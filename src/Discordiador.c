@@ -10,40 +10,69 @@
 
 #include "Discordiador.h"
 
+config_t config;
+t_log* logger;
+
 int main(int argc, char *argv[]) {
 
-	/*
-	pthread_t nombreHilo;
-	pthread_create(&nombreHilo, NULL, (void*) funcionAEjecutar, NULL);
-	*/
+	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
+	leer_config();
 
+	pthread_t hiloConsola;
+	pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
 
-	while(1){
-		leer_consola();
-	}
-
-
+	pthread_join(hiloConsola, NULL);
 	return EXIT_SUCCESS;
 }
 
 void leer_consola(){
-	char* leido = readline(">>>");
-	char** comando= string_split(leido, " ");
-	int cont = 0;
 
-		while(1){
-			if(comando[cont] != NULL)
-				cont++;
-			else
-				break;
+	char* leido;
+	char** comando;
+
+	while(1){
+		leido = readline(">>>");
+		comando= string_split(leido, " ");
+		int cont = 0;
+
+			while(1){
+				if(comando[cont] != NULL)
+					cont++;
+				else
+					break;
+			}
+
+		if(!strncmp(comando[0], "INICIAR_PATOTA", 14)){
+			iniciar_patota(cont, comando);
+		}else if(!strncmp(comando[0], "EXIT", 4)){
+			break;
+		}else{
+			log_warning(logger, "Comando no conocido");
 		}
 
-	if(!strncmp(comando[0], "INICIAR_PATOTA", 14)){
-		iniciar_patota(cont, comando);
 	}
-
 	free(leido);
 	free(comando);
+
+}
+
+void leer_config(){
+	t_config* cfg = config_create("discordiador.config");
+
+	/*config.ip_mi_ram_hq = config_get_string_value(cfg, "IP_MI_RAM_HQ");
+	config.puerto_mi_ram_hq = config_get_int_value(cfg, "PUERTO_MI_RAM_HQ");
+	config.ip_i_mongo_store = config_get_string_value(cfg, "IP_I_MONGO_STORE");
+	config.puerto_i_mongo_store = config_get_int_value(cfg, "PUERTO_I_MONGO_STORE");
+	config.grado_multitarea = config_get_int_value(cfg, "GRADO_MULTITAREA");
+	config.algoritmo = config_get_string_value(cfg, "ALGORITMO");
+	config.quantum = config_get_int_value(cfg, "QUANTUM");
+	config.duracion_sabotaje = config_get_int_value(cfg, "DURACION_SABOTAJE");
+	config.retardo_ciclo_cpu = config_get_int_value(cfg, "RETARDO_CICLO_CPU");*/
+
+
+	log_info(logger, "IP MI RAM HQ: %s", config_get_int_value(cfg, "PUERTO_MI_RAM_HQ"));
+
+	config_destroy(cfg);
 
 }
 
