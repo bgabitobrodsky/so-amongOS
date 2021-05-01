@@ -16,19 +16,6 @@
 #include<commons/config.h>
 #include<readline/readline.h>
 
-/*
-enum comandos{
-	INICIAR_PLANIFICACION,
-	PAUSAR_PLANIFICACION,
-	INICIAR_PATOTA,
-	LISTAR_TRIPULANTES,
-	EXPULSAR_TRIPULANTE,
-	OBTENER_BITACORA
-};
-
-
-#define PARAMETROS_INICIAR_PLANIFICACION 2;
-*/
 typedef struct{
     char* ip_mi_ram_hq;
     int puerto_mi_ram_hq;

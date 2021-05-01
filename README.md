@@ -1,1 +1,0 @@
-# tp-2021-1c-No-matar-a-rey-de-fuego
