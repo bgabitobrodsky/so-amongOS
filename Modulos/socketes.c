@@ -2,7 +2,7 @@
 
  Funcionalidad de sockets, cortesia de Nico
 
- */
+*/
 
 #include "socketes.h"
 
@@ -87,7 +87,7 @@ void escuchar(int socket_escucha) {
 
 		if (!fork()) { // Proceso de hijo (al aceptar un socket se hace uno)
 			close(socket_escucha);
-			acciones_hijo(); // Indefinidas por ahora, podria pasarse la funcion por parametro acorde al modulo
+			// acciones_hijo(); // Indefinidas por ahora, podria pasarse la funcion por parametro acorde al modulo
 			close(socket_especifico);
 			exit(0);
 		}

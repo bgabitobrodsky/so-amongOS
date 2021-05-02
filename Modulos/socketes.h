@@ -17,4 +17,4 @@ void escuchar(int socket_escucha);
 int enviar_mensaje(int socket, char* mensaje, int largo);
 int recibir_mensaje(int socket, char* buffer, int largo);
 
-#endif 
+#endif

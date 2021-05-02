@@ -47,11 +47,11 @@ void leer_consola(){
 					break;
 			}
 
-		if(!strncmp(comando[0], "INICIAR_PATOTA", 14)){
+		if(!strncmp(comando[0], "INICIAR_PATOTA", 14)) {
 			iniciar_patota(cont, comando);
-		}else if(!strncmp(comando[0], "EXIT", 4)){
+		} else if(!strncmp(comando[0], "EXIT", 4)) {
 			break;
-		}else{
+		} else {
 			log_warning(logger, "Comando '%s' no conocido", comando[0]);
 		}
 
@@ -61,7 +61,7 @@ void leer_consola(){
 
 }
 
-void leer_config(){
+void leer_config() {
 	t_config* cfg = config_create("discordiador.config");
 
 	config.ip_mi_ram_hq = config_get_string_value(cfg, "IP_MI_RAM_HQ");
@@ -80,7 +80,7 @@ void leer_config(){
 	config_destroy(cfg);
 }
 
-void iniciar_patota(int argc, char* argv[]){
+void iniciar_patota(int argc, char* argv[]) {
 	printf("PATOTA: cantidad de tripulantes %s, url: %s \n", argv[1], argv[2]);
 	if(argc > 2){
 		printf("Posiciones\n");

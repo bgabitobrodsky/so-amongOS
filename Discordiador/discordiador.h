@@ -15,6 +15,7 @@
 #include<commons/string.h>
 #include<commons/config.h>
 #include<readline/readline.h>
+#include"socketes.h"
 
 typedef struct{
     char* ip_mi_ram_hq;
