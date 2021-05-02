@@ -1,39 +1,37 @@
 /*
 
-Funcionalidad de sockets, cortesia de Nico
+ Funcionalidad de sockets, cortesia de Nico
 
-*/
+ */
 
-#include "Socketes.h"
+#include "socketes.h"
 
+void sigchld_handler(int s) {
+	int saved_errno = errno;
 
-void sigchld_handler(int s)
-{
- 	int saved_errno = errno;
-
-	while(waitpid(-1, NULL, WNOHANG) > 0);
+	while (waitpid(-1, NULL, WNOHANG) > 0);
 
 	errno = saved_errno;
 }
 
-int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_servidor)
-{
+int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_servidor) {
 	struct addrinfo datos_para_server, *informacion_server;
+	int estado;
 
 	memset(&datos_para_server, 0, sizeof(datos_para_server));
 	datos_para_server.ai_family = AF_UNSPEC; // Posible IPv4
 	datos_para_server.ai_socktype = SOCK_STREAM;
 	datos_para_server.ai_flags = AI_PASSIVE;
 
-	if (int estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server) != 0)
+	if ((estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server)) != 0)
 		printf("Error al conseguir informacion del servidor\n");
 
-	int socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol);
+	int socket_cliente = socket(informacion_server->ai_family, informacion_server->ai_socktype, informacion_server->ai_protocol);
 
-	if (socket_cliente == -1) 
+	if (socket_cliente == -1)
 		printf("Error al crear socket\n");
 
-	if (connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1)
+	if (connect(socket_cliente, informacion_server->ai_addr, informacion_server->ai_addrlen) == -1)
 		printf("Error al conectar cliente\n");
 
 	freeaddrinfo(informacion_server);
@@ -44,21 +42,22 @@ int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_serv
 int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servidor) { // Puerto debera ser definido de antemano
 	struct addrinfo datos_para_server, *informacion_server;
 	int socket_escucha;
+	int estado;
 
 	memset(&datos_para_server, 0, sizeof(datos_para_server));
 	datos_para_server.ai_family = AF_UNSPEC;
 	datos_para_server.ai_socktype = SOCK_STREAM;
 	datos_para_server.ai_flags = AI_PASSIVE;
 
-	if (int estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server) != 0)
+	if ((estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server)) != 0)
 		printf("Error al conseguir informacion del servidor\n");
 
-	socket_escucha = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol);
+	socket_escucha = socket(informacion_server->ai_family, informacion_server->ai_socktype, informacion_server->ai_protocol);
 
-	if (socket_escucha == -1) 
+	if (socket_escucha == -1)
 		printf("Error al crear socket\n");
 
-	if (bind(socket_escucha, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1)
+	if (bind(socket_escucha, informacion_server->ai_addr, informacion_server->ai_addrlen) == -1)
 		printf("Error al conectar con el servidor\n");
 
 	freeaddrinfo(informacion_server);
@@ -81,8 +80,8 @@ void escuchar(int socket_escucha) {
 		printf("Error al limpiar procesos\n");
 		exit(1);
 	}
-	
-	while(1) { // Loop infinito donde aceptara clientes
+
+	while (1) { // Loop infinito donde aceptara clientes
 		tamanio_direccion = sizeof(direccion_a_escuchar);
 		socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion);
 
@@ -97,33 +96,31 @@ void escuchar(int socket_escucha) {
 	}
 }
 
-
-
 int enviar_mensaje(int socket, char* mensaje, int largo) { // Se podria definir largo en base al tipo mensaje y hardcodear parametro
 	int bytes_enviados;
-	
+
 	bytes_enviados = send(socket, mensaje, largo, 0);
 
 	if (bytes_enviados == -1)
 		printf("No se envio el mensaje\n");
-	else if (bytes_enviados /= largo) 
+	else if (bytes_enviados /= largo)
 		printf("No se envio todo el mensaje\n");
-	
+
 	return bytes_enviados;
 }
 
-int recibir_mensaje(int socket, char* buffer, int largo) { 
+int recibir_mensaje(int socket, char* buffer, int largo) {
 	int bytes_recibidos;
-	
+
 	bytes_recibidos = recv(socket, buffer, largo, 0);
 
-	switch(bytes_recibidos) {
-		case (-1):
-			printf("Error al recibir mensaje\n");
-			break;
-		case 0: 
-			printf("El remoto ha cerrado la conexion\n");
-			break;
+	switch (bytes_recibidos) {
+	case (-1):
+		printf("Error al recibir mensaje\n");
+		break;
+	case 0:
+		printf("El remoto ha cerrado la conexion\n");
+		break;
 	}
 
 	return bytes_recibidos;
