@@ -1,14 +1,18 @@
 #ifndef SOCKETES_H_
 #define SOCKETES_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<signal.h>
-#include<unistd.h>
-#include<string.h>
+#include <arpa/inet.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 void sigchld_handler(int s);
 int crear_socket_cliente(char *ip_del_servidor_a_conectar, char* puerto_del_servidor);
