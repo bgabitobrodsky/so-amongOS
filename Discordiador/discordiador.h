@@ -15,6 +15,7 @@
 #include<commons/string.h>
 #include<commons/config.h>
 #include<readline/readline.h>
+#include"utils.h"
 #include"../Modulos/socketes.h"
 
 typedef struct{
@@ -29,8 +30,14 @@ typedef struct{
     int retardo_ciclo_cpu;
 } config_t;
 
-void leer_config();
-void leer_consola();
-void iniciar_patota();
+void leerConfig();
+void leerConsola();
+void iniciarPatota(char* leido);
+void listarTripulantes();
+void iniciarPlanificacion();
+void listarTripulantes();
+void pausarPlanificacion();
+void obtenerBitacora(char* leido);
+void expulsarTripulante(char* leido);
 
 #endif /* DISCORDIADOR_H_ */
