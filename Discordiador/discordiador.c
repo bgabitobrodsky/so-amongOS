@@ -16,13 +16,11 @@ t_log* logger;
 int main(int argc, char *argv[]) {
 
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
-	log_info(logger,"Hola");
 
-	leer_config();
-
+	leerConfig();
 
 	pthread_t hiloConsola;
-	pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
+	pthread_create(&hiloConsola, NULL, (void*) leerConsola, NULL);
 
 	pthread_join(hiloConsola, NULL);
 
@@ -30,38 +28,58 @@ int main(int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-void leer_consola(){
+void leerConsola(){
 
 	char* leido;
-	char** comando;
-
-	while(1){
+	int comando;
+	do{
 		leido = readline(">>>");
-		comando= string_split(leido, " ");
-		int cont = 0;
+		if(strlen(leido) > 0){
+			comando = reconocerComando(leido);
 
-			while(1){
-				if(comando[cont] != NULL)
-					cont++;
-				else
+			switch(comando){
+				case INICIAR_PATOTA:
+					iniciarPatota(leido);
+					break;
+
+				case INICIAR_PLANIFICACION:
+					iniciarPlanificacion();
+					break;
+
+				case LISTAR_TRIPULANTES:
+					listarTripulantes();
+					break;
+
+				case PAUSAR_PLANIFICACION:
+					pausarPlanificacion();
+					break;
+
+				case OBTENER_BITACORA:
+					obtenerBitacora(leido);
+					break;
+				
+				case EXPULSAR_TRIPULANTE:
+					expulsarTripulante(leido);
+					break;
+				
+				case HELP:
+					helpComandos();
+					break;
+				
+				case NO_CONOCIDO:
+					printf("Comando desconocido, escribe HELP para obtener la lista de comandos\n");
+					break;
+
+				default:
 					break;
 			}
+		}		
+	}while(comando != EXIT);
 
-		if(!strncmp(comando[0], "INICIAR_PATOTA", 14)) {
-			iniciar_patota(cont, comando);
-		} else if(!strncmp(comando[0], "EXIT", 4)) {
-			break;
-		} else {
-			log_warning(logger, "Comando '%s' no conocido", comando[0]);
-		}
-
-	}
 	free(leido);
-	free(comando);
-
 }
 
-void leer_config() {
+void leerConfig() {
 	t_config* cfg = config_create("discordiador.config");
 
 	config.ip_mi_ram_hq = config_get_string_value(cfg, "IP_MI_RAM_HQ");
@@ -74,20 +92,40 @@ void leer_config() {
 	config.duracion_sabotaje = config_get_int_value(cfg, "DURACION_SABOTAJE");
 	config.retardo_ciclo_cpu = config_get_int_value(cfg, "RETARDO_CICLO_CPU");
 
-
-	log_info(logger, "IP MI RAM HQ: %s", config.ip_mi_ram_hq);
-
 	config_destroy(cfg);
 }
 
-void iniciar_patota(int argc, char* argv[]) {
-	printf("PATOTA: cantidad de tripulantes %s, url: %s \n", argv[1], argv[2]);
-	if(argc > 2){
+void iniciarPatota(char* leido){
+	char** palabras = string_split(leido, " ");
+
+	int cantidadTripulantes = atoi(palabras[1]);
+	char* path = palabras[2];
+
+	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
+
+	// 4 es el offset de lo leído para acceder a las posiciones, (iniciar_patota cant path <posiciones...>)
+	/*for(i = 4; i <= cantidadTripulantes + 4; i++){
 		printf("Posiciones\n");
 		for(int i = 3; i <= argc; i++){
 			if(argv[i]==NULL)
 				argv[i] = "0|0";
 			printf("POSICION %d: %s \n", i-2, argv[i]);
 		}
-	}
+	}*/
+
+}
+void iniciarPlanificacion(){
+	printf("iniciarPlanificacion");
+}
+void listarTripulantes(){
+	printf("listarTripulantes");
+}
+void pausarPlanificacion(){
+	printf("pausarPlanificacion");
+}
+void obtenerBitacora(char* leido){
+	printf("obtenerBitacora");
+}
+void expulsarTripulante(char* leido){
+	printf("expulsarTripulante");
 }
