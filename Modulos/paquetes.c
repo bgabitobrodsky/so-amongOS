@@ -115,6 +115,16 @@ estructura_t* recepcion_y_deserializacion(int socket_receptor) {
     estructura_t* intermediario = malloc(sizeof(estructura_t*));
 
     recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
+
+    if (paquete->codigo_operacion == 2) { // Se hace antes para que no lea al pedo si es sabotaje (aguante la performance)
+        &intermediario->es_sabotaje = true;
+        free(paquete->buffer->estructura);
+        free(paquete->buffer);
+        free(paquete);  
+
+        return intermediario;
+    }
+
     recibir_mensaje(socket_receptor, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
     paquete->buffer->estructura = malloc(paquete->buffer->size);
     recibir_mensaje(socket_receptor, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
@@ -127,9 +137,6 @@ estructura_t* recepcion_y_deserializacion(int socket_receptor) {
         case 1:
             intermediario->tarea = malloc(sizeof(t_tarea));
             &intermediario->tarea = desserializar_tarea(paquete->buffer->estructura);
-            break;
-        case 2:
-            &intermediario->es_sabotaje = true;
             break;
     }
 
