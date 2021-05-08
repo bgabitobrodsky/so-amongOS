@@ -23,3 +23,9 @@
 [INFO] 18:51:47:289 discordiador/(5969:5969): Hola
 [INFO] 18:51:47:302 discordiador/(5969:5969): IP MI RAM HQ: 127.1.1.1
 [WARNING] 18:51:49:262 discordiador/(5969:5970): Comando 'asda' no conocido
+[WARNING] 15:26:58:621 discordiador/(8289:8290): Comando 'asdas' no conocido
+[WARNING] 15:27:07:294 discordiador/(8289:8290): Comando 'Hola' no conocido
+[INFO] 15:27:13:534 discordiador/(8289:8290): Comando reconocido: LISTAR TRIPULANTES
+[INFO] 15:27:29:301 discordiador/(8289:8290): Comando reconocido: LISTAR TRIPULANTES
+[WARNING] 15:27:35:700 discordiador/(8289:8290): Comando '' no conocido
+[INFO] 15:32:34:864 discordiador/(8868:8869): Comando reconocido: LISTAR TRIPULANTES
