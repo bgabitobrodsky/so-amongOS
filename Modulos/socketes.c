@@ -104,7 +104,8 @@ void escuchar(int socket_escucha, void* (funcion_de_hijos) /* (parametros) */)) 
 }
 
 // La funcion send pero con verificacion y simplificada
-int enviar_mensaje(int socket, char* mensaje, int largo) { // Se podria definir largo en base al tipo mensaje y hardcodear parametro
+// Lo enviado en mensaje sera un buffer serializado previamente con las funciones de paquetes
+int enviar_mensaje(int socket, void* mensaje, int largo) { // Se podria definir largo en base al tipo mensaje y hardcodear parametro
 	int bytes_enviados;
 
 	bytes_enviados = send(socket, mensaje, largo, 0); // Envio el mensaje dado, y recibo la cantidad de bytes que mande
@@ -119,7 +120,8 @@ int enviar_mensaje(int socket, char* mensaje, int largo) { // Se podria definir 
 
 
 // La funcion recv pero con verificacion y simplificada
-int recibir_mensaje(int socket, char* buffer, int largo) { // Puede cambiar post diseño de paquetes
+// Lo importante va a estar en el buffer de todas formas, que luego se utilizara en conjunto con las funciones de paquetes
+int recibir_mensaje(int socket, void* buffer, int largo) { 
 	int bytes_recibidos;
 
 	bytes_recibidos = recv(socket, buffer, largo, 0); // Recibo un mensaje, y recibo la cantidad de bytes que recibi
