@@ -38,5 +38,6 @@ void iniciar_planificacion();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
 void expulsar_tripulante(char* leido);
+void help_comandos();
 
 #endif /* DISCORDIADOR_H_ */

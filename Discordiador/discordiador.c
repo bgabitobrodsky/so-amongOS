@@ -13,7 +13,7 @@
 config_t config;
 t_log* logger;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]){
 
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 
@@ -35,42 +35,39 @@ void leer_consola(){
 	do{
 		leido = readline(">>>");
 		if(strlen(leido) > 0){
-			comando = reconocerComando(leido);
+			comando = reconocer_comando(leido);
 
 			switch(comando){
 				case INICIAR_PATOTA:
-					iniciarPatota(leido);
+					iniciar_patota(leido);
 					break;
 
 				case INICIAR_PLANIFICACION:
-					iniciarPlanificacion();
+					iniciar_planificacion();
 					break;
 
 				case LISTAR_TRIPULANTES:
-					listarTripulantes();
+					listar_tripulantes();
 					break;
 
 				case PAUSAR_PLANIFICACION:
-					pausarPlanificacion();
+					pausar_planificacion();
 					break;
 
 				case OBTENER_BITACORA:
-					obtenerBitacora(leido);
+					obtener_bitacora(leido);
 					break;
 				
 				case EXPULSAR_TRIPULANTE:
-					expulsarTripulante(leido);
+					expulsar_tripulante(leido);
 					break;
 				
 				case HELP:
-					helpComandos();
+					help_comandos();
 					break;
 				
 				case NO_CONOCIDO:
 					printf("Comando desconocido, escribe HELP para obtener la lista de comandos\n");
-					break;
-
-				default:
 					break;
 			}
 		}		
@@ -79,7 +76,7 @@ void leer_consola(){
 	free(leido);
 }
 
-void leer_config() {
+void leer_config(){
 	t_config* cfg = config_create("discordiador.config");
 
 	config.ip_mi_ram_hq = config_get_string_value(cfg, "IP_MI_RAM_HQ");
