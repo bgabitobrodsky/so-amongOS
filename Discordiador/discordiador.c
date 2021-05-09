@@ -118,7 +118,7 @@ void iniciarPlanificacion(){
 	printf("iniciarPlanificacion");
 }
 void listarTripulantes(){
-	printf("listarTripulantes soy el cambio de juli");
+	printf("listarTripulantes");
 }
 void pausarPlanificacion(){
 	printf("pausarPlanificacion");
