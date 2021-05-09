@@ -36,7 +36,6 @@ t_buffer serializar_tarea(t_tarea tarea) {
 
     void* estructura = malloc((buffer->tamanio_estructura));
     int desplazamiento = 0;
-
     
     memcpy(estructura + desplazamiento, &tarea.nombre_largo, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
@@ -52,7 +51,7 @@ t_buffer serializar_tarea(t_tarea tarea) {
 
     buffer->estructura = estructura;
 
-    free(tarea.nombre); // Habria que ver si el nombre de la tarea hace falta en src
+    free(tarea.nombre); // TODO: Habria que ver si el nombre de la tarea hace falta en src
 
     return buffer;
 
@@ -78,7 +77,7 @@ t_buffer serializar_sabotaje() {
 // Recibe un buffer, un opcode y un socket a donde se enviara el paquete que se armara en la funcion, y se envia
 // Usar con funciones de serializacion de arriba
 // Usa funcion de socketes.h
-void empaquetar(t_buffer buffer, int codigo_operacion, int socket_receptor) {
+void empaquetar_y_enviar(t_buffer buffer, int codigo_operacion, int socket_receptor) {
 
     t_paquete* paquete = malloc(sizeof(t_paquete));
     paquete->codigo_operacion = codigo_operacion;
@@ -88,11 +87,11 @@ void empaquetar(t_buffer buffer, int codigo_operacion, int socket_receptor) {
     void* mensaje = malloc(tamanio_mensaje);
     int desplazamiento = 0;
 
-    memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
+    memcpy(mensaje + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
     offset += sizeof(uint8_t);
-    memcpy(a_enviar + offset, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
+    memcpy(mensaje + offset, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
     offset += sizeof(uint32_t);
-    memcpy(a_enviar + offset, paquete->buffer->estructura, paquete->buffer->size);
+    memcpy(mensaje + offset, paquete->buffer->estructura, paquete->buffer->size);
 
     enviar_mensaje(socket_receptor, mensaje, tamanio_mensaje);
 
@@ -108,6 +107,7 @@ void empaquetar(t_buffer buffer, int codigo_operacion, int socket_receptor) {
 // IMPORTANTE, es necesario:
 // -Ver las cosas dentro del struct estructura a ver que carajos se mando (puede que sea especifico por el socket y no haga falta)
 // -Liberar el struct estructura luego de extraer las cosas
+// TODO: Mejorable
 estructura_t* recepcion_y_deserializacion(int socket_receptor) { 
 
     t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -116,25 +116,25 @@ estructura_t* recepcion_y_deserializacion(int socket_receptor) {
 
     recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
 
-    if (paquete->codigo_operacion == 2) { // Se hace antes para que no lea al pedo si es sabotaje (aguante la performance)
+    if (paquete->codigo_operacion == SABOTAJE) { // Se hace antes para que no lea al pedo si es sabotaje (aguante la performance)
         &intermediario->es_sabotaje = true;
         free(paquete->buffer->estructura);
         free(paquete->buffer);
-        free(paquete);  
+        free(paquete);
 
         return intermediario;
     }
 
     recibir_mensaje(socket_receptor, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
-    paquete->buffer->estructura = malloc(paquete->buffer->size);
+    paquete->buffer->estructura = malloc(paquete->buffer->tamanio_estructura);
     recibir_mensaje(socket_receptor, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
 
     switch (paquete->codigo_operacion) {
-        case 0:
+        case TRIPULANTE:
             intermediario->tripulante = malloc(sizeof(t_tripulante));
             &intermediario->tripulante = desserializar_tripulante(paquete->buffer);
             break;
-        case 1:
+        case TAREA:
             intermediario->tarea = malloc(sizeof(t_tarea));
             &intermediario->tarea = desserializar_tarea(paquete->buffer->estructura);
             break;
