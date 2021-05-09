@@ -115,7 +115,7 @@ void iniciarPatota(char* leido){
 
 }
 void iniciarPlanificacion(){
-	printf("iniciarPlanificacion");
+	printf("iniciarPlanificacion asdasdasad");
 }
 void listarTripulantes(){
 	printf("listarTripulantes");
