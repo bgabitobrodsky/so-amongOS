@@ -121,7 +121,7 @@ void listarTripulantes(){
 	printf("listarTripulantes");
 }
 void pausarPlanificacion(){
-	printf("pausarPlanificacion");
+	printf("pausarPlanificacion 2");
 }
 void obtenerBitacora(char* leido){
 	printf("obtenerBitacora");
