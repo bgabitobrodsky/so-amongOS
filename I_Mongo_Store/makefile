@@ -1,5 +1,5 @@
-TARGET = discordiador
-LIBS = -lcommons -lreadline -lpthread
+TARGET = i_mongo_store
+LIBS = -lcommons -lpthread
 CC = gcc
 CFLAGS = -g -Wall
 

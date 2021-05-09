@@ -16,7 +16,7 @@ int reconocer_comando(char* str){
 		contador++;
 	}
 
-	if(comparar_string(palabras[0],"INICIAR_PATOTA")){
+	if(comparar_strings(palabras[0],"INICIAR_PATOTA")){
 		if(contador >= 3){
 			free(palabras);
 			return INICIAR_PATOTA;
@@ -25,7 +25,7 @@ int reconocer_comando(char* str){
 		}
 	}
 
-	if(comparar_string(palabras[0],"LISTAR_TRIPULANTES")){
+	if(comparar_strings(palabras[0],"LISTAR_TRIPULANTES")){
 		if(contador == 1){
 			free(palabras);
 			return LISTAR_TRIPULANTES;
@@ -34,7 +34,7 @@ int reconocer_comando(char* str){
 		}
 	}
 
-	if(comparar_string(palabras[0],"EXPULSAR_TRIPULANTE")){
+	if(comparar_strings(palabras[0],"EXPULSAR_TRIPULANTE")){
 		if(contador == 2){
 			free(palabras);
 			return EXPULSAR_TRIPULANTE;
@@ -43,7 +43,7 @@ int reconocer_comando(char* str){
 		}
 	}
 
-	if(comparar_string(palabras[0],"INICIAR_PLANIFICACION")){
+	if(comparar_strings(palabras[0],"INICIAR_PLANIFICACION")){
 		if(contador == 1){
 			free(palabras);
 			return INICIAR_PLANIFICACION;
@@ -52,7 +52,7 @@ int reconocer_comando(char* str){
 		}
 	}
 
-	if(comparar_string(palabras[0],"PAUSAR_PLANIFICACION")){
+	if(comparar_strings(palabras[0],"PAUSAR_PLANIFICACION")){
 		if(contador == 1){
 			free(palabras);
 			return PAUSAR_PLANIFICACION;
@@ -61,7 +61,7 @@ int reconocer_comando(char* str){
 		}
 	}
 
-	if(comparar_string(palabras[0],"OBTENER_BITACORA")){
+	if(comparar_strings(palabras[0],"OBTENER_BITACORA")){
 		if(contador == 1){
 			free(palabras);
 			return OBTENER_BITACORA;
@@ -70,7 +70,7 @@ int reconocer_comando(char* str){
 		}
 	}
 
-	if(comparar_string(palabras[0],"HELP")){
+	if(comparar_strings(palabras[0],"HELP")){
 		if(contador == 1){
 			free(palabras);
 			return HELP;
@@ -79,7 +79,7 @@ int reconocer_comando(char* str){
 		}
 	}
 
-	if(comparar_string(palabras[0],"EXIT")){
+	if(comparar_strings(palabras[0],"EXIT")){
 		if(contador == 1){
 			free(palabras);
 			return EXIT;
@@ -89,11 +89,12 @@ int reconocer_comando(char* str){
 	}
 
 	free(palabras);
+	printf("Comando desconocido, escribe HELP para obtener la lista de comandos\n");
 	return NO_CONOCIDO;
 }
 
 
-int comparar_string(char* str, char* str2){
+int comparar_strings(char* str, char* str2){
 	return !strncmp(str, str2, strlen(str2));
 }
 

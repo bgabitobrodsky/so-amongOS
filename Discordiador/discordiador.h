@@ -28,7 +28,7 @@ typedef struct{
     int quantum;
     int duracion_sabotaje;
     int retardo_ciclo_cpu;
-} config_t;
+} config_discordiador_t;
 
 void leer_config();
 void leer_consola();

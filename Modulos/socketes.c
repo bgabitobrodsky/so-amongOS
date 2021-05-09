@@ -18,6 +18,7 @@ void sigchld_handler(int s) {
 
 // Funcion para crear un socket modalidad cliente
 int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_servidor) { 
+	printf("escuchar cliente");
 	struct addrinfo datos_para_server, *informacion_server;
 	int estado;
 
@@ -72,7 +73,7 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 }
 
 // Funcion para escuchar llamados, con un socket de la funcion anterior, faltaria 
-void escuchar(int socket_escucha,  void* (funcion_de_hijos)  /*(parametros) */){
+void escuchar(int socket_escucha,  void* funcion_de_hijos()  /*(parametros) */){
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
@@ -94,7 +95,7 @@ void escuchar(int socket_escucha,  void* (funcion_de_hijos)  /*(parametros) */){
 
 		if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
 			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-			// void* (funcion_de_hijos)(parametros) // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
+			funcion_de_hijos(); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
 			close(socket_especifico); // Cumple proposito, se cierra socket hijo
 			exit(0); // Returnea
 		}

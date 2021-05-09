@@ -25,7 +25,7 @@ enum{
 	HELP
 }comando_cod;
 
-int reconocer_comandos(char* str);
+int reconocer_comando(char* str);
 int comparar_strings(char* str, char* str2);
 void help_comandos();
 

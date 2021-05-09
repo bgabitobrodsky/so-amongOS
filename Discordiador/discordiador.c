@@ -10,7 +10,7 @@
 
 #include "discordiador.h"
 
-config_t config;
+config_discordiador_t config;
 t_log* logger;
 
 int main(int argc, char *argv[]){
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]){
 	leer_config();
 
 	pthread_t hiloConsola;
-	pthread_create(&hiloConsola, NULL, (void*) leerConsola, NULL);
+	pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
 
 	pthread_join(hiloConsola, NULL);
 
@@ -67,7 +67,6 @@ void leer_consola(){
 					break;
 				
 				case NO_CONOCIDO:
-					printf("Comando desconocido, escribe HELP para obtener la lista de comandos\n");
 					break;
 			}
 		}		
@@ -115,7 +114,9 @@ void iniciar_planificacion(){
 	printf("iniciarPlanificacion");
 }
 void listar_tripulantes(){
-	printf("listarTripulantes");
+	int socket_cliente = crear_socket_cliente("127.0.0.2", "4444");
+
+
 }
 void pausar_planificacion(){
 	printf("pausarPlanificacion");
