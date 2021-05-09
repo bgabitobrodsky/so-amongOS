@@ -72,21 +72,21 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 }
 
 // Funcion para escuchar llamados, con un socket de la funcion anterior, faltaria 
-void escuchar(int socket_escucha, void* (funcion_de_hijos) /* (parametros) */)) {
+void escuchar(int socket_escucha,  void* (funcion_de_hijos)  /*(parametros) */){
 	struct sockaddr_storage direccion_a_escuchar;
-	sockelen_t tamanio_direccion;
+	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
 
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
-	sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 		printf("Error al limpiar procesos\n");
 		exit(1);
-	}
+	}*/
 
 	while (1) { // Loop infinito donde aceptara clientes
 		tamanio_direccion = sizeof(direccion_a_escuchar);

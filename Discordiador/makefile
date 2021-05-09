@@ -1,5 +1,5 @@
 TARGET = discordiador
-LIBS = -lcommons -lreadline -lpthread
+LIBS = -lcommons -lreadline -lpthread -lsockets
 CC = gcc
 CFLAGS = -g -Wall
 
@@ -10,7 +10,7 @@ default: $(TARGET)
 all: default
 
 OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
-HEADERS = $(wildcard *.h, ../Modulos.socketes.h)
+HEADERS = $(wildcard *.h, ../Modulos/$(wildcard *.h), )
 
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@

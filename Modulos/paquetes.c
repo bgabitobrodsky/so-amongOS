@@ -10,7 +10,7 @@
 // En esta funcion se pone el comportamiento comun de la serializacion
 t_buffer serializar_tripulante(t_tripulante tripulante) {
 
-    *t_buffer buffer = malloc((sizeof(t_buffer))); // Se inicializa buffer
+    t_buffer* buffer = malloc((sizeof(t_buffer))); // Se inicializa buffer
     buffer->tamanio_estructura = 3 * sizeof(uint32_t); // Se le da el tamanio del struct del parametro
 
     void* estructura = malloc((buffer->tamanio_estructura)); // Se utiliza intermediario
@@ -31,7 +31,7 @@ t_buffer serializar_tripulante(t_tripulante tripulante) {
 // Serializa un struct tarea a un buffer
 t_buffer serializar_tarea(t_tarea tarea) {
 
-    *t_buffer buffer = malloc((sizeof(t_buffer)));
+    t_buffer* buffer = malloc((sizeof(t_buffer)));
     buffer->tamanio_estructura = 5 * sizeof(uint32_t) + sizeof(tarea.nombre) + 1;
 
     void* estructura = malloc((buffer->tamanio_estructura));
@@ -47,7 +47,7 @@ t_buffer serializar_tarea(t_tarea tarea) {
     desplazamiento += sizeof(uint32_t);
     memcpy(estructura + desplazamiento, &tarea.coord_y, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tarea.duracion, sizeof(uint32_t));
+    memcpy(estructura + desplazamiento, &tarea.duracion_tarea, sizeof(uint32_t));
 
     buffer->estructura = estructura;
 
@@ -60,7 +60,7 @@ t_buffer serializar_tarea(t_tarea tarea) {
 // Serializa el sabotaje a un buffer, funcion recontra al pedo pero sirve por polimorfismo para envio/recepcion de mensajes
 t_buffer serializar_sabotaje() {
 
-    *t_buffer buffer = malloc((sizeof(t_buffer)));
+    t_buffer* buffer = malloc((sizeof(t_buffer)));
 
     buffer->tamanio_estructura = sizeof(char);
 
@@ -87,11 +87,11 @@ void empaquetar_y_enviar(t_buffer buffer, int codigo_operacion, int socket_recep
     void* mensaje = malloc(tamanio_mensaje);
     int desplazamiento = 0;
 
-    memcpy(mensaje + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
-    offset += sizeof(uint8_t);
-    memcpy(mensaje + offset, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
-    offset += sizeof(uint32_t);
-    memcpy(mensaje + offset, paquete->buffer->estructura, paquete->buffer->size);
+    memcpy(mensaje + desplazamiento, &(paquete->codigo_operacion), sizeof(uint8_t));
+    desplazamiento += sizeof(uint8_t);
+    memcpy(mensaje + desplazamiento, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(mensaje + desplazamiento, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
 
     enviar_mensaje(socket_receptor, mensaje, tamanio_mensaje);
 
@@ -181,7 +181,7 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
     estructura += sizeof(uint32_t);
     memcpy(&(tarea->coord_y), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    memcpy(&(tarea->duracion), estructura, sizeof(uint32_t));
+    memcpy(&(tarea->duracion_tarea), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
 
     return tarea;
