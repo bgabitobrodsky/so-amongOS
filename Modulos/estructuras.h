@@ -64,6 +64,6 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     t_tarea tarea;
     bool es_sabotaje = false; // Necesario verificar 
 
-} estructura_t;
+} t_estructura;
 
 #endif

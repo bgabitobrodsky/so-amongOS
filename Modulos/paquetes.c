@@ -108,11 +108,11 @@ void empaquetar_y_enviar(t_buffer buffer, int codigo_operacion, int socket_recep
 // -Ver las cosas dentro del struct estructura a ver que carajos se mando (puede que sea especifico por el socket y no haga falta)
 // -Liberar el struct estructura luego de extraer las cosas
 // TODO: Mejorable
-estructura_t* recepcion_y_deserializacion(int socket_receptor) { 
+t_estructura* recepcion_y_deserializacion(int socket_receptor) { 
 
     t_paquete* paquete = malloc(sizeof(t_paquete));
     paquete->buffer = malloc(sizeof(t_buffer));
-    estructura_t* intermediario = malloc(sizeof(estructura_t*));
+    t_estructura* intermediario = malloc(sizeof(t_estructura*));
 
     recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
 
