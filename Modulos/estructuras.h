@@ -1,12 +1,12 @@
-#ifndef PAQUETES_H_
-#define PAQUETES_H_
+#ifndef ESTRUCTURAS_H_
+#define ESTRUCTURAS_H_
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include “stdbool.h”
+#include "stdbool.h"
 
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
 
