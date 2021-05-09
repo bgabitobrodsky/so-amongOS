@@ -115,13 +115,13 @@ void iniciarPatota(char* leido){
 
 }
 void iniciarPlanificacion(){
-	printf("iniciarPlanificacion 32423");
+	printf("iniciarPlanificacion");
 }
 void listarTripulantes(){
 	printf("listarTripulantes");
 }
 void pausarPlanificacion(){
-	printf("pausarPlanificacion 435435");
+	printf("pausarPlanificacion");
 }
 void obtenerBitacora(char* leido){
 	printf("obtenerBitacora");
