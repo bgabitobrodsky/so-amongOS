@@ -30,14 +30,13 @@ typedef struct{
     int retardo_ciclo_cpu;
 } config_t;
 
-void leerConfig();
-void leerConsola();
-void iniciarPatota(char* leido);
-void listarTripulantes();
-void iniciarPlanificacion();
-void listarTripulantes();
-void pausarPlanificacion();
-void obtenerBitacora(char* leido);
-void expulsarTripulante(char* leido);
+void leer_config();
+void leer_consola();
+void iniciar_patota(char* leido);
+void listar_tripulantes();
+void iniciar_planificacion();
+void pausar_planificacion();
+void obtener_bitacora(char* leido);
+void expulsar_tripulante(char* leido);
 
 #endif /* DISCORDIADOR_H_ */

@@ -7,7 +7,7 @@
 
 #include "utils.h"
 
-int reconocerComando(char* str){
+int reconocer_comando(char* str){
 
 	char** palabras = string_split(str, " ");
 	int contador = 0; //contador de palabras
@@ -16,7 +16,7 @@ int reconocerComando(char* str){
 		contador++;
 	}
 
-	if(compararString(palabras[0],"INICIAR_PATOTA")) {
+	if(comparar_string(palabras[0],"INICIAR_PATOTA")) {
 		if(contador >= 3){
 			free(palabras);
 			return INICIAR_PATOTA;
@@ -25,7 +25,7 @@ int reconocerComando(char* str){
 		}
 	}
 
-	if(compararString(palabras[0],"LISTAR_TRIPULANTES")) {
+	if(comparar_string(palabras[0],"LISTAR_TRIPULANTES")) {
 		if(contador == 1){
 			free(palabras);
 			return LISTAR_TRIPULANTES;
@@ -34,7 +34,7 @@ int reconocerComando(char* str){
 		}
 	}
 
-	if(compararString(palabras[0],"EXPULSAR_TRIPULANTE")) {
+	if(comparar_string(palabras[0],"EXPULSAR_TRIPULANTE")) {
 		if(contador == 2){
 			free(palabras);
 			return EXPULSAR_TRIPULANTE;
@@ -43,7 +43,7 @@ int reconocerComando(char* str){
 		}
 	}
 
-	if(compararString(palabras[0],"INICIAR_PLANIFICACION")) {
+	if(comparar_string(palabras[0],"INICIAR_PLANIFICACION")) {
 		if(contador == 1){
 			free(palabras);
 			return INICIAR_PLANIFICACION;
@@ -52,7 +52,7 @@ int reconocerComando(char* str){
 		}
 	}
 
-	if(compararString(palabras[0],"PAUSAR_PLANIFICACION")) {
+	if(comparar_string(palabras[0],"PAUSAR_PLANIFICACION")) {
 		if(contador == 1){
 			free(palabras);
 			return PAUSAR_PLANIFICACION;
@@ -61,7 +61,7 @@ int reconocerComando(char* str){
 		}
 	}
 
-	if(compararString(palabras[0],"OBTENER_BITACORA")) {
+	if(comparar_string(palabras[0],"OBTENER_BITACORA")) {
 		if(contador == 1){
 			free(palabras);
 			return OBTENER_BITACORA;
@@ -70,7 +70,7 @@ int reconocerComando(char* str){
 		}
 	}
 
-	if(compararString(palabras[0],"HELP")) {
+	if(comparar_string(palabras[0],"HELP")) {
 		if(contador == 1){
 			free(palabras);
 			return HELP;
@@ -79,7 +79,7 @@ int reconocerComando(char* str){
 		}
 	}
 
-	if(compararString(palabras[0],"EXIT")) {
+	if(comparar_string(palabras[0],"EXIT")) {
 		if(contador == 1){
 			free(palabras);
 			return EXIT;
@@ -93,11 +93,11 @@ int reconocerComando(char* str){
 }
 
 
-int compararString(char* str, char* str2){
+int comparar_string(char* str, char* str2){
 	return !strncmp(str, str2, strlen(str2));
 }
 
-void helpComandos(){
+void help_comandos(){
 	printf("Lista de comandos:\n");
 	printf("- INICIAR_PATOTA <cantidad_de_tripulantes> <path> (<pos1> ... <posn>)\n");
 	printf("- INICIAR_PLANIFICACION\n");

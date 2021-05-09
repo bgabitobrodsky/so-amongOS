@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 
-	leerConfig();
+	leer_config();
 
 	pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*) leerConsola, NULL);
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-void leerConsola(){
+void leer_consola(){
 
 	char* leido;
 	int comando;
@@ -79,7 +79,7 @@ void leerConsola(){
 	free(leido);
 }
 
-void leerConfig() {
+void leer_config() {
 	t_config* cfg = config_create("discordiador.config");
 
 	config.ip_mi_ram_hq = config_get_string_value(cfg, "IP_MI_RAM_HQ");
@@ -95,7 +95,7 @@ void leerConfig() {
 	config_destroy(cfg);
 }
 
-void iniciarPatota(char* leido){
+void iniciar_patota(char* leido){
 	char** palabras = string_split(leido, " ");
 
 	int cantidadTripulantes = atoi(palabras[1]);
@@ -114,18 +114,18 @@ void iniciarPatota(char* leido){
 	}*/
 
 }
-void iniciarPlanificacion(){
+void iniciar_planificacion(){
 	printf("iniciarPlanificacion");
 }
-void listarTripulantes(){
+void listar_tripulantes(){
 	printf("listarTripulantes");
 }
-void pausarPlanificacion(){
+void pausar_planificacion(){
 	printf("pausarPlanificacion");
 }
-void obtenerBitacora(char* leido){
+void obtener_bitacora(char* leido){
 	printf("obtenerBitacora");
 }
-void expulsarTripulante(char* leido){
+void expulsar_tripulante(char* leido){
 	printf("expulsarTripulante");
 }

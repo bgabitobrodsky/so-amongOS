@@ -25,8 +25,8 @@ enum{
 	HELP
 }comando_cod;
 
-int reconocerComando(char* str);
-int compararString(char* str, char* str2);
-void helpComandos();
+int reconocer_comandos(char* str);
+int comparar_strings(char* str, char* str2);
+void help_comandos();
 
 #endif /* DISCORDIADOR_UTILS_H_ */
