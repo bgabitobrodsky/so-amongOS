@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef I_MONGO_STORE_I_MONGO_STORE_H_
-#define I_MONGO_STORE_I_MONGO_STORE_H_
+#ifndef MI_RAM_HQ_H_
+#define MI_RAM_HQ_H_
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -14,8 +14,7 @@
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
-#include<readline/readline.h>
-#include"../Modulos/socketes.h"
+#include"utils.h"
 
 typedef struct{
     char* punto_montaje;
@@ -27,4 +26,4 @@ typedef struct{
 void escuchar_alos_cliente();
 void hola();
 
-#endif /* I_MONGO_STORE_I_MONGO_STORE_H_ */
+#endif /* MI_RAM_HQ_H_ */

@@ -12,8 +12,34 @@
 #include<stdlib.h>
 #include<string.h>
 #include<commons/string.h>
+#include<commons/log.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <sys/wait.h>
+#include <signal.h>
 
-enum{
+typedef enum{
+	MENSAJE,
+	HOLA
+}op_code;
+
+typedef struct{
+	int size;
+	void* stream;
+} t_buffer;
+
+
+typedef struct{
+	op_code codigo_operacion;
+	t_buffer* buffer;
+} t_paquete;
+
+typedef enum{
 	NO_CONOCIDO,
 	LISTAR_TRIPULANTES,
 	INICIAR_PLANIFICACION,
@@ -25,8 +51,25 @@ enum{
 	HELP
 }comando_cod;
 
+typedef struct{
+    char* ip_mi_ram_hq;
+    int puerto_mi_ram_hq;
+    char* ip_i_mongo_store;
+    int puerto_i_mongo_store;
+    int grado_multitarea;
+    char* algoritmo;
+    int quantum;
+    int duracion_sabotaje;
+    int retardo_ciclo_cpu;
+} config_discordiador_t;
+
+config_discordiador_t config;
+t_log* logger;
+
 int reconocer_comando(char* str);
 int comparar_strings(char* str, char* str2);
 void help_comandos();
+int conectar_a_mi_ram_hq();
+void* serializar_paquete(t_paquete* paquete, int bytes);
 
 #endif /* DISCORDIADOR_UTILS_H_ */

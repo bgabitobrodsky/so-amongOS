@@ -10,9 +10,6 @@
 
 #include "discordiador.h"
 
-config_discordiador_t config;
-t_log* logger;
-
 int main(int argc, char *argv[]){
 
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
@@ -114,8 +111,29 @@ void iniciar_planificacion(){
 	printf("iniciarPlanificacion");
 }
 void listar_tripulantes(){
-	int socket_cliente = crear_socket_cliente("127.0.0.2", "4444");
 
+	int socket_mi_ram_hq = conectar_a_mi_ram_hq();
+	char* mensaje = "holaaa";
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+
+	paquete->codigo_operacion = MENSAJE;
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->size = strlen(mensaje) + 1;
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
+
+	int bytes = paquete->buffer->size + 2*sizeof(int);
+
+	void* a_enviar = serializar_paquete(paquete, bytes);
+
+	send(socket_mi_ram_hq, a_enviar, bytes, 0);
+
+	free(a_enviar);
+	
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+	close(socket_mi_ram_hq);
 
 }
 void pausar_planificacion(){

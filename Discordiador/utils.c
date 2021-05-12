@@ -107,3 +107,44 @@ void help_comandos(){
 	printf("- EXPULSAR_TRIPULANTE <codigo_de_tripulante>\n");
 	printf("- OBTENER_BITACORA <codigo_de_tripulante>\n");
 }
+
+// Funcion para crear un socket modalidad cliente
+int conectar_a_mi_ram_hq() { 
+	printf("Conectando a MI RAM");
+	struct addrinfo datos_para_server, *informacion_server;
+	int estado;
+
+	memset(&datos_para_server, 0, sizeof(datos_para_server)); // Se settea en 0 la var datos_para_server
+	datos_para_server.ai_family = AF_UNSPEC; // 
+	datos_para_server.ai_socktype = SOCK_STREAM; // Se indica la modalidad de la comunicacion: no declaro formato de ip, socket stream y que se rellene la IP propia del cliente 
+	datos_para_server.ai_flags = AI_PASSIVE; //
+
+	if ((estado = getaddrinfo("127.0.0.1", "4444", &datos_para_server, &informacion_server)) != 0) // Obtengo la informacion del server y la alojo en informacion_server, utilizando los datos predefinidos arriba para settear
+		printf("Error al conseguir informacion del servidor\n"); // Al mismo tiempo se verifica si el proceso funciono correctamente
+
+	int socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol); // Consigo el numero de socket con la informacion obtenida
+
+	if (socket_cliente == -1)
+		printf("Error al crear socket\n"); // Verifico que el socket se haya logrado crear correctamente
+
+	if (connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) // Conecto el socket con el server que obtuve
+		printf("Error al conectar cliente\n"); // Tambien verifico que se conecte
+
+	freeaddrinfo(informacion_server); // Libero la informacion del server total ya no sirve
+
+	return socket_cliente;
+}
+
+void* serializar_paquete(t_paquete* paquete, int bytes){
+	void * magic = malloc(bytes);
+	int desplazamiento = 0;
+
+	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
+	desplazamiento+= paquete->buffer->size;
+
+	return magic;
+}

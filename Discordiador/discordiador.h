@@ -16,19 +16,6 @@
 #include<commons/config.h>
 #include<readline/readline.h>
 #include"utils.h"
-#include"../Modulos/socketes.h"
-
-typedef struct{
-    char* ip_mi_ram_hq;
-    int puerto_mi_ram_hq;
-    char* ip_i_mongo_store;
-    int puerto_i_mongo_store;
-    int grado_multitarea;
-    char* algoritmo;
-    int quantum;
-    int duracion_sabotaje;
-    int retardo_ciclo_cpu;
-} config_discordiador_t;
 
 void leer_config();
 void leer_consola();
