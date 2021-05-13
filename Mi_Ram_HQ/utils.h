@@ -14,14 +14,17 @@
 #include<unistd.h>
 #include<netdb.h>
 #include<commons/log.h>
+#include<commons/config.h>
 #include<commons/collections/list.h>
 #include<string.h>
 
 typedef enum{
-	MENSAJE
+	MENSAJE,
+	PAQUETE
 }op_code;
 
 t_log* logger;
+t_config* config;
 
 int iniciar_servidor(void);
 int esperar_discordiador(int socket_servidor);

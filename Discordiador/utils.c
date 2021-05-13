@@ -21,7 +21,7 @@ int reconocer_comando(char* str){
 			free(palabras);
 			return INICIAR_PATOTA;
 		}else{
-			printf("Error de parametros: INICIAR_PATOTA <cantidad_de_tripulantes> <path> (<pos1> ... <posn>)\n");
+			printf("Error de parametros: INICIAR_PATOTA <cantidad_de_tripulantes> <path>(<pos1> ... <posn>)\n");
 		}
 	}
 
@@ -100,7 +100,7 @@ int comparar_strings(char* str, char* str2){
 
 void help_comandos(){
 	printf("Lista de comandos:\n");
-	printf("- INICIAR_PATOTA <cantidad_de_tripulantes> <path> (<pos1> ... <posn>)\n");
+	printf("- INICIAR_PATOTA <cantidad_de_tripulantes> <path>(<pos1> ... <posn>)\n");
 	printf("- INICIAR_PLANIFICACION\n");
 	printf("- PAUSAR_PLANIFICACION\n");
 	printf("- LISTAR_TRIPULANTES\n");
@@ -108,29 +108,32 @@ void help_comandos(){
 	printf("- OBTENER_BITACORA <codigo_de_tripulante>\n");
 }
 
+
 // Funcion para crear un socket modalidad cliente
 int conectar_a_mi_ram_hq() { 
-	printf("Conectando a MI RAM");
 	struct addrinfo datos_para_server, *informacion_server;
 	int estado;
+	int socket_cliente;
+	char* ip = config_get_string_value(config, "IP_MI_RAM_HQ");
+	char* puerto = config_get_string_value(config, "PUERTO_MI_RAM_HQ");
 
-	memset(&datos_para_server, 0, sizeof(datos_para_server)); // Se settea en 0 la var datos_para_server
-	datos_para_server.ai_family = AF_UNSPEC; // 
-	datos_para_server.ai_socktype = SOCK_STREAM; // Se indica la modalidad de la comunicacion: no declaro formato de ip, socket stream y que se rellene la IP propia del cliente 
-	datos_para_server.ai_flags = AI_PASSIVE; //
+	memset(&datos_para_server, 0, sizeof(datos_para_server));
+	datos_para_server.ai_family = AF_UNSPEC;
+	datos_para_server.ai_socktype = SOCK_STREAM;
+	datos_para_server.ai_flags = AI_PASSIVE;
 
-	if ((estado = getaddrinfo("127.0.0.1", "4444", &datos_para_server, &informacion_server)) != 0) // Obtengo la informacion del server y la alojo en informacion_server, utilizando los datos predefinidos arriba para settear
-		printf("Error al conseguir informacion del servidor\n"); // Al mismo tiempo se verifica si el proceso funciono correctamente
+	// Obtengo la informacion del server y la alojo en informacion_server, utilizando los datos predefinidos arriba para settear
+	if((estado = getaddrinfo(ip, puerto, &datos_para_server, &informacion_server)) != 0)
+		log_warning(logger, "Error al conseguir informacion de MI RAM HQ\n");
 
-	int socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol); // Consigo el numero de socket con la informacion obtenida
+	if((socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol)) != -1){
+		log_warning(logger, "Error al crear socket cliente a MI RAM HQ\n");
+	}
 
-	if (socket_cliente == -1)
-		printf("Error al crear socket\n"); // Verifico que el socket se haya logrado crear correctamente
-
-	if (connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) // Conecto el socket con el server que obtuve
-		printf("Error al conectar cliente\n"); // Tambien verifico que se conecte
-
-	freeaddrinfo(informacion_server); // Libero la informacion del server total ya no sirve
+	if(connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) { 
+		log_warning(logger, "Error al conectar a MI RAM HQ\n");
+	}
+	freeaddrinfo(informacion_server);
 
 	return socket_cliente;
 }

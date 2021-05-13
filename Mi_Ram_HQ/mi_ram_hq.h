@@ -16,14 +16,4 @@
 #include<commons/config.h>
 #include"utils.h"
 
-typedef struct{
-    char* punto_montaje;
-    int puerto;
-    int tiempo_sincronizacion;
-    char** posiciones_sabotaje;
-} config_mongo_t;
-
-void escuchar_alos_cliente();
-void hola();
-
 #endif /* MI_RAM_HQ_H_ */

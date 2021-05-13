@@ -13,6 +13,7 @@
 #include<string.h>
 #include<commons/string.h>
 #include<commons/log.h>
+#include<commons/config.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -25,7 +26,7 @@
 
 typedef enum{
 	MENSAJE,
-	HOLA
+	PAQUETE
 }op_code;
 
 typedef struct{
@@ -51,20 +52,8 @@ typedef enum{
 	HELP
 }comando_cod;
 
-typedef struct{
-    char* ip_mi_ram_hq;
-    int puerto_mi_ram_hq;
-    char* ip_i_mongo_store;
-    int puerto_i_mongo_store;
-    int grado_multitarea;
-    char* algoritmo;
-    int quantum;
-    int duracion_sabotaje;
-    int retardo_ciclo_cpu;
-} config_discordiador_t;
-
-config_discordiador_t config;
-t_log* logger;
+extern t_config* config;
+extern t_log* logger;
 
 int reconocer_comando(char* str);
 int comparar_strings(char* str, char* str2);

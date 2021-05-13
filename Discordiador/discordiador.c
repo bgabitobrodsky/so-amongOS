@@ -10,17 +10,26 @@
 
 #include "discordiador.h"
 
+int socket_mi_ram_hq;
+
 int main(int argc, char *argv[]){
 
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
+	config = config_create("discordiador.config");
 
-	leer_config();
+	socket_mi_ram_hq = conectar_a_mi_ram_hq();
+	if(socket_mi_ram_hq != -1){
+		pthread_t hiloConsola;
+		pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
 
-	pthread_t hiloConsola;
-	pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
+		pthread_join(hiloConsola, NULL);
+	}else{
+		log_warning(logger, "Error al conectar a MI_RAM_HQ");
+	}
 
-	pthread_join(hiloConsola, NULL);
 
+	close(socket_mi_ram_hq);
+	config_destroy(config);
 	log_destroy(logger);
 	return EXIT_SUCCESS;
 }
@@ -72,22 +81,6 @@ void leer_consola(){
 	free(leido);
 }
 
-void leer_config(){
-	t_config* cfg = config_create("discordiador.config");
-
-	config.ip_mi_ram_hq = config_get_string_value(cfg, "IP_MI_RAM_HQ");
-	config.puerto_mi_ram_hq = config_get_int_value(cfg, "PUERTO_MI_RAM_HQ");
-	config.ip_i_mongo_store = config_get_string_value(cfg, "IP_I_MONGO_STORE");
-	config.puerto_i_mongo_store = config_get_int_value(cfg, "PUERTO_I_MONGO_STORE");
-	config.grado_multitarea = config_get_int_value(cfg, "GRADO_MULTITAREA");
-	config.algoritmo = config_get_string_value(cfg, "ALGORITMO");
-	config.quantum = config_get_int_value(cfg, "QUANTUM");
-	config.duracion_sabotaje = config_get_int_value(cfg, "DURACION_SABOTAJE");
-	config.retardo_ciclo_cpu = config_get_int_value(cfg, "RETARDO_CICLO_CPU");
-
-	config_destroy(cfg);
-}
-
 void iniciar_patota(char* leido){
 	char** palabras = string_split(leido, " ");
 
@@ -112,8 +105,8 @@ void iniciar_planificacion(){
 }
 void listar_tripulantes(){
 
-	int socket_mi_ram_hq = conectar_a_mi_ram_hq();
 	char* mensaje = "holaaa";
+
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 
 	paquete->codigo_operacion = MENSAJE;
@@ -128,11 +121,12 @@ void listar_tripulantes(){
 
 	send(socket_mi_ram_hq, a_enviar, bytes, 0);
 
-	free(a_enviar);
-	
+
+	free(a_enviar);	
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);
+
 	close(socket_mi_ram_hq);
 
 }

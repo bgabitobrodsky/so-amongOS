@@ -40,12 +40,13 @@ int esperar_discordiador(int socket_servidor){
 	return socket_cliente;
 }
 
-int leer_operacion(int socket_cliente){
+int leer_operacion(int socket_discordiador){
 	int cod_op;
-	if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) != 0)
+
+	if(recv(socket_discordiador, &cod_op, sizeof(int), MSG_WAITALL) != 0)
 		return cod_op;
 	else{
-		close(socket_cliente);
+		close(socket_discordiador);
 		return -1;
 	}
 }

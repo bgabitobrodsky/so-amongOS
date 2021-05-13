@@ -10,25 +10,29 @@
 int main(int argc, char** argv){
 
     int mi_ram_fd = iniciar_servidor();
-	logger = log_create("log.log", "Servidor", 1, LOG_LEVEL_DEBUG);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
     log_info(logger, "Mi ram hq lista");
 
     int discordiador_fd = esperar_discordiador(mi_ram_fd);
 
     while(1){
 		int cod_op = leer_operacion(discordiador_fd);
+		
 		switch(cod_op){
-		case MENSAJE:
-			printf("RECIBIDO");
-			break;
-		case -1:
-			printf("el cliente se desconecto. Terminando servidor");
-			return EXIT_FAILURE;
-		default:
-			printf("Operacion desconocida. No quieras meter la pata");
-			break;
+			case MENSAJE:
+				log_info(logger, "MENSAJE RECIBIDO");
+				break;
+			case -1:
+				log_info(logger, "Murio el discordiador");
+				return EXIT_FAILURE;
+			default:
+				log_warning(logger, "Operacion desconocida");
+				break;
 		}
 	}
+
+    close(discordiador_fd);
+    log_destroy(logger);
 	return EXIT_SUCCESS;
 
     /*pthread_t hilo_escucha;
