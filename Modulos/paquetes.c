@@ -11,7 +11,7 @@
 t_buffer serializar_tripulante(t_tripulante tripulante) {
 
     t_buffer* buffer = malloc((sizeof(t_buffer))); // Se inicializa buffer
-    buffer->tamanio_estructura = 3 * sizeof(uint32_t); // Se le da el tamanio del struct del parametro
+    buffer->tamanio_estructura = 4 * sizeof(uint32_t); // Se le da el tamanio del struct del parametro
 
     void* estructura = malloc((buffer->tamanio_estructura)); // Se utiliza intermediario
     int desplazamiento = 0; // Desplazamiento para calcular que tanto tengo que correr para que no se sobrepisen cosas del array estructura
@@ -20,7 +20,9 @@ t_buffer serializar_tripulante(t_tripulante tripulante) {
     desplazamiento += sizeof(uint32_t);
     memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t)); // Se copia y pega todo al array estructura ordenado
+    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t)); 
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.estado, sizeof(uint32_t)); // Se copia y pega todo al array estructura ordenado
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
@@ -158,7 +160,9 @@ t_tripulante* desserializar_tripulante(t_buffer* buffer) {
     estructura += sizeof(uint32_t);
     memcpy(&(tripulante->coord_x), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    memcpy(&(tripulante->coord_y), estructura, sizeof(uint32_t)); // Se toma cada cosa (por el orden en el que vino) y se la "pega" al struct tripulante
+    memcpy(&(tripulante->coord_y), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(tripulante->estado), estructura, sizeof(uint32_t)); // Se toma cada cosa (por el orden en el que vino) y se la "pega" al struct tripulante
     estructura += sizeof(uint32_t);
 
     return tripulante;

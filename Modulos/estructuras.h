@@ -9,6 +9,7 @@
 #include "stdbool.h"
 
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
+enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO }
 
 typedef struct {
 
@@ -46,6 +47,7 @@ typedef struct { // Puede estar de mas
     uint32_t codigo;
     uint32_t coord_x;
     uint32_t coord_y;
+    uint32_t estado;
 
 } t_tripulante;
 
