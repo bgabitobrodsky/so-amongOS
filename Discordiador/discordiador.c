@@ -129,6 +129,17 @@ void listar_tripulantes(){
 
 	close(socket_mi_ram_hq);
 
+	/*
+	int i = 0;
+    int argc; // No sÃ© como serÃ­a, pero vamos a recibir a los tripulantes activos de alguna manera
+    char* fechaHora = fecha_y_hora();
+    
+    printf("Estado de la nave: %s\n",fechaHora);
+    for(i; i<argc; i++){
+        printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
+    }
+	*/
+
 }
 void pausar_planificacion(){
 	printf("pausarPlanificacion");
@@ -138,4 +149,18 @@ void obtener_bitacora(char* leido){
 }
 void expulsar_tripulante(char* leido){
 	printf("expulsarTripulante");
+}
+
+
+char* fecha_y_hora() { 
+  time_t tiempo = time(NULL);
+  struct tm tiempoLocal = *localtime(&tiempo); // Tiempo actual
+  static char fecha_Hora[70]; // El lugar en donde se pondrÃ¡ la fecha y hora formateadas
+  char *formato = "%d-%m-%Y %H:%M:%S";  // El formato. Mira mÃ¡s en https://en.cppreference.com/w/c/chrono/strftime
+  int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);  // Intentar formatear
+  if (bytesEscritos != 0) { // Si no hay error, los bytesEscritos no son 0
+   return fecha_Hora;
+  } else {
+    return "Error formateando fecha";
+  }
 }

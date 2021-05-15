@@ -16,6 +16,7 @@
 #include<commons/string.h>
 #include<readline/readline.h>
 #include"utils.h"
+#include <time.h>
 
 t_config* config;
 t_log* logger;
@@ -27,5 +28,6 @@ void iniciar_planificacion();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
 void expulsar_tripulante(char* leido);
+char* fecha_y_hora()
 
 #endif /* DISCORDIADOR_H_ */
