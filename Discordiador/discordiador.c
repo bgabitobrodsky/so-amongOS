@@ -17,6 +17,7 @@ int main(int argc, char *argv[]){
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
 
+	printf("%s", config_get_string_value(config, "IP_MI_RAM_HQ"));
 	socket_mi_ram_hq = conectar_a_mi_ram_hq();
 	if(socket_mi_ram_hq != -1){
 		pthread_t hiloConsola;
@@ -77,7 +78,7 @@ void leer_consola(){
 			}
 		}		
 	}while(comando != EXIT);
-
+	close(socket_mi_ram_hq);
 	free(leido);
 }
 
@@ -119,16 +120,13 @@ void listar_tripulantes(){
 
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
-	send(socket_mi_ram_hq, a_enviar, bytes, 0);
 
+	send(socket_mi_ram_hq, a_enviar, bytes, 0);
 
 	free(a_enviar);	
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);
-
-	close(socket_mi_ram_hq);
-
 }
 void pausar_planificacion(){
 	printf("pausarPlanificacion");
@@ -138,4 +136,60 @@ void obtener_bitacora(char* leido){
 }
 void expulsar_tripulante(char* leido){
 	printf("expulsarTripulante");
+}
+
+
+void tripulante(){
+	int id_tripulante = 2;
+	// avisar a miram que va a iniciar
+
+	int tarea = pedir_tarea(id_tripulante);
+
+/*
+	while(1){
+		realizar_tarea(tarea);
+		tarea = pedir_tarea(id_tripulante);
+	}
+*/
+}
+
+
+int pedir_tarea(int id_tripulante){
+	t_paquete* paquete = crear_paquete(PEDIR_TAREA);
+
+}
+
+
+
+t_paquete* crear_paquete(op_code codigo){
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = codigo;
+	crear_buffer(paquete);
+	return paquete;
+}
+
+void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio){
+	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
+
+	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
+	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
+
+	paquete->buffer->size += tamanio + sizeof(int);
+}
+
+void enviar_paquete(t_paquete* paquete, int socket_cliente)
+{
+	int bytes = paquete->buffer->size + 2*sizeof(int);
+	void* a_enviar = serializar_paquete(paquete, bytes);
+
+	send(socket_cliente, a_enviar, bytes, 0);
+
+	free(a_enviar);
+}
+
+void eliminar_paquete(t_paquete* paquete)
+{
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
 }

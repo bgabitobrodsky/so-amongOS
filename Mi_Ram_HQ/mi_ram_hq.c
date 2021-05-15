@@ -9,9 +9,10 @@
 
 int main(int argc, char** argv){
 
-    int mi_ram_fd = iniciar_servidor();
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
-    log_info(logger, "Mi ram hq lista");
+	config = create_config("mi_ram_hq.config");
+	config_discordiador = create_config("../Discordiador/discordiador.config");
+    int mi_ram_fd = iniciar_servidor();
 
     int discordiador_fd = esperar_discordiador(mi_ram_fd);
 
@@ -21,6 +22,7 @@ int main(int argc, char** argv){
 		switch(cod_op){
 			case MENSAJE:
 				log_info(logger, "MENSAJE RECIBIDO");
+				recibir_mensaje(discordiador_fd);
 				break;
 			case -1:
 				log_info(logger, "Murio el discordiador");
@@ -33,6 +35,8 @@ int main(int argc, char** argv){
 
     close(discordiador_fd);
     log_destroy(logger);
+    config_destroy(config);
+    config_destroy(config_discordiador);
 	return EXIT_SUCCESS;
 
     /*pthread_t hilo_escucha;

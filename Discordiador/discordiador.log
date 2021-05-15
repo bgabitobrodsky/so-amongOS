@@ -29,3 +29,37 @@
 [INFO] 15:27:29:301 discordiador/(8289:8290): Comando reconocido: LISTAR TRIPULANTES
 [WARNING] 15:27:35:700 discordiador/(8289:8290): Comando '' no conocido
 [INFO] 15:32:34:864 discordiador/(8868:8869): Comando reconocido: LISTAR TRIPULANTES
+[WARNING] 21:10:19:170 discordiador/(9685:9685): Error al conseguir informacion de MI RAM HQ
+
+[WARNING] 21:27:45:978 discordiador/(11959:11959): Error al conseguir informacion de MI RAM HQ
+
+[WARNING] 21:32:19:370 discordiador/(12604:12604): Error al crear socket cliente a MI RAM HQ
+
+[WARNING] 21:33:31:684 discordiador/(12708:12708): Error al crear socket cliente a MI RAM HQ
+
+[WARNING] 21:34:09:278 discordiador/(12762:12762): Error al crear socket cliente a MI RAM HQ
+
+[WARNING] 21:36:16:011 discordiador/(13195:13195): Error al conseguir informacion de MI RAM HQ
+
+[WARNING] 10:25:51:951 discordiador/(5095:5095): Error al conseguir informacion de MI RAM HQ
+
+[WARNING] 10:26:56:543 discordiador/(5199:5199): Error al crear socket cliente a MI RAM HQ
+
+[WARNING] 10:33:03:657 discordiador/(5709:5709): Error al conseguir informacion de MI RAM HQ
+
+[WARNING] 10:33:03:657 discordiador/(5709:5709): Error al conectar a MI RAM HQ
+
+[WARNING] 10:34:37:377 discordiador/(5861:5861): Error al conseguir informacion de MI RAM HQ
+
+[WARNING] 10:34:37:377 discordiador/(5861:5861): Error al conectar a MI RAM HQ
+
+[WARNING] 10:38:15:369 discordiador/(6260:6260): Error al crear socket cliente a MI RAM HQ
+
+[WARNING] 10:38:15:369 discordiador/(6260:6260): Error al conectar a MI RAM HQ
+
+[WARNING] 10:39:10:724 discordiador/(6348:6348): Error al crear socket cliente a MI RAM HQ
+
+[WARNING] 10:41:11:439 discordiador/(6670:6670): Error al conectar a MI RAM HQ
+
+[WARNING] 11:00:58:335 discordiador/(8461:8461): Error al conectar a MI RAM HQ
+

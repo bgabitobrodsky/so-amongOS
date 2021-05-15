@@ -24,10 +24,12 @@ typedef enum{
 }op_code;
 
 t_log* logger;
-t_config* config;
+t_config* config, config_discordiador;
 
 int iniciar_servidor(void);
 int esperar_discordiador(int socket_servidor);
 int leer_operacion(int socket_cliente);
+void* recibir_buffer(int* size, int socket_cliente);
+void recibir_mensaje(int socket_cliente);
 
 #endif /* MI_RAM_HQ_UTILS_H_ */
