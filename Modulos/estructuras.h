@@ -1,12 +1,12 @@
-#ifndef PAQUETES_H_
-#define PAQUETES_H_
+#ifndef ESTRUCTURAS_H_
+#define ESTRUCTURAS_H_
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include “stdbool.h”
+#include "stdbool.h"
 
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
 
@@ -53,7 +53,7 @@ typedef struct { // Debe estar de mas, es lo mismo hacer varios structs de tripu
 
     uint32_t cantidad_integrantes;
     FILE* archivo_de_tareas;
-    *uint32_t coordenadas_integrantes; // Protocolo: cada dupla hace un x y, por ende, cada nro par inicia un combo de coordenadas
+    uint32_t* coordenadas_integrantes; // Protocolo: cada dupla hace un x y, por ende, cada nro par inicia un combo de coordenadas
 
 } t_patota;
 
@@ -64,6 +64,6 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     t_tarea tarea;
     bool es_sabotaje = false; // Necesario verificar 
 
-} estructura_t;
+} t_estructura;
 
 #endif

@@ -23,7 +23,7 @@ t_buffer serializar_tripulante(t_tripulante tripulante);
 t_buffer serializar_tarea(t_tarea tarea);
 t_buffer serializar_sabotaje();
 void empaquetar(t_buffer buffer, int codigo_operacion, int socket_receptor);
-estructura_t* recepcion_y_deserializacion(int socket_receptor);
+t_estructura* recepcion_y_deserializacion(int socket_receptor);
 t_tripulante* desserializar_tripulante(t_buffer* buffer);
 t_tarea* desserializar_tarea(t_buffer* buffer);
 
