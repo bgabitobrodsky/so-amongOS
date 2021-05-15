@@ -106,29 +106,7 @@ void iniciar_planificacion(){
 }
 void listar_tripulantes(){
 
-	char* mensaje = "holaaa";
-
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-
-	paquete->codigo_operacion = MENSAJE;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = strlen(mensaje) + 1;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
-
-	int bytes = paquete->buffer->size + 2*sizeof(int);
-
-	void* a_enviar = serializar_paquete(paquete, bytes);
-
-
-	send(socket_mi_ram_hq, a_enviar, bytes, 0);
-
-	free(a_enviar);	
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
-
-	close(socket_mi_ram_hq);
+	tripulante();
 
 	/*
 	int i = 0;
@@ -146,7 +124,7 @@ void pausar_planificacion(){
 	printf("pausarPlanificacion");
 }
 void obtener_bitacora(char* leido){
-	printf("obtenerBitacora");
+	
 }
 void expulsar_tripulante(char* leido){
 	printf("expulsarTripulante");
@@ -158,7 +136,7 @@ void tripulante(){
 	// avisar a miram que va a iniciar
 
 	int tarea = pedir_tarea(id_tripulante);
-
+	printf("%d",tarea);
 /*
 	while(1){
 		realizar_tarea(tarea);
@@ -170,10 +148,10 @@ void tripulante(){
 
 int pedir_tarea(int id_tripulante){
 	t_paquete* paquete = crear_paquete(PEDIR_TAREA);
-
+	agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int));
+	enviar_paquete(paquete,socket_mi_ram_hq);
+	return 1;
 }
-
-
 
 t_paquete* crear_paquete(op_code codigo){
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -181,6 +159,7 @@ t_paquete* crear_paquete(op_code codigo){
 	crear_buffer(paquete);
 	return paquete;
 }
+
 
 void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio){
 	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
@@ -191,31 +170,24 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio){
 	paquete->buffer->size += tamanio + sizeof(int);
 }
 
-void enviar_paquete(t_paquete* paquete, int socket_cliente)
-{
+void enviar_paquete(t_paquete* paquete, int socket_servidor){
 	int bytes = paquete->buffer->size + 2*sizeof(int);
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
-	send(socket_cliente, a_enviar, bytes, 0);
+	send(socket_servidor, a_enviar, bytes, 0);
 
 	free(a_enviar);
+	eliminar_paquete(paquete);
 }
 
-void eliminar_paquete(t_paquete* paquete)
-{
+void eliminar_paquete(t_paquete* paquete){
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);
 }
-char* fecha_y_hora() { 
-  time_t tiempo = time(NULL);
-  struct tm tiempoLocal = *localtime(&tiempo); // Tiempo actual
-  static char fecha_Hora[70]; // El lugar en donde se pondrÃ¡ la fecha y hora formateadas
-  char *formato = "%d-%m-%Y %H:%M:%S";  // El formato. Mira mÃ¡s en https://en.cppreference.com/w/c/chrono/strftime
-  int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);  // Intentar formatear
-  if (bytesEscritos != 0) { // Si no hay error, los bytesEscritos no son 0
-   return fecha_Hora;
-  } else {
-    return "Error formateando fecha";
-  }
+
+void crear_buffer(t_paquete* paquete){
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->size = 0;
+	paquete->buffer->stream = NULL;
 }
