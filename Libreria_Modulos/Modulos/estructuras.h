@@ -6,10 +6,11 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <stdint.h>
 #include "stdbool.h"
 
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
-enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO }
+enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
 
 typedef struct {
 
@@ -29,7 +30,6 @@ typedef struct {
 
 } t_TCB;
 
-char sabotaje = 'S'; // Solo es una señal, variable global representa, aunque innecesaria
 
 typedef struct {
 
@@ -62,9 +62,9 @@ typedef struct { // Debe estar de mas, es lo mismo hacer varios structs de tripu
 
 typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct de una funcion
 
-    t_tripulante tripulante;
-    t_tarea tarea;
-    bool es_sabotaje = false; // Necesario verificar 
+    t_tripulante* tripulante;
+    t_tarea* tarea;
+    int codigo_operacion;
 
 } t_estructura;
 

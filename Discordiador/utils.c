@@ -7,83 +7,91 @@
 
 #include "utils.h"
 
-int reconocer_comando(char* str){
+int reconocer_comando(char* str) {
 
 	char** palabras = string_split(str, " ");
 	int contador = 0; //contador de palabras
 
-	while(palabras[contador] != NULL){ // la ultima palabra es NULL
+	while (palabras[contador] != NULL) { // la ultima palabra es NULL
 		contador++;
 	}
 
-	if(comparar_strings(palabras[0],"INICIAR_PATOTA")){
-		if(contador >= 3){
+	if (comparar_strings(palabras[0],"INICIAR_PATOTA")) {
+		if (contador >= 3) {
 			free(palabras);
 			return INICIAR_PATOTA;
-		}else{
+		}
+		else {
 			printf("Error de parametros: INICIAR_PATOTA <cantidad_de_tripulantes> <path>(<pos1> ... <posn>)\n");
 		}
 	}
 
-	if(comparar_strings(palabras[0],"LISTAR_TRIPULANTES")){
-		if(contador == 1){
+	if (comparar_strings(palabras[0],"LISTAR_TRIPULANTES")) {
+		if (contador == 1) {
 			free(palabras);
 			return LISTAR_TRIPULANTES;
-		}else{
+		}
+		else {
 			printf("Error de parametros: LISTAR_TRIPULANTES\n");
 		}
 	}
 
-	if(comparar_strings(palabras[0],"EXPULSAR_TRIPULANTE")){
-		if(contador == 2){
+	if (comparar_strings(palabras[0],"EXPULSAR_TRIPULANTE")) {
+		if (contador == 2) {
 			free(palabras);
 			return EXPULSAR_TRIPULANTE;
-		}else{
+		}
+		else {
 			printf("Error de parametros: EXPULSAR_TRIPULANTE <codigo_de_tripulante>\n");
 		}
 	}
 
-	if(comparar_strings(palabras[0],"INICIAR_PLANIFICACION")){
-		if(contador == 1){
+	if (comparar_strings(palabras[0],"INICIAR_PLANIFICACION")) {
+		if (contador == 1) {
 			free(palabras);
 			return INICIAR_PLANIFICACION;
-		}else{
+		}
+		else {
 			printf("Error de parametros: INICIAR_PLANIFICACION\n");
 		}
 	}
 
-	if(comparar_strings(palabras[0],"PAUSAR_PLANIFICACION")){
-		if(contador == 1){
+	if (comparar_strings(palabras[0],"PAUSAR_PLANIFICACION")) {
+		if (contador == 1) {
 			free(palabras);
 			return PAUSAR_PLANIFICACION;
-		}else{
+		}
+		else {
 			printf("Error de parametros: PAUSAR_PLANIFICACION\n");
 		}
 	}
 
-	if(comparar_strings(palabras[0],"OBTENER_BITACORA")){
-		if(contador == 1){
+	if (comparar_strings(palabras[0],"OBTENER_BITACORA")) {
+		if (contador == 1) {
 			free(palabras);
 			return OBTENER_BITACORA;
-		}else{
+		}
+		else {
 			printf("Error de parametros: OBTENER_BITACORA <codigo_de_tripulante>\n");
 		}
 	}
 
-	if(comparar_strings(palabras[0],"HELP")){
-		if(contador == 1){
+	if (comparar_strings(palabras[0],"HELP")) {
+		if (contador == 1) {
 			free(palabras);
 			return HELP;
-		}else{
+		}
+		else {
 			printf("Error de parametros: HELP\n");
 		}
 	}
 
-	if(comparar_strings(palabras[0],"EXIT")){
-		if(contador == 1){
+	if (comparar_strings(palabras[0],"EXIT")) {
+		if (contador == 1) {
 			free(palabras);
 			return EXIT;
-		}else{
+		}
+		else {
 			printf("Error de parametros: EXIT\n");
 		}
 	}
@@ -94,11 +102,11 @@ int reconocer_comando(char* str){
 }
 
 
-int comparar_strings(char* str, char* str2){
+int comparar_strings(char* str, char* str2) {
 	return !strncmp(str, str2, strlen(str2));
 }
 
-void help_comandos(){
+void help_comandos() {
 	printf("Lista de comandos:\n");
 	printf("- INICIAR_PATOTA <cantidad_de_tripulantes> <path>(<pos1> ... <posn>)\n");
 	printf("- INICIAR_PLANIFICACION\n");
@@ -124,14 +132,15 @@ int conectar_a_mi_ram_hq() {
 	datos_para_server.ai_flags = AI_PASSIVE;
 
 	// Obtengo la informacion del server y la alojo en informacion_server, utilizando los datos predefinidos arriba para settear
-	if((estado = getaddrinfo(ip, puerto, &datos_para_server, &informacion_server)) != 0)
+	if ((estado = getaddrinfo(ip, puerto, &datos_para_server, &informacion_server)) != 0) {
 		log_warning(logger, "Error al conseguir informacion de MI RAM HQ\n");
+	}
 
-	if((socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol)) == -1){
+	if ((socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol)) == -1) {
 		log_warning(logger, "Error al crear socket cliente a MI RAM HQ\n");
 	}
 
-	if(connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) { 
+	if (connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) { 
 		log_warning(logger, "Error al conectar a MI RAM HQ\n");
 	}
 
@@ -140,8 +149,8 @@ int conectar_a_mi_ram_hq() {
 	return socket_cliente;
 }
 
-void* serializar_paquete(t_paquete* paquete, int bytes){
-	void * magic = malloc(bytes);
+void* serializar_paquete(t_paquete* paquete, int bytes) { 
+	void* magic = malloc(bytes);
 	int desplazamiento = 0;
 
 	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));

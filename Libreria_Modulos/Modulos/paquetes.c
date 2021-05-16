@@ -8,7 +8,7 @@
 
 // Serializa un struct tripulante a un buffer
 // En esta funcion se pone el comportamiento comun de la serializacion
-t_buffer serializar_tripulante(t_tripulante tripulante) {
+t_buffer* serializar_tripulante(t_tripulante tripulante) {
 
     t_buffer* buffer = malloc((sizeof(t_buffer))); // Se inicializa buffer
     buffer->tamanio_estructura = 3 * sizeof(uint32_t); // Se le da el tamanio del struct del parametro
@@ -29,7 +29,7 @@ t_buffer serializar_tripulante(t_tripulante tripulante) {
 }
 
 // Serializa un struct tarea a un buffer
-t_buffer serializar_tarea(t_tarea tarea) {
+t_buffer* serializar_tarea(t_tarea tarea) {
 
     t_buffer* buffer = malloc((sizeof(t_buffer)));
     buffer->tamanio_estructura = 5 * sizeof(uint32_t) + sizeof(tarea.nombre) + 1;
@@ -57,8 +57,10 @@ t_buffer serializar_tarea(t_tarea tarea) {
 
 }
 
-// Serializa el sabotaje a un buffer, funcion recontra al pedo pero sirve por polimorfismo para envio/recepcion de mensajes
-t_buffer serializar_sabotaje() {
+// Serializa un buffer "vacio" (dejo que lleve un char por las dudas) para envio de codigos nomas (podriamos cambiarlo a semaforos)
+t_buffer* serializar_vacio() {
+
+    char sentinela = 'A';
 
     t_buffer* buffer = malloc((sizeof(t_buffer)));
 
@@ -66,7 +68,7 @@ t_buffer serializar_sabotaje() {
 
     void* estructura = malloc((buffer->tamanio_estructura));
     
-    memcpy(estructura, &sabotaje, sizeof(char));
+    memcpy(estructura, &sentinela, sizeof(char));
 
     buffer->estructura = estructura;
 
@@ -77,7 +79,7 @@ t_buffer serializar_sabotaje() {
 // Recibe un buffer, un opcode y un socket a donde se enviara el paquete que se armara en la funcion, y se envia
 // Usar con funciones de serializacion de arriba
 // Usa funcion de socketes.h
-void empaquetar_y_enviar(t_buffer buffer, int codigo_operacion, int socket_receptor) {
+void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_receptor) {
 
     t_paquete* paquete = malloc(sizeof(t_paquete));
     paquete->codigo_operacion = codigo_operacion;
@@ -116,27 +118,25 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
 
-    if (paquete->codigo_operacion == SABOTAJE) { // Se hace antes para que no lea al pedo si es sabotaje (aguante la performance)
-        &intermediario->es_sabotaje = true;
-        free(paquete->buffer->estructura);
-        free(paquete->buffer);
-        free(paquete);
-
-        return intermediario;
-    }
-
     recibir_mensaje(socket_receptor, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
     paquete->buffer->estructura = malloc(paquete->buffer->tamanio_estructura);
     recibir_mensaje(socket_receptor, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
 
-    switch (paquete->codigo_operacion) {
+    switch (paquete->codigo_operacion) { // De agregar nuevos codigos de operacion, simplemente hacer un case y asignar como en el case SABOTAJE
         case TRIPULANTE:
-            intermediario->tripulante = malloc(sizeof(t_tripulante));
-            &intermediario->tripulante = desserializar_tripulante(paquete->buffer);
+            intermediario->codigo_operacion = TRIPULANTE;
+            t_tripulante* tripulante = desserializar_tripulante(paquete->buffer->estructura);
+            intermediario->tripulante = tripulante;
+            free(tripulante);
             break;
         case TAREA:
-            intermediario->tarea = malloc(sizeof(t_tarea));
-            &intermediario->tarea = desserializar_tarea(paquete->buffer->estructura);
+            intermediario->codigo_operacion = TAREA;
+            t_tarea* tarea = desserializar_tarea(paquete->buffer->estructura);
+            intermediario->tarea = tarea;
+            free(tarea);
+            break;
+        case SABOTAJE:
+            intermediario->codigo_operacion = SABOTAJE;
             break;
     }
 

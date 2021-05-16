@@ -10,41 +10,44 @@
 
 #include "discordiador.h"
 
-int socket_mi_ram_hq;
+int socket_mi_ram_hq; // Tal vez seria prettier pasarlo por parametro a leer_consola
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 
-	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
-	config = config_create("discordiador.config");
+	t_config* logger_discordiador = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO); // Los movi a scope main, declararlos global no tenia mucho sentido
+	t_log* config_discordiador = config_create("discordiador.config");
 
 	printf("%s", config_get_string_value(config, "IP_MI_RAM_HQ"));
-	socket_mi_ram_hq = conectar_a_mi_ram_hq();
-	if(socket_mi_ram_hq != -1){
+	socket_mi_ram_hq = conectar_a_mi_ram_hq(); 
+
+	if (socket_mi_ram_hq != -1) { // Ya se hace la verificacion en la funcion, tal vez habria que sacarlo en la misma
 		pthread_t hiloConsola;
 		pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
-
 		pthread_join(hiloConsola, NULL);
-	}else{
+	}
+	else {
 		log_warning(logger, "Error al conectar a MI_RAM_HQ");
 	}
-
 
 	close(socket_mi_ram_hq);
 	config_destroy(config);
 	log_destroy(logger);
+
 	return EXIT_SUCCESS;
 }
 
-void leer_consola(){
+void leer_consola() {
 
 	char* leido;
 	int comando;
-	do{
+
+	do {		
 		leido = readline(">>>");
-		if(strlen(leido) > 0){
+
+		if(strlen(leido) > 0) {
 			comando = reconocer_comando(leido);
 
-			switch(comando){
+			switch (comando) {
 				case INICIAR_PATOTA:
 					iniciar_patota(leido);
 					break;
@@ -77,14 +80,14 @@ void leer_consola(){
 					break;
 			}
 		}		
-	}while(comando != EXIT);
+	} while (comando != EXIT);
+
 	close(socket_mi_ram_hq);
 	free(leido);
 }
 
-void iniciar_patota(char* leido){
+void iniciar_patota(char* leido) {
 	char** palabras = string_split(leido, " ");
-
 	int cantidadTripulantes = atoi(palabras[1]);
 	char* path = palabras[2];
 
@@ -101,10 +104,12 @@ void iniciar_patota(char* leido){
 	}*/
 
 }
-void iniciar_planificacion(){
+
+void iniciar_planificacion() {
 	printf("iniciarPlanificacion");
 }
-void listar_tripulantes(){
+
+void listar_tripulantes() {
 
 	tripulante();
 
@@ -120,18 +125,21 @@ void listar_tripulantes(){
 	*/
 
 }
-void pausar_planificacion(){
+
+void pausar_planificacion() {
 	printf("pausarPlanificacion");
 }
-void obtener_bitacora(char* leido){
-	
+
+void obtener_bitacora(char* leido) {
+	printf("obtenerBitacora");
 }
-void expulsar_tripulante(char* leido){
+
+void expulsar_tripulante(char* leido) {
 	printf("expulsarTripulante");
 }
 
 
-void tripulante(){
+void tripulante() {
 	int id_tripulante = 2;
 	// avisar a miram que va a iniciar
 
@@ -153,15 +161,14 @@ int pedir_tarea(int id_tripulante){
 	return 1;
 }
 
-t_paquete* crear_paquete(op_code codigo){
+t_paquete* crear_paquete(op_code codigo) {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 	paquete->codigo_operacion = codigo;
-	crear_buffer(paquete);
+	crear_buffer(paquete); // Funcion no definida
 	return paquete;
 }
 
-
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio){
+void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
 	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
 
 	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
@@ -170,7 +177,7 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio){
 	paquete->buffer->size += tamanio + sizeof(int);
 }
 
-void enviar_paquete(t_paquete* paquete, int socket_servidor){
+void enviar_paquete(t_paquete* paquete, int socket_cliente) {
 	int bytes = paquete->buffer->size + 2*sizeof(int);
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
@@ -180,7 +187,7 @@ void enviar_paquete(t_paquete* paquete, int socket_servidor){
 	eliminar_paquete(paquete);
 }
 
-void eliminar_paquete(t_paquete* paquete){
+void eliminar_paquete(t_paquete* paquete) { // No estaria mal agregarla a Modulos
 	free(paquete->buffer->stream);
 	free(paquete->buffer);
 	free(paquete);
@@ -190,4 +197,17 @@ void crear_buffer(t_paquete* paquete){
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = 0;
 	paquete->buffer->stream = NULL;
+}
+
+char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace esto
+  time_t tiempo = time(NULL);
+  struct tm tiempoLocal = *localtime(&tiempo); // Tiempo actual
+  static char fecha_Hora[70]; // El lugar en donde se pondrÃ¡ la fecha y hora formateadas
+  char *formato = "%d-%m-%Y %H:%M:%S";  // El formato. Mira mÃ¡s en https://en.cppreference.com/w/c/chrono/strftime
+  int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);  // Intentar formatear
+  if (bytesEscritos != 0) { // Si no hay error, los bytesEscritos no son 0
+   return fecha_Hora;
+  } else {
+    return "Error formateando fecha";
+  }
 }
