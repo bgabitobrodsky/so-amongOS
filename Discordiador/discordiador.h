@@ -19,10 +19,7 @@
 #include <time.h>
 #include <Libreria_Modulos/paquetes.h>
 #include <Libreria_Modulos/socketes.h>
-
-
-t_config* config;
-t_log* logger;
+#include <Libreria_Modulos/estructuras.h>
 
 void leer_consola();
 void iniciar_patota(char* leido);
