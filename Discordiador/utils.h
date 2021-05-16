@@ -26,7 +26,7 @@
 
 typedef enum{
 	MENSAJE,
-	PAQUETE
+	PEDIR_TAREA
 }op_code;
 
 typedef struct{

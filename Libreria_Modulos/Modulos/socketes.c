@@ -72,13 +72,13 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 	return socket_escucha;
 }
 
-// Funcion para escuchar llamados, con un socket de la funcion anterior, faltaria 
+// Funcion para escuchar llamados, con un socket de la funcion anterior, faltaria  //TODO
 void escuchar(int socket_escucha,  void* funcion_de_hijos()  /*(parametros) */){
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
 
-	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente
+	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
 	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas

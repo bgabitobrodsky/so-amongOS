@@ -3,6 +3,7 @@
 	<name>AmongOS</name>
 	<comment></comment>
 	<projects>
+		<project>Libreria_Modulos</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
