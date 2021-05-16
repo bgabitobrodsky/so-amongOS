@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdint.h>
-#include "stdbool.h"
+//#include "stdbool.h"
 
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
 enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };

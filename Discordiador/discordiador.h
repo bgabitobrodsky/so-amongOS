@@ -15,11 +15,9 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <readline/readline.h>
-#include "utils.h"
 #include <time.h>
-#include <Libreria_Modulos/paquetes.h>
-#include <Libreria_Modulos/socketes.h>
-#include <Libreria_Modulos/estructuras.h>
+#include "utils.h"
+
 
 void leer_consola();
 void iniciar_patota(char* leido);

@@ -155,10 +155,10 @@ void* serializar_paquete(t_paquete* paquete, int bytes) {
 
 	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
 	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
+	memcpy(magic + desplazamiento, &(paquete->buffer->tamanio_estructura), sizeof(int));
 	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
-	desplazamiento+= paquete->buffer->size;
+	memcpy(magic + desplazamiento, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
+	desplazamiento+= paquete->buffer->tamanio_estructura;
 
 	return magic;
 }

@@ -14,6 +14,9 @@
 #include<commons/string.h>
 #include<commons/log.h>
 #include<commons/config.h>
+#include <comms/estructuras.h>
+#include <comms/paquetes.h>
+#include <comms/socketes.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -29,16 +32,6 @@ typedef enum{
 	PEDIR_TAREA
 }op_code;
 
-typedef struct{
-	int size;
-	void* stream;
-} t_buffer;
-
-
-typedef struct{
-	op_code codigo_operacion;
-	t_buffer* buffer;
-} t_paquete;
 
 typedef enum{
 	NO_CONOCIDO,

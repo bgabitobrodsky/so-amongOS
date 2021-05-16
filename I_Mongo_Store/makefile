@@ -1,5 +1,5 @@
 TARGET = i_mongo_store
-LIBS = -lcommons -lpthread
+LIBS = -lcommons -lpthread -lcomms
 CC = gcc
 CFLAGS = -g -Wall
 
