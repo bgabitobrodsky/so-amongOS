@@ -125,14 +125,12 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     switch (paquete->codigo_operacion) { // De agregar nuevos codigos de operacion, simplemente hacer un case y asignar como en el case SABOTAJE
         case TRIPULANTE:
             intermediario->codigo_operacion = TRIPULANTE;
-            intermediario->tripulante = malloc(sizeof(t_tripulante));
             t_tripulante* tripulante = desserializar_tripulante(paquete->buffer->estructura);
             intermediario->tripulante = tripulante;
             free(tripulante);
             break;
         case TAREA:
             intermediario->codigo_operacion = TAREA;
-            intermediario->tarea = malloc(sizeof(t_tarea));
             t_tarea* tarea = desserializar_tarea(paquete->buffer->estructura);
             intermediario->tarea = tarea;
             free(tarea);
