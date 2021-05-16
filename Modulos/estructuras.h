@@ -29,7 +29,6 @@ typedef struct {
 
 } t_TCB;
 
-char sabotaje = 'S'; // Solo es una señal, variable global representa, aunque innecesaria
 
 typedef struct {
 
@@ -64,7 +63,7 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
 
     t_tripulante tripulante;
     t_tarea tarea;
-    bool es_sabotaje = false; // Necesario verificar 
+    int codigo_operacion;
 
 } t_estructura;
 

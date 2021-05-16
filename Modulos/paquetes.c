@@ -57,8 +57,10 @@ t_buffer serializar_tarea(t_tarea tarea) {
 
 }
 
-// Serializa el sabotaje a un buffer, funcion recontra al pedo pero sirve por polimorfismo para envio/recepcion de mensajes
-t_buffer serializar_sabotaje() {
+// Serializa un buffer "vacio" (dejo que lleve un char por las dudas) para envio de codigos nomas (podriamos cambiarlo a semaforos)
+t_buffer serializar_vacio() {
+
+    char sentinela = '';
 
     t_buffer* buffer = malloc((sizeof(t_buffer)));
 
@@ -66,7 +68,7 @@ t_buffer serializar_sabotaje() {
 
     void* estructura = malloc((buffer->tamanio_estructura));
     
-    memcpy(estructura, &sabotaje, sizeof(char));
+    memcpy(estructura, &sentinela, sizeof(char));
 
     buffer->estructura = estructura;
 
@@ -116,27 +118,23 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
 
-    if (paquete->codigo_operacion == SABOTAJE) { // Se hace antes para que no lea al pedo si es sabotaje (aguante la performance)
-        &intermediario->es_sabotaje = true;
-        free(paquete->buffer->estructura);
-        free(paquete->buffer);
-        free(paquete);
-
-        return intermediario;
-    }
-
     recibir_mensaje(socket_receptor, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
     paquete->buffer->estructura = malloc(paquete->buffer->tamanio_estructura);
     recibir_mensaje(socket_receptor, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
 
-    switch (paquete->codigo_operacion) {
+    switch (paquete->codigo_operacion) { // De agregar nuevos codigos de operacion, simplemente hacer un case y asignar como en el case SABOTAJE
         case TRIPULANTE:
+            intermediario->codigo_operacion = TRIPULANTE;
             intermediario->tripulante = malloc(sizeof(t_tripulante));
             &intermediario->tripulante = desserializar_tripulante(paquete->buffer);
             break;
         case TAREA:
+            intermediario->codigo_operacion = TAREA;
             intermediario->tarea = malloc(sizeof(t_tarea));
             &intermediario->tarea = desserializar_tarea(paquete->buffer->estructura);
+            break;
+        case SABOTAJE:
+            intermediario->codigo_operacion = SABOTAJE;
             break;
     }
 
