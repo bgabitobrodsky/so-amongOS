@@ -16,9 +16,6 @@ int socket_mi_ram_hq; // Tal vez seria prettier pasarlo por parametro a leer_con
 int main(int argc, char *argv[]) {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
-	
-	t_config* logger_discordiador = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO); // Los movi a scope main, declararlos global no tenia mucho sentido
-	t_log* config_discordiador = config_create("discordiador.config");
 
 	socket_mi_ram_hq = conectar_a_mi_ram_hq(); 
 
@@ -84,7 +81,6 @@ void leer_consola() {
 		}		
 	} while (comando != EXIT);
 
-	close(socket_mi_ram_hq);
 	free(leido);
 }
 
