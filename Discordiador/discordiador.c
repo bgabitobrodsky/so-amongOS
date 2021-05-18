@@ -121,6 +121,7 @@ void listar_tripulantes() {
         printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
     }
 	*/
+	printf("listarTripulantes");
 
 }
 
