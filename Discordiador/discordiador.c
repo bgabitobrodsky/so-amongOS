@@ -9,15 +9,14 @@
  */
 
 #include "discordiador.h"
-
+t_config* config;
+t_log* logger;
 int socket_mi_ram_hq; // Tal vez seria prettier pasarlo por parametro a leer_consola
 
 int main(int argc, char *argv[]) {
+	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
+	config = config_create("discordiador.config");
 
-	t_config* logger_discordiador = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO); // Los movi a scope main, declararlos global no tenia mucho sentido
-	t_log* config_discordiador = config_create("discordiador.config");
-
-	printf("%s", config_get_string_value(config, "IP_MI_RAM_HQ"));
 	socket_mi_ram_hq = conectar_a_mi_ram_hq(); 
 
 	if (socket_mi_ram_hq != -1) { // Ya se hace la verificacion en la funcion, tal vez habria que sacarlo en la misma
@@ -82,7 +81,6 @@ void leer_consola() {
 		}		
 	} while (comando != EXIT);
 
-	close(socket_mi_ram_hq);
 	free(leido);
 }
 
@@ -111,29 +109,7 @@ void iniciar_planificacion() {
 
 void listar_tripulantes() {
 
-	char* mensaje = "holaaa";
-
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-
-	paquete->codigo_operacion = MENSAJE;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = strlen(mensaje) + 1;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
-
-	int bytes = paquete->buffer->size + 2*sizeof(int);
-
-	void* a_enviar = serializar_paquete(paquete, bytes);
-
-
-	send(socket_mi_ram_hq, a_enviar, bytes, 0);
-
-	free(a_enviar);	
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
-
-	close(socket_mi_ram_hq);
+	tripulante();
 
 	/*
 	int i = 0;
@@ -166,7 +142,7 @@ void tripulante() {
 	// avisar a miram que va a iniciar
 
 	int tarea = pedir_tarea(id_tripulante);
-
+	printf("%d",tarea);
 /*
 	while(1){
 		realizar_tarea(tarea);
@@ -176,8 +152,11 @@ void tripulante() {
 }
 
 
-int pedir_tarea(int id_tripulante) { // Tipo de retorno mal
-	t_paquete* paquete = crear_paquete(PEDIR_TAREA); 
+int pedir_tarea(int id_tripulante){
+	t_paquete* paquete = crear_paquete(PEDIR_TAREA);
+	agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int));
+	enviar_paquete(paquete,socket_mi_ram_hq);
+	return 1;
 }
 
 t_paquete* crear_paquete(op_code codigo) {
@@ -188,27 +167,34 @@ t_paquete* crear_paquete(op_code codigo) {
 }
 
 void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
+	paquete->buffer->estructura = realloc(paquete->buffer->estructura, paquete->buffer->tamanio_estructura + tamanio + sizeof(int));
 
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
-	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
+	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura, &tamanio, sizeof(int));
+	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura + sizeof(int), valor, tamanio);
 
-	paquete->buffer->size += tamanio + sizeof(int);
+	paquete->buffer->tamanio_estructura += tamanio + sizeof(int);
 }
 
-void enviar_paquete(t_paquete* paquete, int socket_cliente) {
-	int bytes = paquete->buffer->size + 2*sizeof(int);
+void enviar_paquete(t_paquete* paquete, int socket_servidor) {
+	int bytes = paquete->buffer->tamanio_estructura + 2*sizeof(int);
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
-	send(socket_cliente, a_enviar, bytes, 0);
+	send(socket_servidor, a_enviar, bytes, 0);
 
 	free(a_enviar);
+	eliminar_paquete(paquete);
 }
 
 void eliminar_paquete(t_paquete* paquete) { // No estaria mal agregarla a Modulos
-	free(paquete->buffer->stream);
+	free(paquete->buffer->estructura);
 	free(paquete->buffer);
 	free(paquete);
+}
+
+void crear_buffer(t_paquete* paquete){
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->tamanio_estructura = 0;
+	paquete->buffer->estructura = NULL;
 }
 
 char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace esto

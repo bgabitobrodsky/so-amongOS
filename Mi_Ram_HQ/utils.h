@@ -20,11 +20,12 @@
 
 typedef enum{
 	MENSAJE,
-	PAQUETE
+	PEDIR_TAREA
 }op_code;
 
-t_log* logger;
-t_config* config, config_discordiador;
+extern t_log* logger;
+extern t_config* config;
+extern t_config* config_discordiador;
 
 int iniciar_servidor(void);
 int esperar_discordiador(int socket_servidor);

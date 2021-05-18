@@ -10,8 +10,9 @@
 int main(int argc, char** argv){
 
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
-	config = create_config("mi_ram_hq.config");
-	config_discordiador = create_config("../Discordiador/discordiador.config");
+	config = config_create("mi_ram_hq.config");
+	config_discordiador = config_create("../Discordiador/discordiador.config");
+	
     int mi_ram_fd = iniciar_servidor();
 
     int discordiador_fd = esperar_discordiador(mi_ram_fd);
@@ -24,6 +25,8 @@ int main(int argc, char** argv){
 				log_info(logger, "MENSAJE RECIBIDO");
 				recibir_mensaje(discordiador_fd);
 				break;
+			case PEDIR_TAREA:
+				log_info(logger, "PEDIDO DE TAREA RECIBIDO");
 			case -1:
 				log_info(logger, "Murio el discordiador");
 				return EXIT_FAILURE;

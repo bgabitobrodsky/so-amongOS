@@ -16,4 +16,8 @@
 #include<commons/config.h>
 #include"utils.h"
 
+t_log* logger;
+t_config* config;
+t_config* config_discordiador;
+
 #endif /* MI_RAM_HQ_H_ */
