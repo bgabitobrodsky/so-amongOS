@@ -139,6 +139,10 @@ void expulsar_tripulante(char* leido) {
 
 void tripulante() {
 	int id_tripulante = 2;
+	int id_patota;
+	int cord_x;
+	int cord_y;
+	char* status;
 	// avisar a miram que va a iniciar
 
 	int tarea = pedir_tarea(id_tripulante);
@@ -148,8 +152,15 @@ void tripulante() {
 		realizar_tarea(tarea);
 		tarea = pedir_tarea(id_tripulante);
 	}
+	
 */
+	//informar ram movimiento
+
+
+
 }
+
+
 
 
 int pedir_tarea(int id_tripulante){
@@ -158,6 +169,17 @@ int pedir_tarea(int id_tripulante){
 	enviar_paquete(paquete,socket_mi_ram_hq);
 	return 1;
 }
+
+
+void realizar_tarea(t_tarea tarea){ // TODO 
+
+}
+
+void instanciar_tripulante(char* str_posicion){ // TODO
+	int cord_x = atoi(str_posicion[0]);
+	int cord_y = atoi(str_posicion[2]);
+}
+
 
 t_paquete* crear_paquete(op_code codigo) {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
