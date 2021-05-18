@@ -88,44 +88,18 @@ void iniciar_patota(char* leido) {
 	char** palabras = string_split(leido, " ");
 	int cantidadTripulantes = atoi(palabras[1]);
 	char* path = palabras[2];
-	//char** posiciones[cantidadTripulantes]
 
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
-	// 3 es el offset de lo leído para acceder a las posiciones, (iniciar_patota cant path <posiciones...>)
-	// Tira comportamiento indefinido si la cantidad de posiciones pasadas es menor a cantidadTripulantes²,
-	// Intenté varias formas pero siempre pasa lo mismo
-	for(int i = 3; i <= cantidadTripulantes + 2; i++){
-		if(palabras[i]== NULL){
-			palabras[i] = "0|0";
-			palabras[i+1] = NULL;
-		}
-		printf("POSICION %d: %s \n", i-2, palabras[i]);
+	int i = 0;
+
+	while (palabras[i+3] != NULL){
+		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
+		i++;
 	}
-
-
-
-	/* a ver si esto anda
-	printf("Posiciones\n");
-	for(i = 3; i <= cantidadTripulantes + 3; i++){
-		if(palabras[i] == NULL){   
-			posiciones[i] = "0|0";                         
-		}
-		else{
-			posiciones[i] = palabras[i];
-		}
-
-		printf("POSICION %d: %s \n", i-2, posiciones[i]);
+	for(int j = i; j <= cantidadTripulantes; j++){
+		printf("POSICION %d: 0|0 \n", j);
 	}
-
-
-		iniciar_patota() 
-		
-		for(i = 0; i < cantidadTripulantes ; i++){
-			instanciar_tripulante(posiciones[i]);
-		}
-		
-	*/
 }
 
 void iniciar_planificacion() {

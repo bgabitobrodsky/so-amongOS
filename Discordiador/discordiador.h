@@ -16,6 +16,7 @@
 #include <commons/string.h>
 #include <readline/readline.h>
 #include <time.h>
+#include <stddef.h>
 #include "utils.h"
 
 
