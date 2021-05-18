@@ -88,6 +88,7 @@ void iniciar_patota(char* leido) {
 	char** palabras = string_split(leido, " ");
 	int cantidadTripulantes = atoi(palabras[1]);
 	char* path = palabras[2];
+	//char** posiciones[cantidadTripulantes]
 
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
@@ -101,6 +102,29 @@ void iniciar_patota(char* leido) {
 		}
 	}*/
 
+
+
+	/* a ver si esto anda
+	printf("Posiciones\n");
+	for(i = 3; i <= cantidadTripulantes + 3; i++){
+		if(palabras[i] == NULL){   
+			posiciones[i] = "0|0";                         
+		}
+		else{
+			posiciones[i] = palabras[i];
+		}
+
+		printf("POSICION %d: %s \n", i-2, posiciones[i]);
+	}
+
+
+		iniciar_patota() 
+		
+		for(i = 0; i < cantidadTripulantes ; i++){
+			instanciar_tripulante(posiciones[i]);
+		}
+		
+	*/
 }
 
 void iniciar_planificacion() {
@@ -139,6 +163,10 @@ void expulsar_tripulante(char* leido) {
 
 void tripulante() {
 	int id_tripulante = 2;
+	int id_patota;
+	int cord_x;
+	int cord_y;
+	char* status;
 	// avisar a miram que va a iniciar
 
 	int tarea = pedir_tarea(id_tripulante);
@@ -148,8 +176,15 @@ void tripulante() {
 		realizar_tarea(tarea);
 		tarea = pedir_tarea(id_tripulante);
 	}
+	
 */
+	//informar ram movimiento
+
+
+
 }
+
+
 
 
 int pedir_tarea(int id_tripulante){
@@ -158,6 +193,17 @@ int pedir_tarea(int id_tripulante){
 	enviar_paquete(paquete,socket_mi_ram_hq);
 	return 1;
 }
+
+
+void realizar_tarea(t_tarea tarea){ // TODO 
+
+}
+
+void instanciar_tripulante(char* str_posicion){ // TODO
+	int cord_x = atoi(str_posicion[0]);
+	int cord_y = atoi(str_posicion[2]);
+}
+
 
 t_paquete* crear_paquete(op_code codigo) {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
