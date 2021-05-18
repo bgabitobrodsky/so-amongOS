@@ -92,15 +92,16 @@ void iniciar_patota(char* leido) {
 
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
-	// 4 es el offset de lo leído para acceder a las posiciones, (iniciar_patota cant path <posiciones...>)
-	/*for(i = 4; i <= cantidadTripulantes + 4; i++){
-		printf("Posiciones\n");
-		for(int i = 3; i <= argc; i++){
-			if(argv[i]==NULL)
-				argv[i] = "0|0";
-			printf("POSICION %d: %s \n", i-2, argv[i]);
+	// 3 es el offset de lo leído para acceder a las posiciones, (iniciar_patota cant path <posiciones...>)
+	// Tira comportamiento indefinido si la cantidad de posiciones pasadas es menor a cantidadTripulantes²,
+	// Intenté varias formas pero siempre pasa lo mismo
+	for(int i = 3; i <= cantidadTripulantes + 2; i++){
+		if(palabras[i]== NULL){
+			palabras[i] = "0|0";
+			palabras[i+1] = NULL;
 		}
-	}*/
+		printf("POSICION %d: %s \n", i-2, palabras[i]);
+	}
 
 
 
@@ -145,6 +146,7 @@ void listar_tripulantes() {
         printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
     }
 	*/
+	printf("listarTripulantes");
 
 }
 
