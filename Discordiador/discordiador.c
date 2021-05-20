@@ -121,27 +121,7 @@ void listar_tripulantes() {
 }
 
 void pausar_planificacion() {
-	printf("hola");
-	t_tarea* tarea;
-	printf("declaro");
-	char name[] = "HOLA SOY UN NOMBRE ASDASDASDAS";
-	printf("despues del string");
-	tarea->nombre = malloc(sizeof(name));
-	printf("despues del malloc");
-	strcpy(tarea->nombre,name);
-	printf("despues del cpy");
-	tarea->coord_x = 3;
-	tarea->coord_y = 2;
-	tarea->duracion = 10;
-	tarea->parametro = 4;
-	printf("creo la tarea");
-
-	t_paquete* paquete = crear_paquete(COD_TAREA);
-	agregar_a_paquete(paquete, (void*) tarea, sizeof(tarea));
-	enviar_paquete(paquete,socket_mi_ram_hq);
-
-	free(tarea->nombre);
-	free(tarea);
+	
 }
 
 void obtener_bitacora(char* leido) {

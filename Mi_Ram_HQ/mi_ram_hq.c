@@ -29,11 +29,8 @@ int main(int argc, char** argv){
 				log_info(logger, "PEDIDO DE TAREA RECIBIDO");
 				break;
 			case COD_TAREA:
-				tarea = (t_tarea*) recibir_paquete(discordiador_fd);
-				printf("Nombre de la tarea: %s\n", tarea->nombre);
-				printf("Duracion: %d\n", tarea->duracion);
-				printf("Coord x: %d\n", tarea->coord_x);
-				printf("Coord y: %d\n", tarea->coord_y);
+				printf("recibo una tarea");
+				
 				break;
 			case -1:
 				log_info(logger, "Murio el discordiador");
