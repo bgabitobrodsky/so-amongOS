@@ -70,7 +70,7 @@ void hola(){
 */
 
 
-int iniciar_patota(FILE* archivo){
+t_TCB iniciar_patota(FILE* archivo){
 	t_PCB pcb;
 	pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
 	pcb->direccion_tareas = &archivo;
@@ -81,7 +81,7 @@ int iniciar_patota(FILE* archivo){
 
 	//cargar_en_Mongo(archivo);
 
-	return pcb->PID;
+	return pcb;
 }
 
 int nuevo_pid(){
@@ -97,15 +97,16 @@ int nuevo_pid(){
 //Iniciar tripulante: será el encargado de crear la o las estructuras
 //administrativas necesarias para que un tripulante pueda ejecutar.
 
-iniciar_tripulante(char* posicion){
+iniciar_tripulante(char* posicion, t_PCB* puntero_pcb, int tid){
 	t_TCB tcb;
-	tcb->TID = nuevo_tid()
+	tcb->TID = tid;
+	tcb->estado_tripulante = estado_tripulante[LLEGADA]; //Supongo que se inicializa en LLEGADA por defecto
 	tcb->coord_x = posicion[0];
 	tcb->coord_y = posicion[2];
 	//tcb->siguiente_instruccion = ;//Ni idea de que va acá
-	tcb->puntero_a_pcb =
+	tcb->puntero_a_pcb = puntero_pcb;
 
 	t_tripulante tripulante;
 	//tripulante->codigo = ;//Ni idea de que va acá
-	tripulante->estado = LLEGADA; //Supongo que se inicializa en LLEGADA por defecto
+	tripulante->tcb = tcb;
 }

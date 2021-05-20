@@ -10,8 +10,8 @@
 //#include "stdbool.h"
 
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
-//char** estado_tripulante = {"LLEGADA", "LISTO", "TRABAJANDO", "BLOQUEADO", "FINALIZADO"};
-//enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
+char** estado_tripulante = {"LLEGADA", "LISTO", "TRABAJANDO", "BLOQUEADO", "FINALIZADO"};
+enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
 
 typedef struct {
 
