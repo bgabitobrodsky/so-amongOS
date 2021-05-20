@@ -70,6 +70,7 @@ t_buffer* serializar_vacio() {
 
 }
 
+// Crea un paquete unicamente para transportar un codigo de operacion
 t_paquete* crear_paquete_de_codigo(codigo_operacion codigo) {
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
