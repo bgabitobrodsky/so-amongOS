@@ -28,6 +28,7 @@
 #include <signal.h>
 
 typedef enum{
+
 	NO_CONOCIDO,
 	LISTAR_TRIPULANTES,
 	INICIAR_PLANIFICACION,
@@ -37,14 +38,13 @@ typedef enum{
 	INICIAR_PATOTA,
 	EXIT,
 	HELP
-}comando_cod;
+} comando_cod;
 
-extern t_config* config;
-extern t_log* logger;
+extern t_config* config_discordiador;
+extern t_log* logger_discordiador;
 
 int reconocer_comando(char* str);
 int comparar_strings(char* str, char* str2);
 void help_comandos();
-int conectar_a_mi_ram_hq();
 
 #endif /* DISCORDIADOR_UTILS_H_ */

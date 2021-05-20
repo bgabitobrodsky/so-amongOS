@@ -19,5 +19,6 @@
 #include<comms/socketes.h>
 #include"utils.h"
 
+void atender_clientes(int socket_hijo);
 
 #endif /* MI_RAM_HQ_H_ */

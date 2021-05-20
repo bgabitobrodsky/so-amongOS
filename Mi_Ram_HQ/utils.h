@@ -21,12 +21,8 @@
 #include<comms/paquetes.h>
 #include<comms/socketes.h>
 
-extern t_log* logger;
-extern t_config* config;
+extern t_log* logger_miramhq;
+extern t_config* config_miramhq;
 extern t_config* config_discordiador;
-
-int iniciar_servidor(void);
-int esperar_discordiador(int socket_servidor);
-int leer_operacion(int socket_cliente);
 
 #endif /* MI_RAM_HQ_UTILS_H_ */

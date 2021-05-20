@@ -22,7 +22,7 @@ int main(int argc, char** argv){
 	config_discordiador = config_create("../Discordiador/discordiador.config");
 	(void*) p_atender_clientes = atender_clientes();
 
-    int socket_server = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
+    int socket_server = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); // Se podria delegar a un hilo
 	escuchar(socket_server, p_atender_clientes);
 
     close(socket_server);
