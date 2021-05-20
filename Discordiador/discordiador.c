@@ -88,13 +88,16 @@ void iniciar_patota(char* leido) {
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
 	int i = 0;
+	//int PID = ram_crear_patota(path) --> Esto le debe mandar a RAM que inicie la patota. Esto debe retornar el idPatota
 
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
 		i++;
+		//iniciarTripulante(PID, Posicion) -->Le manda a RAM el tripulante
 	}
 	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
+		//iniciarTripulante(PID, "0|0") -->Le manda a RAM el tripulante
 	}
 }
 
@@ -139,7 +142,7 @@ void tripulante() {
 	int cord_x;
 	int cord_y;
 	char* status;
-	// avisar a miram que va a iniciar
+	//avisar a miram que va a iniciar
 
 	int tarea = pedir_tarea(id_tripulante);
 	printf("%d",tarea);

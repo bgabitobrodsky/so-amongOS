@@ -11,7 +11,10 @@ int main(int argc, char** argv){
 
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
-	config_discordiador = config_create("../Discordiador/discordiador.config");
+	//config_discordiador = config_create("../Discordiador/discordiador.config");
+
+	int tamanio_memoria = config_get_string_value(config, "TAMANIO_MEMORIA");
+	char* memoria = malloc(tamanio_memoria);
 	
     int mi_ram_fd = iniciar_servidor();
 
@@ -44,6 +47,7 @@ int main(int argc, char** argv){
     log_destroy(logger);
     config_destroy(config);
     config_destroy(config_discordiador);
+    free(memoria);
 	return EXIT_SUCCESS;
 
     /*pthread_t hilo_escucha;
@@ -64,3 +68,44 @@ void hola(){
     printf("Hola");
 }
 */
+
+
+int iniciar_patota(FILE* archivo){
+	t_PCB pcb;
+	pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
+	pcb->direccion_tareas = &archivo;
+
+	t_patota patota;
+	patota->archivo_de_tareas = archivo;
+	patota->pcb = pcb;
+
+	//cargar_en_Mongo(archivo);
+
+	return pcb->PID;
+}
+
+int nuevo_pid(){
+	int id_patota = 1;
+	while(1){
+		if(!existe(id_patota)) {
+	    	return id_patota;
+	    }
+	    id_patota++;
+	}
+}
+
+//Iniciar tripulante: será el encargado de crear la o las estructuras
+//administrativas necesarias para que un tripulante pueda ejecutar.
+
+iniciar_tripulante(char* posicion){
+	t_TCB tcb;
+	tcb->TID = nuevo_tid()
+	tcb->coord_x = posicion[0];
+	tcb->coord_y = posicion[2];
+	//tcb->siguiente_instruccion = ;//Ni idea de que va acá
+	tcb->puntero_a_pcb =
+
+	t_tripulante tripulante;
+	//tripulante->codigo = ;//Ni idea de que va acá
+	tripulante->estado = LLEGADA; //Supongo que se inicializa en LLEGADA por defecto
+}
