@@ -10,7 +10,6 @@
 //#include "stdbool.h"
 
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
-char** estado_tripulante = {"LLEGADA", "LISTO", "TRABAJANDO", "BLOQUEADO", "FINALIZADO"};
 enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
 
 typedef struct {
@@ -46,15 +45,17 @@ typedef struct {
 typedef struct { // Puede estar de mas
 
     uint32_t codigo;
-    t_TCB tcb;
+    uint32_t coord_x;
+    uint32_t coord_y;
+    uint32_t estado;
 
 } t_tripulante;
 
 typedef struct { // Debe estar de mas, es lo mismo hacer varios structs de tripu y tareas, y es mas lindo asi, la dejo como vestigio porlas
 
-//    uint32_t cantidad_integrantes; //NO IRIRA, se actualiza cada vez que se finaliza un tripulante
+    uint32_t cantidad_integrantes;
     FILE* archivo_de_tareas;
-    t_PCB pcb;
+    uint32_t* coordenadas_integrantes; // Protocolo: cada dupla hace un x y, por ende, cada nro par inicia un combo de coordenadas
 
 } t_patota;
 
