@@ -29,8 +29,7 @@ int main(int argc, char** argv){
 				log_info(logger, "PEDIDO DE TAREA RECIBIDO");
 				break;
 			case COD_TAREA:
-				printf("recibo una tarea");
-				
+				printf("recibo una tarea");				
 				break;
 			case -1:
 				log_info(logger, "Murio el discordiador");

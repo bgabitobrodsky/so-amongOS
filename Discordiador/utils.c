@@ -101,6 +101,7 @@ int reconocer_comando(char* str) {
 	return NO_CONOCIDO;
 }
 
+
 int comparar_strings(char* str, char* str2) {
 	return !strncmp(str, str2, strlen(str2));
 }
@@ -122,8 +123,8 @@ int conectar_a_mi_ram_hq() {
 	int estado;
 	int socket_cliente;
 
-	//char* ip = config_get_string_value(config, "IP_MI_RAM_HQ");
-	//char* puerto = config_get_string_value(config, "PUERTO_MI_RAM_HQ");
+	char* ip = config_get_string_value(config, "IP_MI_RAM_HQ");
+	char* puerto = config_get_string_value(config, "PUERTO_MI_RAM_HQ");
 
 	memset(&datos_para_server, 0, sizeof(datos_para_server));
 	datos_para_server.ai_family = AF_UNSPEC;
@@ -131,7 +132,7 @@ int conectar_a_mi_ram_hq() {
 	datos_para_server.ai_flags = AI_PASSIVE;
 
 	// Obtengo la informacion del server y la alojo en informacion_server, utilizando los datos predefinidos arriba para settear
-	if ((estado = getaddrinfo("127.0.0.1", "25430", &datos_para_server, &informacion_server)) != 0) {
+	if ((estado = getaddrinfo(ip, puerto, &datos_para_server, &informacion_server)) != 0) {
 		log_warning(logger, "Error al conseguir informacion de MI RAM HQ\n");
 	}
 
