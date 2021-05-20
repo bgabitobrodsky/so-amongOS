@@ -59,13 +59,18 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 
 	socket_escucha = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol);
 
-	if (socket_escucha == -1)
-		printf("Error al crear socket\n");
+	for (p = informacion_server; p != NULL; p = p->ai_next){
+		
+        if ((socket_escucha = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
+            continue;
 
-	// Todo lo de arriba identico a la funcion anterior
+        if (bind(socket_escucha, p->ai_addr, p->ai_addrlen) == -1){
+            close(socket_escucha);
+            continue;
+        }
 
-	if (bind(socket_escucha, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) // Asocio socket obtenido a un puerto especifico donde se escucharan llamados de conexion
-		printf("Error al conectar con el servidor\n");
+        break;
+    }
 
 	freeaddrinfo(informacion_server); // Libero la informacion del server total ya no sirve
 

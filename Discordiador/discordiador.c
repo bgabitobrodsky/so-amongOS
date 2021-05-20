@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 	close(socket_a_mongo_store);
 
 	// Liberar punteros a hilos
-	free(p_leer_consola);
+	free(p_leer_consola); // Verificar sintaxis
 	
 	config_destroy(config);
 	log_destroy(logger_discordiador);
@@ -196,7 +196,7 @@ char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace es
 	static char fecha_Hora[70]; // El lugar en donde se pondrÃ¡ la fecha y hora formateadas
 	char *formato = "%d-%m-%Y %H:%M:%S";  // El formato. Mira mÃ¡s en https://en.cppreference.com/w/c/chrono/strftime
 	int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);  // Intentar formatear
-	
+
 	if (bytesEscritos != 0) { // Si no hay error, los bytesEscritos no son 0
 		return fecha_Hora;
   	} 
