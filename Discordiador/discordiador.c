@@ -93,7 +93,7 @@ void iniciar_patota(char* leido) {
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
 		i++;
 	}
-	for(int j = i; j <= cantidadTripulantes; j++){
+	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
 	}
 }
