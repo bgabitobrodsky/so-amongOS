@@ -19,14 +19,22 @@ int main(int argc, char** argv){
 
     while(1){
 		int cod_op = leer_operacion(discordiador_fd);
+		t_tarea* tarea;
 		
 		switch(cod_op){
 			case MENSAJE:
 				log_info(logger, "MENSAJE RECIBIDO");
-				recibir_mensaje(discordiador_fd);
 				break;
 			case PEDIR_TAREA:
 				log_info(logger, "PEDIDO DE TAREA RECIBIDO");
+				break;
+			case COD_TAREA:
+				tarea = (t_tarea*) recibir_paquete(discordiador_fd);
+				printf("Nombre de la tarea: %s\n", tarea->nombre);
+				printf("Duracion: %d\n", tarea->duracion);
+				printf("Coord x: %d\n", tarea->coord_x);
+				printf("Coord y: %d\n", tarea->coord_y);
+				break;
 			case -1:
 				log_info(logger, "Murio el discordiador");
 				return EXIT_FAILURE;

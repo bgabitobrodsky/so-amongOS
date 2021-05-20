@@ -14,6 +14,9 @@
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
+#include<comms/paquetes.h>
+#include<comms/estructuras.h>
+#include<comms/socketes.h>
 #include"utils.h"
 
 t_log* logger;

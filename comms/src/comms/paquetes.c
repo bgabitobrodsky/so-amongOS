@@ -47,7 +47,7 @@ t_buffer* serializar_tarea(t_tarea tarea) {
     desplazamiento += sizeof(uint32_t);
     memcpy(estructura + desplazamiento, &tarea.coord_y, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tarea.duracion_tarea, sizeof(uint32_t));
+    memcpy(estructura + desplazamiento, &tarea.duracion, sizeof(uint32_t));
 
     buffer->estructura = estructura;
 
@@ -181,8 +181,70 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
     estructura += sizeof(uint32_t);
     memcpy(&(tarea->coord_y), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    memcpy(&(tarea->duracion_tarea), estructura, sizeof(uint32_t));
+    memcpy(&(tarea->duracion), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
 
     return tarea;
+}
+
+t_paquete* crear_paquete(op_code codigo) {
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = codigo;
+	crear_buffer(paquete);
+	return paquete;
+}
+
+void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
+	paquete->buffer->estructura = realloc(paquete->buffer->estructura, paquete->buffer->tamanio_estructura + tamanio + sizeof(int));
+
+	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura, &tamanio, sizeof(int));
+	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura + sizeof(int), valor, tamanio);
+
+	paquete->buffer->tamanio_estructura += tamanio + sizeof(int);
+}
+
+void enviar_paquete(t_paquete* paquete, int socket_servidor) {
+	int bytes = paquete->buffer->tamanio_estructura + 2*sizeof(int);
+	void* a_enviar = serializar_paquete(paquete, bytes);
+
+	send(socket_servidor, a_enviar, bytes, 0);
+
+	free(a_enviar);
+	eliminar_paquete(paquete);
+}
+
+void eliminar_paquete(t_paquete* paquete) { // No estaria mal agregarla a Modulos
+	free(paquete->buffer->estructura);
+	free(paquete->buffer);
+	free(paquete);
+}
+
+void crear_buffer(t_paquete* paquete){
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->tamanio_estructura = 0;
+	paquete->buffer->estructura = NULL;
+}
+
+void* recibir_paquete(int socket_cliente){
+	void * buffer;
+    int* size;
+	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
+	buffer = malloc(*size);
+	recv(socket_cliente, buffer, *size, MSG_WAITALL);
+
+	return buffer;
+}
+
+void* serializar_paquete(t_paquete* paquete, int bytes) { 
+	void* magic = malloc(bytes);
+	int desplazamiento = 0;
+
+	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(magic + desplazamiento, &(paquete->buffer->tamanio_estructura), sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(magic + desplazamiento, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
+	desplazamiento+= paquete->buffer->tamanio_estructura;
+
+	return magic;
 }

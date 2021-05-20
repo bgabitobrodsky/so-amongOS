@@ -11,21 +11,18 @@
 #include "discordiador.h"
 t_config* config;
 t_log* logger;
-int socket_mi_ram_hq; // Tal vez seria prettier pasarlo por parametro a leer_consola
+int socket_mi_ram_hq;
 
 int main(int argc, char *argv[]) {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
 
-	socket_mi_ram_hq = conectar_a_mi_ram_hq(); 
+	socket_mi_ram_hq = conectar_a_mi_ram_hq();
 
-	if (socket_mi_ram_hq != -1) { // Ya se hace la verificacion en la funcion, tal vez habria que sacarlo en la misma
+	if (socket_mi_ram_hq != -1) {
 		pthread_t hiloConsola;
 		pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
 		pthread_join(hiloConsola, NULL);
-	}
-	else {
-		log_warning(logger, "Error al conectar a MI_RAM_HQ");
 	}
 
 	close(socket_mi_ram_hq);
@@ -36,7 +33,6 @@ int main(int argc, char *argv[]) {
 }
 
 void leer_consola() {
-
 	char* leido;
 	int comando;
 
@@ -125,7 +121,27 @@ void listar_tripulantes() {
 }
 
 void pausar_planificacion() {
-	printf("pausarPlanificacion");
+	printf("hola");
+	t_tarea* tarea;
+	printf("declaro");
+	char name[] = "HOLA SOY UN NOMBRE ASDASDASDAS";
+	printf("despues del string");
+	tarea->nombre = malloc(sizeof(name));
+	printf("despues del malloc");
+	strcpy(tarea->nombre,name);
+	printf("despues del cpy");
+	tarea->coord_x = 3;
+	tarea->coord_y = 2;
+	tarea->duracion = 10;
+	tarea->parametro = 4;
+	printf("creo la tarea");
+
+	t_paquete* paquete = crear_paquete(COD_TAREA);
+	agregar_a_paquete(paquete, (void*) tarea, sizeof(tarea));
+	enviar_paquete(paquete,socket_mi_ram_hq);
+
+	free(tarea->nombre);
+	free(tarea);
 }
 
 void obtener_bitacora(char* leido) {
@@ -178,45 +194,6 @@ void realizar_tarea(t_tarea tarea){ // TODO
 void instanciar_tripulante(char* str_posicion){ // TODO
 	int cord_x = atoi(str_posicion[0]);
 	int cord_y = atoi(str_posicion[2]);
-}
-
-
-t_paquete* crear_paquete(op_code codigo) {
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = codigo;
-	crear_buffer(paquete); // Funcion no definida
-	return paquete;
-}
-
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
-	paquete->buffer->estructura = realloc(paquete->buffer->estructura, paquete->buffer->tamanio_estructura + tamanio + sizeof(int));
-
-	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura, &tamanio, sizeof(int));
-	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura + sizeof(int), valor, tamanio);
-
-	paquete->buffer->tamanio_estructura += tamanio + sizeof(int);
-}
-
-void enviar_paquete(t_paquete* paquete, int socket_servidor) {
-	int bytes = paquete->buffer->tamanio_estructura + 2*sizeof(int);
-	void* a_enviar = serializar_paquete(paquete, bytes);
-
-	send(socket_servidor, a_enviar, bytes, 0);
-
-	free(a_enviar);
-	eliminar_paquete(paquete);
-}
-
-void eliminar_paquete(t_paquete* paquete) { // No estaria mal agregarla a Modulos
-	free(paquete->buffer->estructura);
-	free(paquete->buffer);
-	free(paquete);
-}
-
-void crear_buffer(t_paquete* paquete){
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->tamanio_estructura = 0;
-	paquete->buffer->estructura = NULL;
 }
 
 char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace esto

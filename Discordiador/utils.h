@@ -28,12 +28,6 @@
 #include <signal.h>
 
 typedef enum{
-	MENSAJE,
-	PEDIR_TAREA
-}op_code;
-
-
-typedef enum{
 	NO_CONOCIDO,
 	LISTAR_TRIPULANTES,
 	INICIAR_PLANIFICACION,
@@ -52,6 +46,5 @@ int reconocer_comando(char* str);
 int comparar_strings(char* str, char* str2);
 void help_comandos();
 int conectar_a_mi_ram_hq();
-void* serializar_paquete(t_paquete* paquete, int bytes);
 
 #endif /* DISCORDIADOR_UTILS_H_ */

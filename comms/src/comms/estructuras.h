@@ -38,7 +38,7 @@ typedef struct {
     uint32_t parametro; // Siempre es un int, a menos que sea DESCARTAR_BASURA que no lleva nada
     uint32_t coord_x;
     uint32_t coord_y;
-    uint32_t duracion_tarea; // En ciclos de CPU
+    uint32_t duracion; // En ciclos de CPU
 
 } t_tarea;
 

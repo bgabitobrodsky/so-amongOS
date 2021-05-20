@@ -149,16 +149,4 @@ int conectar_a_mi_ram_hq() {
 	return socket_cliente;
 }
 
-void* serializar_paquete(t_paquete* paquete, int bytes) { 
-	void* magic = malloc(bytes);
-	int desplazamiento = 0;
 
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->tamanio_estructura), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
-	desplazamiento+= paquete->buffer->tamanio_estructura;
-
-	return magic;
-}
