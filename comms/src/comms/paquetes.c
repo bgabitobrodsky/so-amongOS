@@ -18,9 +18,7 @@ t_buffer* serializar_tripulante(t_tripulante tripulante) {
 
     memcpy(estructura + desplazamiento, &tripulante.codigo, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));// Se copia y pega todo al array estructura ordenado 
+    memcpy(estructura + desplazamiento, &tripulante.tcb, sizeof(uint32_t));
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
@@ -156,9 +154,7 @@ t_tripulante* desserializar_tripulante(t_buffer* buffer) {
 
     memcpy(&(tripulante->codigo), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    memcpy(&(tripulante->coord_x), estructura, sizeof(uint32_t));
-    estructura += sizeof(uint32_t);
-    memcpy(&(tripulante->coord_y), estructura, sizeof(uint32_t));
+    memcpy(&(tripulante->tcb), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
 
     return tripulante;
