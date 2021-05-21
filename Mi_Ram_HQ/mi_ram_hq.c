@@ -7,19 +7,17 @@
 
 #include "mi_ram_hq.h"
 
-#define	IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ");
-#define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ");
+#define	IP_MI_RAM_HQ config_get_string_value(config_miramhq, "IP_MI_RAM_HQ")
+#define PUERTO_MI_RAM_HQ config_get_string_value(config_miramhq, "PUERTO_MI_RAM_HQ")
 
 // Vars globales
 t_log* logger_miramhq;
 t_config* config_miramhq;
-t_config* config_discordiador;
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
 
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
-	config_discordiador = config_create("../Discordiador/discordiador.config");
 	(void*) p_atender_clientes = atender_clientes();
 
     int socket_server = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); // Se podria delegar a un hilo
@@ -29,7 +27,6 @@ int main(int argc, char** argv){
 
     log_destroy(logger);
     config_destroy(config);
-    config_destroy(config_discordiador);
 
 	return EXIT_SUCCESS;
 }

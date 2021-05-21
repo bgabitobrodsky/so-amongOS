@@ -38,6 +38,7 @@ typedef enum{
 	INICIAR_PATOTA,
 	EXIT,
 	HELP
+	
 } comando_cod;
 
 extern t_config* config_discordiador;

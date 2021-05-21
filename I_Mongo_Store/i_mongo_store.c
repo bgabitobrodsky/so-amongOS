@@ -7,17 +7,25 @@
 
 #include "i_mongo_store.h"
 
-#define	IP_MONGO_STORE config_get_string_value(config, "IP_MONGO_STORE"); // Verificar sintaxis
-#define PUERTO_MONGO_STORE config_get_string_value(config, "PUERTO_MONGO_STORE");
+#define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP_MONGO_STORE") // Verificar sintaxis
+#define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO_MONGO_STORE")
+
+// Vars globales
+t_log* logger_mongo;
+t_config* config_mongo;
 
 int main(int argc, char** argv){
 
+    logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
+	config_mongo = config_create("mongo.config");
     pthread_t hilo_escucha;
     (void*) p_escuchar_alos_cliente = &escuchar_alos_cliente();
 	pthread_create(&hilo_escucha, NULL, p_escuchar_alos_cliente, NULL);
 	pthread_join(hilo_escucha, NULL);
 
     free(p_escuchar_alos_cliente);
+    log_destroy(logger_mongo);
+    config_destroy(config_mongo);
 }
 
 

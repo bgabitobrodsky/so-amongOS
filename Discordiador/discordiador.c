@@ -8,10 +8,10 @@
  ============================================================================
  */
 
-#define	IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ");
-#define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ");
-#define	IP_MONGO_STORE config_get_string_value(config, "IP_MONGO_STORE"); // Verificar sintaxis
-#define PUERTO_MONGO_STORE config_get_string_value(config, "PUERTO_MONGO_STORE");
+#define	IP_MI_RAM_HQ config_get_string_value(config_discordiador, "IP_MI_RAM_HQ")
+#define PUERTO_MI_RAM_HQ config_get_string_value(config_discordiador, "PUERTO_MI_RAM_HQ")
+#define	IP_MONGO_STORE config_get_string_value(config_discordiador, "IP_MONGO_STORE") // Verificar sintaxis
+#define PUERTO_MONGO_STORE config_get_string_value(config_discordiador, "PUERTO_MONGO_STORE")
 
 #include "discordiador.h"
 
@@ -94,10 +94,9 @@ void leer_consola() {
 			}
 		}
 
-		free(leido);
+		free(leido); // No sacar afuera
 
 	} while (comando != EXIT);
-
 }
 
 void iniciar_patota(char* leido) {

@@ -70,15 +70,6 @@ t_buffer* serializar_vacio() {
 
 }
 
-// Crea un paquete unicamente para transportar un codigo de operacion
-t_paquete* crear_paquete_de_codigo(codigo_operacion codigo) {
-
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = codigo;
-	paquete->buffer = NULL;
-	return paquete;
-}
-
 // Recibe un buffer, un opcode y un socket a donde se enviara el paquete que se armara en la funcion, y se envia
 // Usar con funciones de serializacion de arriba
 // Usa funcion de socketes.h
@@ -206,13 +197,6 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
     estructura += sizeof(uint32_t);
 
     return tarea;
-}
-
-t_paquete* crear_paquete(codigo_operacion codigo) {
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = codigo;
-	crear_buffer(paquete);
-	return paquete;
 }
 
 void eliminar_paquete(t_paquete* paquete) {
