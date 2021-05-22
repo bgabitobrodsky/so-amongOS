@@ -84,17 +84,20 @@ void iniciar_patota(char* leido) {
 	char** palabras = string_split(leido, " ");
 	int cantidadTripulantes = atoi(palabras[1]);
 	char* path = palabras[2];
-
+	
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
 	int i = 0;
+	//t_PCB pcb = ram_crear_patota(path) --> Esto le debe mandar a RAM que inicie la patota. Esto debe retornar el PCB
 
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
+		//iniciarTripulante(&pcb, palabras[i+3], i+1) -->Le manda a RAM el tripulante
 		i++;
 	}
 	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
+		//iniciarTripulante(&pcb, "0|0", j) -->Le manda a RAM el tripulante
 	}
 }
 
