@@ -26,7 +26,6 @@ typedef struct{
     
 } config_mongo_t;
 
-void escuchar_alos_cliente();
-void hola();
+void escuchar_mongo(int socket_escucha);
 
 #endif /* I_MONGO_STORE_H_ */

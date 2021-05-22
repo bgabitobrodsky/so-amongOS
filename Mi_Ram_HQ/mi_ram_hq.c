@@ -18,13 +18,15 @@ int main(int argc, char** argv) {
 
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
-	(void*) p_atender_clientes = atender_clientes();
 
-    int socket_server = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); // Se podria delegar a un hilo
-	escuchar(socket_server, p_atender_clientes);
+    int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); // Se podria delegar a un hilo
+	pthread_t hilo_escucha;
+    void (*p_escuchar_miram)(int) = &escuchar_miram;
+	pthread_create(&hilo_escucha, NULL, p_escuchar_miram(socket_oyente), NULL);
+	pthread_join(hilo_escucha, NULL);
 
     close(socket_server);
-
+	free(p_escuchar_miram);
     log_destroy(logger);
     config_destroy(config);
 
@@ -52,5 +54,36 @@ void atender_clientes(int socket_hijo) {
 					log_info(logger, "Se desconecto el modulo Discordiador");
 					return EXIT_FAILURE;
 		}
+	}
+}
+
+void escuchar_miram(int socket_escucha){
+	struct sockaddr_storage direccion_a_escuchar;
+	socklen_t tamanio_direccion;
+	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
+
+	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
+		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
+
+	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+		printf("Error al limpiar procesos\n");
+		exit(1);
+	}*/
+
+	while (1) { // Loop infinito donde aceptara clientes
+		tamanio_direccion = sizeof(direccion_a_escuchar);
+		socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
+
+		if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
+			atender_clientes(socket_especifico); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
+			close(socket_especifico); // Cumple proposito, se cierra socket hijo
+			exit(0); // Returnea
+		}
+
+		close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 	}
 }

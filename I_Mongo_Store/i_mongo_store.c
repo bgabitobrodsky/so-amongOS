@@ -18,24 +18,44 @@ int main(int argc, char** argv){
 
     logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
 	config_mongo = config_create("mongo.config");
+    int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
     pthread_t hilo_escucha;
-    (void*) p_escuchar_alos_cliente = &escuchar_alos_cliente();
-	pthread_create(&hilo_escucha, NULL, p_escuchar_alos_cliente, NULL);
+    void (*p_escuchar_mongo)(int) = &escuchar_mongo;
+	pthread_create(&hilo_escucha, NULL, p_escuchar_mongo(socket_oyente), NULL);
 	pthread_join(hilo_escucha, NULL);
 
-    free(p_escuchar_alos_cliente);
+    free(p_escuchar_mongo);
     log_destroy(logger_mongo);
     config_destroy(config_mongo);
 }
 
+void escuchar_mongo(int socket_escucha) {
+	struct sockaddr_storage direccion_a_escuchar;
+	socklen_t tamanio_direccion;
+	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
 
-void escuchar_alos_cliente(){
-    int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
-    (void*) p_hola = &hola();
-    escuchar(socket_oyente, p_hola);
-    free(p_hola);
-}
+	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
+		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
-void hola(){
-    printf("Hola");
+	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+		printf("Error al limpiar procesos\n");
+		exit(1);
+	}*/
+
+	while (1) { // Loop infinito donde aceptara clientes
+		tamanio_direccion = sizeof(direccion_a_escuchar);
+		socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
+
+		if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
+			printf("Hola soy el Mongo"); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
+			close(socket_especifico); // Cumple proposito, se cierra socket hijo
+			exit(0); // Returnea
+		}
+
+		close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+	}
 }

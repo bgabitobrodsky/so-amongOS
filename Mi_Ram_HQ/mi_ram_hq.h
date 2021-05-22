@@ -20,5 +20,6 @@
 #include"utils.h"
 
 void atender_clientes(int socket_hijo);
+void escuchar_miram(int socket_escucha);
 
 #endif /* MI_RAM_HQ_H_ */
