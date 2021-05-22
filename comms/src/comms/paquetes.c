@@ -62,12 +62,11 @@ t_buffer* serializar_vacio() {
 
     t_buffer* buffer = malloc((sizeof(t_buffer)));
 
-    // buffer->tamanio_estructura = sizeof(void); // Comentado porque tal vez haga falta
+    buffer->tamanio_estructura = NULL;
 
-    // buffer->estructura = NULL;
+    buffer->estructura = NULL;
 
     return buffer;
-
 }
 
 // Recibe un buffer, un opcode y un socket a donde se enviara el paquete que se armara en la funcion, y se envia
@@ -97,8 +96,14 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
 
 // Recibe un paquete (QUE UNICAMENTE CONTIENE UN OPCODE) y un socket, y envia dicho paquete
 // Usa funcion de socketes.h
-void enviar_codigo(t_paquete* paquete, int socket_receptor) {
-    int tamanio_mensaje = sizeof(uint8_t)
+void enviar_codigo(int codigo_operacion, int socket_receptor) {
+    
+    t_paquete* paquete = malloc(sizeof(t_paquete));
+    t_buffer* buffer = serializar_vacio();
+    paquete->codigo_operacion = codigo_operacion;
+    paquete->buffer = buffer;
+
+    int tamanio_mensaje = sizeof(uint8_t);
     void* mensaje = tamanio_mensaje;
 
     memcpy(mensaje, &(paquete->codigo_operacion), sizeof(uint8_t));

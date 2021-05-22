@@ -78,7 +78,7 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 }
 
 // Funcion para escuchar llamados, con un socket de la funcion anterior, faltaria  //TODO
-void escuchar(int socket_escucha,  void* funcion_de_hijos()  /*(parametros) */){
+void escuchar(int socket_escucha,  void* funcion_de_hijos()  /* (parametros) */){
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente

@@ -36,7 +36,6 @@ void atender_clientes(int socket_hijo) {
 			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
 		
 			switch(mensaje_recibido->codigo_operacion) {
-
 				case MENSAJE:
 					log_info(logger, "Mensaje recibido");
 					break;
@@ -46,7 +45,7 @@ void atender_clientes(int socket_hijo) {
 					break;
 
 				case COD_TAREA:
-					printf("Recibo una tarea");				
+					printf("Recibo una tarea");
 					break;
 
 				case -1: // Puede que rompa si discordiador no envia mensajes, mejor hacerlo un codigo de por si

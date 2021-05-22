@@ -94,7 +94,7 @@ void leer_consola() {
 			}
 		}
 
-		free(leido); // No sacar afuera
+		free(leido); 
 
 	} while (comando != EXIT);
 }
@@ -174,9 +174,9 @@ void tripulante() {
 }
 
 int pedir_tarea(int id_tripulante){
-	t_paquete* paquete = crear_paquete(PEDIR_TAREA);
-	agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int));
-	enviar_paquete(paquete,socket_a_mi_ram_hq);
+	t_paquete* paquete = crear_paquete(PEDIR_TAREA); // BORRAR ESTA COSA BONITA
+	agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int)); // BORRAR ESTA COSA BONITA
+	enviar_paquete(paquete,socket_a_mi_ram_hq); // BORRAR ESTA COSA BONITA
 	return 1;
 }
 
