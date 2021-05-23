@@ -9,13 +9,14 @@
 
 int main(int argc, char** argv){
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
-	config = config_create("mi_ram_hq.config");
-	//config_discordiador = config_create("../Discordiador/discordiador.config");
+    logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
+    config = config_create("mi_ram_hq.config");
+    //config_discordiador = config_create("../Discordiador/discordiador.config");
 
-	int tamanio_memoria = config_get_string_value(config, "TAMANIO_MEMORIA");
-	char* memoria = malloc(tamanio_memoria);
-
+    char* tamanio_memoria = config_get_string_value(config, "TAMANIO_MEMORIA");
+    char* memoria = malloc(atoi(tamanio_memoria));
+    free(tamanio_memoria);
+	
     int mi_ram_fd = iniciar_servidor();
 
     int discordiador_fd = esperar_discordiador(mi_ram_fd);
