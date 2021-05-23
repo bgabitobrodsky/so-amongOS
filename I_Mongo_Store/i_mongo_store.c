@@ -18,18 +18,22 @@ int main(int argc, char** argv){
 
     logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
 	config_mongo = config_create("mongo.config");
+
+
     int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
-    pthread_t hilo_escucha;
-    void (*p_escuchar_mongo)(int) = &escuchar_mongo;
-	pthread_create(&hilo_escucha, NULL, p_escuchar_mongo(socket_oyente), NULL);
+	args_escuchar_mongo args_escuchar;
+	args_escuchar.socket_oyente = socket_oyente;
+    
+	pthread_t hilo_escucha;	
+	pthread_create(&hilo_escucha, NULL, &escuchar_mongo, (void*) &args_escuchar);
 	pthread_join(hilo_escucha, NULL);
 
-    free(p_escuchar_mongo);
     log_destroy(logger_mongo);
     config_destroy(config_mongo);
 }
 
-void escuchar_mongo(int socket_escucha) {
+void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
+	int socket_escucha = args->socket_oyente; 
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente

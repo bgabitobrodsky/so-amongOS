@@ -19,7 +19,11 @@
 #include<comms/socketes.h>
 #include"utils.h"
 
+typedef struct {
+    int socket_oyente;
+} args_escuchar_miram;
+
 void atender_clientes(int socket_hijo);
-void escuchar_miram(int socket_escucha);
+void escuchar_miram(void* args);
 
 #endif /* MI_RAM_HQ_H_ */

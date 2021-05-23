@@ -22,8 +22,8 @@
 
 void leer_consola();
 void iniciar_patota(char* leido);
-void listar_tripulantes();
 void iniciar_planificacion();
+void listar_tripulantes();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
 void expulsar_tripulante(char* leido);

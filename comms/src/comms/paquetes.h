@@ -28,7 +28,7 @@ t_buffer* serializar_tripulante(t_tripulante tripulante);
 t_buffer* serializar_tarea(t_tarea tarea);
 t_buffer* serializar_vacio();
 void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_receptor);
-void enviar_codigo(t_paquete* paquete, int socket_receptor);
+void enviar_codigo(int codigo_operacion, int socket_receptor);
 t_estructura* recepcion_y_deserializacion(int socket_receptor);
 t_tripulante* desserializar_tripulante(t_buffer* buffer);
 t_tarea* desserializar_tarea(t_buffer* buffer);

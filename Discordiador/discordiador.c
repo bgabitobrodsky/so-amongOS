@@ -31,17 +31,13 @@ int main(int argc, char *argv[]) {
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
 		pthread_t hiloConsola;
-		void* p_leer_consola = &leer_consola(); // Verificar sintaxis
-		pthread_create(&hiloConsola, NULL, p_leer_consola, NULL);
+		pthread_create(&hiloConsola, NULL, &leer_consola, NULL);
 		pthread_join(hiloConsola, NULL);
 
 	}
 
 	close(socket_a_mi_ram_hq);
 	close(socket_a_mongo_store);
-
-	// Liberar punteros a hilos
-	free(p_leer_consola); // Verificar sintaxis
 	
 	config_destroy(config);
 	log_destroy(logger_discordiador);

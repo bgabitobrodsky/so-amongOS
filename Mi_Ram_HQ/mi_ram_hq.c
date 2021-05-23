@@ -20,13 +20,14 @@ int main(int argc, char** argv) {
 	config_miramhq = config_create("mi_ram_hq.config");
 
     int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); // Se podria delegar a un hilo
+	args_escuchar_miram args_miram;
+	args_miram.socket_oyente = socket_oyente;
+
 	pthread_t hilo_escucha;
-    void (*p_escuchar_miram)(int) = &escuchar_miram;
-	pthread_create(&hilo_escucha, NULL, p_escuchar_miram(socket_oyente), NULL);
+	pthread_create(&hilo_escucha, NULL, &escuchar_miram, (void*) &args_miram);
 	pthread_join(hilo_escucha, NULL);
 
     close(socket_server);
-	free(p_escuchar_miram);
     log_destroy(logger);
     config_destroy(config);
 
@@ -57,7 +58,8 @@ void atender_clientes(int socket_hijo) {
 	}
 }
 
-void escuchar_miram(int socket_escucha){
+void escuchar_miram(void* args) { // No se libera args, ver donde liberar
+	int socket_escucha = args->socket_oyente;
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente

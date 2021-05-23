@@ -62,7 +62,7 @@ t_buffer* serializar_vacio() {
 
     t_buffer* buffer = malloc((sizeof(t_buffer)));
 
-    buffer->tamanio_estructura = NULL;
+    buffer->tamanio_estructura = 0;
 
     buffer->estructura = NULL;
 
@@ -94,7 +94,7 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
     eliminar_paquete(paquete); 
 }
 
-// Recibe un paquete (QUE UNICAMENTE CONTIENE UN OPCODE) y un socket, y envia dicho paquete
+// Recibe un opcode y un socket, y envia paquete con opcode only
 // Usa funcion de socketes.h
 void enviar_codigo(int codigo_operacion, int socket_receptor) {
     
@@ -104,7 +104,7 @@ void enviar_codigo(int codigo_operacion, int socket_receptor) {
     paquete->buffer = buffer;
 
     int tamanio_mensaje = sizeof(uint8_t);
-    void* mensaje = tamanio_mensaje;
+    void* mensaje = malloc(tamanio_mensaje);
 
     memcpy(mensaje, &(paquete->codigo_operacion), sizeof(uint8_t));
 
