@@ -58,7 +58,7 @@ int main(int argc, char** argv){
 
 t_patota* iniciar_patota(FILE* archivo){
 	t_PCB* pcb = malloc(sizeof(t_PCB));
-	pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
+	//pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
 	pcb->direccion_tareas = &archivo;
 
 	t_patota* patota;
@@ -69,7 +69,7 @@ t_patota* iniciar_patota(FILE* archivo){
 
 	return patota;
 }
-
+/*
 int nuevo_pid(){
 	int id_patota = 1;
 	while(1){
@@ -78,7 +78,7 @@ int nuevo_pid(){
 	    }
 	    id_patota++;
 	}
-}
+}*/
 
 //Iniciar tripulante: será el encargado de crear la o las estructuras
 //administrativas necesarias para que un tripulante pueda ejecutar.
