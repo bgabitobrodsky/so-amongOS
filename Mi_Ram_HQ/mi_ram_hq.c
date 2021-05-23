@@ -62,7 +62,7 @@ t_patota* iniciar_patota(FILE* archivo){
 	//pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
 	pcb->direccion_tareas = &archivo;
 
-	t_patota* patota;
+	t_patota* patota = malloc(sizeof(t_patota));
 	patota->archivo_de_tareas = archivo;
 	patota->pcb = pcb;
 
@@ -93,7 +93,7 @@ t_tripulante* iniciar_tripulante(char* posicion, t_PCB* puntero_pcb, int tid){
 	//tcb->siguiente_instruccion = ;//Ni idea de que va acá
 	tcb->puntero_a_pcb = puntero_pcb;
 
-	t_tripulante* tripulante;
+	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
 	//tripulante->codigo = ;//Ni idea de que va acá
 	tripulante->tcb = tcb;
 	return tripulante;
