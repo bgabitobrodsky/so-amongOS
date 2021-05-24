@@ -12,6 +12,7 @@
 enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE };
 enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
 
+
 typedef struct {
 
     uint32_t PID;
@@ -48,15 +49,15 @@ typedef struct { // Puede estar de mas
     uint32_t coord_x;
     uint32_t coord_y;
     uint32_t estado;
+    t_TCB* tcb;
 
 } t_tripulante;
 
 typedef struct { // Debe estar de mas, es lo mismo hacer varios structs de tripu y tareas, y es mas lindo asi, la dejo como vestigio porlas
 
-    uint32_t cantidad_integrantes;
+//uint32_t cantidad_integrantes; //NO IRIA, se actualiza cada vez que se finaliza un tripulante
     FILE* archivo_de_tareas;
-    uint32_t* coordenadas_integrantes; // Protocolo: cada dupla hace un x y, por ende, cada nro par inicia un combo de coordenadas
-
+    t_PCB* pcb;
 } t_patota;
 
 
