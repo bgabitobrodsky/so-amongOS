@@ -18,33 +18,33 @@ int main(int argc, char** argv) {
 
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
-
-    int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); // Se podria delegar a un hilo
+    	//int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // Se podria delegar a un hilo
+    	int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // TODO: HARCODEADO HASTA CAMBIARR EL CONFIG
 	args_escuchar_miram args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
 	pthread_t hilo_escucha;
-	pthread_create(&hilo_escucha, NULL, &escuchar_miram, (void*) &args_miram);
+	pthread_create(&hilo_escucha, NULL, (void*) escuchar_miram, (void*) &args_miram);
 	pthread_join(hilo_escucha, NULL);
 
-    close(socket_server);
-    log_destroy(logger);
-    config_destroy(config);
+    	close(socket_oyente);
+    	log_destroy(logger_miramhq);
+    	config_destroy(config_miramhq);
 
 	return EXIT_SUCCESS;
 }
 
 void atender_clientes(int socket_hijo) {
-	    while(1) {
+	    while(1) { //TODO cambiar por do while  y liberar la estructura
 			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
 		
 			switch(mensaje_recibido->codigo_operacion) {
 				case MENSAJE:
-					log_info(logger, "Mensaje recibido");
+					log_info(logger_miramhq, "Mensaje recibido");
 					break;
 
 				case PEDIR_TAREA:
-					log_info(logger, "Pedido de tarea recibido");
+					log_info(logger_miramhq, "Pedido de tarea recibido");
 					break;
 
 				case COD_TAREA:
@@ -52,14 +52,17 @@ void atender_clientes(int socket_hijo) {
 					break;
 
 				case -1: // Puede que rompa si discordiador no envia mensajes, mejor hacerlo un codigo de por si
-					log_info(logger, "Se desconecto el modulo Discordiador");
-					return EXIT_FAILURE;
+					log_info(logger_miramhq, "Se desconecto el modulo Discordiador");
 		}
 	}
 }
 
 void escuchar_miram(void* args) { // No se libera args, ver donde liberar
-	int socket_escucha = args->socket_oyente;
+	args_escuchar_miram* p = malloc(sizeof(args_escuchar_miram));
+	p = args;
+	int socket_escucha = p->socket_oyente;
+	free(p);
+
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
