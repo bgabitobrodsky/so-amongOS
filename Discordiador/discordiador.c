@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
 		pthread_t hiloConsola;
-		pthread_create(&hiloConsola, NULL, &leer_consola, NULL);
+		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 		pthread_join(hiloConsola, NULL);
 
 	}
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 	close(socket_a_mi_ram_hq);
 	close(socket_a_mongo_store);
 	
-	config_destroy(config);
+	config_destroy(config_discordiador);
 	log_destroy(logger_discordiador);
 
 	return EXIT_SUCCESS;
@@ -116,21 +116,21 @@ void iniciar_patota(char* leido) {
 void iniciar_planificacion() {
 	printf("iniciarPlanificacion");
 }
-
+/*
 void listar_tripulantes() {
 
 	tripulante();
 
-	/*
-	int i = 0;
-    int argc; // No sÃ© como serÃ­a, pero vamos a recibir a los tripulantes activos de alguna manera
-    char* fechaHora = fecha_y_hora();
+
+	//int i = 0;
+    //int argc; // No sÃ© como serÃ­a, pero vamos a recibir a los tripulantes activos de alguna manera
+    //char* fechaHora = fecha_y_hora();
     
-    printf("Estado de la nave: %s\n",fechaHora);
-    for(i; i<argc; i++){
-        printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
-    }
-	*/
+    //printf("Estado de la nave: %s\n",fechaHora);
+    //for(i; i<argc; i++){
+    //    printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
+    //}
+
 	printf("listarTripulantes");
 
 }
@@ -159,13 +159,13 @@ void tripulante() {
 	int tarea = pedir_tarea(id_tripulante);
 	printf("%d",tarea);
 
-	/*
-	while(1){
-		realizar_tarea(tarea);
-		tarea = pedir_tarea(id_tripulante);
-	}
 	
-	*/
+	//while(1){
+	//	realizar_tarea(tarea);
+	//	tarea = pedir_tarea(id_tripulante);
+	//}
+
+
 	//informar ram movimiento
 }
 
@@ -198,4 +198,4 @@ char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace es
 	else {
     	return "Error formateando fecha";
   	}
-}
+}*/
