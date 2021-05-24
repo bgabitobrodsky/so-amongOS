@@ -8,6 +8,7 @@
 #ifndef I_MONGO_STORE_H_
 #define I_MONGO_STORE_H_
 
+#include<unistd.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<pthread.h>
@@ -15,6 +16,10 @@
 #include<commons/string.h>
 #include<commons/config.h>
 #include<readline/readline.h>
+#include<comms/paquetes.h>
+#include<comms/estructuras.h>
+#include<comms/socketes.h>
+#include"utils.h"
 
 typedef struct{
 
