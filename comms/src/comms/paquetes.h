@@ -19,7 +19,7 @@ typedef struct {
 
 typedef struct {
 
-    codigo_operacion codigo_operacion;
+    int codigo_operacion;
     t_buffer* buffer;
 
 } t_paquete;
