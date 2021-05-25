@@ -67,6 +67,7 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 	args_escuchar_miram* p = malloc(sizeof(args_escuchar_miram));
 	p = args;
 	int socket_escucha = p->socket_oyente;
+	free(p->socket_oyente);
 	free(p);
 
 	struct sockaddr_storage direccion_a_escuchar;

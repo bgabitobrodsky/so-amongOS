@@ -41,8 +41,8 @@ typedef enum{
 	
 } comando_cod;
 
-extern t_config* config_discordiador;
-extern t_log* logger_discordiador;
+extern t_config* config;
+extern t_log* logger;
 
 int reconocer_comando(char* str);
 int comparar_strings(char* str, char* str2);

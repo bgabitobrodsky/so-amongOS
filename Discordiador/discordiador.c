@@ -8,10 +8,10 @@
  ============================================================================
  */
 
-#define	IP_MI_RAM_HQ config_get_string_value(config_discordiador, "IP_MI_RAM_HQ")
-#define PUERTO_MI_RAM_HQ config_get_string_value(config_discordiador, "PUERTO_MI_RAM_HQ")
-#define	IP_MONGO_STORE config_get_string_value(config_discordiador, "IP_MONGO_STORE") // Verificar sintaxis
-#define PUERTO_MONGO_STORE config_get_string_value(config_discordiador, "PUERTO_MONGO_STORE")
+#define	IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
+#define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
+#define	IP_MONGO_STORE config_get_string_value(config, "IP_MONGO_STORE") // Verificar sintaxis
+#define PUERTO_MONGO_STORE config_get_string_value(config, "PUERTO_MONGO_STORE")
 
 #include "discordiador.h"
 
@@ -24,8 +24,8 @@ int socket_a_mi_ram_hq;
 int socket_a_mongo_store;
 
 int main(int argc, char *argv[]) {
-	logger_discordiador = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
-	config_discordiador = config_create("discordiador.config");
+	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
+	config = config_create("discordiador.config");
   //logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
@@ -42,8 +42,8 @@ int main(int argc, char *argv[]) {
 	close(socket_a_mi_ram_hq);
 	close(socket_a_mongo_store);
 	
-	config_destroy(config_discordiador);
-	log_destroy(logger_discordiador);
+	config_destroy(config);
+	log_destroy(logger);
   //liberar_logger(logger,&loggerSem);
 
 	return EXIT_SUCCESS;

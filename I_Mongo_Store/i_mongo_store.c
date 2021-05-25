@@ -39,8 +39,6 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 	args_escuchar_mongo *p = malloc(sizeof(args_escuchar_mongo));
 	p = args;
 	int socket_escucha = p->socket_oyente;
-	free(p->socket_oyente);
-	free(p);
 
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
