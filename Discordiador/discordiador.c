@@ -69,7 +69,7 @@ void leer_consola() {
 					iniciar_planificacion();
 					break;
 
-				case LISTAR_TRIPULANTES:
+				/*case LISTAR_TRIPULANTES:
 					listar_tripulantes();
 					break;
 
@@ -83,7 +83,7 @@ void leer_consola() {
 				
 				case EXPULSAR_TRIPULANTE:
 					expulsar_tripulante(leido);
-					break;
+					break;*/
 				
 				case HELP:
 					help_comandos();

@@ -16,7 +16,7 @@ t_config* config_miramhq;
 
 int main(int argc, char** argv) {
 
-  char* tamanio_memoria = config_get_string_value(config, "TAMANIO_MEMORIA");
+  char* tamanio_memoria = config_get_string_value(config_miramhq, "TAMANIO_MEMORIA");
   char* memoria = malloc(atoi(tamanio_memoria));
   free(tamanio_memoria);
 
@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
   close(socket_oyente);
   log_destroy(logger_miramhq);
   config_destroy(config_miramhq);
+  free(memoria);
 
 	return EXIT_SUCCESS;
 }
@@ -58,6 +59,7 @@ void atender_clientes(int socket_hijo) {
 				case -1: // Puede que rompa si discordiador no envia mensajes, mejor hacerlo un codigo de por si
 					log_info(logger_miramhq, "Se desconecto el modulo Discordiador");
 		}
+			free(mensaje_recibido);
 	}
 }
 
@@ -65,7 +67,6 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 	args_escuchar_miram* p = malloc(sizeof(args_escuchar_miram));
 	p = args;
 	int socket_escucha = p->socket_oyente;
-	free(p->socket_oyente);
 	free(p);
 
 	struct sockaddr_storage direccion_a_escuchar;
@@ -75,13 +76,20 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
-	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		printf("Error al limpiar procesos\n");
-		exit(1);
-	}*/
+	while (1) { // Loop infinito donde aceptara clientes
+			tamanio_direccion = sizeof(direccion_a_escuchar);
+			socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
+
+			if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+				close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
+				atender_clientes(socket_especifico); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
+				close(socket_especifico); // Cumple proposito, se cierra socket hijo
+				exit(0); // Returnea
+			}
+
+			close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+		}
+}
 
 t_patota* iniciar_patota(FILE* archivo){
 	t_PCB* pcb = malloc(sizeof(t_PCB));
@@ -123,27 +131,4 @@ t_tripulante* iniciar_tripulante(char* posicion, t_PCB* puntero_pcb, int tid){
 	//tripulante->codigo = ;//Ni idea de que va acá
 	tripulante->tcb = tcb;
 	return tripulante;
-}
-
-
-
-/*
-void escuchar_alos_cliente(){
-    int socket_oyente = crear_socket_oyente("127.0.0.2", "4000");
-    
-    escuchar(socket_oyente, (void*) hola);
-
-	while (1) { // Loop infinito donde aceptara clientes
-		tamanio_direccion = sizeof(direccion_a_escuchar);
-		socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
-
-		if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
-			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-			atender_clientes(socket_especifico); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
-			close(socket_especifico); // Cumple proposito, se cierra socket hijo
-			exit(0); // Returnea
-		}
-
-		close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
-	}
 }
