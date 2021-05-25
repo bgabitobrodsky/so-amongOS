@@ -19,8 +19,11 @@
 #include<comms/socketes.h>
 #include"utils.h"
 
-t_log* logger;
-t_config* config;
-t_config* config_discordiador;
+typedef struct {
+    int socket_oyente;
+} args_escuchar_miram;
+
+void atender_clientes(int socket_hijo);
+void escuchar_miram(void* args);
 
 #endif /* MI_RAM_HQ_H_ */

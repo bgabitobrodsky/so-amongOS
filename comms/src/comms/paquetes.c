@@ -60,20 +60,13 @@ t_buffer* serializar_tarea(t_tarea tarea) {
 // Serializa un buffer "vacio" (dejo que lleve un char por las dudas) para envio de codigos nomas (podriamos cambiarlo a semaforos)
 t_buffer* serializar_vacio() {
 
-    char sentinela = 'A';
-
     t_buffer* buffer = malloc((sizeof(t_buffer)));
 
-    buffer->tamanio_estructura = sizeof(char);
+    buffer->tamanio_estructura = 0;
 
-    void* estructura = malloc((buffer->tamanio_estructura));
-    
-    memcpy(estructura, &sentinela, sizeof(char));
-
-    buffer->estructura = estructura;
+    buffer->estructura = NULL;
 
     return buffer;
-
 }
 
 // Recibe un buffer, un opcode y un socket a donde se enviara el paquete que se armara en la funcion, y se envia
@@ -98,9 +91,26 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
     enviar_mensaje(socket_receptor, mensaje, tamanio_mensaje);
 
     free(mensaje);
-    free(paquete->buffer->estructura);
-    free(paquete->buffer);
-    free(paquete);  
+    eliminar_paquete(paquete); 
+}
+
+// Recibe un opcode y un socket, y envia paquete con opcode only
+// Usa funcion de socketes.h
+void enviar_codigo(int codigo_operacion, int socket_receptor) {
+    
+    t_paquete* paquete = malloc(sizeof(t_paquete));
+    t_buffer* buffer = serializar_vacio();
+    paquete->codigo_operacion = codigo_operacion;
+    paquete->buffer = buffer;
+
+    int tamanio_mensaje = sizeof(uint8_t);
+    void* mensaje = malloc(tamanio_mensaje);
+
+    memcpy(mensaje, &(paquete->codigo_operacion), sizeof(uint8_t));
+
+    enviar_mensaje(socket_receptor, mensaje, tamanio_mensaje);
+    free(mensaje);
+    eliminar_paquete(paquete);   
 }
 
 
@@ -118,31 +128,38 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
 
+    // If que maneja llegada de codigos de operacion unicamente (TODO CODIGO UNICO DEBE ESTAR DESPUES DE SABOTAJE)
+    if (paquete->codigo_operacion >= SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash
+        intermediario->codigo_operacion = paquete->codigo_operacion;
+
+        eliminar_paquete(paquete); 
+
+        return intermediario;
+    }
+
     recibir_mensaje(socket_receptor, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
     paquete->buffer->estructura = malloc(paquete->buffer->tamanio_estructura);
     recibir_mensaje(socket_receptor, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
 
-    switch (paquete->codigo_operacion) { // De agregar nuevos codigos de operacion, simplemente hacer un case y asignar como en el case SABOTAJE
+    // Switch estructuras
+    switch (paquete->codigo_operacion) { 
+
         case TRIPULANTE:
             intermediario->codigo_operacion = TRIPULANTE;
             t_tripulante* tripulante = desserializar_tripulante(paquete->buffer->estructura);
             intermediario->tripulante = tripulante;
             free(tripulante);
             break;
+
         case TAREA:
             intermediario->codigo_operacion = TAREA;
             t_tarea* tarea = desserializar_tarea(paquete->buffer->estructura);
             intermediario->tarea = tarea;
             free(tarea);
             break;
-        case SABOTAJE:
-            intermediario->codigo_operacion = SABOTAJE;
-            break;
     }
 
-    free(paquete->buffer->estructura);
-    free(paquete->buffer);
-    free(paquete);  
+    eliminar_paquete(paquete);
 
     return intermediario;
 }
@@ -187,64 +204,8 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
     return tarea;
 }
 
-t_paquete* crear_paquete(op_code codigo) {
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = codigo;
-	crear_buffer(paquete);
-	return paquete;
-}
-
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio) {
-	paquete->buffer->estructura = realloc(paquete->buffer->estructura, paquete->buffer->tamanio_estructura + tamanio + sizeof(int));
-
-	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura, &tamanio, sizeof(int));
-	memcpy(paquete->buffer->estructura + paquete->buffer->tamanio_estructura + sizeof(int), valor, tamanio);
-
-	paquete->buffer->tamanio_estructura += tamanio + sizeof(int);
-}
-
-void enviar_paquete(t_paquete* paquete, int socket_servidor) {
-	int bytes = paquete->buffer->tamanio_estructura + 2*sizeof(int);
-	void* a_enviar = serializar_paquete(paquete, bytes);
-
-	send(socket_servidor, a_enviar, bytes, 0);
-
-	free(a_enviar);
-	eliminar_paquete(paquete);
-}
-
-void eliminar_paquete(t_paquete* paquete) { // No estaria mal agregarla a Modulos
+void eliminar_paquete(t_paquete* paquete) {
 	free(paquete->buffer->estructura);
 	free(paquete->buffer);
 	free(paquete);
-}
-
-void crear_buffer(t_paquete* paquete){
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->tamanio_estructura = 0;
-	paquete->buffer->estructura = NULL;
-}
-
-void* recibir_paquete(int socket_cliente){
-	void * buffer;
-    int* size;
-	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
-	buffer = malloc(*size);
-	recv(socket_cliente, buffer, *size, MSG_WAITALL);
-
-	return buffer;
-}
-
-void* serializar_paquete(t_paquete* paquete, int bytes) { 
-	void* magic = malloc(bytes);
-	int desplazamiento = 0;
-
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->tamanio_estructura), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
-	desplazamiento+= paquete->buffer->tamanio_estructura;
-
-	return magic;
 }

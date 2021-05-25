@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef MI_RAM_HQ_UTILS_H_
-#define MI_RAM_HQ_UTILS_H_
+#ifndef MONGO_STORE_UTILS_H_
+#define MONGO_STORE_UTILS_H_
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -21,7 +21,7 @@
 #include<comms/paquetes.h>
 #include<comms/socketes.h>
 
-extern t_log* logger_miramhq;
-extern t_config* config_miramhq;
+extern t_log* logger_mongo;
+extern t_config* config_mongo;
 
-#endif /* MI_RAM_HQ_UTILS_H_ */
+#endif /* MONGO_STORE_UTILS_H_ */

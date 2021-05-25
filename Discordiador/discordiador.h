@@ -23,8 +23,8 @@
 
 void leer_consola();
 void iniciar_patota(char* leido);
-void listar_tripulantes();
 void iniciar_planificacion();
+void listar_tripulantes();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
 void expulsar_tripulante(char* leido);
@@ -32,11 +32,6 @@ void tripulante();
 int pedir_tarea(int id_tripulante);
 void realizar_tarea(t_tarea tarea);
 void instanciar_tripulante(char* str_posicion);
-t_paquete* crear_paquete(op_code codigo);
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio);
-void enviar_paquete(t_paquete* paquete, int socket_servidor);
-void eliminar_paquete(t_paquete* paquete);
-void crear_buffer(t_paquete* paquete);
 char* fecha_y_hora();
 
 #endif /* DISCORDIADOR_H_ */

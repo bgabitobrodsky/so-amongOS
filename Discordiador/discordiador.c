@@ -8,30 +8,43 @@
  ============================================================================
  */
 
+#define	IP_MI_RAM_HQ config_get_string_value(config_discordiador, "IP_MI_RAM_HQ")
+#define PUERTO_MI_RAM_HQ config_get_string_value(config_discordiador, "PUERTO_MI_RAM_HQ")
+#define	IP_MONGO_STORE config_get_string_value(config_discordiador, "IP_MONGO_STORE") // Verificar sintaxis
+#define PUERTO_MONGO_STORE config_get_string_value(config_discordiador, "PUERTO_MONGO_STORE")
+
 #include "discordiador.h"
-t_config* config;
+
+// Vars globales
+t_config* config_discordiador;
+t_log* logger_discordiador;
 t_log* logger;
-int socket_mi_ram_hq;
 int loggerSem;
+int socket_a_mi_ram_hq;
+int socket_a_mongo_store;
 
 int main(int argc, char *argv[]) {
-	
-	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
-	//logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
-	config = config_create("discordiador.config");
+	logger_discordiador = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
+	config_discordiador = config_create("discordiador.config");
+  //logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 
-	socket_mi_ram_hq = conectar_a_mi_ram_hq();
+	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
+	socket_a_mongo_store = crear_socket_cliente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
 
-	if (socket_mi_ram_hq != -1) {
+	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
+
 		pthread_t hiloConsola;
-		pthread_create(&hiloConsola, NULL, (void*) leer_consola, NULL);
+		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 		pthread_join(hiloConsola, NULL);
+
 	}
 
-	close(socket_mi_ram_hq);
-	config_destroy(config);
-	log_destroy(logger);
-	//liberar_logger(logger,&loggerSem);
+	close(socket_a_mi_ram_hq);
+	close(socket_a_mongo_store);
+	
+	config_destroy(config_discordiador);
+	log_destroy(logger_discordiador);
+  //liberar_logger(logger,&loggerSem);
 
 	return EXIT_SUCCESS;
 }
@@ -40,10 +53,11 @@ void leer_consola() {
 	char* leido;
 	int comando;
 
-	do {		
+	do {
+
 		leido = readline(">>>");
 
-		if(strlen(leido) > 0) {
+		if (strlen(leido) > 0) {
 			comando = reconocer_comando(leido);
 
 			switch (comando) {
@@ -78,10 +92,11 @@ void leer_consola() {
 				case NO_CONOCIDO:
 					break;
 			}
-		}		
-	} while (comando != EXIT);
+		}
 
-	free(leido);
+		free(leido); 
+
+	} while (comando != EXIT);
 }
 
 void iniciar_patota(char* leido) {
@@ -108,21 +123,21 @@ void iniciar_patota(char* leido) {
 void iniciar_planificacion() {
 	printf("iniciarPlanificacion");
 }
-
+/*
 void listar_tripulantes() {
 
 	tripulante();
 
-	/*
-	int i = 0;
-    int argc; // No sÃ© como serÃ­a, pero vamos a recibir a los tripulantes activos de alguna manera
-    char* fechaHora = fecha_y_hora();
+
+	//int i = 0;
+    //int argc; // No sÃ© como serÃ­a, pero vamos a recibir a los tripulantes activos de alguna manera
+    //char* fechaHora = fecha_y_hora();
     
-    printf("Estado de la nave: %s\n",fechaHora);
-    for(i; i<argc; i++){
-        printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
-    }
-	*/
+    //printf("Estado de la nave: %s\n",fechaHora);
+    //for(i; i<argc; i++){
+    //    printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
+    //}
+
 	printf("listarTripulantes");
 
 }
@@ -150,29 +165,23 @@ void tripulante() {
 
 	int tarea = pedir_tarea(id_tripulante);
 	printf("%d",tarea);
-/*
-	while(1){
-		realizar_tarea(tarea);
-		tarea = pedir_tarea(id_tripulante);
-	}
+
 	
-*/
+	//while(1){
+	//	realizar_tarea(tarea);
+	//	tarea = pedir_tarea(id_tripulante);
+	//}
+
+
 	//informar ram movimiento
-
-
-
 }
-
-
-
 
 int pedir_tarea(int id_tripulante){
-	t_paquete* paquete = crear_paquete(PEDIR_TAREA);
-	agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int));
-	enviar_paquete(paquete,socket_mi_ram_hq);
+	t_paquete* paquete = crear_paquete(PEDIR_TAREA); // BORRAR ESTA COSA BONITA
+	agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int)); // BORRAR ESTA COSA BONITA
+	enviar_paquete(paquete,socket_a_mi_ram_hq); // BORRAR ESTA COSA BONITA
 	return 1;
 }
-
 
 void realizar_tarea(t_tarea tarea){ // TODO 
 
@@ -184,14 +193,16 @@ void instanciar_tripulante(char* str_posicion){ // TODO
 }
 
 char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace esto
-  time_t tiempo = time(NULL);
-  struct tm tiempoLocal = *localtime(&tiempo); // Tiempo actual
-  static char fecha_Hora[70]; // El lugar en donde se pondrÃ¡ la fecha y hora formateadas
-  char *formato = "%d-%m-%Y %H:%M:%S";  // El formato. Mira mÃ¡s en https://en.cppreference.com/w/c/chrono/strftime
-  int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);  // Intentar formatear
-  if (bytesEscritos != 0) { // Si no hay error, los bytesEscritos no son 0
-   return fecha_Hora;
-  } else {
-    return "Error formateando fecha";
-  }
-}
+	time_t tiempo = time(NULL);
+	struct tm tiempoLocal = *localtime(&tiempo); // Tiempo actual
+	static char fecha_Hora[70]; // El lugar en donde se pondrÃ¡ la fecha y hora formateadas
+	char *formato = "%d-%m-%Y %H:%M:%S";  // El formato. Mira mÃ¡s en https://en.cppreference.com/w/c/chrono/strftime
+	int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);  // Intentar formatear
+
+	if (bytesEscritos != 0) { // Si no hay error, los bytesEscritos no son 0
+		return fecha_Hora;
+  	} 
+	else {
+    	return "Error formateando fecha";
+  	}
+}*/
