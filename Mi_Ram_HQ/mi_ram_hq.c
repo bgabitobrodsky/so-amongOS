@@ -16,6 +16,10 @@ t_config* config_miramhq;
 
 int main(int argc, char** argv) {
 
+  char* tamanio_memoria = config_get_string_value(config, "TAMANIO_MEMORIA");
+  char* memoria = malloc(atoi(tamanio_memoria));
+  free(tamanio_memoria);
+
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
     	//int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // Se podria delegar a un hilo
@@ -27,9 +31,9 @@ int main(int argc, char** argv) {
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_miram, (void*) &args_miram);
 	pthread_join(hilo_escucha, NULL);
 
-    	close(socket_oyente);
-    	log_destroy(logger_miramhq);
-    	config_destroy(config_miramhq);
+  close(socket_oyente);
+  log_destroy(logger_miramhq);
+  config_destroy(config_miramhq);
 
 	return EXIT_SUCCESS;
 }
@@ -78,6 +82,56 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 		printf("Error al limpiar procesos\n");
 		exit(1);
 	}*/
+
+t_patota* iniciar_patota(FILE* archivo){
+	t_PCB* pcb = malloc(sizeof(t_PCB));
+	//pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
+	pcb->direccion_tareas = &archivo;
+
+	t_patota* patota = malloc(sizeof(t_patota));
+	patota->archivo_de_tareas = archivo;
+	patota->pcb = pcb;
+
+	//cargar_en_Mongo(archivo);
+
+	return patota;
+}
+/*
+int nuevo_pid(){
+	int id_patota = 1;
+	while(1){
+		if(!existe(id_patota)) {
+	    	return id_patota;
+	    }
+	    id_patota++;
+	}
+}*/
+
+//Iniciar tripulante: será el encargado de crear la o las estructuras
+//administrativas necesarias para que un tripulante pueda ejecutar.
+
+t_tripulante* iniciar_tripulante(char* posicion, t_PCB* puntero_pcb, int tid){
+	t_TCB* tcb = malloc(sizeof(t_TCB));
+	tcb->TID = tid;
+	tcb->estado_tripulante = LLEGADA; //Supongo que se inicializa en LLEGADA por defecto
+	tcb->coord_x = posicion[0];
+	tcb->coord_y = posicion[2];
+	//tcb->siguiente_instruccion = ;//Ni idea de que va acá
+	tcb->puntero_a_pcb = puntero_pcb;
+
+	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+	//tripulante->codigo = ;//Ni idea de que va acá
+	tripulante->tcb = tcb;
+	return tripulante;
+}
+
+
+
+/*
+void escuchar_alos_cliente(){
+    int socket_oyente = crear_socket_oyente("127.0.0.2", "4000");
+    
+    escuchar(socket_oyente, (void*) hola);
 
 	while (1) { // Loop infinito donde aceptara clientes
 		tamanio_direccion = sizeof(direccion_a_escuchar);

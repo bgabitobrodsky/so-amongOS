@@ -18,12 +18,15 @@
 // Vars globales
 t_config* config_discordiador;
 t_log* logger_discordiador;
+t_log* logger;
+int loggerSem;
 int socket_a_mi_ram_hq;
 int socket_a_mongo_store;
 
 int main(int argc, char *argv[]) {
 	logger_discordiador = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config_discordiador = config_create("discordiador.config");
+  //logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
 	socket_a_mongo_store = crear_socket_cliente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
@@ -41,6 +44,7 @@ int main(int argc, char *argv[]) {
 	
 	config_destroy(config_discordiador);
 	log_destroy(logger_discordiador);
+  //liberar_logger(logger,&loggerSem);
 
 	return EXIT_SUCCESS;
 }
@@ -99,17 +103,20 @@ void iniciar_patota(char* leido) {
 	char** palabras = string_split(leido, " ");
 	int cantidadTripulantes = atoi(palabras[1]);
 	char* path = palabras[2];
-
+	
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
 	int i = 0;
+	//t_PCB pcb = ram_crear_patota(path) --> Esto le debe mandar a RAM que inicie la patota. Esto debe retornar el PCB
 
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
+		//iniciarTripulante(&pcb, palabras[i+3], i+1) -->Le manda a RAM el tripulante
 		i++;
 	}
 	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
+		//iniciarTripulante(&pcb, "0|0", j) -->Le manda a RAM el tripulante
 	}
 }
 
@@ -136,7 +143,7 @@ void listar_tripulantes() {
 }
 
 void pausar_planificacion() {
-	
+	//loggear(logger,&loggerSem,INFO,"Holaaaa");
 }
 
 void obtener_bitacora(char* leido) {
