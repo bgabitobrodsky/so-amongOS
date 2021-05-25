@@ -12,9 +12,12 @@
 t_config* config;
 t_log* logger;
 int socket_mi_ram_hq;
+int loggerSem;
 
 int main(int argc, char *argv[]) {
+	
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
+	//logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 	config = config_create("discordiador.config");
 
 	socket_mi_ram_hq = conectar_a_mi_ram_hq();
@@ -28,6 +31,7 @@ int main(int argc, char *argv[]) {
 	close(socket_mi_ram_hq);
 	config_destroy(config);
 	log_destroy(logger);
+	//liberar_logger(logger,&loggerSem);
 
 	return EXIT_SUCCESS;
 }
@@ -124,7 +128,7 @@ void listar_tripulantes() {
 }
 
 void pausar_planificacion() {
-	
+	//loggear(logger,&loggerSem,INFO,"Holaaaa");
 }
 
 void obtener_bitacora(char* leido) {
