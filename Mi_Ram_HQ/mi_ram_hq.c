@@ -16,9 +16,9 @@ t_config* config_miramhq;
 
 int main(int argc, char** argv) {
 
-  char* tamanio_memoria = config_get_string_value(config_miramhq, "TAMANIO_MEMORIA");
+  /*char* tamanio_memoria = config_get_string_value(config_miramhq, "TAMANIO_MEMORIA");
   char* memoria = malloc(atoi(tamanio_memoria));
-  free(tamanio_memoria);
+  free(tamanio_memoria);*/ //TODO  ESTO QUE ROMPE POR ALGUNA RAZON, Y AGREGAR EL FREE EN MEMORIA AL FINAL DEL PROGRAMA
 
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
   close(socket_oyente);
   log_destroy(logger_miramhq);
   config_destroy(config_miramhq);
-  free(memoria);
+  //free(memoria);
 
 	return EXIT_SUCCESS;
 }
@@ -67,8 +67,6 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 	args_escuchar_miram* p = malloc(sizeof(args_escuchar_miram));
 	p = args;
 	int socket_escucha = p->socket_oyente;
-	free(p->socket_oyente);
-	free(p);
 
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
