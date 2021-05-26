@@ -15,14 +15,13 @@ t_log* logger_miramhq;
 t_config* config_miramhq;
 
 int main(int argc, char** argv) {
-
-  /*char* tamanio_memoria = config_get_string_value(config_miramhq, "TAMANIO_MEMORIA");
-  char* memoria = malloc(atoi(tamanio_memoria));
-  free(tamanio_memoria);*/ //TODO  ESTO QUE ROMPE POR ALGUNA RAZON, Y AGREGAR EL FREE EN MEMORIA AL FINAL DEL PROGRAMA
-
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
-    	//int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // Se podria delegar a un hilo
+	char* tamanio_memoria = config_get_string_value(config_miramhq, "TAMANIO_MEMORIA");
+	char* memoria = malloc(atoi(tamanio_memoria));
+	free(tamanio_memoria);
+    	
+	//int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // Se podria delegar a un hilo
     	int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // TODO: HARCODEADO HASTA CAMBIARR EL CONFIG
 	args_escuchar_miram args_miram;
 	args_miram.socket_oyente = socket_oyente;
@@ -31,10 +30,10 @@ int main(int argc, char** argv) {
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_miram, (void*) &args_miram);
 	pthread_join(hilo_escucha, NULL);
 
-  close(socket_oyente);
-  log_destroy(logger_miramhq);
-  config_destroy(config_miramhq);
-  //free(memoria);
+	close(socket_oyente);
+	log_destroy(logger_miramhq);
+	config_destroy(config_miramhq);
+	free(memoria);
 
 	return EXIT_SUCCESS;
 }
