@@ -16,7 +16,7 @@
 #include "discordiador.h"
 
 // Vars globales
-t_config* config_discordiador;
+t_config* config;
 t_log* logger_discordiador;
 t_log* logger;
 int loggerSem;
@@ -29,7 +29,8 @@ int main(int argc, char *argv[]) {
   //logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
-	socket_a_mongo_store = crear_socket_cliente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
+	socket_a_mongo_store = crear_socket_cliente("127.1.1.2", "4000"); //TODO harcodeado hasta cambiar la config
+	//socket_a_mongo_store = crear_socket_cliente(IP_MONGO_STORE, PUERTO_MONGO_STORE); 
 
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
