@@ -2,6 +2,7 @@ all:
 	-cd comms && $(MAKE) all
 	-cd Discordiador && $(MAKE) all
 	-cd Mi_Ram_HQ && $(MAKE) all
+	-cd I_Mongo_Store && $(MAKE) all
 	
 clean:
 	-cd Discordiador && $(MAKE) clean
