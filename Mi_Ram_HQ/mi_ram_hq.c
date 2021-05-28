@@ -103,14 +103,7 @@ t_patota* iniciar_patota(FILE* archivo){
 	return patota;
 }
 /*
-int nuevo_pid(){
-	int id_patota = 1;
-	while(1){
-		if(!existe(id_patota)) {
-	    	return id_patota;
-	    }
-	    id_patota++;
-	}
+
 }*/
 
 //Iniciar tripulante: será el encargado de crear la o las estructuras

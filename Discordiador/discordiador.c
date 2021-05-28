@@ -22,6 +22,7 @@ t_log* logger;
 int loggerSem;
 int socket_a_mi_ram_hq;
 int socket_a_mongo_store;
+int pids[100]; //TODO lista
 
 int main(int argc, char *argv[]) {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
@@ -108,17 +109,99 @@ void iniciar_patota(char* leido) {
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
 	int i = 0;
-	//t_PCB pcb = ram_crear_patota(path) --> Esto le debe mandar a RAM que inicie la patota. Esto debe retornar el PCB
+	t_PCB* pcb = crear_pcb(path);
+	t_patota patota = crear_patota(pcb);
 
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
-		//iniciarTripulante(&pcb, palabras[i+3], i+1) -->Le manda a RAM el tripulante
+		iniciar_tripulante(&pcb, palabras[i+3], i+1) -->Le manda a RAM el tripulante
 		i++;
 	}
 	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
-		//iniciarTripulante(&pcb, "0|0", j) -->Le manda a RAM el tripulante
+		iniciar_tripulante(&pcb, "0|0", j) -->Le manda a RAM el tripulante
 	}
+}
+
+t_PCB* crear_pcb(char* path){
+	t_PCB* pcb = malloc(sizeof(t_PCB));
+	pcb -> PID = nuevo_pid();
+	pcb -> direccion_tareas = path; //TODO uint32_t
+
+	return pcb;
+
+}
+
+int nuevo_pid(){
+	int id_patota = 1;
+	while(1){
+		if(!pids_contiene(id_patota))
+	    	return id_patota;
+	    id_patota++;
+	}
+}
+
+int pids_contiene(int valor){
+	for(int i = 0; i<100; i++){
+		if(pids[i] == valor)
+			return 1;
+	}
+	return 0;
+}
+
+t_patota* crear_patota(t_PCB* un_pcb){
+	t_patota* patota = malloc(sizeof(t_patota));
+	patota -> pcb = un_pcb;
+	//patota -> archivo_de_tareas //TODO
+	return patota;
+}
+
+void tripulante() {
+	int id_tripulante = 2;
+	int id_patota;
+	int cord_x;
+	int cord_y;
+	char* status;
+	// avisar a miram que va a iniciar
+
+	int tarea = pedir_tarea(id_tripulante);
+	printf("%d",tarea);
+
+
+	//while(1){
+	//	realizar_tarea(tarea);
+	//	tarea = pedir_tarea(id_tripulante);
+	//}
+
+
+	//informar ram movimiento
+}
+
+void iniciar_hilo_tripulante(void* funcion){
+	pthread_t hilo1;
+	pthread_create(&hilo1, NULL, funcion, NULL);
+	pthread_join(hilo1, NULL);
+}
+
+t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
+	t_TCB* tcb = malloc(sizeof(t_TCB));
+	tcb -> TID = tid;
+	tcb -> estado_tripulante = 'N';
+	tcb -> coord_x = posicion[0];
+	tcb -> coord_y = posicion[2];
+	//tcb -> siguiente_instruccion; //TODO
+	tcb -> puntero_a_pcb = pcb;
+
+	return tcb;
+
+}
+
+t_tripulante* crear_tripulante(t_TCB* un_tcb){
+	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+
+	tripulante -> tcb = un_tcb;
+	//tripulante -> codigo //TODO
+	return tripulante;
 }
 
 void iniciar_planificacion() {
@@ -153,31 +236,9 @@ void obtener_bitacora(char* leido) {
 
 void expulsar_tripulante(char* leido) {
 	printf("expulsarTripulante");
-}
+}*/
 
-
-void tripulante() {
-	int id_tripulante = 2;
-	int id_patota;
-	int cord_x;
-	int cord_y;
-	char* status;
-	// avisar a miram que va a iniciar
-
-	int tarea = pedir_tarea(id_tripulante);
-	printf("%d",tarea);
-
-	
-	//while(1){
-	//	realizar_tarea(tarea);
-	//	tarea = pedir_tarea(id_tripulante);
-	//}
-
-
-	//informar ram movimiento
-}
-
-int pedir_tarea(int id_tripulante){
+/*int pedir_tarea(int id_tripulante){
 	t_paquete* paquete = crear_paquete(PEDIR_TAREA); // BORRAR ESTA COSA BONITA
 	agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int)); // BORRAR ESTA COSA BONITA
 	enviar_paquete(paquete,socket_a_mi_ram_hq); // BORRAR ESTA COSA BONITA

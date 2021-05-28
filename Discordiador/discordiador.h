@@ -16,7 +16,7 @@
 #include <commons/string.h>
 #include <readline/readline.h>
 #include <time.h>
-#include <comms/loggers.h>
+//#include <comms/loggers.h>
 #include <stddef.h>
 #include "utils.h"
 
@@ -33,5 +33,9 @@ int pedir_tarea(int id_tripulante);
 void realizar_tarea(t_tarea tarea);
 void instanciar_tripulante(char* str_posicion);
 char* fecha_y_hora();
+void iniciar_hilo_tripulante(void* funcion);
+t_tripulante* crear_tripulante(char* posicion);
+int nuevo_pid();
+int pids_contiene(int valor);
 
 #endif /* DISCORDIADOR_H_ */

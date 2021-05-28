@@ -23,16 +23,13 @@ typedef struct { // Debe estar de mas, es lo mismo hacer varios structs de tripu
 typedef struct {
 
     uint32_t PID;
-    uint32_t direccion_tareas;
+    //uint32_t direccion_tareas; //TODO
+    char* direccion_tareas;
 
 } t_PCB;
 
 typedef struct { // Puede estar de mas
 
-    uint32_t codigo;
-    uint32_t coord_x;
-    uint32_t coord_y;
-    uint32_t estado;
     t_TCB* tcb;
 
 } t_tripulante;
