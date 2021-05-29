@@ -64,13 +64,9 @@ t_buffer* serializar_vacio() {
 
     t_buffer* buffer = malloc((sizeof(t_buffer)));
 
-    buffer->tamanio_estructura = sizeof(char);
+    // buffer->tamanio_estructura = sizeof(void); // Comentado porque es cualquiera, pero de ser necesario settear, queda ahi
 
-    void* estructura = malloc((buffer->tamanio_estructura));
-    
-    memcpy(estructura, &sentinela, sizeof(char));
-
-    buffer->estructura = estructura;
+    // buffer->estructura = NULL;
 
     return buffer;
 
@@ -117,6 +113,8 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     t_estructura* intermediario = malloc(sizeof(t_estructura*));
 
     recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
+
+
 
     recibir_mensaje(socket_receptor, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
     paquete->buffer->estructura = malloc(paquete->buffer->tamanio_estructura);

@@ -9,11 +9,12 @@
  */
 
 #include "discordiador.h"
+
 t_config* config;
 t_log* logger;
 int socket_mi_ram_hq;
 
-int main(int argc, char *argv[]) {
+int main() {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
 
