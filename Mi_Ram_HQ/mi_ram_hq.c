@@ -103,7 +103,7 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 t_patota* iniciar_patota(FILE* archivo){
 	t_PCB* pcb = malloc(sizeof(t_PCB));
 	//pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
-	pcb->direccion_tareas = &archivo;
+	pcb->direccion_tareas = (uint32_t) &archivo; //lo castee para evitar warnings pero habria que ver
 
 	t_patota* patota = malloc(sizeof(t_patota));
 	patota->archivo_de_tareas = archivo;
@@ -127,7 +127,7 @@ t_tripulante* iniciar_tripulante(char* posicion, t_PCB* puntero_pcb, int tid){
 	tcb->coord_x = posicion[0];
 	tcb->coord_y = posicion[2];
 	//tcb->siguiente_instruccion = ;//Ni idea de que va acá
-	tcb->puntero_a_pcb = puntero_pcb;
+	tcb->puntero_a_pcb = (uint32_t) puntero_pcb;
 
 	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
 	//tripulante->codigo = ;//Ni idea de que va acá

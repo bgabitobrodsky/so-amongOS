@@ -29,6 +29,8 @@ int pids[100]; //TODO lista
 int main() {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
+
+
   //logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
@@ -135,7 +137,7 @@ void iniciar_patota(char* leido) {
 t_PCB* crear_pcb(char* path){
 	t_PCB* pcb = malloc(sizeof(t_PCB));
 	pcb -> PID = nuevo_pid();
-	pcb -> direccion_tareas = path; //TODO uint32_t
+	pcb -> direccion_tareas = (uint32_t) path;
 
 	return pcb;
 
@@ -193,7 +195,7 @@ t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb -> coord_x = posicion[0];
 	tcb -> coord_y = posicion[2];
 	//tcb -> siguiente_instruccion; //TODO
-	tcb -> puntero_a_pcb = (uint32_t*) pcb;
+	tcb -> puntero_a_pcb = (uint32_t) pcb;
 
 	return tcb;
 
