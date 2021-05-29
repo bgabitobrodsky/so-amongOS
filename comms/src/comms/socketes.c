@@ -136,7 +136,7 @@ int enviar_mensaje(int socket, void* mensaje, int largo) { // Se podria definir 
 int recibir_mensaje(int socket, void* buffer, int largo) { 
 	int bytes_recibidos;
 
-	bytes_recibidos = recv(socket, buffer, largo, 0); // Recibo un mensaje, y recibo la cantidad de bytes que recibi
+	bytes_recibidos = recv(socket, buffer, largo, MSG_WAITALL); // Recibo un mensaje, y recibo la cantidad de bytes que recibi
 
 	switch (bytes_recibidos) {
 	case (-1):
