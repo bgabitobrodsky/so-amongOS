@@ -22,6 +22,7 @@ t_log* logger_discordiador;
 t_log* logger;
 int loggerSem;
 int socket_a_mi_ram_hq;
+int socket_a_mi_ram_hq2;
 int socket_a_mongo_store;
 int pids[100]; //TODO lista
 
@@ -34,20 +35,25 @@ int main() {
 	socket_a_mongo_store = crear_socket_cliente("127.1.1.2", "4000"); //TODO harcodeado hasta cambiar la config
 	//socket_a_mongo_store = crear_socket_cliente(IP_MONGO_STORE, PUERTO_MONGO_STORE); 
 
+	t_estructura* mensaje;
+
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
-		enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
-		while (1) {
-			t_estructura* mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-			if (mensaje->codigo_operacion == RECEPCION) {
-				printf("Se recibio la respuesta");
-				break;
-			}
-		}
-		pthread_t hiloConsola;
-		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
-		pthread_join(hiloConsola, NULL);
-
+			enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
+			log_info(logger, "Codigo enviado");
+			/*while (1) {
+				log_info(logger, "Entra al while");
+				mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+				log_info(logger, "Estructura creada");
+				if (mensaje->codigo_operacion == RECEPCION) {
+					printf("Se recibio la respuesta");
+					log_info(logger, "Se recibio la respuesta");
+					break;
+				}
+			}*/
+			pthread_t hiloConsola;
+			pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
+			pthread_join(hiloConsola, NULL);
 	}
 
 	close(socket_a_mi_ram_hq);

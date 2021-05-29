@@ -126,7 +126,13 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     paquete->buffer = malloc(sizeof(t_buffer));
     t_estructura* intermediario = malloc(sizeof(t_estructura*));
 
-    recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
+    int conexion_cerrada = recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
+
+    if(conexion_cerrada == 0){
+    	intermediario->codigo_operacion = DESCONEXION;
+    	eliminar_paquete(paquete);
+		return intermediario;
+    }
 
     // If que maneja llegada de codigos de operacion unicamente (TODO CODIGO UNICO DEBE ESTAR DESPUES DE SABOTAJE)
     if (paquete->codigo_operacion >= SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash

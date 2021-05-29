@@ -39,7 +39,8 @@ int main(int argc, char** argv) {
 }
 
 void atender_clientes(int socket_hijo) {
-	    while(1) { //TODO cambiar por do while  y liberar la estructura
+	int flag = 1;
+	    while(flag) { //TODO cambiar por do while  y liberar la estructura
 			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
 		
 			switch(mensaje_recibido->codigo_operacion) {
@@ -58,9 +59,8 @@ void atender_clientes(int socket_hijo) {
 
 				case DESCONEXION:
 					log_info(logger_miramhq, "Se desconecto el modulo Discordiador");
+					flag = 0;
 			}
-
-			free(mensaje_recibido);
 	    }
 }
 
