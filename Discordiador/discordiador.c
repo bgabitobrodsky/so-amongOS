@@ -37,6 +37,13 @@ int main() {
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
 		enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
+		while (1) {
+			t_estructura* mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+			if (mensaje->codigo_operacion == RECEPCION) {
+				printf("Se recibio la respuesta");
+				break;
+			}
+		}
 		pthread_t hiloConsola;
 		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 		pthread_join(hiloConsola, NULL);
@@ -66,11 +73,11 @@ void leer_consola() {
 
 			switch (comando) {
 				case INICIAR_PATOTA:
-					iniciar_patota(leido);
+					// iniciar_patota(leido);
 					break;
 
 				case INICIAR_PLANIFICACION:
-					iniciar_planificacion();
+					// iniciar_planificacion();
 					break;
 
 				/*case LISTAR_TRIPULANTES:
@@ -102,7 +109,7 @@ void leer_consola() {
 
 	} while (comando != EXIT);
 }
-
+/*
 void iniciar_patota(char* leido) {
 	char** palabras = string_split(leido, " ");
 	int cantidadTripulantes = atoi(palabras[1]);
@@ -208,7 +215,7 @@ t_tripulante* crear_tripulante(t_TCB* un_tcb){
 
 void iniciar_planificacion() {
 	printf("iniciarPlanificacion");
-}
+} */
 /*
 void listar_tripulantes() {
 

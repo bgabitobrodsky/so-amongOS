@@ -96,7 +96,7 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
 
 // Recibe un opcode y un socket, y envia paquete con opcode only
 // Usa funcion de socketes.h
-void enviar_codigo(int codigo_operacion, int socket_receptor) {
+void enviar_codigo(uint8_t codigo_operacion, int socket_receptor) {
     
     t_paquete* paquete = malloc(sizeof(t_paquete));
     t_buffer* buffer = serializar_vacio();

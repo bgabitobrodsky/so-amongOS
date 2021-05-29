@@ -18,7 +18,6 @@ void sigchld_handler(int s) {
 
 // Funcion para crear un socket modalidad cliente
 int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_servidor) { 
-	printf("escuchar cliente");
 	struct addrinfo datos_para_server, *informacion_server, *p;
 	int socket_cliente;
 	int estado;
@@ -124,8 +123,8 @@ int enviar_mensaje(int socket, void* mensaje, int largo) { // Se podria definir 
 
 	if (bytes_enviados == -1) // Pudieron no mandarse, verifico
 		printf("No se envio el mensaje\n");
-	else if (bytes_enviados /= largo) // Pueden ser menos de los que queria, verifico (hasta 1KB safe si no me equivoco)
-		printf("No se envio todo el mensaje\n");
+	/* else if (bytes_enviados /= largo) // Pueden ser menos de los que queria, verifico (hasta 1KB safe si no me equivoco)
+		printf("No se envio todo el mensaje\n");*/
 
 	return bytes_enviados;
 }
