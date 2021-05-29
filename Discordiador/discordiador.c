@@ -41,7 +41,7 @@ int main() {
 
 			enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
 			log_info(logger, "Codigo enviado");
-			/*while (1) {
+			while (1) {
 				log_info(logger, "Entra al while");
 				mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
 				log_info(logger, "Estructura creada");
@@ -50,7 +50,7 @@ int main() {
 					log_info(logger, "Se recibio la respuesta");
 					break;
 				}
-			}*/
+			}
 			pthread_t hiloConsola;
 			pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 			pthread_join(hiloConsola, NULL);

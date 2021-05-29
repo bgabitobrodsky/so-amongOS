@@ -76,6 +76,15 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
+	struct sigaction sa;
+		sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = SA_RESTART;
+		if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+			printf("Error al limpiar procesos\n");
+			exit(1);
+		}
+
 	while (1) { // Loop infinito donde aceptara clientes
 			tamanio_direccion = sizeof(direccion_a_escuchar);
 			socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha

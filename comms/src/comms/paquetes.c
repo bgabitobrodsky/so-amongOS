@@ -211,7 +211,7 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
 }
 
 void eliminar_paquete(t_paquete* paquete) {
-	free(paquete->buffer->estructura);
+	//free(paquete->buffer->estructura);
 	free(paquete->buffer);
 	free(paquete);
 }
