@@ -39,18 +39,12 @@ int main() {
 
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
-			enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
-			log_info(logger, "Codigo enviado");
-			while (1) {
-				log_info(logger, "Entra al while");
-				mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-				log_info(logger, "Estructura creada");
-				if (mensaje->codigo_operacion == RECEPCION) {
-					printf("Se recibio la respuesta");
-					log_info(logger, "Se recibio la respuesta");
-					break;
-				}
-			}
+		enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
+		mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+		if (mensaje->codigo_operacion == RECEPCION) {
+			printf("Se recibio la respuesta");
+			log_info(logger, "Se recibio la respuesta");
+		}
 			pthread_t hiloConsola;
 			pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 			pthread_join(hiloConsola, NULL);
@@ -79,11 +73,12 @@ void leer_consola() {
 
 			switch (comando) {
 				case INICIAR_PATOTA:
-					// iniciar_patota(leido);
+					//iniciar_patota(leido);
+					enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
 					break;
 
 				case INICIAR_PLANIFICACION:
-					// iniciar_planificacion();
+				//	iniciar_planificacion();
 					break;
 
 				/*case LISTAR_TRIPULANTES:
