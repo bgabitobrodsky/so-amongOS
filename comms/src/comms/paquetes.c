@@ -6,9 +6,9 @@
 
 #include "paquetes.h"
 
-// Serializa un struct tripulante a un buffer
+// Serializa un struct tcb a un buffer
 // En esta funcion se pone el comportamiento comun de la serializacion
-t_buffer* serializar_tripulante(t_tripulante tripulante) {
+t_buffer* serializar_tcb(t_TCB tcb) {
 
     t_buffer* buffer = malloc((sizeof(t_buffer))); // Se inicializa buffer
     buffer->tamanio_estructura = 3 * sizeof(uint32_t); // Se le da el tamanio del struct del parametro
@@ -16,11 +16,11 @@ t_buffer* serializar_tripulante(t_tripulante tripulante) {
     void* estructura = malloc((buffer->tamanio_estructura)); // Se utiliza intermediario
     int desplazamiento = 0; // Desplazamiento para calcular que tanto tengo que correr para que no se sobrepisen cosas del array estructura
 
-    memcpy(estructura + desplazamiento, &tripulante.codigo, sizeof(uint32_t));
+    memcpy(estructura + desplazamiento, &tcb.TID, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
+    memcpy(estructura + desplazamiento, &tcb.coord_x, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));// Se copia y pega todo al array estructura ordenado 
+    memcpy(estructura + desplazamiento, &tcb.coord_y, sizeof(uint32_t));// Se copia y pega todo al array estructura ordenado
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
@@ -61,7 +61,7 @@ t_buffer* serializar_tarea(t_tarea tarea) {
 t_buffer* serializar_vacio() {
 
     t_buffer* buffer = malloc((sizeof(t_buffer)));
-    
+
     buffer->tamanio_estructura = 0;
 
     buffer->estructura = NULL;
@@ -144,11 +144,11 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     // Switch estructuras
     switch (paquete->codigo_operacion) { 
 
-        case TRIPULANTE:
-            intermediario->codigo_operacion = TRIPULANTE;
-            t_tripulante* tripulante = desserializar_tripulante(paquete->buffer->estructura);
-            intermediario->tripulante = tripulante;
-            free(tripulante);
+        case TCB:
+            intermediario->codigo_operacion = TCB;
+            t_TCB* tcb = desserializar_tcb(paquete->buffer->estructura);
+            intermediario->tcb = tcb;
+            free(tcb);
             break;
 
         case TAREA:
@@ -164,21 +164,21 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     return intermediario;
 }
 
-// Pasa un struct buffer a un tripulante
+// Pasa un struct buffer a un tcb
 // Se explica deserializacion en esta funcion
-t_tripulante* desserializar_tripulante(t_buffer* buffer) {
+t_TCB* desserializar_tcb(t_buffer* buffer) {
 
-    t_tripulante* tripulante = malloc(sizeof(t_tripulante)); // Se toma tamaño de lo que sabemos que viene
+	t_TCB* tcb = malloc(sizeof(t_TCB)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
 
-    memcpy(&(tripulante->codigo), estructura, sizeof(uint32_t));
+    memcpy(&(tcb->TID), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    memcpy(&(tripulante->coord_x), estructura, sizeof(uint32_t));
+    memcpy(&(tcb->coord_x), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    memcpy(&(tripulante->coord_y), estructura, sizeof(uint32_t));
+    memcpy(&(tcb->coord_y), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
 
-    return tripulante;
+    return tcb;
 }
 
 // Pasa un struct buffer a una tarea

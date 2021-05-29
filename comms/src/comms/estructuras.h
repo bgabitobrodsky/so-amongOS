@@ -9,30 +9,22 @@
 #include <stdint.h>
 //#include "stdbool.h"
 
-enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION , DESCONEXION };
+enum codigo_operacion { TCB, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA };
 enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
 
 
-typedef struct { // Debe estar de mas, es lo mismo hacer varios structs de tripu y tareas, y es mas lindo asi, la dejo como vestigio porlas
-
-//uint32_t cantidad_integrantes; //NO IRIA, se actualiza cada vez que se finaliza un tripulante
-    FILE* archivo_de_tareas;
-    t_PCB* pcb;
-} t_patota;
-
 typedef struct {
-
     uint32_t PID;
     //uint32_t direccion_tareas; //TODO
     char* direccion_tareas;
 
 } t_PCB;
 
-typedef struct { // Puede estar de mas
-
-    t_TCB* tcb;
-
-} t_tripulante;
+typedef struct { // Debe estar de mas, es lo mismo hacer varios structs de tripu y tareas, y es mas lindo asi, la dejo como vestigio porlas
+//uint32_t cantidad_integrantes; //NO IRIA, se actualiza cada vez que se finaliza un tripulante
+    FILE* archivo_de_tareas;
+    t_PCB* pcb;
+} t_patota;
 
 typedef struct {
 
@@ -44,6 +36,12 @@ typedef struct {
     uint32_t puntero_a_pcb;
 
 } t_TCB;
+
+typedef struct { // Puede estar de mas
+	uint32_t codigo;
+    t_TCB* tcb;
+
+} t_tripulante;
 
 
 typedef struct {
@@ -60,7 +58,7 @@ typedef struct {
 
 typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct de una funcion
 
-    t_tripulante* tripulante;
+    t_TCB* tcb;
     t_tarea* tarea;
     int codigo_operacion;
 
