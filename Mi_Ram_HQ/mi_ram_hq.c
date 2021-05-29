@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
 	free(tamanio_memoria);
     	
 	//int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // Se podria delegar a un hilo
-    	int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // TODO: HARCODEADO HASTA CAMBIARR EL CONFIG
+    int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // TODO: HARCODEADO HASTA CAMBIARR EL CONFIG
 	args_escuchar_miram args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
@@ -43,8 +43,9 @@ void atender_clientes(int socket_hijo) {
 			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
 		
 			switch(mensaje_recibido->codigo_operacion) {
-				case MENSAJE:
+				case MENSAJE: // Codigo al pedo, lo usamos para testear
 					log_info(logger_miramhq, "Mensaje recibido");
+					enviar_codigo(RECEPCION, socket_hijo);
 					break;
 
 				case PEDIR_TAREA:
@@ -55,11 +56,12 @@ void atender_clientes(int socket_hijo) {
 					printf("Recibo una tarea");
 					break;
 
-				case -1: // Puede que rompa si discordiador no envia mensajes, mejor hacerlo un codigo de por si
+				case DESCONEXION:
 					log_info(logger_miramhq, "Se desconecto el modulo Discordiador");
-		}
+			}
+
 			free(mensaje_recibido);
-	}
+	    }
 }
 
 void escuchar_miram(void* args) { // No se libera args, ver donde liberar

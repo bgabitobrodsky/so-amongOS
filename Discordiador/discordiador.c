@@ -36,6 +36,7 @@ int main() {
 
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
+		enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
 		pthread_t hiloConsola;
 		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 		pthread_join(hiloConsola, NULL);

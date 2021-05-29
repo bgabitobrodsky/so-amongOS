@@ -9,7 +9,7 @@
 #include <stdint.h>
 //#include "stdbool.h"
 
-enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA };
+enum codigo_operacion { TRIPULANTE, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION , DESCONEXION };
 enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
 
 
