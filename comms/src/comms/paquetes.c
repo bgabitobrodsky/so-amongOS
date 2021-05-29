@@ -96,17 +96,17 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
 
 // Recibe un opcode y un socket, y envia paquete con opcode only
 // Usa funcion de socketes.h
-void enviar_codigo(uint8_t codigo_operacion, int socket_receptor) {
+void enviar_codigo(int codigo_operacion, int socket_receptor) {
     
     t_paquete* paquete = malloc(sizeof(t_paquete));
     t_buffer* buffer = serializar_vacio();
     paquete->codigo_operacion = codigo_operacion;
     paquete->buffer = buffer;
 
-    int tamanio_mensaje = sizeof(uint8_t);
+    int tamanio_mensaje = sizeof(int);
     void* mensaje = malloc(tamanio_mensaje);
 
-    memcpy(mensaje, &(paquete->codigo_operacion), sizeof(uint8_t));
+    memcpy(mensaje, &(paquete->codigo_operacion), sizeof(int));
 
     enviar_mensaje(socket_receptor, mensaje, tamanio_mensaje);
     free(mensaje);
@@ -124,9 +124,15 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     t_paquete* paquete = malloc(sizeof(t_paquete));
     paquete->buffer = malloc(sizeof(t_buffer));
-    t_estructura* intermediario = malloc(sizeof(t_estructura*));
+    t_estructura* intermediario = malloc(sizeof(t_estructura));
 
-    recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(uint8_t));
+    int conexion_cerrada = recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(int));
+
+    if(conexion_cerrada == 0){
+    	intermediario->codigo_operacion = DESCONEXION;
+    	eliminar_paquete(paquete);
+		return intermediario;
+    }
 
     // If que maneja llegada de codigos de operacion unicamente (TODO CODIGO UNICO DEBE ESTAR DESPUES DE SABOTAJE)
     if (paquete->codigo_operacion >= SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash
@@ -205,7 +211,7 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
 }
 
 void eliminar_paquete(t_paquete* paquete) {
-	free(paquete->buffer->estructura);
+	//free(paquete->buffer->estructura);
 	free(paquete->buffer);
 	free(paquete);
 }

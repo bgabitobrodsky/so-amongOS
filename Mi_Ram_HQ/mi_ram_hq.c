@@ -39,7 +39,8 @@ int main(int argc, char** argv) {
 }
 
 void atender_clientes(int socket_hijo) {
-	    while(1) { //TODO cambiar por do while  y liberar la estructura
+	int flag = 1;
+	    while(flag) { //TODO cambiar por do while  y liberar la estructura
 			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
 		
 			switch(mensaje_recibido->codigo_operacion) {
@@ -58,9 +59,8 @@ void atender_clientes(int socket_hijo) {
 
 				case DESCONEXION:
 					log_info(logger_miramhq, "Se desconecto el modulo Discordiador");
+					flag = 0;
 			}
-
-			free(mensaje_recibido);
 	    }
 }
 
@@ -75,6 +75,15 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
+
+	struct sigaction sa;
+		sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = SA_RESTART;
+		if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+			printf("Error al limpiar procesos\n");
+			exit(1);
+		}
 
 	while (1) { // Loop infinito donde aceptara clientes
 			tamanio_direccion = sizeof(direccion_a_escuchar);
