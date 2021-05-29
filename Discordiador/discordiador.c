@@ -110,7 +110,6 @@ void leer_consola() {
 
 	} while (comando != EXIT);
 }
-/*
 void iniciar_patota(char* leido) {
 	char** palabras = string_split(leido, " ");
 	int cantidadTripulantes = atoi(palabras[1]);
@@ -120,16 +119,16 @@ void iniciar_patota(char* leido) {
 
 	int i = 0;
 	t_PCB* pcb = crear_pcb(path);
-	t_patota patota = crear_patota(pcb);
+	t_patota* patota = crear_patota(pcb);
 
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
-		iniciar_tripulante(&pcb, palabras[i+3], i+1) -->Le manda a RAM el tripulante
+		//iniciar_tripulante(&pcb, palabras[i+3], i+1) -->Le manda a RAM el tripulante
 		i++;
 	}
 	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
-		iniciar_tripulante(&pcb, "0|0", j) -->Le manda a RAM el tripulante
+		//iniciar_tripulante(&pcb, "0|0", j) -->Le manda a RAM el tripulante
 	}
 }
 
@@ -167,15 +166,9 @@ t_patota* crear_patota(t_PCB* un_pcb){
 }
 
 void tripulante() {
-	int id_tripulante = 2;
-	int id_patota;
-	int cord_x;
-	int cord_y;
-	char* status;
+
 	// avisar a miram que va a iniciar
 
-	int tarea = pedir_tarea(id_tripulante);
-	printf("%d",tarea);
 
 
 	//while(1){
@@ -200,7 +193,7 @@ t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb -> coord_x = posicion[0];
 	tcb -> coord_y = posicion[2];
 	//tcb -> siguiente_instruccion; //TODO
-	tcb -> puntero_a_pcb = pcb;
+	tcb -> puntero_a_pcb = (uint32_t*) pcb;
 
 	return tcb;
 
@@ -216,7 +209,7 @@ t_tripulante* crear_tripulante(t_TCB* un_tcb){
 
 void iniciar_planificacion() {
 	printf("iniciarPlanificacion");
-} */
+}
 /*
 void listar_tripulantes() {
 

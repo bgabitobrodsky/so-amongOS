@@ -33,7 +33,7 @@ typedef struct {
     uint32_t coord_x;
     uint32_t coord_y;
     uint32_t siguiente_instruccion;
-    uint32_t puntero_a_pcb;
+    uint32_t* puntero_a_pcb;
 
 } t_TCB;
 
