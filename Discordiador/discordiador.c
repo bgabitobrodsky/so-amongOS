@@ -18,16 +18,14 @@
 
 // Vars globales
 t_config* config;
-t_log* logger_discordiador;
 t_log* logger;
-int loggerSem;
 int socket_a_mi_ram_hq;
-int socket_a_mi_ram_hq2;
 int socket_a_mongo_store;
 int pids[100]; //TODO lista
+char estado_tripulante[4] = {'n', 'r', 'e', 'b'};
+//t_queue *queue = queue_create(); //TODO
 
 int main() {
-	//logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
 
@@ -37,16 +35,9 @@ int main() {
 	t_estructura* mensaje;
 
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
-
-		enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
-		mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-		if (mensaje->codigo_operacion == RECEPCION) {
-			printf("Se recibio la respuesta");
-			log_info(logger, "Se recibio la respuesta");
-		}
-			pthread_t hiloConsola;
-			pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
-			pthread_join(hiloConsola, NULL);
+		pthread_t hiloConsola;
+		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
+		pthread_join(hiloConsola, NULL);
 	}
 
 	close(socket_a_mi_ram_hq);
@@ -54,7 +45,6 @@ int main() {
 	
 	config_destroy(config);
 	log_destroy(logger);
-  //liberar_logger(logger,&loggerSem);
 
 	return EXIT_SUCCESS;
 }
@@ -72,15 +62,14 @@ void leer_consola() {
 
 			switch (comando) {
 				case INICIAR_PATOTA:
-					//iniciar_patota(leido);
-					enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
+					iniciar_patota(leido);
 					break;
 
 				case INICIAR_PLANIFICACION:
-				//	iniciar_planificacion();
+					iniciar_planificacion();
 					break;
 
-				/*case LISTAR_TRIPULANTES:
+				case LISTAR_TRIPULANTES:
 					listar_tripulantes();
 					break;
 
@@ -94,7 +83,7 @@ void leer_consola() {
 				
 				case EXPULSAR_TRIPULANTE:
 					expulsar_tripulante(leido);
-					break;*/
+					break;
 				
 				case HELP:
 					help_comandos();
@@ -122,12 +111,14 @@ void iniciar_patota(char* leido) {
 
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
-		//iniciar_tripulante(&pcb, palabras[i+3], i+1) -->Le manda a RAM el tripulante
+		//void* funcion = pedir_funcion()
+		iniciar_tripulante(NULL, pcb, i+1, palabras[i+3]); //Le manda a RAM el tripulante
 		i++;
 	}
 	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
-		//iniciar_tripulante(&pcb, "0|0", j) -->Le manda a RAM el tripulante
+		//void* funcion = pedir_funcion()
+		iniciar_tripulante(NULL, pcb, i+1, "0|0"); //Le manda a RAM el tripulante
 	}
 }
 
@@ -164,30 +155,16 @@ int pids_contiene(int valor){
 	return 0;
 }
 
-void tripulante() {
-	// avisar a miram que va a iniciar
-
-
-
-	//while(1){
-	//	realizar_tarea(tarea);
-	//	tarea = pedir_tarea(id_tripulante);
-	//}
-
-
-	//informar ram movimiento
-}
-
 void iniciar_hilo_tripulante(void* funcion){
 	pthread_t hilo1;
 	pthread_create(&hilo1, NULL, funcion, NULL);
-	pthread_join(hilo1, NULL);
+	//pthread_join(hilo1, NULL); //Hojear si está bien
 }
 
 t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	t_TCB* tcb = malloc(sizeof(t_TCB));
 	tcb -> TID = tid;
-	tcb -> estado_tripulante = 'N';
+	tcb -> estado_tripulante = estado_tripulante[NEW];
 	tcb -> coord_x = posicion[0];
 	tcb -> coord_y = posicion[2];
 	//tcb -> siguiente_instruccion; //TODO
@@ -203,13 +180,17 @@ t_tripulante* crear_tripulante(t_TCB* un_tcb){
 	return tripulante;
 }
 
+void iniciar_tripulante(void* funcion, t_PCB* pcb, int tid, char* posicion){
+	t_TCB* un_tcb = crear_tcb(pcb, tid, posicion);
+	crear_tripulante(un_tcb);
+	iniciar_hilo_tripulante(funcion);
+}
+
 void iniciar_planificacion() {
 	printf("iniciarPlanificacion");
 }
-/*
-void listar_tripulantes() {
 
-	tripulante();
+void listar_tripulantes() {
 
 
 	//int i = 0;
@@ -225,7 +206,7 @@ void listar_tripulantes() {
 }
 
 void pausar_planificacion() {
-	//loggear(logger,&loggerSem,INFO,"Holaaaa");
+
 }
 
 void obtener_bitacora(char* leido) {
@@ -234,7 +215,7 @@ void obtener_bitacora(char* leido) {
 
 void expulsar_tripulante(char* leido) {
 	printf("expulsarTripulante");
-}*/
+}
 
 /*int pedir_tarea(int id_tripulante){
 	t_paquete* paquete = crear_paquete(PEDIR_TAREA); // BORRAR ESTA COSA BONITA
@@ -245,7 +226,7 @@ void expulsar_tripulante(char* leido) {
 
 void realizar_tarea(t_tarea tarea){ // TODO 
 
-}
+}*/
 
 char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace esto
 	time_t tiempo = time(NULL);
@@ -260,4 +241,4 @@ char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace es
 	else {
     	return "Error formateando fecha";
   	}
-}*/
+}

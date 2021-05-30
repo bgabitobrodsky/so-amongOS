@@ -10,8 +10,7 @@
 //#include "stdbool.h"
 
 enum codigo_operacion { TCB, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION, DESCONEXION };
-enum estado_tripulante { LLEGADA, LISTO, TRABAJANDO, BLOQUEADO, FINALIZADO };
-
+enum estados { NEW, READY, EXCECUTING, BLOCKED};
 
 typedef struct {
     uint32_t PID;
