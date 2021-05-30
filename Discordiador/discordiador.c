@@ -10,8 +10,8 @@
 
 #define	IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
-#define	IP_MONGO_STORE config_get_string_value(config, "IP_MONGO_STORE") // Verificar sintaxis
-#define PUERTO_MONGO_STORE config_get_string_value(config, "PUERTO_MONGO_STORE")
+#define	IP_I_MONGO_STORE config_get_string_value(config, "IP_I_MONGO_STORE")
+#define PUERTO_I_MONGO_STORE config_get_string_value(config, "PUERTO_I_MONGO_STORE")
 
 #include "discordiador.h"
 
@@ -34,8 +34,7 @@ int main() {
   //logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
-	socket_a_mongo_store = crear_socket_cliente("127.1.1.2", "4000"); //TODO harcodeado hasta cambiar la config
-	//socket_a_mongo_store = crear_socket_cliente(IP_MONGO_STORE, PUERTO_MONGO_STORE); 
+	socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
 	t_estructura* mensaje;
 

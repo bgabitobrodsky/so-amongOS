@@ -7,8 +7,8 @@
 
 #include "i_mongo_store.h"
 
-#define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP_MONGO_STORE") // Verificar sintaxis
-#define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO_MONGO_STORE")
+#define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP") // Verificar sintaxis
+#define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
 
 // Vars globales
 t_log* logger_mongo;
@@ -17,11 +17,9 @@ t_config* config_mongo;
 int main(int argc, char** argv){
 
 	logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
-	config_mongo = config_create("mongo.config");
+	config_mongo = config_create("i_mongo_store.config");
 
-
-	//int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE); TODO HARCODEADO HASTA CAMBIAR LAS CONFIGS
-	int socket_oyente = crear_socket_oyente("127.1.1.2", "4000");
+	int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
 	args_escuchar_mongo args_escuchar;
 	args_escuchar.socket_oyente = socket_oyente;
     
@@ -47,13 +45,14 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
-	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+	struct sigaction sa;
+	sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 		printf("Error al limpiar procesos\n");
 		exit(1);
-	}*/
+	}
 
 	while (1) { // Loop infinito donde aceptara clientes
 		tamanio_direccion = sizeof(direccion_a_escuchar);

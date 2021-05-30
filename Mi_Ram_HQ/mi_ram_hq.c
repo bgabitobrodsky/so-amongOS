@@ -7,8 +7,8 @@
 
 #include "mi_ram_hq.h"
 
-#define	IP_MI_RAM_HQ config_get_string_value(config_miramhq, "IP_MI_RAM_HQ")
-#define PUERTO_MI_RAM_HQ config_get_string_value(config_miramhq, "PUERTO_MI_RAM_HQ")
+#define	IP_MI_RAM_HQ config_get_string_value(config_miramhq, "IP")
+#define PUERTO_MI_RAM_HQ config_get_string_value(config_miramhq, "PUERTO")
 
 // Vars globales
 t_log* logger_miramhq;
@@ -21,8 +21,7 @@ int main(int argc, char** argv) {
 	char* memoria = malloc(atoi(tamanio_memoria));
 	free(tamanio_memoria);
     	
-	//int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // Se podria delegar a un hilo
-    int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); // TODO: HARCODEADO HASTA CAMBIARR EL CONFIG
+    int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); //Se podria delegar a un hilo
 	args_escuchar_miram args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
