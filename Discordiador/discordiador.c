@@ -27,11 +27,9 @@ int socket_a_mongo_store;
 int pids[100]; //TODO lista
 
 int main() {
+	//logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
-
-
-  //logger = crear_logger("discordiador.log", "discordiador", &loggerSem);
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
 	socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
@@ -133,11 +131,17 @@ void iniciar_patota(char* leido) {
 	}
 }
 
+t_patota* crear_patota(t_PCB* un_pcb){
+	t_patota* patota = malloc(sizeof(t_patota));
+	patota -> pcb = un_pcb;
+	//patota -> archivo_de_tareas //TODO
+	return patota;
+}
+
 t_PCB* crear_pcb(char* path){
 	t_PCB* pcb = malloc(sizeof(t_PCB));
 	pcb -> PID = nuevo_pid();
 	pcb -> direccion_tareas = (uint32_t) path;
-
 	return pcb;
 
 }
@@ -145,25 +149,20 @@ t_PCB* crear_pcb(char* path){
 int nuevo_pid(){
 	int id_patota = 1;
 	while(1){
-		if(!pids_contiene(id_patota))
+		if(!pids_contiene(id_patota)){
+			pids[id_patota] = id_patota;
 	    	return id_patota;
+		}
 	    id_patota++;
 	}
 }
 
 int pids_contiene(int valor){
-	for(int i = 0; i<100; i++){
+	for(int i = 1; i<100; i++){
 		if(pids[i] == valor)
 			return 1;
 	}
 	return 0;
-}
-
-t_patota* crear_patota(t_PCB* un_pcb){
-	t_patota* patota = malloc(sizeof(t_patota));
-	patota -> pcb = un_pcb;
-	//patota -> archivo_de_tareas //TODO
-	return patota;
 }
 
 void tripulante() {
@@ -204,7 +203,6 @@ t_tripulante* crear_tripulante(t_TCB* un_tcb){
 	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
 
 	tripulante -> tcb = un_tcb;
-	//tripulante -> codigo //TODO
 	return tripulante;
 }
 
@@ -218,7 +216,7 @@ void listar_tripulantes() {
 
 
 	//int i = 0;
-    //int argc; // No sÃ© como serÃ­a, pero vamos a recibir a los tripulantes activos de alguna manera
+    //int argc; tripulantes activos
     //char* fechaHora = fecha_y_hora();
     
     //printf("Estado de la nave: %s\n",fechaHora);
@@ -251,11 +249,6 @@ void expulsar_tripulante(char* leido) {
 
 void realizar_tarea(t_tarea tarea){ // TODO 
 
-}
-
-void instanciar_tripulante(char* str_posicion){ // TODO
-	int cord_x = atoi(str_posicion[0]);
-	int cord_y = atoi(str_posicion[2]);
 }
 
 char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace esto
