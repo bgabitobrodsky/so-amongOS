@@ -14,6 +14,7 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include <commons/collections/queue.h>
 #include <readline/readline.h>
 #include <time.h>
 #include <comms/loggers.h>
@@ -35,11 +36,10 @@ char* fecha_y_hora();
 
 //HILOS
 void expulsar_tripulante(char* leido);
-void tripulante();
-void instanciar_tripulante(char* str_posicion);
 void iniciar_hilo_tripulante(void* funcion);
 t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion);
 t_tripulante* crear_tripulante(t_TCB* un_tcb);
+void iniciar_tripulante(void* funcion, t_PCB* pcb, int tid, char* posicion);
 
 //PROCESOS
 t_patota* crear_patota(t_PCB* un_pcb);
