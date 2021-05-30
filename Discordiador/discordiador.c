@@ -143,7 +143,6 @@ t_PCB* crear_pcb(char* path){
 	pcb -> PID = nuevo_pid();
 	pcb -> direccion_tareas = (uint32_t) path;
 	return pcb;
-
 }
 
 int nuevo_pid(){
@@ -166,7 +165,6 @@ int pids_contiene(int valor){
 }
 
 void tripulante() {
-
 	// avisar a miram que va a iniciar
 
 
@@ -196,7 +194,6 @@ t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb -> puntero_a_pcb = (uint32_t) pcb;
 
 	return tcb;
-
 }
 
 t_tripulante* crear_tripulante(t_TCB* un_tcb){
@@ -225,7 +222,6 @@ void listar_tripulantes() {
     //}
 
 	printf("listarTripulantes");
-
 }
 
 void pausar_planificacion() {
