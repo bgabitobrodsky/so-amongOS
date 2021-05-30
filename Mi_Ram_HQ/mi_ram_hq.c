@@ -112,24 +112,3 @@ t_patota* iniciar_patota(FILE* archivo){
 
 	return patota;
 }
-/*
-
-}*/
-
-//Iniciar tripulante: será el encargado de crear la o las estructuras
-//administrativas necesarias para que un tripulante pueda ejecutar.
-
-t_tripulante* iniciar_tripulante(char* posicion, t_PCB* puntero_pcb, int tid){
-	t_TCB* tcb = malloc(sizeof(t_TCB));
-	tcb->TID = tid;
-	tcb->estado_tripulante = LLEGADA; //Supongo que se inicializa en LLEGADA por defecto
-	tcb->coord_x = posicion[0];
-	tcb->coord_y = posicion[2];
-	//tcb->siguiente_instruccion = ;//Ni idea de que va acá
-	tcb->puntero_a_pcb = (uint32_t) puntero_pcb;
-
-	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-	//tripulante->codigo = ;//Ni idea de que va acá
-	tripulante->tcb = tcb;
-	return tripulante;
-}

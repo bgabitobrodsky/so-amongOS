@@ -22,7 +22,8 @@ t_log* logger;
 int socket_a_mi_ram_hq;
 int socket_a_mongo_store;
 int pids[100]; //TODO lista
-t_queue *queue = queue_create();
+char estado_tripulante[4] = {'n', 'r', 'e', 'b'};
+//t_queue *queue = queue_create(); //TODO
 
 int main() {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
