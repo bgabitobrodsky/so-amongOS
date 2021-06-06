@@ -8,12 +8,12 @@
 #ifndef DISCORDIADOR_UTILS_H_
 #define DISCORDIADOR_UTILS_H_
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<commons/string.h>
-#include<commons/log.h>
-#include<commons/config.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <commons/string.h>
+#include <commons/log.h>
+#include <commons/config.h>
 #include <comms/estructuras.h>
 #include <comms/paquetes.h>
 #include <comms/socketes.h>
@@ -26,6 +26,10 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <pthread.h>
+#include <readline/readline.h>
+#include <time.h>
+#include <stddef.h>
 
 typedef enum{
 

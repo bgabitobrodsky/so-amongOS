@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <string.h>
 #include <stdint.h>
-//#include "stdbool.h"
 
 enum codigo_operacion { TCB, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION, DESCONEXION };
 enum estados { NEW, READY, EXCECUTING, BLOCKED};

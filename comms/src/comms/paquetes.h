@@ -9,7 +9,6 @@
 #include "estructuras.h"
 #include "socketes.h"
 
-
 typedef struct {
 
     uint32_t tamanio_estructura; 
