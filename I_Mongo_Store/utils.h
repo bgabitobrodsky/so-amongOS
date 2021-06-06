@@ -22,6 +22,8 @@
 #include <comms/socketes.h>
 #include <pthread.h>
 #include <readline/readline.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
