@@ -54,7 +54,20 @@ t_buffer* serializar_tarea(t_tarea tarea) {
     free(tarea.nombre); // TODO: Habria que ver si el nombre de la tarea hace falta en src
 
     return buffer;
+}
 
+// Nombre medio raro, serializa una cantidad de las cosas del filesystem (int, puede ser negativo)
+t_buffer* serializar_cantidad(int cantidad) {
+    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    buffer->tamanio_estructura = sizeof(int);
+
+    void* estructura = malloc((buffer->tamanio_estructura));
+
+    memcpy(estructura, &cantidad, sizeof(int));
+
+    buffer->estructura = estructura;
+
+    return buffer;
 }
 
 // Serializa un buffer "vacio" (dejo que lleve un char por las dudas) para envio de codigos nomas (podriamos cambiarlo a semaforos)
@@ -147,7 +160,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     paquete->buffer->estructura = malloc(paquete->buffer->tamanio_estructura);
     recibir_mensaje(socket_receptor, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
 
-    // Switch estructuras
+    // Switch estructuras y cosas del fylesystem
     switch (paquete->codigo_operacion) { 
 
         case TCB:
@@ -159,9 +172,17 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
         case TAREA:
             intermediario->codigo_operacion = TAREA;
-            t_tarea* tarea = desserializar_tarea(paquete->buffer->estructura);
+            t_tarea* tarea = desserializar_tarea(paquete->buffer->estructura); 
             intermediario->tarea = tarea;
             free(tarea);
+            break;
+
+        // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
+        case OXIGENO:
+        case COMIDA:
+        case BASURA:
+            intermediario->codigo_operacion = paquete->codigo_operacion;
+            memcpy(&(intermediario->cantidad), paquete->buffer->estructura, sizeof(int));
             break;
     }
 
@@ -172,7 +193,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
 // Pasa un struct buffer a un tcb
 // Se explica deserializacion en esta funcion
-t_TCB* desserializar_tcb(t_buffer* buffer) {
+t_TCB* desserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se esta pasando paquete->buffer->estructura, ver si es error
 
 	t_TCB* tcb = malloc(sizeof(t_TCB)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
@@ -211,7 +232,7 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
 }
 
 void eliminar_paquete(t_paquete* paquete) {
-	//free(paquete->buffer->estructura);
+	//free(paquete->buffer->estructura); // TODO: Ver si se puede descomentar
 	free(paquete->buffer);
 	free(paquete);
 }

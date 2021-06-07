@@ -109,10 +109,10 @@ void iniciar_file_system() {
 	sprintf(path_files, "/Files");
 
 	if (file_system_existente(path_directorio, dir)) {
-		inicializar_archivos(path_files); // Revisar si open() funca como fopen()
+		inicializar_archivos(path_files); // TODO: Revisar si open() funca como fopen()
 	}
 	else {
-		mkdir(path_directorio, 0777); // Revisar que es lo de la derecha de mkdir, sacado de stackoverflow
+		mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow
 		mkdir(path_files, 0777);
 		inicializar_archivos(path_files);
 		free(path_files);
@@ -121,11 +121,11 @@ void iniciar_file_system() {
 	free(path_directorio);
 }
 
-int file_system_existente(char* punto_montaje, stat dir) { // Verificar sintaxis stat
+int file_system_existente(char* punto_montaje, stat dir) { // TODO: Verificar sintaxis stat
 	return (stat(punto_montaje, &dir) != -1);
 }
 
-void inicializar_archivos(char* path_files) { // Puede romper, revisar repeticion de codigo
+void inicializar_archivos(char* path_files) { // TODO: Puede romper, revisar repeticion de codigo
 	char* path_oxigeno;
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
@@ -135,7 +135,7 @@ void inicializar_archivos(char* path_files) { // Puede romper, revisar repeticio
 	char* path_basura;
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
-	int filedescriptor_oxigeno = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // Ver que son esas constantes
+	int filedescriptor_oxigeno = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
 	int filedescriptor_comida = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
 	int filedescriptor_basura = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
 
@@ -148,7 +148,7 @@ void inicializar_archivos(char* path_files) { // Puede romper, revisar repeticio
 	archivos.basura = file_basura;
 }
 
-void alterar(int codigo_archivo, int cantidad) { // Revisar repeticion de codigo
+void alterar(int codigo_archivo, int cantidad) { // TODO: Revisar repeticion de codigo
 	switch(codigo_archivo) { 
 		case OXIGENO:
 			if (cantidad > 0) 
