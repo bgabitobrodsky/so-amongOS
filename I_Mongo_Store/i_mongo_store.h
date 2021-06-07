@@ -35,5 +35,14 @@ typedef struct {
 } args_escuchar_mongo;
 
 void escuchar_mongo(void* args);
+void sabotaje(int socket_discordiador);
+void manejo_tripulante(int socket_tripulante);
+void iniciar_file_system();
+int file_system_existente(char* punto_montaje, stat dir);
+void inicializar_archivos(char* path_files);
+void alterar(int codigo_archivo, int cantidad);
+void agregar(FILE* archivo, int cantidad, char tipo);
+void quitar(FILE* archivo, int cantidad, char tipo);
+void cerrar_archivos();
 
 #endif /* I_MONGO_STORE_H_ */
