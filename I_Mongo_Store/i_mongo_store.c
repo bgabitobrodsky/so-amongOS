@@ -86,10 +86,10 @@ void sabotaje(int socket_discordiador) {
 	while(1) {
 		wait(SIGUSR1);
 		enviar_codigo(SABOTAJE, socket_discordiador);
-		wait(verificacion); // Declarar semaforo
+		wait(verificacion);
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
 		reparar(mensaje);
-		signal(reparado); // Declarar semaforo
+		signal(reparado); 
 		free(mensaje);
 	}
 }
@@ -97,7 +97,7 @@ void sabotaje(int socket_discordiador) {
 void manejo_tripulante(int socket_tripulante) {
 	while(1) {
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
-		alterar(mensaje->codigo_operacion, mensaje->cantidad); // Modificar t_estructura para tener cantidad
+		alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 		free(mensaje);
 	}
 }
@@ -149,7 +149,7 @@ void inicializar_archivos(char* path_files) { // Puede romper, revisar repeticio
 }
 
 void alterar(int codigo_archivo, int cantidad) { // Revisar repeticion de codigo
-	switch(codigo_archivo) { // Agregar ctes a enum
+	switch(codigo_archivo) { 
 		case OXIGENO:
 			if (cantidad > 0) 
 				agregar(archivos.oxigeno, cantidad, 'O');

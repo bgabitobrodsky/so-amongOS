@@ -8,8 +8,12 @@
 #include <string.h>
 #include <stdint.h>
 
-enum codigo_operacion { TCB, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION, DESCONEXION };
+/* ENUMS */
+
+enum codigo_operacion { TCB, TAREA, OXIGENO, COMIDA, BASURA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION, DESCONEXION };
 enum estados { NEW, READY, EXCECUTING, BLOCKED};
+
+/* ESTRUCTURAS */
 
 typedef struct {
     uint32_t PID;
@@ -58,7 +62,13 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     t_TCB* tcb;
     t_tarea* tarea;
     int codigo_operacion;
+    int cantidad; // Revisar funcs paquetes, y serializar cantidades
 
 } t_estructura;
+
+/* SEMAFOROS */
+
+int verificacion = 0;
+int reparado = 0;
 
 #endif
