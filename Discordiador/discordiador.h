@@ -18,8 +18,8 @@
 //#include <readline/readline.h>
 //#include <time.h>
 //#include <stddef.h>
-#include <commons/collections/queue.h>
-#include <commons/collections/list.h>
+//#include <commons/collections/queue.h>
+//#include <commons/collections/list.h>
 
 void leer_consola();
 void iniciar_patota(char* leido);
@@ -30,25 +30,25 @@ void obtener_bitacora(char* leido);
 int pedir_tarea(int id_tripulante);
 void realizar_tarea(t_tarea tarea);
 char* fecha_y_hora();
-
-
+void escuchar_discordiador(void* args);
 
 //HILOS
 void expulsar_tripulante(char* leido);
 void iniciar_hilo_tripulante(void* funcion);
 t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion);
-t_tripulante* crear_tripulante(t_TCB* un_tcb);
-t_tripulante* iniciar_tripulante(void* funcion, t_PCB* pcb, int tid, char* posicion);
+//t_tripulante* crear_tripulante(t_TCB* un_tcb);
+t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion);
+void enlistar_tripulante();
 
 //PROCESOS
-t_patota* crear_patota(t_PCB* un_pcb);
+//t_patota* crear_patota(t_PCB* un_pcb);
 t_PCB* crear_pcb(char* path);
 int nuevo_pid();
-//int pids_contiene(int valor); // se puede eliminar, ya es lista
-
 int esta_en_lista(t_list* lista, int elemento);
 int sonIguales(int elemento1, int elemento2);
 
-
+typedef struct {
+    int socket_oyente;
+} args_escuchar_discordiador;
 
 #endif /* DISCORDIADOR_H_ */

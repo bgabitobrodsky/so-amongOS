@@ -18,9 +18,16 @@ t_buffer* serializar_tcb(t_TCB tcb) {
 
     memcpy(estructura + desplazamiento, &tcb.TID, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
+    //TODO: seba estuvo aqui, dejo una z en las lineas que agregue por si lo hice mal
+    memcpy(estructura + desplazamiento, &tcb.estado_tripulante, sizeof(char)); //z
+    desplazamiento += sizeof(char); //z
     memcpy(estructura + desplazamiento, &tcb.coord_x, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tcb.coord_y, sizeof(uint32_t));// Se copia y pega todo al array estructura ordenado
+    memcpy(estructura + desplazamiento, &tcb.coord_y, sizeof(uint32_t));// Se copia y pega al array estructura ordenado
+    desplazamiento += sizeof(uint32_t); //z
+    memcpy(estructura + desplazamiento, &tcb.siguiente_instruccion, sizeof(uint32_t)); //z
+    desplazamiento += sizeof(uint32_t); //z
+    memcpy(estructura + desplazamiento, &tcb.puntero_a_pcb, sizeof(uint32_t)); //z
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
@@ -150,8 +157,8 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     // Switch estructuras
     switch (paquete->codigo_operacion) { 
 
-        case TCB:
-            intermediario->codigo_operacion = TCB;
+        case RECIBIR_TCB:
+            intermediario->codigo_operacion = RECIBIR_TCB;
             t_TCB* tcb = desserializar_tcb(paquete->buffer->estructura);
             intermediario->tcb = tcb;
             free(tcb);

@@ -9,6 +9,8 @@
 #define MI_RAM_HQ_H_
 
 #include "utils.h"
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
 //#include <stdio.h>
 //#include <stdlib.h>
 //#include <pthread.h>

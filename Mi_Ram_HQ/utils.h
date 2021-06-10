@@ -23,7 +23,6 @@
 #include <pthread.h>
 #include <commons/string.h>
 
-
 extern t_log* logger_miramhq;
 extern t_config* config_miramhq;
 

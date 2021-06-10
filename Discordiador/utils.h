@@ -30,6 +30,8 @@
 #include <readline/readline.h>
 #include <time.h>
 #include <stddef.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
 
 typedef enum{
 
@@ -41,7 +43,8 @@ typedef enum{
 	EXPULSAR_TRIPULANTE,
 	INICIAR_PATOTA,
 	EXIT,
-	HELP
+	HELP,
+	APAGAR_SISTEMA
 	
 } comando_cod;
 

@@ -96,6 +96,16 @@ int reconocer_comando(char* str) {
 		}
 	}
 
+	if (comparar_strings(palabras[0],"APAGAR_SISTEMA")) {
+		if (contador == 1) {
+			free(palabras);
+			return APAGAR_SISTEMA;
+		}
+		else {
+			printf("Error de parametros: EXIT\n");
+		}
+	}
+
 	free(palabras);
 	printf("Comando desconocido, escribe HELP para obtener la lista de comandos\n");
 	return NO_CONOCIDO;

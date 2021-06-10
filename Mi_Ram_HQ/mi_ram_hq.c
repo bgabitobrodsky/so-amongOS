@@ -14,13 +14,18 @@
 t_log* logger_miramhq;
 t_config* config_miramhq;
 
+t_list* lista_tcb;
+
+
 int main(int argc, char** argv) {
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
 	char* tamanio_memoria = config_get_string_value(config_miramhq, "TAMANIO_MEMORIA");
 	char* memoria = malloc(atoi(tamanio_memoria));
 	free(tamanio_memoria);
-    	
+
+	lista_tcb = list_create();
+
     int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); //Se podria delegar a un hilo
 	args_escuchar_miram args_miram;
 	args_miram.socket_oyente = socket_oyente;
@@ -37,15 +42,14 @@ int main(int argc, char** argv) {
 	return EXIT_SUCCESS;
 }
 
-void atender_clientes(int socket_hijo) {
+void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si muere discordiador. una forma de arreglarlo es hacer que estas funciones devuelvan valores.
 	int flag = 1;
 	    while(flag) { //TODO cambiar por do while  y liberar la estructura
 			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
-		
+			//sleep(1); //no quitar. sirve para testeos
 			switch(mensaje_recibido->codigo_operacion) {
-				case MENSAJE: // Codigo al pedo, lo usamos para testear
+				case MENSAJE:
 					log_info(logger_miramhq, "Mensaje recibido");
-					enviar_codigo(RECEPCION, socket_hijo);
 					break;
 
 				case PEDIR_TAREA:
@@ -56,11 +60,28 @@ void atender_clientes(int socket_hijo) {
 					printf("Recibo una tarea");
 					break;
 
+				case RECIBIR_PCB:
+					printf("Recibo una pcb");
+					//almacenar_pcb(mensaje_recibido);
+					break;
+
+				case RECIBIR_TCB:
+					printf("Recibo una tcb");
+					list_add(lista_tcb, (void*) mensaje_recibido->tcb);
+					enviar_codigo(RECEPCION, socket_hijo);
+					break;
+
 				case DESCONEXION:
 					log_info(logger_miramhq, "Se desconecto el modulo Discordiador");
 					flag = 0;
+					break;
+
+				default:
+					log_info(logger_miramhq, "Se recibio un codigo invalido.");
+					break;
 			}
 	    }
+
 }
 
 void escuchar_miram(void* args) { // No se libera args, ver donde liberar
@@ -73,10 +94,10 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
 
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
-		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
+		printf("Error al configurar recepcion de mensajes\n");
 
 	struct sigaction sa;
-		sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+		sa.sa_handler = sigchld_handler;
 		sigemptyset(&sa.sa_mask);
 		sa.sa_flags = SA_RESTART;
 		if (sigaction(SIGCHLD, &sa, NULL) == -1) {
@@ -97,18 +118,4 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 
 			close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 		}
-}
-
-t_patota* iniciar_patota(FILE* archivo){
-	t_PCB* pcb = malloc(sizeof(t_PCB));
-	//pcb->PID = nuevo_pid();//TODO A discusión de como sacar el pid
-	pcb->direccion_tareas = (uint32_t) &archivo; //lo castee para evitar warnings pero habria que ver
-
-	t_patota* patota = malloc(sizeof(t_patota));
-	patota->archivo_de_tareas = archivo;
-	patota->pcb = pcb;
-
-	//cargar_en_Mongo(archivo);
-
-	return patota;
 }

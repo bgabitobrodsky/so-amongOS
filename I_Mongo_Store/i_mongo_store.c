@@ -46,13 +46,13 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
 	struct sigaction sa;
-	sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		printf("Error al limpiar procesos\n");
-		exit(1);
-	}
+		sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = SA_RESTART;
+		if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+			printf("Error al limpiar procesos\n");
+			exit(1);
+		}
 
 	while (1) { // Loop infinito donde aceptara clientes
 		tamanio_direccion = sizeof(direccion_a_escuchar);
