@@ -8,9 +8,7 @@
  ============================================================================
  */
 //TODO: Implementar HANDLER de ESCUCHAR
-//TODO: GENERALIZAR los ARGS de todos los ESCUCHAR
-//TODO: JUNTAR TODAS LAS LISTAS Y COLAS EN UNA FUNC
-//TODO en crear_tcb, estamos asignando a las posiciones el ASCII, no el numero (lo cual esta bien?)
+//TODO: en crear_tcb, estamos asignando a las posiciones el ASCII, no el numero (lo cual esta bien?)
 #define	IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
 #define	IP_I_MONGO_STORE config_get_string_value(config, "IP_I_MONGO_STORE")
@@ -28,25 +26,22 @@ int socket_a_mongo_store;
 char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 
-t_list *lista_pids;
-t_list *lista_patotas;
+t_list* lista_pids;
+t_list* lista_patotas;
+t_list* lista_tripulantes_new;
+t_list* lista_tripulantes_exec;
 
-t_list *lista_tripulantes_new;
-
-t_queue* cola_tripulantes_new;
+t_queue *cola_tripulantes_new;
 t_queue *cola_tripulantes_ready;
 
-t_list *lista_tripulantes_exec;
 int sistema_activo = 1;
 
 int main() {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
 	config = config_create("discordiador.config");
 
-	cola_tripulantes_ready = queue_create();
-	lista_tripulantes_new = list_create();
-	lista_pids = list_create();
-	lista_patotas = list_create();
+	iniciar_listas();
+	iniciar_colas();
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
 	//socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
@@ -60,7 +55,7 @@ int main() {
 
 		//pthread_join(hiloConsola, NULL);
 		/*
-		args_escuchar_discordiador args_disc;
+		args_escuchar args_disc;
 		args_disc.socket_oyente = socket_a_mi_ram_hq;
 		pthread_t hilo_escucha_ram;
 		pthread_create(&hilo_escucha_ram, NULL, (void*) escuchar_discordiador, &args_disc);
@@ -72,8 +67,6 @@ int main() {
 	while(sistema_activo){
 		usleep(1);
 	}
-
-
 
 	close(socket_a_mi_ram_hq);
 	close(socket_a_mongo_store);
@@ -173,7 +166,7 @@ void iniciar_patota(char* leido) {
 t_patota* crear_patota(t_PCB* un_pcb){
 	t_patota* patota = malloc(sizeof(t_patota));
 	patota -> pcb = un_pcb;
-	//patota -> archivo_de_tareas //TODO
+	//patota -> archivo_de_tareas
 	return patota;
 }*/
 
@@ -230,7 +223,6 @@ void iniciar_planificacion() {
 	planificacion_activa = 1;
 
 	// TODO NO TESTEADO
-	// No sé dónde va esto, pero debería ser mientras una variable planificacion_activa = true;
 	while(planificacion_activa){
 		if(comparar_strings(ALGORITMO, "FIFO")){
 			while(list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){
@@ -241,11 +233,14 @@ void iniciar_planificacion() {
 }
 
 void listar_tripulantes() {	//TODO falta testear
+
+	printf("listar Tripulantes\n");
+
     char* fechaHora = fecha_y_hora();
 
     printf("Estado de la nave: %s\n", fechaHora);
 
-	//also existe list_iterate(lista_patotas, );
+	//tambien existe list_iterate(lista_patotas, ...);, pero no se como se aplicaria
 	t_PCB* aux_p;
 	t_TCB* aux_t;
 
@@ -261,16 +256,44 @@ void listar_tripulantes() {	//TODO falta testear
 		}
 
 	}
-
-	printf("listarTripulantes");
+	//liberar pcb aux
+	//liberar tcb aux
 }
+
 t_list* lista_tripulantes_patota(t_PCB* pcb){
-	//codear
+
+
+	// Necesito listar todos los tripulantes que estan en RAM, y los que estan en NEW
+	// Primero; le mando a ram el PID o el PCB (posiblemente este).
+	// Segundo, RAM ejecuta su funcion y me devuelve los tripulantes con ese PCB asociado
+	// Tercero, los guardo en una lista
+	// Cuarto, si lo tenemos diseñado que los tripulantes de NEW no esten en RAM,
+	// que es lo teoricamente correcto, entonces verifico lo mismo con la lista o cola de NEW
+	// de discordiador y uno las dos listas
+	// Quinto: devuelvo la lista
+
+	// t_list* aux_lista_tripulantes = list_create();
+	// pedido_ram_tripulantes (t_PCB* pcb);
+	// aux_lista_tripulantes = recibir_tripulantes_de_ram();
+	// sacar lista_tripulantes_new_de_esa_patota, de Discordiador con las funciones de list.h;
+	// juntar(aux_lista_tripulantes, lista_tripulantes_new_de_esa_patota);
+	// return aux_lista_tripulantes;
+	// list_destroy(aux_lista_tripulantes); debo destrozar esto LUEGO de usarla en la funcion anterior
+
 	return NULL;
 }
 
+/*
+void lista_tripulantes_patota_version_RAM(t_PCB* pcb){
+
+	// verifico que el pcb/patota esta en la lista de pcbs/patotas
+	// en una lista de tripulantes, me quedo con aquellos que cumplan que su puntero_a_pcb es igual al pcb que tenemos.
+	// envio esa lista a Discordiador, o bien enviarlos uno por uno que puede ser mas facil
+
+}*/
+
 void pausar_planificacion() {
-	printf("pausarPlanificacion");
+	printf("Pausar Planificacion\n");
 	planificacion_activa = 0;
 }
 
@@ -279,6 +302,7 @@ void obtener_bitacora(char* leido) {
 }
 
 void expulsar_tripulante(char* leido) {
+	//TODO plantearselo a los agentes doble j
 	printf("expulsarTripulante");
 }
 
@@ -321,7 +345,7 @@ int sonIguales(int elemento1, int elemento2){
 	}
 
 
-/*//hablar con los chicos
+/*//hablar con los agentes doble j
 // codear escuchar discordiador YA
 // guardarlo en el logger
 // SACAS UNO DE LA COLA DE NEW Y LO PASARLO A READY
@@ -329,13 +353,17 @@ int sonIguales(int elemento1, int elemento2){
 */
 
 void enlistar_tripulante(){ //TODO no testeado, SEBA
+	// Utilizo NEW como si fuera una cola, pero no necesariamente lo es
+	// no es NECESARIO que el que se pase a ready sea el primero de la cola,
+	// pero no deberia ser problema implementarlo asi siempre y cuando
+	// se le asigne la tarea al tripulante que sacamos de la cola de new
 	t_TCB* tripulante_a_ready = queue_pop(cola_tripulantes_new);
 	queue_push(cola_tripulantes_ready, tripulante_a_ready);
 	tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
 }
 
 void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde liberar
-	args_escuchar_discordiador* p = malloc(sizeof(args_escuchar_discordiador));
+	args_escuchar* p = malloc(sizeof(args_escuchar));
 	p = args;
 	int socket_escucha = p->socket_oyente;
 
@@ -364,10 +392,25 @@ void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde li
 				//atender_clientes(socket_especifico); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
 				printf("Recibido, gracias cliente");
 				close(socket_especifico); // Cumple proposito, se cierra socket hijo
-				exit(0); // Returnea
+				exit(0);
 			}
 
 			close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 		}
 }
 
+
+void iniciar_listas() {
+
+	lista_tripulantes_new = list_create();
+	lista_tripulantes_exec = list_create();
+	lista_pids = list_create();
+	lista_patotas = list_create();
+
+}
+void iniciar_colas() {
+
+	cola_tripulantes_ready = queue_create();
+	cola_tripulantes_new= queue_create();
+
+}

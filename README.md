@@ -3,6 +3,12 @@
 ### Registro de cambios
 
 10/06/2021
++ FInalizados los siguientes TODO:  
+    +GENERALIZAR LOS ARGS DE TODOS LOS  ESCUCHAR.  
+    +JUNTAR LA INICIALIZACION DE LISTAS Y COLAS EN UNA FUNC.  
++ Pseudocodigo de subfunciones de LISTAR_TRIPULANTES.
+
+09/06/2021
 + Cambiadas varias listas a colas.
 + Añadido escuchar discordiador y enlistar_tripulante().
 + Eliminado pthread_join de leer consola.

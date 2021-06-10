@@ -20,7 +20,7 @@ int main(int argc, char** argv){
 	config_mongo = config_create("i_mongo_store.config");
 
 	int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
-	args_escuchar_mongo args_escuchar;
+	args_escuchar args_escuchar;
 	args_escuchar.socket_oyente = socket_oyente;
     
 	pthread_t hilo_escucha;	
@@ -34,7 +34,7 @@ int main(int argc, char** argv){
 
 
 void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
-	args_escuchar_mongo *p = malloc(sizeof(args_escuchar_mongo));
+	args_escuchar *p = malloc(sizeof(args_escuchar));
 	p = args;
 	int socket_escucha = p->socket_oyente;
 

@@ -21,9 +21,6 @@
 //#include <comms/estructuras.h>
 //#include <comms/socketes.h>
 
-typedef struct {
-    int socket_oyente;
-} args_escuchar_miram;
 
 void atender_clientes(int socket_hijo);
 void escuchar_miram(void* args);

@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 	lista_tcb = list_create();
 
     int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); //Se podria delegar a un hilo
-	args_escuchar_miram args_miram;
+    args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
 	pthread_t hilo_escucha;
@@ -85,7 +85,7 @@ void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si
 }
 
 void escuchar_miram(void* args) { // No se libera args, ver donde liberar
-	args_escuchar_miram* p = malloc(sizeof(args_escuchar_miram));
+	args_escuchar* p = malloc(sizeof(args_escuchar));
 	p = args;
 	int socket_escucha = p->socket_oyente;
 

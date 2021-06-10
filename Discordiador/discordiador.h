@@ -44,12 +44,13 @@ void enlistar_tripulante();
 //t_patota* crear_patota(t_PCB* un_pcb);
 t_PCB* crear_pcb(char* path);
 int nuevo_pid();
-int esta_en_lista(t_list* lista, int elemento);
-int sonIguales(int elemento1, int elemento2);
 t_list* lista_tripulantes_patota(t_PCB* pcb);
 
-typedef struct {
-    int socket_oyente;
-} args_escuchar_discordiador;
+//FUNCIONES AUXILIARES
+
+int esta_en_lista(t_list* lista, int elemento);
+int sonIguales(int elemento1, int elemento2);
+void iniciar_listas();
+void iniciar_colas();
 
 #endif /* DISCORDIADOR_H_ */

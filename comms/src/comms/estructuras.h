@@ -17,6 +17,7 @@ typedef struct {
     uint32_t direccion_tareas;
 
 } t_PCB;
+
 /*
 typedef struct {
     t_PCB* pcb;
@@ -58,5 +59,11 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     int codigo_operacion;
 
 } t_estructura;
+
+typedef struct {
+
+    int socket_oyente;
+
+} args_escuchar;
 
 #endif
