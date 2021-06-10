@@ -9,6 +9,7 @@
  */
 //TODO: Implementar HANDLER de ESCUCHAR
 //TODO: GENERALIZAR los ARGS de todos los ESCUCHAR
+//TODO: JUNTAR TODAS LAS LISTAS Y COLAS EN UNA FUNC
 //TODO en crear_tcb, estamos asignando a las posiciones el ASCII, no el numero (lo cual esta bien?)
 #define	IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -28,6 +29,8 @@ char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 
 t_list *lista_pids;
+t_list *lista_patotas;
+
 t_list *lista_tripulantes_new;
 
 t_queue* cola_tripulantes_new;
@@ -43,6 +46,7 @@ int main() {
 	cola_tripulantes_ready = queue_create();
 	lista_tripulantes_new = list_create();
 	lista_pids = list_create();
+	lista_patotas = list_create();
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
 	//socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
@@ -236,18 +240,33 @@ void iniciar_planificacion() {
 	}
 }
 
-void listar_tripulantes() {
+void listar_tripulantes() {	//TODO falta testear
+    char* fechaHora = fecha_y_hora();
 
-	//int i = 0;
-    //int argc; tripulantes activos
-    //char* fechaHora = fecha_y_hora();
-    
-    //printf("Estado de la nave: %s\n",fechaHora);
-    //for(i; i<argc; i++){
-    //    printf("Tripulante: %d\tPatota: %d\tStatus: %s", i, patota, status)
-    //}
+    printf("Estado de la nave: %s\n", fechaHora);
+
+	//also existe list_iterate(lista_patotas, );
+	t_PCB* aux_p;
+	t_TCB* aux_t;
+
+	int i,j;
+
+	for(i = 0; i < list_size(lista_patotas); i++){
+		aux_p = list_get(lista_patotas, i);
+
+		for(j = 0; j < list_size(lista_tripulantes_patota(aux_p)); j++){
+			aux_t = list_get(lista_tripulantes_patota(aux_p), j);
+			printf("Tripulante: %d\tPatota: %d\tStatus: %i", aux_t->TID, ((t_PCB*) (aux_t->puntero_a_pcb))->PID, aux_t->estado_tripulante);
+
+		}
+
+	}
 
 	printf("listarTripulantes");
+}
+t_list* lista_tripulantes_patota(t_PCB* pcb){
+	//codear
+	return NULL;
 }
 
 void pausar_planificacion() {
@@ -322,7 +341,7 @@ void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde li
 
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
-	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
+	int socket_especifico;
 
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n");
@@ -336,7 +355,7 @@ void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde li
 			exit(1);
 		}
 
-	while (1) { // Loop infinito donde aceptara clientes
+	while (1) {
 			tamanio_direccion = sizeof(direccion_a_escuchar);
 			socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
 

@@ -46,6 +46,7 @@ t_PCB* crear_pcb(char* path);
 int nuevo_pid();
 int esta_en_lista(t_list* lista, int elemento);
 int sonIguales(int elemento1, int elemento2);
+t_list* lista_tripulantes_patota(t_PCB* pcb);
 
 typedef struct {
     int socket_oyente;
