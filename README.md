@@ -9,6 +9,7 @@
 + Creada variable "sistema_activo" y agregado el comando "APAGAR_SISTEMA"; el cual apaga el sistema sin depender de un hilo.
 + Arreglado puerto del mongo.
 + Añadida recepción de TCBs en MI_RAM.
++ Prototipo de listar_tripulantes().
 
 06/06/2021
 + Nos mudamos a Listas.
