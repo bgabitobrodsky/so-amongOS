@@ -6,8 +6,6 @@
 
 #include "socketes.h"
 
-
-// Funcion extraida de la Guia Beej, para limpieza de procesos muertos
 void sigchld_handler(int s) {
 	int saved_errno = errno;
 
@@ -92,7 +90,7 @@ void escuchar(int socket_escucha) {
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
 	struct sigaction sa;
-	sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+	sa.sa_handler = sigchld_handler;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {

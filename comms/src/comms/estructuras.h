@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdint.h>
 
-enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION, DESCONEXION };
+enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION, DESCONEXION};
 enum estados { NEW, READY, EXCECUTING, BLOCKED};
 
 typedef struct {
@@ -55,6 +55,7 @@ typedef struct {
 typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct de una funcion
 
     t_TCB* tcb;
+    t_PCB* pcb;
     t_tarea* tarea;
     int codigo_operacion;
 

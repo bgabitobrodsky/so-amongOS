@@ -15,7 +15,7 @@ t_log* logger_miramhq;
 t_config* config_miramhq;
 
 t_list* lista_tcb;
-
+t_list* lista_pcb;
 
 int main(int argc, char** argv) {
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
@@ -25,8 +25,11 @@ int main(int argc, char** argv) {
 	free(tamanio_memoria);
 
 	lista_tcb = list_create();
+	lista_pcb = list_create();
 
     int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ); //Se podria delegar a un hilo
+    //int socket_oyente = crear_socket_oyente("127.0.0.1", "25430"); //Se podria delegar a un hilo
+
     args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
@@ -44,9 +47,11 @@ int main(int argc, char** argv) {
 
 void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si muere discordiador. una forma de arreglarlo es hacer que estas funciones devuelvan valores.
 	int flag = 1;
+	t_estructura* mensaje_recibido;
 	    while(flag) { //TODO cambiar por do while  y liberar la estructura
-			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
+			mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
 			//sleep(1); //no quitar. sirve para testeos
+
 			switch(mensaje_recibido->codigo_operacion) {
 				case MENSAJE:
 					log_info(logger_miramhq, "Mensaje recibido");
@@ -57,18 +62,21 @@ void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si
 					break;
 
 				case COD_TAREA:
-					printf("Recibo una tarea");
+					log_info(logger_miramhq, "Recibo una tarea");
 					break;
 
 				case RECIBIR_PCB:
-					printf("Recibo una pcb");
-					//almacenar_pcb(mensaje_recibido);
+					log_info(logger_miramhq, "Recibo una pcb");
+					list_add(lista_pcb, (void*) mensaje_recibido->pcb);
+					//almacenar_pcb(mensaje_recibido); //TODO en un futuro, capaz no podamos recibir el PCB por quedarnos sin memoria
 					break;
 
 				case RECIBIR_TCB:
-					printf("Recibo una tcb");
+					log_info(logger_miramhq, "Recibo una tcb");
+					log_info(logger_miramhq, "Tripulante: %i, estado: %c pos: %i %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
 					list_add(lista_tcb, (void*) mensaje_recibido->tcb);
-					enviar_codigo(RECEPCION, socket_hijo);
+
+					//printf("Tripulante 1 pos: %c %c\n", (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
 					break;
 
 				case DESCONEXION:
@@ -77,7 +85,8 @@ void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si
 					break;
 
 				default:
-					log_info(logger_miramhq, "Se recibio un codigo invalido.");
+					log_info(logger_miramhq, "Se recibio un codigo invalido.\n");
+					printf("El codigo es %d\n", mensaje_recibido->codigo_operacion);
 					break;
 			}
 	    }

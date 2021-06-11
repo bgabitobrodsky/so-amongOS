@@ -15,6 +15,9 @@
 #define PUERTO_I_MONGO_STORE config_get_string_value(config, "PUERTO_I_MONGO_STORE")
 #define	ALGORITMO config_get_string_value(config, "ALGORITMO")
 #define	GRADO_MULTITAREA config_get_string_value(config, "GRADO_MULTITAREA")
+#define	QUANTUM config_get_int_value(config, "QUANTUM")
+#define	RETARDO_CICLO_CPU config_get_int_value(config, "RETARDO_CICLO_CPU")
+#define	DURACION_SABOTAJE config_get_int_value(config, "DURACION_SABOTAJE")
 
 #include "discordiador.h"
 
@@ -48,12 +51,30 @@ int main() {
 	socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 	//socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
 
+	/*t_PCB* p_pcb = crear_pcb("ah re");
+	t_TCB tcb1 = crear_tcb(p_pcb, 1, "0a0");
+	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb1.TID, (char) tcb1.estado_tripulante,(int) tcb1.coord_x, (int) tcb1.coord_y);
+	t_buffer* b = serializar_tcb(tcb1);
+
+	t_TCB* tcb = desserializar_tcb(b);
+
+	log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int)tcb->TID, (char) tcb->estado_tripulante, (int) tcb->coord_x, (int) tcb->coord_y);
+*/
+/*
+	t_PCB* p_pcb = crear_pcb("ah re");
+	t_TCB tcb1 = crear_tcb(p_pcb, 0, "0a0");
+	t_buffer* b = serializar_tcb(tcb1);
+	empaquetar_y_enviar(b, RECIBIR_TCB, socket_a_mi_ram_hq);
+*/
+
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
+
 		pthread_t hiloConsola;
 		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 		pthread_detach(hiloConsola);
 
 		//pthread_join(hiloConsola, NULL);
+
 		/*
 		args_escuchar args_disc;
 		args_disc.socket_oyente = socket_a_mi_ram_hq;
@@ -193,6 +214,7 @@ void iniciar_hilo_tripulante(void* funcion){
 	pthread_create(&hilo1, NULL, funcion, NULL);
 }
 
+/*
 t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	t_TCB* tcb = malloc(sizeof(t_TCB));
 	tcb -> TID = tid;
@@ -201,6 +223,18 @@ t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb -> coord_y = posicion[2];
 	//tcb -> siguiente_instruccion; //TODO
 	tcb -> puntero_a_pcb = (uint32_t) pcb;
+
+	return tcb;
+}*/
+
+t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
+	t_TCB tcb;
+	tcb.TID = tid;
+	tcb.estado_tripulante = estado_tripulante[NEW];
+	tcb.coord_x = posicion[0];
+	tcb.coord_y = posicion[2];
+	tcb.siguiente_instruccion = 5; //TODO
+	tcb.puntero_a_pcb = (uint32_t) pcb;
 
 	return tcb;
 }
@@ -212,22 +246,37 @@ t_tripulante* crear_tripulante(t_TCB* un_tcb){
 }
 */
 t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){
-	t_TCB* un_tcb = crear_tcb(pcb, tid, posicion);
+	//t_TCB* un_tcb = crear_tcb(pcb, tid, posicion);
 	//t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);
-	iniciar_hilo_tripulante(funcion);
-	return un_tcb;
+	//iniciar_hilo_tripulante(funcion);
+	//return un_tcb;
 }
 
 void iniciar_planificacion() {
-	printf("iniciarPlanificacion");
+	printf("Iniciar Planificacion");
 	planificacion_activa = 1;
 
-	// TODO NO TESTEADO
-	while(planificacion_activa){
+	// codigo para testeos
+	// t_tarea* aux_tarea = malloc(sizeof(t_tarea));
+	// aux_tarea->duracion = 5;
+
+	// TODO NO TESTEADO, y eliminar redundancia.
+
+	while(planificacion_activa && list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){
 		if(comparar_strings(ALGORITMO, "FIFO")){
-			while(list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){
-				list_add(lista_tripulantes_exec, queue_pop(cola_tripulantes_ready));
-			}
+			t_TCB* aux_tripulante = queue_pop(cola_tripulantes_ready);
+			aux_tripulante->estado_tripulante = estado_tripulante[EXCECUTING];
+			list_add(lista_tripulantes_exec, aux_tripulante);
+			free(aux_tripulante);
+		}
+		else if(comparar_strings(ALGORITMO, "RR")){
+			t_TCB* aux_tripulante = queue_pop(cola_tripulantes_ready);
+			aux_tripulante->estado_tripulante = estado_tripulante[EXCECUTING];
+			list_add(lista_tripulantes_exec, aux_tripulante);
+			/*for(;;){
+				sleep(RETARDO_CICLO_CPU);
+			}*/
+			free(aux_tripulante);
 		}
 	}
 }
@@ -240,7 +289,6 @@ void listar_tripulantes() {	//TODO falta testear
 
     printf("Estado de la nave: %s\n", fechaHora);
 
-	//tambien existe list_iterate(lista_patotas, ...);, pero no se como se aplicaria
 	t_PCB* aux_p;
 	t_TCB* aux_t;
 
@@ -252,16 +300,15 @@ void listar_tripulantes() {	//TODO falta testear
 		for(j = 0; j < list_size(lista_tripulantes_patota(aux_p)); j++){
 			aux_t = list_get(lista_tripulantes_patota(aux_p), j);
 			printf("Tripulante: %d\tPatota: %d\tStatus: %i", aux_t->TID, ((t_PCB*) (aux_t->puntero_a_pcb))->PID, aux_t->estado_tripulante);
-
+			printf("Status: %d\t", ((t_PCB*) (aux_t->puntero_a_pcb))->PID);
 		}
-
 	}
-	//liberar pcb aux
-	//liberar tcb aux
+
+	free(aux_p);
+	free(aux_t);
 }
 
-t_list* lista_tripulantes_patota(t_PCB* pcb){
-
+t_list* lista_tripulantes_patota(t_PCB* pcb){ //TODO codear
 
 	// Necesito listar todos los tripulantes que estan en RAM, y los que estan en NEW
 	// Primero; le mando a ram el PID o el PCB (posiblemente este).
@@ -298,12 +345,11 @@ void pausar_planificacion() {
 }
 
 void obtener_bitacora(char* leido) {
-	printf("obtenerBitacora");
+	printf("Obtener Bitacora");
 }
 
 void expulsar_tripulante(char* leido) {
-	//TODO plantearselo a los agentes doble j
-	printf("expulsarTripulante");
+	printf("Expulsar Tripulante");
 }
 
 /*int pedir_tarea(int id_tripulante){
@@ -313,18 +359,19 @@ void expulsar_tripulante(char* leido) {
 	return 1;
 }
 
-void realizar_tarea(t_tarea tarea){ // TODO 
+void realizar_tarea(t_tarea tarea){
 
 }*/
 
-char* fecha_y_hora() { // Creo que las commons ya tienen una funcion que hace esto
-	time_t tiempo = time(NULL);
-	struct tm tiempoLocal = *localtime(&tiempo); // Tiempo actual
-	static char fecha_Hora[70]; // El lugar en donde se pondrÃ¡ la fecha y hora formateadas
-	char *formato = "%d-%m-%Y %H:%M:%S";  // El formato. Mira mÃ¡s en https://en.cppreference.com/w/c/chrono/strftime
-	int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);  // Intentar formatear
 
-	if (bytesEscritos != 0) { // Si no hay error, los bytesEscritos no son 0
+char* fecha_y_hora() {
+	time_t tiempo = time(NULL);
+	struct tm tiempoLocal = *localtime(&tiempo);
+	static char fecha_Hora[70];
+	char *formato = "%d-%m-%Y %H:%M:%S";
+	int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);
+
+	if (bytesEscritos != 0) {
 		return fecha_Hora;
   	} 
 	else {
@@ -345,12 +392,8 @@ int sonIguales(int elemento1, int elemento2){
 	}
 
 
-/*//hablar con los agentes doble j
-// codear escuchar discordiador YA
+// codear atender_discordiador
 // guardarlo en el logger
-// SACAS UNO DE LA COLA DE NEW Y LO PASARLO A READY
-// CAMBIAR EL ESTADO DEL TCB
-*/
 
 void enlistar_tripulante(){ //TODO no testeado, SEBA
 	// Utilizo NEW como si fuera una cola, pero no necesariamente lo es
@@ -359,6 +402,7 @@ void enlistar_tripulante(){ //TODO no testeado, SEBA
 	// se le asigne la tarea al tripulante que sacamos de la cola de new
 	t_TCB* tripulante_a_ready = queue_pop(cola_tripulantes_new);
 	queue_push(cola_tripulantes_ready, tripulante_a_ready);
+	//asignar tarea
 	tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
 }
 
@@ -399,7 +443,6 @@ void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde li
 		}
 }
 
-
 void iniciar_listas() {
 
 	lista_tripulantes_new = list_create();
@@ -414,3 +457,49 @@ void iniciar_colas() {
 	cola_tripulantes_new= queue_create();
 
 }
+/*
+void atender_clientes(int socket_hijo) {
+	int flag = 1;
+	    while(flag) { //TODO cambiar por do while  y liberar la estructura
+			t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
+			//sleep(1); //no quitar. sirve para testeos
+
+			switch(mensaje_recibido->codigo_operacion) {
+				case MENSAJE:
+					log_info(logger_miramhq, "Mensaje recibido");
+					break;
+
+				case PEDIR_TAREA:
+					log_info(logger_miramhq, "Pedido de tarea recibido");
+					break;
+
+				case COD_TAREA:
+					printf("Recibo una tarea");
+					break;
+
+				case RECIBIR_PCB:
+					printf("Recibo una pcb");
+					list_add(lista_pcb, (void*) mensaje_recibido->pcb);
+					enviar_codigo(RECEPCION, socket_hijo);
+					//almacenar_pcb(mensaje_recibido); TODO en un futuro, capaz no podamos recibir el PCB por quedarnos sin memoria
+					break;
+
+				case RECIBIR_TCB:
+					printf("Recibo una tcb");
+					list_add(lista_tcb, (void*) mensaje_recibido->tcb);
+					enviar_codigo(RECEPCION, socket_hijo);
+					break;
+
+				case DESCONEXION:
+					log_info(logger_miramhq, "Se desconecto el modulo");
+					flag = 0;
+					break;
+
+				default:
+					log_info(logger_miramhq, "Se recibio un codigo invalido.");
+					break;
+			}
+	    }
+
+}
+*/
