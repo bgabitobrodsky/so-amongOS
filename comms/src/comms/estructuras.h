@@ -16,6 +16,7 @@ enum estados { NEW, READY, EXCECUTING, BLOCKED};
 /* ESTRUCTURAS */
 
 typedef struct {
+
     uint32_t PID;
     uint32_t direccion_tareas;
 
@@ -39,6 +40,7 @@ typedef struct {
 } t_TCB;
 
 typedef struct { // Puede estar de mas
+
 	uint32_t codigo;
     t_TCB* tcb;
 

@@ -87,7 +87,7 @@ void sabotaje(int socket_discordiador) {
 		wait(SIGUSR1);
 		enviar_codigo(SABOTAJE, socket_discordiador);
 		wait(verificacion);
-		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
+		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
 		reparar(mensaje);
 		signal(reparado); 
 		free(mensaje);
@@ -113,7 +113,7 @@ void iniciar_file_system() {
 	}
 	else {
 		mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow
-		mkdir(path_files, 0777);
+		mkdir(path_files, 0777); // TODO: Crear bloque y superbloque
 		inicializar_archivos(path_files);
 		free(path_files);
 	}
