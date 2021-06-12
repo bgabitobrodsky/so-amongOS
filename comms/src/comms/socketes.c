@@ -6,8 +6,6 @@
 
 #include "socketes.h"
 
-
-// Funcion extraida de la Guia Beej, para limpieza de procesos muertos
 void sigchld_handler(int s) {
 	int saved_errno = errno;
 
@@ -18,8 +16,8 @@ void sigchld_handler(int s) {
 
 // Funcion para crear un socket modalidad cliente
 int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_servidor) { 
-	printf("escuchar cliente");
-	struct addrinfo datos_para_server, *informacion_server;
+	struct addrinfo datos_para_server, *informacion_server, *p;
+	int socket_cliente;
 	int estado;
 
 	memset(&datos_para_server, 0, sizeof(datos_para_server)); // Se settea en 0 la var datos_para_server
@@ -30,13 +28,19 @@ int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_serv
 	if ((estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server)) != 0) // Obtengo la informacion del server y la alojo en informacion_server, utilizando los datos predefinidos arriba para settear
 		printf("Error al conseguir informacion del servidor\n"); // Al mismo tiempo se verifica si el proceso funciono correctamente
 
-	int socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol); // Consigo el numero de socket con la informacion obtenida
+	for (p = informacion_server; p != NULL; p = p->ai_next){ // Ciclo por todas las opciones hasta encontrar una
+		
+        if ((socket_cliente = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) // Si crear socket falla, sigue intentando
+            continue;
 
-	if (socket_cliente == -1)
-		printf("Error al crear socket\n"); // Verifico que el socket se haya logrado crear correctamente
+        if (connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) { // Si no conecta, cierra e intenta a otro
+            close(socket_cliente);
+            continue;
+        }
 
-	if (connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) // Conecto el socket con el server que obtuve
-		printf("Error al conectar cliente\n"); // Tambien verifico que se conecte
+        break;
+    }
+
 
 	freeaddrinfo(informacion_server); // Libero la informacion del server total ya no sirve
 
@@ -45,7 +49,7 @@ int crear_socket_cliente(char* ip_del_servidor_a_conectar, char* puerto_del_serv
 
 // Funcion para crear un socket que escuchara llamados de conexion en un servidor
 int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servidor) { 
-	struct addrinfo datos_para_server, *informacion_server;
+	struct addrinfo datos_para_server, *informacion_server, *p;
 	int socket_escucha;
 	int estado;
 
@@ -57,37 +61,45 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 	if ((estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server)) != 0)
 		printf("Error al conseguir informacion del servidor\n");
 
-	socket_escucha = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol);
+	int activado = 1;
+	setsockopt(socket_escucha, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
-	if (socket_escucha == -1)
-		printf("Error al crear socket\n");
+	for (p = informacion_server; p != NULL; p = p->ai_next){
+		
+        if ((socket_escucha = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
+            continue;
 
-	// Todo lo de arriba identico a la funcion anterior
+        if (bind(socket_escucha, p->ai_addr, p->ai_addrlen) == -1){
+        	printf("Fallo en el bind.\n");
+            close(socket_escucha);
+            continue;
+        }
 
-	if (bind(socket_escucha, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) // Asocio socket obtenido a un puerto especifico donde se escucharan llamados de conexion
-		printf("Error al conectar con el servidor\n");
+        break;
+    }
 
 	freeaddrinfo(informacion_server); // Libero la informacion del server total ya no sirve
 
 	return socket_escucha;
 }
 
-// Funcion para escuchar llamados, con un socket de la funcion anterior, faltaria 
-void escuchar(int socket_escucha,  void* funcion_de_hijos()  /*(parametros) */){
+// Funcion para escuchar llamados, con un socket de la funcion anterior, faltaria  //TODO
+void escuchar(int socket_escucha) {
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
 
-	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente
+	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
-	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+	struct sigaction sa;
+	sa.sa_handler = sigchld_handler;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 		printf("Error al limpiar procesos\n");
 		exit(1);
-	}*/
+	}
 
 	while (1) { // Loop infinito donde aceptara clientes
 		tamanio_direccion = sizeof(direccion_a_escuchar);
@@ -95,7 +107,7 @@ void escuchar(int socket_escucha,  void* funcion_de_hijos()  /*(parametros) */){
 
 		if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
 			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-			funcion_de_hijos(); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
+			// funcion_de_hijos(); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
 			close(socket_especifico); // Cumple proposito, se cierra socket hijo
 			exit(0); // Returnea
 		}
@@ -113,8 +125,8 @@ int enviar_mensaje(int socket, void* mensaje, int largo) { // Se podria definir 
 
 	if (bytes_enviados == -1) // Pudieron no mandarse, verifico
 		printf("No se envio el mensaje\n");
-	else if (bytes_enviados /= largo) // Pueden ser menos de los que queria, verifico (hasta 1KB safe si no me equivoco)
-		printf("No se envio todo el mensaje\n");
+	/* else if (bytes_enviados /= largo) // Pueden ser menos de los que queria, verifico (hasta 1KB safe si no me equivoco)
+		printf("No se envio todo el mensaje\n");*/
 
 	return bytes_enviados;
 }
@@ -125,7 +137,7 @@ int enviar_mensaje(int socket, void* mensaje, int largo) { // Se podria definir 
 int recibir_mensaje(int socket, void* buffer, int largo) { 
 	int bytes_recibidos;
 
-	bytes_recibidos = recv(socket, buffer, largo, 0); // Recibo un mensaje, y recibo la cantidad de bytes que recibi
+	bytes_recibidos = recv(socket, buffer, largo, MSG_WAITALL); // Recibo un mensaje, y recibo la cantidad de bytes que recibi
 
 	switch (bytes_recibidos) {
 	case (-1):

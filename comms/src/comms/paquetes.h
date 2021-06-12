@@ -10,21 +10,28 @@
 #include "socketes.h"
 
 typedef struct {
+
     uint32_t tamanio_estructura; 
     void* estructura;
+
 } t_buffer;
 
 typedef struct {
-    uint8_t codigo_operacion;
+
+    int codigo_operacion;
     t_buffer* buffer;
+
 } t_paquete;
 
-t_buffer serializar_tripulante(t_tripulante tripulante);
-t_buffer serializar_tarea(t_tarea tarea);
-t_buffer serializar_sabotaje();
-void empaquetar(t_buffer buffer, int codigo_operacion, int socket_receptor);
+t_buffer* serializar_tcb(t_TCB tcb);
+t_buffer* serializar_tarea(t_tarea tarea);
+t_buffer* serializar_vacio();
+void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_receptor);
+void enviar_codigo(int codigo_operacion, int socket_receptor);
 t_estructura* recepcion_y_deserializacion(int socket_receptor);
-t_tripulante* desserializar_tripulante(t_buffer* buffer);
+t_TCB* desserializar_tcb(t_buffer* buffer);
 t_tarea* desserializar_tarea(t_buffer* buffer);
+void eliminar_paquete(t_paquete* paquete);
+
 
 #endif
