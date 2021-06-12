@@ -125,3 +125,18 @@ void help_comandos() {
 	printf("- EXPULSAR_TRIPULANTE <codigo_de_tripulante>\n");
 	printf("- OBTENER_BITACORA <codigo_de_tripulante>\n");
 }
+
+void iniciar_listas() {
+
+	lista_tripulantes_new = list_create();
+	lista_tripulantes_exec = list_create();
+	lista_pids = list_create();
+	lista_patotas = list_create();
+
+}
+void iniciar_colas() {
+
+	cola_tripulantes_ready = queue_create();
+	cola_tripulantes_new= queue_create();
+
+}

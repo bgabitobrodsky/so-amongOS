@@ -9,8 +9,7 @@
 #define MI_RAM_HQ_H_
 
 #include "utils.h"
-#include <commons/collections/queue.h>
-#include <commons/collections/list.h>
+
 //#include <stdio.h>
 //#include <stdlib.h>
 //#include <pthread.h>
@@ -24,5 +23,8 @@
 
 void atender_clientes(int socket_hijo);
 void escuchar_miram(void* args);
+t_PCB* crear_pcb(char* path);
+t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
+
 
 #endif /* MI_RAM_HQ_H_ */

@@ -51,8 +51,19 @@ typedef enum{
 extern t_config* config;
 extern t_log* logger;
 
+extern t_list* lista_tripulantes_new;
+extern t_list* lista_tripulantes_exec;
+extern t_list* lista_pids;
+extern t_list* lista_patotas;
+
+extern t_queue* cola_tripulantes_new;
+extern t_queue* cola_tripulantes_ready;
+
 int reconocer_comando(char* str);
 int comparar_strings(char* str, char* str2);
 void help_comandos();
+void iniciar_listas();
+void iniciar_colas();
+
 
 #endif /* DISCORDIADOR_UTILS_H_ */

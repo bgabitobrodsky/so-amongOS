@@ -31,14 +31,16 @@ void obtener_bitacora(char* leido);
 int pedir_tarea(int id_tripulante);
 void realizar_tarea(t_tarea tarea);
 
-// Funciones sockets
+// Funciones de conexiones y sockets
 void escuchar_discordiador(void* args);
 void atender_clientes();
+void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
+
 
 // HILOS
 void expulsar_tripulante(char* leido);
 void iniciar_hilo_tripulante(void* funcion);
-//t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion);
+t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 //t_tripulante* crear_tripulante(t_TCB* un_tcb);
@@ -55,8 +57,6 @@ t_list* lista_tripulantes_patota(t_PCB* pcb);
 
 int esta_en_lista(t_list* lista, int elemento);
 int sonIguales(int elemento1, int elemento2);
-void iniciar_listas();
-void iniciar_colas();
 char* fecha_y_hora();
 
 
