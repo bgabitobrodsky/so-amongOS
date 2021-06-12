@@ -1,10 +1,3 @@
-/*
- * utils.h
- *
- *  Created on: 8 may. 2021
- *      Author: utnso
- */
-
 #ifndef MI_RAM_HQ_UTILS_H_
 #define MI_RAM_HQ_UTILS_H_
 
@@ -25,7 +18,7 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 
-extern t_log* logger_miramhq;
-extern t_config* config_miramhq;
+extern t_log* logger;
+extern t_config* config;
 
 #endif /* MI_RAM_HQ_UTILS_H_ */

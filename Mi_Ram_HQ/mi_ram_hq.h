@@ -1,10 +1,3 @@
-/*
- * i_mongo_store.h
- *
- *  Created on: 9 may. 2021
- *      Author: utnso
- */
-
 #ifndef MI_RAM_HQ_H_
 #define MI_RAM_HQ_H_
 
@@ -20,7 +13,7 @@
 //#include <comms/estructuras.h>
 //#include <comms/socketes.h>
 
-
+void iniciar_memoria();
 void atender_clientes(int socket_hijo);
 void escuchar_miram(void* args);
 t_PCB* crear_pcb(char* path);
