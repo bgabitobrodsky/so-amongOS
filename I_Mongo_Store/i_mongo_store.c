@@ -13,7 +13,7 @@
 // Vars globales
 t_log* logger_mongo;
 t_config* config_mongo;
-t_archivos archivos; // Declarar ese struct
+t_archivos archivos; 
 
 int main(int argc, char** argv){
 
