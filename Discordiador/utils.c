@@ -18,7 +18,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"INICIAR_PATOTA")) {
 		if (contador >= 3) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return INICIAR_PATOTA;
 		}
 		else {
@@ -28,7 +28,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"LISTAR_TRIPULANTES")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return LISTAR_TRIPULANTES;
 		}
 		else {
@@ -38,7 +38,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"EXPULSAR_TRIPULANTE")) {
 		if (contador == 2) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return EXPULSAR_TRIPULANTE;
 		}
 		else {
@@ -48,7 +48,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"INICIAR_PLANIFICACION")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return INICIAR_PLANIFICACION;
 		}
 		else {
@@ -58,7 +58,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"PAUSAR_PLANIFICACION")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return PAUSAR_PLANIFICACION;
 		}
 		else {
@@ -68,7 +68,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"OBTENER_BITACORA")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return OBTENER_BITACORA;
 		}
 		else {
@@ -78,7 +78,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"HELP")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return HELP;
 		}
 		else {
@@ -88,7 +88,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"EXIT")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return EXIT;
 		}
 		else {
@@ -98,7 +98,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"APAGAR_SISTEMA")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return APAGAR_SISTEMA;
 		}
 		else {
@@ -106,7 +106,8 @@ int reconocer_comando(char* str) {
 		}
 	}
 
-	free(palabras);
+	liberar_puntero_doble(palabras);
+
 	printf("Comando desconocido, escribe HELP para obtener la lista de comandos\n");
 	return NO_CONOCIDO;
 }
@@ -124,4 +125,32 @@ void help_comandos() {
 	printf("- LISTAR_TRIPULANTES\n");
 	printf("- EXPULSAR_TRIPULANTE <codigo_de_tripulante>\n");
 	printf("- OBTENER_BITACORA <codigo_de_tripulante>\n");
+}
+
+void iniciar_listas() {
+
+	lista_tripulantes_new = list_create();
+	lista_tripulantes_exec = list_create();
+	lista_pids = list_create();
+	lista_patotas = list_create();
+
+}
+void iniciar_colas() {
+
+	cola_tripulantes_ready = queue_create();
+	cola_tripulantes_new= queue_create();
+
+}
+
+void liberar_puntero_doble(char** palabras){
+	int contador = 0;
+
+	while (palabras[contador] != NULL) {
+		contador++;
+	}
+
+	for(int i = 0; i<contador; i++){
+		free(palabras[i]);
+	}
+	free(palabras);
 }

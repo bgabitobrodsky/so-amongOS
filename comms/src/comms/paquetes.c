@@ -1,6 +1,7 @@
 /*
 
  Funcionalidad de paquetes, cortesia de Nico
+ TODO de SEBA, falta testear serializacion, envio y recepcion de tareas.
 
 */
 
@@ -11,27 +12,26 @@
 t_buffer* serializar_tcb(t_TCB tcb) {
 
     t_buffer* buffer = malloc(sizeof(t_buffer));
-    //buffer->tamanio_estructura = (5 * sizeof(uint32_t)); // Se le da el tamanio del struct del parametro
-    buffer->tamanio_estructura = sizeof(uint32_t)*5 + sizeof(char);
+    buffer->tamanio_estructura = sizeof(uint32_t)*5 + sizeof(char);  // Se le da el tamanio del struct del parametro
 
     void* estructura = malloc(buffer->tamanio_estructura); // Se utiliza intermediario
     int desplazamiento = 0; // Desplazamiento para calcular que tanto tengo que correr para que no se sobrepisen cosas del array estructura
 
-    memcpy(estructura + desplazamiento, &tcb.TID, sizeof(uint32_t));
+    memcpy(estructura + desplazamiento, &tcb.TID, sizeof(uint32_t)); // Se copia y pega al array estructura ordenado:
     desplazamiento += sizeof(uint32_t);
-    //TODO: seba estuvo aqui, dejo una z en las lineas que agregue por si lo hice mal
-    memcpy(estructura + desplazamiento, &tcb.estado_tripulante, sizeof(char)); //z
-    desplazamiento += sizeof(char); //z
+    memcpy(estructura + desplazamiento, &tcb.estado_tripulante, sizeof(char));
+    desplazamiento += sizeof(char);
     memcpy(estructura + desplazamiento, &tcb.coord_x, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tcb.coord_y, sizeof(uint32_t));// Se copia y pega al array estructura ordenado
-    desplazamiento += sizeof(uint32_t); //z
-    memcpy(estructura + desplazamiento, &tcb.siguiente_instruccion, sizeof(uint32_t)); //z
-    desplazamiento += sizeof(uint32_t); //z
-    memcpy(estructura + desplazamiento, &tcb.puntero_a_pcb, sizeof(uint32_t)); //z
+    memcpy(estructura + desplazamiento, &tcb.coord_y, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tcb.siguiente_instruccion, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tcb.puntero_a_pcb, sizeof(uint32_t));
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
+    free(estructura);
     return buffer;
 
 }
@@ -85,8 +85,8 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
     t_paquete* paquete = malloc(sizeof(t_paquete));
     paquete->codigo_operacion = codigo_operacion;
     paquete->buffer = buffer;
-    //printf("codigo de operacion paquetes: %i", paquete->codigo_operacion);
-    int tamanio_mensaje = buffer->tamanio_estructura + sizeof(int) + sizeof(uint32_t);
+
+    int tamanio_mensaje = ((unsigned int) (buffer->tamanio_estructura)) + sizeof(int) + sizeof(uint32_t);
 
     void* mensaje = malloc(tamanio_mensaje);
     int desplazamiento = 0;
@@ -137,9 +137,6 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     t_estructura* intermediario = malloc(sizeof(t_estructura));
 
     int conexion_cerrada = recibir_mensaje(socket_receptor, &(paquete->codigo_operacion), sizeof(int));
-    //printf("Codigo recibido: cero");
-
-    printf("Codigo recibido: %i", paquete->codigo_operacion);
 
     if(conexion_cerrada == 0){
     	intermediario->codigo_operacion = DESCONEXION;
@@ -160,12 +157,14 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     // Switch estructuras
     switch (paquete->codigo_operacion) { 
+    	case RECIBIR_PCB:
+    		intermediario->codigo_operacion = RECIBIR_PCB;
+    		break;
 
         case RECIBIR_TCB:
-            intermediario->codigo_operacion = RECIBIR_TCB;
-            t_TCB* tcb = desserializar_tcb(paquete->buffer->estructura);
-            intermediario->tcb = tcb;
-            free(tcb);
+        	intermediario->codigo_operacion = RECIBIR_TCB;
+        	intermediario->tcb = malloc(sizeof(uint32_t)*5 + sizeof(char));
+            intermediario->tcb = desserializar_tcb(paquete->buffer);
             break;
 
         case TAREA:
@@ -176,6 +175,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
             break;
         default:
         	printf("No se recibio ni tarea ni tcb.");
+            break;
     }
 
     eliminar_paquete(paquete);
@@ -187,7 +187,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 // Se explica deserializacion en esta funcion
 t_TCB* desserializar_tcb(t_buffer* buffer) {
 
-	t_TCB* tcb = malloc(sizeof(t_TCB)); // Se toma tamaño de lo que sabemos que viene
+	t_TCB* tcb = malloc(sizeof(uint32_t)*5 + sizeof(char)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
 
     memcpy(&(tcb->TID), estructura, sizeof(uint32_t));
@@ -198,9 +198,9 @@ t_TCB* desserializar_tcb(t_buffer* buffer) {
     estructura += sizeof(uint32_t);
     memcpy(&(tcb->coord_y), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    memcpy(&(tcb->puntero_a_pcb), estructura, sizeof(uint32_t));
-    estructura += sizeof(uint32_t);
     memcpy(&(tcb->siguiente_instruccion), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(tcb->puntero_a_pcb), estructura, sizeof(uint32_t));
 
     return tcb;
 }
@@ -215,7 +215,6 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
     estructura += sizeof(uint32_t);
     tarea->nombre = malloc(tarea->nombre_largo);
     memcpy(tarea->nombre, estructura, tarea->nombre_largo);
-
     memcpy(&(tarea->parametro), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
     memcpy(&(tarea->coord_x), estructura, sizeof(uint32_t));

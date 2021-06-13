@@ -21,14 +21,13 @@
 
 #include "discordiador.h"
 
-// Vars globales
+// Variables globales
 t_config* config;
 t_log* logger;
 int socket_a_mi_ram_hq;
 int socket_a_mongo_store;
-char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
-int planificacion_activa = 0;
 
+// Listas
 t_list* lista_pids;
 t_list* lista_patotas;
 t_list* lista_tripulantes_new;
@@ -37,6 +36,9 @@ t_list* lista_tripulantes_exec;
 t_queue *cola_tripulantes_new;
 t_queue *cola_tripulantes_ready;
 
+// Variables de discordiador
+char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
+int planificacion_activa = 0;
 int sistema_activo = 1;
 
 int main() {
@@ -50,22 +52,6 @@ int main() {
 	//socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
 	socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 	//socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
-
-	/*t_PCB* p_pcb = crear_pcb("ah re");
-	t_TCB tcb1 = crear_tcb(p_pcb, 1, "0a0");
-	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb1.TID, (char) tcb1.estado_tripulante,(int) tcb1.coord_x, (int) tcb1.coord_y);
-	t_buffer* b = serializar_tcb(tcb1);
-
-	t_TCB* tcb = desserializar_tcb(b);
-
-	log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int)tcb->TID, (char) tcb->estado_tripulante, (int) tcb->coord_x, (int) tcb->coord_y);
-*/
-/*
-	t_PCB* p_pcb = crear_pcb("ah re");
-	t_TCB tcb1 = crear_tcb(p_pcb, 0, "0a0");
-	t_buffer* b = serializar_tcb(tcb1);
-	empaquetar_y_enviar(b, RECIBIR_TCB, socket_a_mi_ram_hq);
-*/
 
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -110,6 +96,7 @@ void leer_consola() {
 			comando = reconocer_comando(leido);
 
 			switch (comando) {
+
 				case INICIAR_PATOTA:
 					iniciar_patota(leido);
 					break;
@@ -160,14 +147,22 @@ void iniciar_patota(char* leido) {
 	
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
+	int contador = 0;
+	while (palabras[contador] != NULL) {
+		contador++;
+	}
+
 	int i = 0;
 	t_PCB* pcb = crear_pcb(path);
-
 	t_TCB* aux;
+
+	// TODO: aux en iniciar_tcb ROMPE. por este motivo fue cambiado a crear_puntero_tcb
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
 		//void* funcion = pedir_funcion()
-		aux = iniciar_tcb(NULL, pcb, i+1, palabras[i+3]); //Le manda a RAM el tripulante
+		//aux = iniciar_tcb(NULL, pcb, i+1, palabras[i+3]);
+		aux = crear_puntero_tcb(pcb, i+1, palabras[i+3]);
+		enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
 
 		queue_push(cola_tripulantes_new, (void*) aux);
 		i++;
@@ -176,11 +171,14 @@ void iniciar_patota(char* leido) {
 	for(int j = i+1; j <= cantidadTripulantes; j++){
 		printf("POSICION %d: 0|0 \n", j);
 		//void* funcion = pedir_funcion()
-		aux = iniciar_tcb(NULL, pcb, i+1, "0|0"); //Le manda a RAM el tripulante
+		//aux = iniciar_tcb(NULL, pcb, i+1, "0|0");
+		aux = crear_puntero_tcb(pcb, i+1, "0|0");
+		enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
 
 		queue_push(cola_tripulantes_new, (void*) aux);
 	}
 	free(aux);
+	liberar_puntero_doble(palabras);
 }
 
 /*
@@ -214,18 +212,18 @@ void iniciar_hilo_tripulante(void* funcion){
 	pthread_create(&hilo1, NULL, funcion, NULL);
 }
 
-/*
-t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
+
+t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
 	t_TCB* tcb = malloc(sizeof(t_TCB));
 	tcb -> TID = tid;
 	tcb -> estado_tripulante = estado_tripulante[NEW];
 	tcb -> coord_x = posicion[0];
 	tcb -> coord_y = posicion[2];
-	//tcb -> siguiente_instruccion; //TODO
+	tcb -> siguiente_instruccion = 0; //TODO
 	tcb -> puntero_a_pcb = (uint32_t) pcb;
 
 	return tcb;
-}*/
+}
 
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	t_TCB tcb;
@@ -233,7 +231,7 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb.estado_tripulante = estado_tripulante[NEW];
 	tcb.coord_x = posicion[0];
 	tcb.coord_y = posicion[2];
-	tcb.siguiente_instruccion = 5; //TODO
+	tcb.siguiente_instruccion = 0; //TODO
 	tcb.puntero_a_pcb = (uint32_t) pcb;
 
 	return tcb;
@@ -245,11 +243,12 @@ t_tripulante* crear_tripulante(t_TCB* un_tcb){
 	return tripulante;
 }
 */
+
 t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){
-	//t_TCB* un_tcb = crear_tcb(pcb, tid, posicion);
+	t_TCB* un_tcb = crear_puntero_tcb(pcb, tid, posicion);
 	//t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);
-	//iniciar_hilo_tripulante(funcion);
-	//return un_tcb;
+	iniciar_hilo_tripulante(funcion);
+	return un_tcb;
 }
 
 void iniciar_planificacion() {
@@ -443,20 +442,6 @@ void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde li
 		}
 }
 
-void iniciar_listas() {
-
-	lista_tripulantes_new = list_create();
-	lista_tripulantes_exec = list_create();
-	lista_pids = list_create();
-	lista_patotas = list_create();
-
-}
-void iniciar_colas() {
-
-	cola_tripulantes_ready = queue_create();
-	cola_tripulantes_new= queue_create();
-
-}
 /*
 void atender_clientes(int socket_hijo) {
 	int flag = 1;
@@ -503,3 +488,10 @@ void atender_clientes(int socket_hijo) {
 
 }
 */
+
+//TODO posiblemente, cambiar la serializacion para que se puedan serializar punteros de tcb
+void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
+	t_buffer* buffer_tcb = serializar_tcb(un_tcb);
+	empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
+	// NOTA: si se libera el buffer, tira error de doble free.
+}
