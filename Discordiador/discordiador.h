@@ -46,7 +46,8 @@ t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion);
-void enlistar_tripulante();
+void enlistar_algun_tripulante();
+void enlistar_este_tripulante(t_TCB* tripulante);
 
 // PROCESOS
 //t_patota* crear_patota(t_PCB* un_pcb);
@@ -56,8 +57,7 @@ t_list* lista_tripulantes_patota(t_PCB* pcb);
 
 // FUNCIONES AUXILIARES
 int esta_en_lista(t_list* lista, int elemento);
-int esta_tcb_en_lista(t_list* lista, t_TCB elemento);
-//void eliminar_de_lista(t_list* lista, t_TCB elemento);
+int esta_tcb_en_lista(t_list* lista, t_TCB* elemento);
 void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento);
 int sonIguales(int elemento1, int elemento2);
 char* fecha_y_hora();

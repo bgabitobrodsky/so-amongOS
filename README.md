@@ -2,6 +2,7 @@
 
 ### Registro de cambios
 14/06/2021
++ Nos mudamos a monitores!
 + DIseñados monitores para colas y listas.
 + Modificada eliminar_tcb_de_lista para hacerla polimorfica.
 

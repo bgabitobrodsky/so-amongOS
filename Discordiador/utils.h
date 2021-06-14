@@ -58,7 +58,6 @@ extern t_list* lista_tripulantes_new;
 extern t_list* lista_tripulantes_exec;
 
 extern t_queue* cola_tripulantes_ready;
-extern t_queue* cola_tripulantes_new;
 
 extern pthread_mutex_t sem_lista_exec;
 extern pthread_mutex_t sem_lista_new;
