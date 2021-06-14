@@ -1,11 +1,21 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+14/06/2021
++ DIseñados monitores para colas y listas.
++ Modificada eliminar_tcb_de_lista para hacerla polimorfica.
+
+13/06/2021
++ Agregada funcion para eliminar punteros dobles en DIscordiador, y arregladas algunas perdidas de bytes, cortesia de Valgrind.
+
+11/06/2021
++ Se pudo enviar y recibir TCBs de RAM a DISCORDIADOR bidireccionalmente.
++ Arregladas funciones de serializar y desserializar TCB.
 
 10/06/2021
 + FInalizados los siguientes TODO:  
-    +GENERALIZAR LOS ARGS DE TODOS LOS  ESCUCHAR.  
-    +JUNTAR LA INICIALIZACION DE LISTAS Y COLAS EN UNA FUNC.  
+    - GENERALIZAR LOS ARGS DE TODOS LOS  ESCUCHAR.  
+    - JUNTAR LA INICIALIZACION DE LISTAS Y COLAS EN UNA FUNC.  
 + Pseudocodigo de subfunciones de LISTAR_TRIPULANTES.
 
 09/06/2021

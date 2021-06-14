@@ -19,25 +19,45 @@
 #define	RETARDO_CICLO_CPU config_get_int_value(config, "RETARDO_CICLO_CPU")
 #define	DURACION_SABOTAJE config_get_int_value(config, "DURACION_SABOTAJE")
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 #include "discordiador.h"
 
-// Vars globales
+// Variables globales
 t_config* config;
 t_log* logger;
 int socket_a_mi_ram_hq;
 int socket_a_mongo_store;
-char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
-int planificacion_activa = 0;
 
+// Listas, colas, semaforos
 t_list* lista_pids;
 t_list* lista_patotas;
 t_list* lista_tripulantes_new;
 t_list* lista_tripulantes_exec;
 
-t_queue *cola_tripulantes_new;
-t_queue *cola_tripulantes_ready;
+t_queue* cola_tripulantes_ready;
+t_queue* cola_tripulantes_new; // podria ser una lista
 
+pthread_mutex_t sem_lista_exec;
+pthread_mutex_t sem_lista_new;
+pthread_mutex_t sem_cola_ready;
+
+// Variables de discordiador
+char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
+int planificacion_activa = 0;
 int sistema_activo = 1;
+
+/* TODO: Replantear.
+void enviar_archivo_a_ram(char* contenido, int socket){
+	t_buffer* b_archivo= serializar_archivo_tareas(contenido);
+	empaquetar_y_enviar(b_archivo, CONTENIDO_ARCHIVO_TAREAS, socket);
+}
+
+t_buffer* serializar_archivo_tareas(char*);
+
+char* desserializar_archivo_tareas(t_buffer*);
+*/
 
 int main() {
 	logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
@@ -45,27 +65,12 @@ int main() {
 
 	iniciar_listas();
 	iniciar_colas();
+	iniciar_semaforos();
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
 	//socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
 	socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 	//socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
-
-	/*t_PCB* p_pcb = crear_pcb("ah re");
-	t_TCB tcb1 = crear_tcb(p_pcb, 1, "0a0");
-	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb1.TID, (char) tcb1.estado_tripulante,(int) tcb1.coord_x, (int) tcb1.coord_y);
-	t_buffer* b = serializar_tcb(tcb1);
-
-	t_TCB* tcb = desserializar_tcb(b);
-
-	log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int)tcb->TID, (char) tcb->estado_tripulante, (int) tcb->coord_x, (int) tcb->coord_y);
-*/
-/*
-	t_PCB* p_pcb = crear_pcb("ah re");
-	t_TCB tcb1 = crear_tcb(p_pcb, 0, "0a0");
-	t_buffer* b = serializar_tcb(tcb1);
-	empaquetar_y_enviar(b, RECIBIR_TCB, socket_a_mi_ram_hq);
-*/
 
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -110,6 +115,7 @@ void leer_consola() {
 			comando = reconocer_comando(leido);
 
 			switch (comando) {
+
 				case INICIAR_PATOTA:
 					iniciar_patota(leido);
 					break;
@@ -160,27 +166,61 @@ void iniciar_patota(char* leido) {
 	
 	printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
+	int contador = 0;
+	while (palabras[contador] != NULL) {
+		contador++;
+	}
+
 	int i = 0;
+
+	// pasarle el pcb a ram y matarlo
 	t_PCB* pcb = crear_pcb(path);
+	char* archivo_tareas = leer_archivo_entero(path);
+	if (archivo_tareas != NULL){
+		//enviar_archivo_a_ram(archivo_tareas, socket_a_mi_ram_hq);
+		free(archivo_tareas);
+	}
+
+	// Pasar la variable a RAM
+
+	// RAM VERSION:
+	// recibe el mensaje (la variable con todo el archivo)
+	// spliteamos en base al salto de linea \n
+	// nos devuelve un array de tareas
 
 	t_TCB* aux;
+
+	// TODO: aux en iniciar_tcb ROMPE. por este motivo fue cambiado a crear_puntero_tcb
+
 	while (palabras[i+3] != NULL){
 		printf("POSICION %d: %s \n", i+1, palabras[i+3]);
 		//void* funcion = pedir_funcion()
-		aux = iniciar_tcb(NULL, pcb, i+1, palabras[i+3]); //Le manda a RAM el tripulante
+		//aux = iniciar_tcb(NULL, pcb, i+1, palabras[i+3]);
+		aux = crear_puntero_tcb(pcb, ((pcb->PID)*10000) + i+1, palabras[i+3]);
+		enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
+
+		printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
 
 		queue_push(cola_tripulantes_new, (void*) aux);
+
+		free(aux);
 		i++;
-
 	}
+
 	for(int j = i+1; j <= cantidadTripulantes; j++){
-		printf("POSICION %d: 0|0 \n", j);
+		printf("POSICION %d: 0|0\n", j);
 		//void* funcion = pedir_funcion()
-		aux = iniciar_tcb(NULL, pcb, i+1, "0|0"); //Le manda a RAM el tripulante
-
+		//aux = iniciar_tcb(NULL, pcb, i+1, "0|0");
+		aux = crear_puntero_tcb(pcb, ((pcb->PID)*10000) + i+1, "0|0");
+		enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
+		printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
 		queue_push(cola_tripulantes_new, (void*) aux);
+		free(aux);
 	}
-	free(aux);
+
+	free(pcb);
+	//free(aux);
+	liberar_puntero_doble(palabras);
 }
 
 /*
@@ -193,7 +233,7 @@ t_patota* crear_patota(t_PCB* un_pcb){
 
 t_PCB* crear_pcb(char* path){
 	t_PCB* pcb = malloc(sizeof(t_PCB));
-	pcb -> PID = nuevo_pid();
+	pcb -> PID = (uint32_t) nuevo_pid();
 	pcb -> direccion_tareas = (uint32_t) path;
 	return pcb;
 }
@@ -214,18 +254,18 @@ void iniciar_hilo_tripulante(void* funcion){
 	pthread_create(&hilo1, NULL, funcion, NULL);
 }
 
-/*
-t_TCB* crear_tcb(t_PCB* pcb, int tid, char* posicion){
+
+t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
 	t_TCB* tcb = malloc(sizeof(t_TCB));
 	tcb -> TID = tid;
 	tcb -> estado_tripulante = estado_tripulante[NEW];
 	tcb -> coord_x = posicion[0];
 	tcb -> coord_y = posicion[2];
-	//tcb -> siguiente_instruccion; //TODO
+	tcb -> siguiente_instruccion = 0; //TODO
 	tcb -> puntero_a_pcb = (uint32_t) pcb;
 
 	return tcb;
-}*/
+}
 
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	t_TCB tcb;
@@ -233,53 +273,54 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb.estado_tripulante = estado_tripulante[NEW];
 	tcb.coord_x = posicion[0];
 	tcb.coord_y = posicion[2];
-	tcb.siguiente_instruccion = 5; //TODO
+	tcb.siguiente_instruccion = 0; //TODO
 	tcb.puntero_a_pcb = (uint32_t) pcb;
 
 	return tcb;
 }
-/*
-t_tripulante* crear_tripulante(t_TCB* un_tcb){
-	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-	tripulante -> tcb = un_tcb;
-	return tripulante;
-}
-*/
+
 t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){
-	//t_TCB* un_tcb = crear_tcb(pcb, tid, posicion);
+	t_TCB* un_tcb = crear_puntero_tcb(pcb, tid, posicion);
 	//t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);
-	//iniciar_hilo_tripulante(funcion);
-	//return un_tcb;
+	iniciar_hilo_tripulante(funcion);
+	return un_tcb;
 }
 
 void iniciar_planificacion() {
 	printf("Iniciar Planificacion");
 	planificacion_activa = 1;
 
-	// codigo para testeos
-	// t_tarea* aux_tarea = malloc(sizeof(t_tarea));
-	// aux_tarea->duracion = 5;
+	//codigo para testeos
+	t_tarea* aux_tarea = malloc(sizeof(t_tarea));
+	aux_tarea->duracion = 5;
+
+	int tiempo_restante = aux_tarea->duracion;
 
 	// TODO NO TESTEADO, y eliminar redundancia.
-
 	while(planificacion_activa && list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){
+		t_TCB* aux_tripulante = queue_pop(cola_tripulantes_ready);
+		aux_tripulante->estado_tripulante = estado_tripulante[EXCECUTING];
+
+		// mutex
+		list_add(lista_tripulantes_exec, aux_tripulante);
+		// mutex
+
 		if(comparar_strings(ALGORITMO, "FIFO")){
-			t_TCB* aux_tripulante = queue_pop(cola_tripulantes_ready);
-			aux_tripulante->estado_tripulante = estado_tripulante[EXCECUTING];
-			list_add(lista_tripulantes_exec, aux_tripulante);
 			free(aux_tripulante);
 		}
 		else if(comparar_strings(ALGORITMO, "RR")){
-			t_TCB* aux_tripulante = queue_pop(cola_tripulantes_ready);
-			aux_tripulante->estado_tripulante = estado_tripulante[EXCECUTING];
-			list_add(lista_tripulantes_exec, aux_tripulante);
-			/*for(;;){
-				sleep(RETARDO_CICLO_CPU);
-			}*/
+
+			sleep(MIN(tiempo_restante, QUANTUM)*RETARDO_CICLO_CPU);
+			// actualizar la duracion de la tarea
+			eliminar_tcb_de_lista(lista_tripulantes_exec, aux_tripulante);
+			aux_tripulante->estado_tripulante = estado_tripulante[READY];
+			queue_push(cola_tripulantes_ready, aux_tripulante);
 			free(aux_tripulante);
 		}
 	}
 }
+
+//void tripulante
 
 void listar_tripulantes() {	//TODO falta testear
 
@@ -345,11 +386,22 @@ void pausar_planificacion() {
 }
 
 void obtener_bitacora(char* leido) {
-	printf("Obtener Bitacora");
+	printf("Obtener Bitacora\n");
 }
 
 void expulsar_tripulante(char* leido) {
 	printf("Expulsar Tripulante");
+	char** palabras = string_split(leido, " ");
+	int tid_tripulante_a_expulsar = atoi(palabras[1]);
+
+	// TODO CODEAR
+	// Le pedimos a RAM que elimine el tcb
+	// Sacamos el tripulante de la lista (puede estar en CUALQUIER lista)
+	// EN el caso de que el tripulante este en discordiador, eliminarlo tambien segun su estado
+
+	printf("Tripulante expulsado: TID %d\n", tid_tripulante_a_expulsar);
+	log_info(logger, "Tripulante expulsado: TID %d\n", tid_tripulante_a_expulsar);
+	liberar_puntero_doble(palabras);
 }
 
 /*int pedir_tarea(int id_tripulante){
@@ -391,9 +443,6 @@ int sonIguales(int elemento1, int elemento2){
 		return elemento1 == elemento2;
 	}
 
-
-// codear atender_discordiador
-// guardarlo en el logger
 
 void enlistar_tripulante(){ //TODO no testeado, SEBA
 	// Utilizo NEW como si fuera una cola, pero no necesariamente lo es
@@ -443,20 +492,6 @@ void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde li
 		}
 }
 
-void iniciar_listas() {
-
-	lista_tripulantes_new = list_create();
-	lista_tripulantes_exec = list_create();
-	lista_pids = list_create();
-	lista_patotas = list_create();
-
-}
-void iniciar_colas() {
-
-	cola_tripulantes_ready = queue_create();
-	cola_tripulantes_new= queue_create();
-
-}
 /*
 void atender_clientes(int socket_hijo) {
 	int flag = 1;
@@ -500,6 +535,56 @@ void atender_clientes(int socket_hijo) {
 					break;
 			}
 	    }
+
+}
+*/
+
+//TODO posiblemente, cambiar la serializacion para que se puedan serializar punteros de tcb
+void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
+	t_buffer* buffer_tcb = serializar_tcb(un_tcb);
+	empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
+	// NOTA: si se libera el buffer, tira error de doble free.
+}
+
+int esta_tcb_en_lista(t_list* lista, t_TCB elemento){
+	bool contains(void* elemento1){
+		return (elemento.TID == ((t_TCB*) elemento1)->TID); //por que no puedo usar el punto?
+		}
+	bool a = list_any_satisfy(lista, contains);
+	return a;
+}
+
+/*
+void eliminar_de_lista(t_list* lista, t_TCB elemento){
+	bool contains(void* elemento1){
+		return (elemento.TID == ((t_TCB*) elemento1)->TID); //por que no puedo usar el punto?
+		}
+	list_remove_by_condition(lista, contains);
+}*/
+
+
+void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento){
+	bool contains(void* elemento1){
+		return (elemento->TID == ((t_TCB*) elemento1)->TID); //por que no puedo usar el punto?
+		}
+	t_TCB* aux = list_remove_by_condition(lista, contains);
+	return aux;
+}
+
+/* TODO preguntar/usar punteros a func
+void monitor_queue_push(t_queue* cola_tripulantes_new, (void*) aux){
+
+	pthead_mutex_lock(&mutex_queue_new);
+	queue_push(cola_tripulantes_new, (void*) aux);
+	pthead_mutex_unlock(&mutex_queue_new);
+
+}
+
+void monitor_queue_pop(t_queue* cola_tripulantes_new, (void*) aux){
+
+	pthead_mutex_lock(&mutex_queue_new);
+	queue_pop(cola_tripulantes_new, (void*) aux);
+	pthead_mutex_unlock(&mutex_queue_new);
 
 }
 */

@@ -34,6 +34,7 @@ typedef struct {
     uint32_t puntero_a_pcb;
 
 } t_TCB;
+
 /*
 typedef struct { // Puede estar de mas
     t_TCB* tcb;
@@ -42,7 +43,7 @@ typedef struct { // Puede estar de mas
 
 typedef struct {
 
-    uint32_t nombre_largo;
+    uint32_t largo_nombre;
     char* nombre;
     uint32_t parametro; // Siempre es un int, a menos que sea DESCARTAR_BASURA que no lleva nada
     uint32_t coord_x;
@@ -50,7 +51,6 @@ typedef struct {
     uint32_t duracion; // En ciclos de CPU
 
 } t_tarea;
-
 
 typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct de una funcion
 

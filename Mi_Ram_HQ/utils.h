@@ -22,6 +22,8 @@
 #include<comms/socketes.h>
 #include <pthread.h>
 #include <commons/string.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
 
 extern t_log* logger_miramhq;
 extern t_config* config_miramhq;

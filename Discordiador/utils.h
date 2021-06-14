@@ -17,6 +17,7 @@
 #include <comms/estructuras.h>
 #include <comms/paquetes.h>
 #include <comms/socketes.h>
+#include <comms/generales.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -51,8 +52,22 @@ typedef enum{
 extern t_config* config;
 extern t_log* logger;
 
+extern t_list* lista_pids;
+extern t_list* lista_patotas;
+extern t_list* lista_tripulantes_new;
+extern t_list* lista_tripulantes_exec;
+
+extern t_queue* cola_tripulantes_ready;
+extern t_queue* cola_tripulantes_new;
+
+extern pthread_mutex_t sem_lista_exec;
+extern pthread_mutex_t sem_lista_new;
+extern pthread_mutex_t sem_cola_ready;
+
 int reconocer_comando(char* str);
-int comparar_strings(char* str, char* str2);
 void help_comandos();
+void iniciar_listas();
+void iniciar_colas();
+void iniciar_semaforos();
 
 #endif /* DISCORDIADOR_UTILS_H_ */
