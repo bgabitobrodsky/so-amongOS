@@ -6,8 +6,6 @@
 
 #include "socketes.h"
 
-
-// Funcion extraida de la Guia Beej, para limpieza de procesos muertos
 void sigchld_handler(int s) {
 	int saved_errno = errno;
 
@@ -63,6 +61,8 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 	if ((estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server)) != 0)
 		printf("Error al conseguir informacion del servidor\n");
 
+	int activado = 1;
+	setsockopt(socket_escucha, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
 	for (p = informacion_server; p != NULL; p = p->ai_next){
 		
@@ -70,6 +70,7 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
             continue;
 
         if (bind(socket_escucha, p->ai_addr, p->ai_addrlen) == -1){
+        	printf("Fallo en el bind.\n");
             close(socket_escucha);
             continue;
         }
@@ -91,13 +92,14 @@ void escuchar(int socket_escucha) {
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
 		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
 
-	/*sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos, ctrl C ctrl V del Beej, porlas
+	struct sigaction sa;
+	sa.sa_handler = sigchld_handler;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 		printf("Error al limpiar procesos\n");
 		exit(1);
-	}*/
+	}
 
 	while (1) { // Loop infinito donde aceptara clientes
 		tamanio_direccion = sizeof(direccion_a_escuchar);
@@ -135,7 +137,7 @@ int enviar_mensaje(int socket, void* mensaje, int largo) { // Se podria definir 
 int recibir_mensaje(int socket, void* buffer, int largo) { 
 	int bytes_recibidos;
 
-	bytes_recibidos = recv(socket, buffer, largo, 0); // Recibo un mensaje, y recibo la cantidad de bytes que recibi
+	bytes_recibidos = recv(socket, buffer, largo, MSG_WAITALL); // Recibo un mensaje, y recibo la cantidad de bytes que recibi
 
 	switch (bytes_recibidos) {
 	case (-1):
