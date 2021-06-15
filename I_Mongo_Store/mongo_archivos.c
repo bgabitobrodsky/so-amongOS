@@ -16,18 +16,23 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
 	char* path_blocks;
 	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
 
-    // TODO: Repetir pasos de abajo para Blocks y Superbloque
-	int filedescriptor_oxigeno = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
-	int filedescriptor_comida = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
-	int filedescriptor_basura = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
+	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
+	int filedescriptor_comida      = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
+	int filedescriptor_basura      = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
+    int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT);
+    int filedescriptor_blocks      = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
 
-	FILE* file_oxigeno = fdopen(filedescriptor_oxigeno, "r+");
-	FILE* file_comida = fdopen(filedescriptor_comida, "r+");
-	FILE* file_basura = fdopen(filedescriptor_basura, "r+");
+	FILE* file_oxigeno     = fdopen(filedescriptor_oxigeno, "r+");
+	FILE* file_comida      = fdopen(filedescriptor_comida, "r+");
+	FILE* file_basura      = fdopen(filedescriptor_basura, "r+");
+    FILE* file_superbloque = fdopen(filedescriptor_superbloque, "r+");
+    FILE* file_blocks      = fdopen(filedescriptor_blocks, "r+");
 
-	archivos.oxigeno = file_oxigeno;
-	archivos.comida = file_comida;
-	archivos.basura = file_basura;
+	archivos.oxigeno     = file_oxigeno;
+	archivos.comida      = file_comida;
+	archivos.basura      = file_basura;
+    archivos.superbloque = file_superbloque;
+    archivos.blocks      = file_blocks;
 
 	free(path_oxigeno);
 	free(path_comida);

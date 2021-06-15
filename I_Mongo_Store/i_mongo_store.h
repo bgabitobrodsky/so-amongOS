@@ -53,6 +53,8 @@ typedef struct {
     FILE* oxigeno;
     FILE* comida;
     FILE* basura;
+    FILE* superbloque;
+    FILE* blocks;
 
 } t_archivos;
 
