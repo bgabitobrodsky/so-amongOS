@@ -1,5 +1,11 @@
 #include "mongo_archivos.h"
 
+// Vars globales
+t_log* logger_mongo;
+t_config* config_mongo;
+t_archivos archivos;
+
+
 void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
 	char* path_oxigeno;
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
@@ -41,7 +47,7 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
 	free(path_blocks);
 }
 
-void alterar(int codigo_archivo, int cantidad) { 
+/* void alterar(int codigo_archivo, int cantidad) {
 	switch(codigo_archivo) { 
 		case OXIGENO:
 			if (cantidad >= 0) 
@@ -62,7 +68,7 @@ void alterar(int codigo_archivo, int cantidad) {
 				quitar(archivos.basura, cantidad, 'B');
 			break;
 	}
-}
+} */
 
 void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, revisar si funciona
 	if (cantidad >= 0)
@@ -99,7 +105,7 @@ char conseguir_char(int codigo) {
 	}
 }
 
-pthread_mutex_t conseguir_semaforo(char tipo) {
+pthread_mutex_t* conseguir_semaforo(char tipo) {
     if (tipo == 'O')
         return mutex_oxigeno;
     if (tipo == 'C')
@@ -138,4 +144,13 @@ void quitar(FILE* archivo, int cantidad, char tipo) {
     
     agregar_unlocked(archivo, nueva_cantidad, tipo);
     pthread_mutex_unlock(conseguir_semaforo(tipo));
+}
+
+int max (int a, int b) {
+	if (a >= b) {
+		return a;
+	}
+	else {
+		return b;
+	}
 }

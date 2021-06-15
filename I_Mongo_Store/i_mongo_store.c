@@ -10,11 +10,6 @@
 #define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP") // Verificar sintaxis
 #define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
 
-// Vars globales
-t_log* logger_mongo;
-t_config* config_mongo;
-t_archivos archivos;
-
 int main(int argc, char** argv){
 
 	logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
@@ -75,6 +70,7 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 			if (es_discordiador) {
 				sabotaje(socket_especifico);
 				es_discordiador = 0;
+			}
 			else {
 				manejo_tripulante(socket_especifico); 
 			}
@@ -88,18 +84,14 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 
 void sabotaje(int socket_discordiador) {
 	while(1) {
-		wait(SIGUSR1);
+		/* wait(SIGUSR1);
 		enviar_codigo(SABOTAJE, socket_discordiador);
 		wait(verificacion);
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
 		reparar(mensaje);
 		signal(reparado); 
-		free(mensaje);
+		free(mensaje); */
 	}
-}
-
-int file_system_existente(char* punto_montaje, stat dir) { // TODO: Verificar sintaxis stat
-	return (stat(punto_montaje, &dir) != -1);
 }
 
 void iniciar_file_system() {
@@ -110,7 +102,7 @@ void iniciar_file_system() {
 	char* path_bitacoras = path_files;
 	sprintf(path_bitacoras, "/Bitacoras");
 
-	if (file_system_existente(path_directorio, dir)) {
+	if ((stat(path_directorio, &dir) != -1)) {
 		inicializar_archivos(path_files); // TODO: Revisar si open() funca como fopen()
 	}
 	else {
