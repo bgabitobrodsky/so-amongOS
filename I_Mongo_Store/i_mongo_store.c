@@ -123,7 +123,7 @@ int file_system_existente(char* punto_montaje, stat dir) { // TODO: Verificar si
 	return (stat(punto_montaje, &dir) != -1);
 }
 
-void inicializar_archivos(char* path_files) { // TODO: Puede romper
+void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
 	char* path_oxigeno;
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
@@ -132,6 +132,12 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 
 	char* path_basura;
 	sprintf(path_basura, "%s/Basura.ims", path_files);
+
+	char* path_superbloque;
+	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); // TODO: Implementar cosas con el superbloque
+
+	char* path_blocks;
+	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
 
 	int filedescriptor_oxigeno = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
 	int filedescriptor_comida = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
@@ -144,6 +150,12 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 	archivos.oxigeno = file_oxigeno;
 	archivos.comida = file_comida;
 	archivos.basura = file_basura;
+
+	free(path_oxigeno);
+	free(path_comida);
+	free(path_basura);
+	free(path_superbloque);
+	free(path_blocks);
 }
 
 void alterar(int codigo_archivo, int cantidad) { 
