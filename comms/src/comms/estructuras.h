@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 /* ENUMS */
-//                      ESTRUCTURAS     COSAS FILESYSTEM            ACCIONES BITACORA                                                           CODIGOS UNICOS: MONGO           MIRAM                                GENERALES
+//                      ESTRUCTURAS     COSAS FILESYSTEM            ACCIONES BITACORA                                                           CODIGOS UNICOS: MONGO           DISCORDIADOR                         GENERALES
 enum codigo_operacion { TCB, TAREA,     OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,     MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION };
 enum estados { NEW, READY, EXCECUTING, BLOCKED};
 
