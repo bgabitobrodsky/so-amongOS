@@ -41,6 +41,14 @@ typedef struct {
     int socket_oyente;
 } args_escuchar_mongo;
 
+typedef struct {
+
+    FILE* oxigeno;
+    FILE* comida;
+    FILE* basura;
+
+} t_archivos;
+
 void escuchar_mongo(void* args);
 void sabotaje(int socket_discordiador);
 void manejo_tripulante(int socket_tripulante);
@@ -49,6 +57,8 @@ int file_system_existente(char* punto_montaje, stat dir);
 void inicializar_archivos(char* path_files);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(FILE* archivo, int cantidad, char tipo);
+FILE* conseguir_archivo(int codigo);
+char conseguir_char(int codigo);
 void quitar(FILE* archivo, int cantidad, char tipo);
 void cerrar_archivos();
 

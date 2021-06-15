@@ -68,13 +68,6 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
 
 } t_estructura;
 
-typedef struct {
-
-    FILE* oxigeno;
-    FILE* comida;
-    FILE* basura;
-
-} t_archivos;
 
 /* SEMAFOROS */
 

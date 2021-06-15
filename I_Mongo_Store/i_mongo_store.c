@@ -24,14 +24,12 @@ int main(int argc, char** argv){
 	args_escuchar_mongo args_escuchar;
 	args_escuchar.socket_oyente = socket_oyente;
 
-	pthread_t iniciar_file_system;
-	pthread_create(&iniciar_file_system, NULL, (void*) iniciar_file_system, NULL);
+	iniciar_file_system();
     
 	pthread_t hilo_escucha;	
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 
-	pthread_join(hilo_escucha, NULL);
-	pthread_join(iniciar_file_system, NULL);
+	pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba
 
 	cerrar_archivos();
 	close(socket_oyente);
@@ -125,7 +123,7 @@ int file_system_existente(char* punto_montaje, stat dir) { // TODO: Verificar si
 	return (stat(punto_montaje, &dir) != -1);
 }
 
-void inicializar_archivos(char* path_files) { // TODO: Puede romper, revisar repeticion de codigo
+void inicializar_archivos(char* path_files) { // TODO: Puede romper
 	char* path_oxigeno;
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
@@ -148,25 +146,60 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, revisar rep
 	archivos.basura = file_basura;
 }
 
-void alterar(int codigo_archivo, int cantidad) { // TODO: Revisar repeticion de codigo
+void alterar(int codigo_archivo, int cantidad) { 
 	switch(codigo_archivo) { 
 		case OXIGENO:
-			if (cantidad > 0) 
+			if (cantidad >= 0) 
 				agregar(archivos.oxigeno, cantidad, 'O');
 			else
 				quitar(archivos.oxigeno, cantidad, 'O');
 			break;
 		case COMIDA: 
-			if (cantidad > 0) 
+			if (cantidad >= 0) 
 				agregar(archivos.comida, cantidad, 'C');
 			else
 				quitar(archivos.comida, cantidad, 'C');
 			break;
 		case BASURA: 
-			if (cantidad > 0) 
+			if (cantidad >= 0) 
 				agregar(archivos.basura, cantidad, 'B');
 			else
 				quitar(archivos.basura, cantidad, 'B');
+			break;
+	}
+}
+
+void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, revisar si funciona
+	if (cantidad >= 0)
+		agregar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+	else
+		quitar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+}
+
+FILE* conseguir_archivo(int codigo) {
+	switch(codigo) {
+		case OXIGENO:
+			return archivos.oxigeno;
+			break;
+		case COMIDA:
+			return archivos.comida;
+			break;
+		case BASURA:
+			return archivos.basura;
+			break;
+	}
+}
+
+char conseguir_char(int codigo) {
+	switch(codigo) {
+		case OXIGENO:
+			return 'O';
+			break;
+		case COMIDA:
+			return 'C';
+			break;
+		case BASURA:
+			return 'B';
 			break;
 	}
 }
