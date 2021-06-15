@@ -13,7 +13,7 @@
 // Vars globales
 t_log* logger_mongo;
 t_config* config_mongo;
-t_archivos archivos; 
+t_archivos archivos;
 
 int main(int argc, char** argv){
 
@@ -92,12 +92,8 @@ void sabotaje(int socket_discordiador) {
 	}
 }
 
-void manejo_tripulante(int socket_tripulante) {
-	while(1) {
-		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
-		alterar(mensaje->codigo_operacion, mensaje->cantidad); 
-		free(mensaje);
-	}
+int file_system_existente(char* punto_montaje, stat dir) { // TODO: Verificar sintaxis stat
+	return (stat(punto_montaje, &dir) != -1);
 }
 
 void iniciar_file_system() {
@@ -105,136 +101,24 @@ void iniciar_file_system() {
 	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 	char* path_files = path_directorio;
 	sprintf(path_files, "/Files");
+	char* path_bitacoras = path_files;
+	sprintf(path_bitacoras, "/Bitacoras");
 
 	if (file_system_existente(path_directorio, dir)) {
 		inicializar_archivos(path_files); // TODO: Revisar si open() funca como fopen()
 	}
 	else {
 		mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow
-		mkdir(path_files, 0777); // TODO: Crear bloque y superbloque
+		mkdir(path_files, 0777);
+		mkdir(path_bitacoras, 0777); // TODO: Crear bloque y superbloque
+
 		inicializar_archivos(path_files);
+
 		free(path_files);
+		free(path_bitacoras);
 	}
 
 	free(path_directorio);
-}
-
-int file_system_existente(char* punto_montaje, stat dir) { // TODO: Verificar sintaxis stat
-	return (stat(punto_montaje, &dir) != -1);
-}
-
-void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
-	char* path_oxigeno;
-	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
-
-	char* path_comida;
-	sprintf(path_comida, "%s/Comida.ims", path_files);
-
-	char* path_basura;
-	sprintf(path_basura, "%s/Basura.ims", path_files);
-
-	char* path_superbloque;
-	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); // TODO: Implementar cosas con el superbloque
-
-	char* path_blocks;
-	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
-
-	int filedescriptor_oxigeno = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
-	int filedescriptor_comida = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
-	int filedescriptor_basura = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
-
-	FILE* file_oxigeno = fdopen(filedescriptor_oxigeno, "r+");
-	FILE* file_comida = fdopen(filedescriptor_comida, "r+");
-	FILE* file_basura = fdopen(filedescriptor_basura, "r+");
-
-	archivos.oxigeno = file_oxigeno;
-	archivos.comida = file_comida;
-	archivos.basura = file_basura;
-
-	free(path_oxigeno);
-	free(path_comida);
-	free(path_basura);
-	free(path_superbloque);
-	free(path_blocks);
-}
-
-void alterar(int codigo_archivo, int cantidad) { 
-	switch(codigo_archivo) { 
-		case OXIGENO:
-			if (cantidad >= 0) 
-				agregar(archivos.oxigeno, cantidad, 'O');
-			else
-				quitar(archivos.oxigeno, cantidad, 'O');
-			break;
-		case COMIDA: 
-			if (cantidad >= 0) 
-				agregar(archivos.comida, cantidad, 'C');
-			else
-				quitar(archivos.comida, cantidad, 'C');
-			break;
-		case BASURA: 
-			if (cantidad >= 0) 
-				agregar(archivos.basura, cantidad, 'B');
-			else
-				quitar(archivos.basura, cantidad, 'B');
-			break;
-	}
-}
-
-void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, revisar si funciona
-	if (cantidad >= 0)
-		agregar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
-	else
-		quitar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
-}
-
-FILE* conseguir_archivo(int codigo) {
-	switch(codigo) {
-		case OXIGENO:
-			return archivos.oxigeno;
-			break;
-		case COMIDA:
-			return archivos.comida;
-			break;
-		case BASURA:
-			return archivos.basura;
-			break;
-	}
-}
-
-char conseguir_char(int codigo) {
-	switch(codigo) {
-		case OXIGENO:
-			return 'O';
-			break;
-		case COMIDA:
-			return 'C';
-			break;
-		case BASURA:
-			return 'B';
-			break;
-	}
-}
-
-void agregar(FILE* archivo, int cantidad, char tipo) {
-	for(int i = 0; i < cantidad; i++) {
-		putc(tipo, archivo);
-	}
-}
-
-void quitar(FILE* archivo, int cantidad, char tipo) {
-	char c;
-	int contador = 0;
-	for (c = getc(archivo); c != EOF; c = getc(archivo))
-        contador++;
-
-	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso
-	fclose(archivo);
-	fopen(archivo, "w"); // Reseteo archivo
-	fclose(archivo);
-	fopen(archivo, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
-
-	agregar(archivo, nueva_cantidad, tipo);
 }
 
 void cerrar_archivos() {

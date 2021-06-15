@@ -25,8 +25,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+// Puede que explote todo al faltar cosas en los subarchivos, revisar
+#include "mongo_tripulantes.h"
+#include "mongo_archivos.h"
+
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
+extern t_archivos archivos;
 
 typedef struct{
 
@@ -51,15 +56,8 @@ typedef struct {
 
 void escuchar_mongo(void* args);
 void sabotaje(int socket_discordiador);
-void manejo_tripulante(int socket_tripulante);
 void iniciar_file_system();
 int file_system_existente(char* punto_montaje, stat dir);
-void inicializar_archivos(char* path_files);
-void alterar(int codigo_archivo, int cantidad);
-void agregar(FILE* archivo, int cantidad, char tipo);
-FILE* conseguir_archivo(int codigo);
-char conseguir_char(int codigo);
-void quitar(FILE* archivo, int cantidad, char tipo);
 void cerrar_archivos();
 
 #endif /* I_MONGO_STORE_H_ */
