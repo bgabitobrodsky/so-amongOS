@@ -33,6 +33,8 @@ extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_archivos archivos;
 
+/* ESTRUCTURAS PROPIAS */
+
 typedef struct{
 
     char* punto_montaje;
@@ -53,6 +55,12 @@ typedef struct {
     FILE* basura;
 
 } t_archivos;
+
+/* SEMAFOROS PROPIOS */
+
+pthread_mutex_t mutex_oxigeno;
+pthread_mutex_t mutex_comida;
+pthread_mutex_t mutex_basura;
 
 void escuchar_mongo(void* args);
 void sabotaje(int socket_discordiador);

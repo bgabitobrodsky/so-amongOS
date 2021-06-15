@@ -16,6 +16,7 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
 	char* path_blocks;
 	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
 
+    // TODO: Repetir pasos de abajo para Blocks y Superbloque
 	int filedescriptor_oxigeno = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
 	int filedescriptor_comida = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
 	int filedescriptor_basura = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
@@ -93,8 +94,25 @@ char conseguir_char(int codigo) {
 	}
 }
 
+pthread_mutex_t conseguir_semaforo(char tipo) {
+    if (tipo == 'O')
+        return mutex_oxigeno;
+    if (tipo == 'C')
+        return mutex_comida;
+    if (tipo == 'B')
+        return mutex_basura; 
+}
+
 void agregar(FILE* archivo, int cantidad, char tipo) {
-	for(int i = 0; i < cantidad; i++) {
+	pthread_mutex_lock(conseguir_semaforo(tipo));
+    for(int i = 0; i < cantidad; i++) {
+		putc(tipo, archivo);
+	}
+    pthread_mutex_unlock(conseguir_semaforo(tipo));
+}
+
+void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {
+    for(int i = 0; i < cantidad; i++) {
 		putc(tipo, archivo);
 	}
 }
@@ -102,14 +120,17 @@ void agregar(FILE* archivo, int cantidad, char tipo) {
 void quitar(FILE* archivo, int cantidad, char tipo) {
 	char c;
 	int contador = 0;
+
+    pthread_mutex_lock(conseguir_semaforo(tipo));
 	for (c = getc(archivo); c != EOF; c = getc(archivo))
         contador++;
 
 	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso
-	fclose(archivo);
+    fclose(archivo);
 	fopen(archivo, "w"); // Reseteo archivo
 	fclose(archivo);
 	fopen(archivo, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
-
-	agregar(archivo, nueva_cantidad, tipo);
+    
+    agregar_unlocked(archivo, nueva_cantidad, tipo);
+    pthread_mutex_unlock(conseguir_semaforo(tipo));
 }

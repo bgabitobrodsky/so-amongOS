@@ -22,9 +22,14 @@ extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_archivos archivos;
 
+extern pthread_mutex_t mutex_oxigeno;
+extern pthread_mutex_t mutex_comida;
+extern pthread_mutex_t mutex_basura;
+
 void inicializar_archivos(char* path_files);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(FILE* archivo, int cantidad, char tipo);
+void agregar_unlocked(FILE* archivo, int cantidad, char tipo);
 FILE* conseguir_archivo(int codigo);
 char conseguir_char(int codigo);
 void quitar(FILE* archivo, int cantidad, char tipo);

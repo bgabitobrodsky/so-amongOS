@@ -25,6 +25,11 @@ int main(int argc, char** argv){
 	args_escuchar.socket_oyente = socket_oyente;
 
 	iniciar_file_system();
+
+	// Ver si es correcto considerandose que se usa fork(), no serian ULTs sino KLTs
+	pthread_mutex_init(mutex_oxigeno, NULL);
+	pthread_mutex_init(mutex_comida, NULL);
+	pthread_mutex_init(mutex_basura, NULL);
     
 	pthread_t hilo_escucha;	
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
@@ -32,6 +37,7 @@ int main(int argc, char** argv){
 	pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba
 
 	cerrar_archivos();
+	cerrar_mutexs();
 	close(socket_oyente);
 	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
@@ -125,4 +131,10 @@ void cerrar_archivos() {
 	fclose(archivos.oxigeno);
 	fclose(archivos.comida);
 	fclose(archivos.basura);
+}
+
+void cerrar_mutexs() {
+	pthread_mutex_destroy(mutex_oxigeno);
+	pthread_mutex_destroy(mutex_comida);
+	pthread_mutex_destroy(mutex_basura);
 }
