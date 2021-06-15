@@ -37,12 +37,11 @@ int main() {
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
 		enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
+		enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
 		while (1) {
 			t_estructura* mensaje = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-			if (mensaje->codigo_operacion == RECEPCION) {
-				printf("Se recibio la respuesta");
-				break;
-			}
+			printf("Recibi %d", mensaje->codigo_operacion);
+			free(mensaje);
 		}
 		pthread_t hiloConsola;
 		pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);

@@ -45,7 +45,8 @@ void atender_clientes(int socket_hijo) {
 			switch(mensaje_recibido->codigo_operacion) {
 				case MENSAJE: // Codigo al pedo, lo usamos para testear
 					log_info(logger_miramhq, "Mensaje recibido");
-					enviar_codigo(RECEPCION, socket_hijo);
+					enviar_codigo(MENSAJE, socket_hijo);
+					log_info(logger_miramhq, "Confirme recepcion");
 					break;
 
 				case PEDIR_TAREA:
