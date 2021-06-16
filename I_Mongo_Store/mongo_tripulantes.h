@@ -10,5 +10,6 @@ extern t_archivos archivos;
 void manejo_tripulante(int socket_tripulante);
 void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante);
 void modificar_bitacora(int codigo_operacion, t_TCB* tcb);
+void borrar_bitacora(t_TCB* tcb);
 
 #endif

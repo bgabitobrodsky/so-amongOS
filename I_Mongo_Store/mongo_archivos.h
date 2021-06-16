@@ -58,10 +58,11 @@ void inicializar_archivos(char* path_files);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(FILE* archivo, int cantidad, char tipo);
 void agregar_unlocked(FILE* archivo, int cantidad, char tipo);
+void quitar(FILE* archivo, int cantidad, char tipo);
+char* conseguir_tipo(char tipo);
 FILE* conseguir_archivo(int codigo);
 char conseguir_char(int codigo);
 pthread_mutex_t* conseguir_semaforo(char tipo);
-void quitar(FILE* archivo, int cantidad, char tipo);
 int max(int a, int b);
 
 #endif

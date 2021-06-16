@@ -20,6 +20,7 @@ int main(int argc, char** argv){
 	args_escuchar.socket_oyente = socket_oyente;
 
 	iniciar_file_system();
+	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
 
 	// Ver si es correcto considerandose que se usa fork(), no serian ULTs sino KLTs
 	pthread_mutex_init(&mutex_oxigeno, NULL);
@@ -36,6 +37,7 @@ int main(int argc, char** argv){
 	close(socket_oyente);
 	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
+	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.\n");
 }
 
 
@@ -50,14 +52,14 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
 
 	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
-		printf("Error al configurar recepcion de mensajes\n"); // Se verifica
+		log_info(logger_mongo, "Error al configurar recepcion de mensajes\n"); // Se verifica
 
 	struct sigaction sa;
 		sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos
 		sigemptyset(&sa.sa_mask);
 		sa.sa_flags = SA_RESTART;
 		if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-			printf("Error al limpiar procesos\n");
+			log_info(logger_mongo, "Error al limpiar procesos\n");
 			exit(1);
 		}
 
@@ -68,11 +70,12 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 		if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
 			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
 			if (es_discordiador) {
+				log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
 				sabotaje(socket_especifico);
 				es_discordiador = 0;
 			}
 			else {
-				manejo_tripulante(socket_especifico); 
+				manejo_tripulante(socket_especifico);
 			}
 			close(socket_especifico); // Cumple proposito, se cierra socket hijo
 			exit(0); // Returnea
@@ -83,15 +86,17 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 }
 
 void sabotaje(int socket_discordiador) {
-	//while(1) {
+	while(1) {
 		/* wait(SIGUSR1);
+		log_info(logger_mongo, "Se detecto un sabotaje.\n");
 		enviar_codigo(SABOTAJE, socket_discordiador);
 		wait(verificacion);
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
 		reparar(mensaje);
-		signal(reparado); 
+		log_info(logger_mongo, "Se reparo el sabotaje.\n");
+		signal(reparado);
 		free(mensaje); */
-	//}
+	}
 }
 
 void iniciar_file_system() {
@@ -106,12 +111,14 @@ void iniciar_file_system() {
 	sprintf(path_bitacoras, "/Bitacoras");
 
 	if ((stat(path_directorio, &dir) != -1)) {
+		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");
 		inicializar_archivos(path_files); // TODO: Revisar si open() funca como fopen()
 	}
 	else {
 		mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow
 		mkdir(path_files, 0777);
 		mkdir(path_bitacoras, 0777); // TODO: Crear bloque y superbloque
+		log_info(logger_mongo, "Se creo un FileSystem.\n");
 
 		inicializar_archivos(path_files);
 

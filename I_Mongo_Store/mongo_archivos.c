@@ -73,8 +73,52 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
 void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, revisar si funciona
 	if (cantidad >= 0)
 		agregar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	else
 		quitar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
+}
+
+void agregar(FILE* archivo, int cantidad, char tipo) {
+	pthread_mutex_lock(conseguir_semaforo(tipo));
+    for(int i = 0; i < cantidad; i++) {
+		putc(tipo, archivo);
+	}
+    pthread_mutex_unlock(conseguir_semaforo(tipo));
+}
+
+void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {
+    for(int i = 0; i < cantidad; i++) {
+		putc(tipo, archivo);
+	}
+}
+
+void quitar(FILE* archivo, int cantidad, char tipo) {
+	char c;
+	int contador = 0;
+
+    pthread_mutex_lock(conseguir_semaforo(tipo));
+	for (c = getc(archivo); c != EOF; c = getc(archivo))
+        contador++;
+
+	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso
+    fclose(archivo);
+	fopen(archivo, "w"); // Reseteo archivo
+	fclose(archivo);
+	fopen(archivo, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
+    
+    agregar_unlocked(archivo, nueva_cantidad, tipo);
+    pthread_mutex_unlock(conseguir_semaforo(tipo));
+}
+
+char* conseguir_tipo(char tipo) {
+	if (tipo == 'O')
+        return "Oxigeno";
+    if (tipo == 'C')
+        return "Comida";
+    if (tipo == 'B')
+        return "Basura";
+    return NULL;
 }
 
 FILE* conseguir_archivo(int codigo) {
@@ -115,38 +159,6 @@ pthread_mutex_t* conseguir_semaforo(char tipo) {
     if (tipo == 'B')
         return &mutex_basura;
     return NULL;
-}
-
-void agregar(FILE* archivo, int cantidad, char tipo) {
-	pthread_mutex_lock(conseguir_semaforo(tipo));
-    for(int i = 0; i < cantidad; i++) {
-		putc(tipo, archivo);
-	}
-    pthread_mutex_unlock(conseguir_semaforo(tipo));
-}
-
-void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {
-    for(int i = 0; i < cantidad; i++) {
-		putc(tipo, archivo);
-	}
-}
-
-void quitar(FILE* archivo, int cantidad, char tipo) {
-	char c;
-	int contador = 0;
-
-    pthread_mutex_lock(conseguir_semaforo(tipo));
-	for (c = getc(archivo); c != EOF; c = getc(archivo))
-        contador++;
-
-	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso
-    fclose(archivo);
-	fopen(archivo, "w"); // Reseteo archivo
-	fclose(archivo);
-	fopen(archivo, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
-    
-    agregar_unlocked(archivo, nueva_cantidad, tipo);
-    pthread_mutex_unlock(conseguir_semaforo(tipo));
 }
 
 int max (int a, int b) {

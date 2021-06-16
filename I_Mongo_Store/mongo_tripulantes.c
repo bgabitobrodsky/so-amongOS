@@ -6,11 +6,13 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 
 		if (mensaje->codigo_operacion == PRIMERA_CONEXION) { // TODO: Agregar codigo
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante); // TODO: Ver como se mandan tripulantes
+			log_info(logger_mongo, "Se creo la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 			free(mensaje->tcb);
 		} 	
 		else {
 			if (mensaje->codigo_operacion >= BASURA && mensaje->codigo_operacion <= SABOTAJE) {
 				modificar_bitacora(mensaje->codigo_operacion, mensaje->tcb);
+				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
 			else {
@@ -19,6 +21,8 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 		}
 
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
+			borrar_bitacora(mensaje->tcb);
+			log_info(logger_mongo, "Se desconecto el tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 			free(mensaje);
 			exit(0);
 		}
@@ -53,4 +57,8 @@ void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir com
 		case RESUELVE_SABOTAJE:
 			break;
 	}
+}
+
+void borrar_bitacora(t_TCB* tcb) { // TODO: implementar
+
 }
