@@ -109,11 +109,11 @@ char conseguir_char(int codigo) {
 
 pthread_mutex_t* conseguir_semaforo(char tipo) {
     if (tipo == 'O')
-        return mutex_oxigeno;
+        return &mutex_oxigeno;
     if (tipo == 'C')
-        return mutex_comida;
+        return &mutex_comida;
     if (tipo == 'B')
-        return mutex_basura; 
+        return &mutex_basura;
     return NULL;
 }
 
