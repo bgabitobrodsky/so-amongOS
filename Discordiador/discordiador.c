@@ -72,6 +72,13 @@ int main() {
 	//socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 	socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "5000");
 
+	t_PCB* p_pcb = crear_pcb("ah re");
+	printf("%i %s\n", p_pcb->PID, (char*) p_pcb->direccion_tareas);
+	t_TCB tcb1 = crear_tcb(p_pcb, 0, "1a1");
+	t_buffer* b = serializar_tcb(tcb1);
+	empaquetar_y_enviar(b, RECIBIR_TCB, socket_a_mi_ram_hq);
+
+
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
 		pthread_t hiloConsola;

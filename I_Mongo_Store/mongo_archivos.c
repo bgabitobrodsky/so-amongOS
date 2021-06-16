@@ -4,8 +4,8 @@
 t_log* logger_mongo;
 t_config* config_mongo;
 t_archivos archivos;
-t_bitacora* bitacoras[]; // Especie de mapa para las bitacoras
-int posiciciones_bitacora[]; // 0 si libre, 1 si ocupado, mismo tamaño que bitacoras
+t_bitacora** bitacoras; // Especie de mapa para las bitacoras
+int* posiciciones_bitacora; // 0 si libre, 1 si ocupado, mismo tamaño que bitacoras
 
 
 void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
@@ -73,12 +73,14 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
 } */
 
 void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, revisar si funciona
-	if (cantidad >= 0)
+	if (cantidad >= 0){
 		agregar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
-	else
+	}
+	else{
 		quitar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
+	}
 }
 
 void agregar(FILE* archivo, int cantidad, char tipo) {
@@ -99,7 +101,7 @@ void quitar(FILE* archivo, int cantidad, char tipo) {
 	char c;
 	int contador = 0;
 
-    pthread_mutex_lock(conseguir_semaforo(tipo));
+	pthread_mutex_lock(conseguir_semaforo(tipo));
 	for (c = getc(archivo); c != EOF; c = getc(archivo))
         contador++;
 

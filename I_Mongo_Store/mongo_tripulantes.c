@@ -47,7 +47,9 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: 
 
 void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	int posicion = encontrar_posicion_libre();
-	t_bitacora* bitacora_tripulante = { .bitacora_asociada = file_tripulante, .tripulante = tcb};
+	t_bitacora* bitacora_tripulante;
+	bitacora_tripulante->bitacora_asociada = file_tripulante;
+	bitacora_tripulante->tripulante = tcb;
 	bitacoras[posicion] = bitacora_tripulante;
 	posiciciones_bitacora[posicion] = 1;
 }
@@ -81,6 +83,7 @@ int encontrar_posicion_libre() {
 			return i;
 		}
 	}
+	return -1;
 }
 
 int encontrar_posicion_dado_tripulante(t_TCB* tcb) {
@@ -89,4 +92,5 @@ int encontrar_posicion_dado_tripulante(t_TCB* tcb) {
 			return i;
 		}
 	}
+	return -1;
 }

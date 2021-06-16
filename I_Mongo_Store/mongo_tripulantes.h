@@ -6,6 +6,7 @@
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_archivos archivos;
+extern t_bitacora** bitacoras;
 
 void manejo_tripulante(int socket_tripulante);
 void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante);

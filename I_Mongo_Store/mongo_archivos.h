@@ -20,12 +20,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-extern t_log* logger_mongo;
-extern t_config* config_mongo;
-extern t_archivos archivos;
-extern t_bitacora bitacoras[];
-extern int posiciciones_bitacora[];
-
 /* ESTRUCTURAS PROPIAS */
 
 typedef struct{
@@ -76,5 +70,11 @@ FILE* conseguir_archivo(int codigo);
 char conseguir_char(int codigo);
 pthread_mutex_t* conseguir_semaforo(char tipo);
 int max(int a, int b);
+
+extern t_log* logger_mongo;
+extern t_config* config_mongo;
+extern t_archivos archivos;
+extern t_bitacora** bitacoras;
+extern int* posiciciones_bitacora;
 
 #endif

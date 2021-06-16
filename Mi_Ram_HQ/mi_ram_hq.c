@@ -87,8 +87,8 @@ void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si
 					break;
 
 				case RECIBIR_TCB:
-					// log_info(logger_miramhq, "Recibo una tcb\n");
-					// log_info(logger_miramhq, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
+					log_info(logger_miramhq, "Recibo una tcb\n");
+					log_info(logger_miramhq, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
 					list_add(lista_tcb, (void*) mensaje_recibido->tcb);
 					free(mensaje_recibido->tcb);
 					//printf("Tripulante 1 pos: %c %c\n", (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
