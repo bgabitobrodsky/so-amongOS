@@ -8,7 +8,7 @@
  ============================================================================
  */
 //TODO: Implementar HANDLER de ESCUCHAR
-//TODO: en crear_tcb, estamos asignando a las posiciones el ASCII, no el numero (lo cual esta bien?)
+
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
 #define IP_I_MONGO_STORE config_get_string_value(config, "IP_I_MONGO_STORE")
@@ -66,10 +66,48 @@ int main() {
     iniciar_colas();
     iniciar_semaforos();
 
+
+    /*
+    t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
+
+	printf("Largo nombre: %i\n", t->largo_nombre);
+	printf("Nombre: %s\n", t->nombre);
+	printf("Parametros: %i\n", t->parametro);
+	printf("Cordenada en X: %i\n", t->coord_x);
+	printf("Cordenada en Y: %i\n", t->coord_y);
+	printf("Duracion: %i\n", t->duracion);
+
+    t_buffer* b = serializar_tarea(*t);
+    t_tarea* t2 = desserializar_tarea(b);
+
+	printf("Largo nombre: %i\n", t2->largo_nombre);
+	printf("Nombre: %s\n", t2->nombre);
+	printf("Parametros: %i\n", t2->parametro);
+	printf("Cordenada en X: %i\n", t2->coord_x);
+	printf("Cordenada en Y: %i\n", t2->coord_y);
+	printf("Duracion: %i\n", t2->duracion);
+	*/
+
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     //socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     //socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
+
+    //enviar_codigo(PEDIR_TAREA, socket_a_mi_ram_hq);
+
+	t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
+	t_buffer* b = serializar_tarea(*t);
+	empaquetar_y_enviar(b, TAREA, socket_a_mi_ram_hq);
+	/*
+    t_estructura* est = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+    printf("Tarea recibida! ");
+    printf("Largo nombre: %i\n", est->tarea->largo_nombre);
+    printf("Nombre: %s\n", est->tarea->nombre);
+    printf("Parametros: %i\n", est->tarea->parametro);
+    printf("Cordenada en X: %i\n", est->tarea->coord_x);
+    printf("Cordenada en Y: %i\n", est->tarea->coord_y);
+    printf("Duracion: %i\n", est->tarea->duracion);
+*/
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -183,18 +221,17 @@ void iniciar_patota(char* leido) {
     // Pasar la variable a RAM
 
     // RAM VERSION:
-    // recibe el mensaje (la variable con todo el archivo)
+    // recibe el mensaje (la variable con el archivo entero)
     // spliteamos en base al salto de linea \n
     // nos devuelve un array de tareas
 
     t_TCB* aux;
 
-    // TODO: aux en iniciar_tcb ROMPE. por este motivo fue cambiado a crear_puntero_tcb
 
     while (palabras[i+3] != NULL){
         printf("POSICION %d: %s \n", i+1, palabras[i+3]);
-        //void* funcion = pedir_funcion()
-        //aux = iniciar_tcb(NULL, pcb, i+1, palabras[i+3]);
+        // void* funcion = pedir_funcion()
+        // aux = iniciar_tcb(NULL, pcb, ((pcb->PID)*10000) + i+1, palabras[i+3]);
         aux = crear_puntero_tcb(pcb, ((pcb->PID)*10000) + i+1, palabras[i+3]);
         enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
         monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
@@ -206,9 +243,9 @@ void iniciar_patota(char* leido) {
 
     for(int j = i+1; j <= cantidadTripulantes; j++){
         printf("POSICION %d: 0|0\n", j);
-        //void* funcion = pedir_funcion()
-        //aux = iniciar_tcb(NULL, pcb, i+1, "0|0");
-        aux = crear_puntero_tcb(pcb, ((pcb->PID)*10000) + i+1, "0|0");
+        // void* funcion = pedir_funcion()
+        // aux = iniciar_tcb(NULL, pcb, ((pcb->PID)*10000) + j, "0|0");
+        aux = crear_puntero_tcb(pcb, ((pcb->PID)*10000) + j, "0|0");
         enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
         monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
         printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
@@ -221,68 +258,6 @@ void iniciar_patota(char* leido) {
     liberar_puntero_doble(palabras);
 }
 
-/*
-t_patota* crear_patota(t_PCB* un_pcb){
-    t_patota* patota = malloc(sizeof(t_patota));
-    patota -> pcb = un_pcb;
-    //patota -> archivo_de_tareas
-    return patota;
-}*/
-
-t_PCB* crear_pcb(char* path){
-    t_PCB* pcb = malloc(sizeof(t_PCB));
-    pcb -> PID = (uint32_t) nuevo_pid();
-    pcb -> direccion_tareas = (uint32_t) path;
-    return pcb;
-}
-
-int nuevo_pid(){
-    int id_patota = 1;
-    while(1){
-        if(!esta_en_lista(lista_pids, id_patota)){
-            list_add(lista_pids, (void*) id_patota);
-            return id_patota;
-        }
-        id_patota++;
-    }
-}
-
-void iniciar_hilo_tripulante(void* funcion){
-    pthread_t hilo1;
-    pthread_create(&hilo1, NULL, funcion, NULL);
-}
-
-
-t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
-    t_TCB* tcb = malloc(sizeof(t_TCB));
-    tcb -> TID = tid;
-    tcb -> estado_tripulante = estado_tripulante[NEW];
-    tcb -> coord_x = posicion[0];
-    tcb -> coord_y = posicion[2];
-    tcb -> siguiente_instruccion = 0; //TODO
-    tcb -> puntero_a_pcb = (uint32_t) pcb;
-
-    return tcb;
-}
-
-t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
-    t_TCB tcb;
-    tcb.TID = tid;
-    tcb.estado_tripulante = estado_tripulante[NEW];
-    tcb.coord_x = posicion[0];
-    tcb.coord_y = posicion[2];
-    tcb.siguiente_instruccion = 0; //TODO
-    tcb.puntero_a_pcb = (uint32_t) pcb;
-
-    return tcb;
-}
-
-t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){
-    t_TCB* un_tcb = crear_puntero_tcb(pcb, tid, posicion);
-    //t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);
-    iniciar_hilo_tripulante(funcion);
-    return un_tcb;
-}
 
 void iniciar_planificacion() {
     printf("Iniciar Planificacion");
@@ -559,4 +534,70 @@ void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento){
         }
     t_TCB* aux = list_remove_by_condition(lista, contains);
     return aux;
+}
+
+
+/*
+t_patota* crear_patota(t_PCB* un_pcb){
+    t_patota* patota = malloc(sizeof(t_patota));
+    patota -> pcb = un_pcb;
+    //patota -> archivo_de_tareas
+    return patota;
+}*/
+
+t_PCB* crear_pcb(char* path){
+    t_PCB* pcb = malloc(sizeof(t_PCB));
+    pcb -> PID = (uint32_t) nuevo_pid();
+    pcb -> direccion_tareas = (uint32_t) path;
+    return pcb;
+}
+
+int nuevo_pid(){
+    int id_patota = 1;
+    while(1){
+        if(!esta_en_lista(lista_pids, id_patota)){
+            list_add(lista_pids, (void*) id_patota);
+            return id_patota;
+        }
+        id_patota++;
+    }
+}
+
+void iniciar_hilo_tripulante(void* funcion){
+    pthread_t hilo1;
+    pthread_create(&hilo1, NULL, funcion, NULL);
+}
+
+
+t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
+	// No asigna siguiente instruccion
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb -> TID = tid;
+    tcb -> estado_tripulante = estado_tripulante[NEW];
+    tcb -> coord_x = posicion[0] - 48; // equivalencia ascii - numero
+    tcb -> coord_y = posicion[2] - 48; // equivalencia ascii - numero
+    tcb -> siguiente_instruccion = 0;
+    tcb -> puntero_a_pcb = (uint32_t) pcb;
+
+    return tcb;
+}
+
+t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
+	// No asigna siguiente instruccion
+    t_TCB tcb;
+    tcb.TID = tid;
+    tcb.estado_tripulante = estado_tripulante[NEW];
+    tcb.coord_x = posicion[0] - 48; // equivalencia ascii - numero;
+    tcb.coord_y = posicion[2] - 48; // equivalencia ascii - numero;
+    tcb.siguiente_instruccion = 0;
+    tcb.puntero_a_pcb = (uint32_t) pcb;
+
+    return tcb;
+}
+
+t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){
+    t_TCB* un_tcb = crear_puntero_tcb(pcb, tid, posicion);
+    //t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);
+    iniciar_hilo_tripulante(funcion);
+    return un_tcb;
 }

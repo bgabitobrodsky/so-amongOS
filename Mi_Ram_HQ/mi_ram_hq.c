@@ -8,6 +8,8 @@
 //TODO: por alguna razon, no funcionan los printf en este modulo.
 
 #include "mi_ram_hq.h"
+#include <comms/generales.h>
+
 
 #define	IP_MI_RAM_HQ config_get_string_value(config_miramhq, "IP")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config_miramhq, "PUERTO")
@@ -34,7 +36,7 @@ int main(int argc, char** argv) {
 
     //int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     int socket_oyente = crear_socket_oyente("127.0.0.1", "25430");
-    escuchar_miram((void*) socket_oyente);//debug
+    //escuchar_miram((void*) socket_oyente);//debug
 
     args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
@@ -53,16 +55,16 @@ int main(int argc, char** argv) {
 
 void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si muere discordiador. una forma de arreglarlo es hacer que estas funciones devuelvan valores.
 	int flag = 1;
+
+	t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
+	t_buffer* b = serializar_tarea(*t);
+	empaquetar_y_enviar(b, 2, socket_hijo);
+
 	log_info(logger_miramhq, "Atendiendo.\n");
 
 	    while(flag) {
 	    	t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
 	    	sleep(1); //para que no se rompa en casos de bug o tiempos de espera
-	    	log_info(logger_miramhq, "Log vacio\n");
-	    	if(mensaje_recibido->codigo_operacion < 20){
-	    		log_info(logger_miramhq, "Mensaje totalmente valido\n", mensaje_recibido->codigo_operacion);
-	    	}
-	    	log_info(logger_miramhq, "Otro mas\n");
 
 			switch(mensaje_recibido->codigo_operacion) {
 
@@ -72,6 +74,16 @@ void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si
 
 				case PEDIR_TAREA:
 					log_info(logger_miramhq, "Pedido de tarea recibido\n");
+					break;
+
+				case TAREA:
+                    printf("Tarea recibida! ");
+                    printf("Largo nombre: %i\n", mensaje_recibido->tarea->largo_nombre);
+                    printf("Nombre: %s\n", mensaje_recibido->tarea->nombre);
+                    printf("Parametros: %i\n", mensaje_recibido->tarea->parametro);
+                    printf("Cordenada en X: %i\n", mensaje_recibido->tarea->coord_x);
+                    printf("Cordenada en Y: %i\n", mensaje_recibido->tarea->coord_y);
+                    printf("Duracion: %i\n", mensaje_recibido->tarea->duracion);
 					break;
 
 				case COD_TAREA:
@@ -110,10 +122,10 @@ void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si
 }
 
 void escuchar_miram(void* args) { // No se libera args, ver donde liberar
-	//args_escuchar* p = malloc(sizeof(args_escuchar));
-	//p = args;
-	//int socket_escucha = p->socket_oyente;
-	int socket_escucha = (int) args; //Tema de testeos, no borrar
+	args_escuchar* p = malloc(sizeof(args_escuchar));
+	p = args;
+	int socket_escucha = p->socket_oyente;
+	//int socket_escucha = (int) args; //Tema de testeos, no borrar
 
 	struct sockaddr_storage direccion_a_escuchar;
 	socklen_t tamanio_direccion;
@@ -135,12 +147,12 @@ void escuchar_miram(void* args) { // No se libera args, ver donde liberar
 			tamanio_direccion = sizeof(direccion_a_escuchar);
 			socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
 
-			//if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+			if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
 				close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
 				atender_clientes(socket_especifico); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
 				close(socket_especifico); // Cumple proposito, se cierra socket hijo
 				exit(0); // Returnea
-			//} //comentar fork para debuggeo
+			} //comentar fork para debuggeo
 
 			close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 		}
