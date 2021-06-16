@@ -13,7 +13,6 @@
 enum codigo_operacion { TCB, TAREA,     OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,     MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION };
 enum estados { NEW, READY, EXCECUTING, BLOCKED};
 
-
 /* ESTRUCTURAS */
 
 typedef struct {
@@ -66,11 +65,5 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     int cantidad; // Revisar funcs paquetes
 
 } t_estructura;
-
-
-/* SEMAFOROS */
-
-int verificacion = 0;
-int reparado = 0;
 
 #endif

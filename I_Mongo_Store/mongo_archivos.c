@@ -7,19 +7,19 @@ t_archivos archivos;
 
 
 void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
-	char* path_oxigeno;
+	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
-	char* path_comida;
+	char* path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
 	sprintf(path_comida, "%s/Comida.ims", path_files);
 
-	char* path_basura;
+	char* path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
-	char* path_superbloque;
+	char* path_superbloque = malloc((strlen(path_files)+1) + strlen("/SuperBloque.ims"));
 	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); // TODO: Implementar cosas con el superbloque
 
-	char* path_blocks;
+	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
 
 	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
@@ -89,6 +89,7 @@ FILE* conseguir_archivo(int codigo) {
 			return archivos.basura;
 			break;
 	}
+	return NULL;
 }
 
 char conseguir_char(int codigo) {
@@ -103,6 +104,7 @@ char conseguir_char(int codigo) {
 			return 'B';
 			break;
 	}
+	return '\0';
 }
 
 pthread_mutex_t* conseguir_semaforo(char tipo) {
@@ -112,6 +114,7 @@ pthread_mutex_t* conseguir_semaforo(char tipo) {
         return mutex_comida;
     if (tipo == 'B')
         return mutex_basura; 
+    return NULL;
 }
 
 void agregar(FILE* archivo, int cantidad, char tipo) {

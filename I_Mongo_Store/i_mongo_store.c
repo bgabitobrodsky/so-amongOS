@@ -22,11 +22,11 @@ int main(int argc, char** argv){
 	iniciar_file_system();
 
 	// Ver si es correcto considerandose que se usa fork(), no serian ULTs sino KLTs
-	pthread_mutex_init(mutex_oxigeno, NULL);
-	pthread_mutex_init(mutex_comida, NULL);
-	pthread_mutex_init(mutex_basura, NULL);
-    
-	pthread_t hilo_escucha;	
+	pthread_mutex_init(&mutex_oxigeno, NULL);
+	pthread_mutex_init(&mutex_comida, NULL);
+	pthread_mutex_init(&mutex_basura, NULL);
+
+	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 
 	pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba
@@ -83,7 +83,7 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 }
 
 void sabotaje(int socket_discordiador) {
-	while(1) {
+	//while(1) {
 		/* wait(SIGUSR1);
 		enviar_codigo(SABOTAJE, socket_discordiador);
 		wait(verificacion);
@@ -91,15 +91,18 @@ void sabotaje(int socket_discordiador) {
 		reparar(mensaje);
 		signal(reparado); 
 		free(mensaje); */
-	}
+	//}
 }
 
 void iniciar_file_system() {
 	struct stat dir = {0};
 	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
-	char* path_files = path_directorio;
+	char* path_files = malloc(strlen(path_directorio) + strlen("/Files") + 1);
+	strncpy(path_files, path_directorio, strlen(path_directorio) + 1);
 	sprintf(path_files, "/Files");
-	char* path_bitacoras = path_files;
+
+	char* path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
+	strncpy(path_bitacoras , path_files, strlen(path_files) + 1);
 	sprintf(path_bitacoras, "/Bitacoras");
 
 	if ((stat(path_directorio, &dir) != -1)) {
@@ -126,7 +129,7 @@ void cerrar_archivos() {
 }
 
 void cerrar_mutexs() {
-	pthread_mutex_destroy(mutex_oxigeno);
-	pthread_mutex_destroy(mutex_comida);
-	pthread_mutex_destroy(mutex_basura);
+	pthread_mutex_destroy(&mutex_oxigeno);
+	pthread_mutex_destroy(&mutex_comida);
+	pthread_mutex_destroy(&mutex_basura);
 }
