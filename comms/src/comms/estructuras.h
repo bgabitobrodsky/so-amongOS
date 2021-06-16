@@ -8,8 +8,12 @@
 #include <string.h>
 #include <stdint.h>
 
-enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, SABOTAJE, MENSAJE, PEDIR_TAREA, COD_TAREA, RECEPCION, DESCONEXION};
+/* ENUMS */
+//                      ESTRUCTURAS                          COSAS FILESYSTEM            ACCIONES BITACORA                                                           CODIGOS UNICOS: MONGO           DISCORDIADOR                         GENERALES
+enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA,     OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,     MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION };
 enum estados { NEW, READY, EXCECUTING, BLOCKED};
+
+/* ESTRUCTURAS */
 
 typedef struct {
 
@@ -58,6 +62,7 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     t_PCB* pcb;
     t_tarea* tarea;
     int codigo_operacion;
+    int cantidad; // Revisar funcs paquetes
 
 } t_estructura;
 

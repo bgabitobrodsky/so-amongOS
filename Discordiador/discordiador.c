@@ -69,8 +69,8 @@ int main() {
 
 	socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
 	//socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
-	socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
-	//socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
+	//socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
+	socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "5000");
 
 	if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
