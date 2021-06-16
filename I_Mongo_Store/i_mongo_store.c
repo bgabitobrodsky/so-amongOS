@@ -71,6 +71,12 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
 			if (es_discordiador) {
 				log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
+
+				t_estructura* mensaje = recepcion_y_deserializacion(socket_especifico);
+				bitacoras = malloc(sizeof(t_bitacora) * mensaje->cantidad); // TODO: Considerando que son arrays puros y duros y no punteros, ver si explota, si si, hacerlos punteros sin mas
+				posiciciones_bitacora = malloc(sizeof(int) * mensaje->cantidad);
+				memset(posiciciones_bitacora, 0, sizeof(int) * mensaje->cantidad);
+				
 				sabotaje(socket_especifico);
 				es_discordiador = 0;
 			}

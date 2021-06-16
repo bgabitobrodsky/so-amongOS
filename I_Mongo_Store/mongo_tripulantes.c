@@ -41,7 +41,15 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: 
 	int file_descriptor_tripulante = open(path_tripulante, O_RDWR | O_APPEND | O_CREAT);
 
 	FILE* file_tripulante = fdopen(file_descriptor_tripulante, "r+");
-	// TODO hacer un hashmap de bitacora
+	
+	acomodar_bitacora(file_tripulante, tcb);
+}
+
+void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
+	int posicion = encontrar_posicion_libre();
+	t_bitacora* bitacora_tripulante = { .bitacora_asociada = file_tripulante, .tripulante = tcb};
+	bitacoras[posicion] = bitacora_tripulante;
+	posiciciones_bitacora[posicion] = 1;
 }
 
 void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir comportamiento
@@ -59,6 +67,26 @@ void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir com
 	}
 }
 
-void borrar_bitacora(t_TCB* tcb) { // TODO: implementar
+void borrar_bitacora(t_TCB* tcb) {
+	int posicion = encontrar_posicion_dado_tripulante(tcb);
+	fclose(bitacoras[posicion]->bitacora_asociada);
+	free(bitacoras[posicion]->tripulante);
+	free(bitacoras[posicion]);
+	posiciciones_bitacora[posicion] = 0;
+}
 
+int encontrar_posicion_libre() {
+	for(int i; i < sizeof(posiciciones_bitacora)/sizeof(int); i++) {
+		if (posiciciones_bitacora[i] == 0) {
+			return i;
+		}
+	}
+}
+
+int encontrar_posicion_dado_tripulante(t_TCB* tcb) {
+	for(int i; i < sizeof(bitacoras)/sizeof(t_bitacora); i++) {
+		if (bitacoras[i]->tripulante->TID == tcb->TID) {
+			return i;
+		}
+	}
 }

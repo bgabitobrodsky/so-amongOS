@@ -22,6 +22,9 @@
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
+extern t_archivos archivos;
+extern t_bitacora bitacoras[];
+extern int posiciciones_bitacora[];
 
 /* ESTRUCTURAS PROPIAS */
 
@@ -35,8 +38,17 @@ typedef struct{
 } config_mongo_t;
 
 typedef struct {
+
     int socket_oyente;
+
 } args_escuchar_mongo;
+
+typedef struct {
+
+    t_TCB* tripulante;
+    FILE* bitacora_asociada;
+
+} t_bitacora;
 
 typedef struct {
 
