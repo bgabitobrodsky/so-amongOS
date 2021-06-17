@@ -35,7 +35,7 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: 
 	char* path_bitacoras = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 	sprintf(path_bitacoras, "/Files/Bitacoras");
 	
-	char* path_tripulante;
+	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante%s.ims") + 1);
 	sprintf(path_tripulante, "%s/Tripulante%s.ims", path_bitacoras, string_itoa(tcb->TID)); // TODO: Revisar funcionamiento de esta linea y ver identificador
 
 	int file_descriptor_tripulante = open(path_tripulante, O_RDWR | O_APPEND | O_CREAT);
@@ -46,7 +46,7 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: 
 }
 
 void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
-	t_bitacora* nueva_bitacora;
+	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->tripulante = tcb;
 
@@ -82,5 +82,5 @@ void borrar_bitacora(t_TCB* tcb) {
 }
 
 int obtener_indice_bitacora(t_TCB* tcb) { // TODO: Implementar
-
+	return 0;
 }

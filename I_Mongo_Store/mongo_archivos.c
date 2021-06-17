@@ -4,7 +4,7 @@
 t_log* logger_mongo;
 t_config* config_mongo;
 t_archivos archivos;
-t_list* bitacoras = list_create();
+t_list* bitacoras;
 
 void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
 	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));

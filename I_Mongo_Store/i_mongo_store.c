@@ -14,6 +14,7 @@ int main(int argc, char** argv){
 
 	logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
+	bitacoras = list_create();
 
 	int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
 	args_escuchar args_escuchar;

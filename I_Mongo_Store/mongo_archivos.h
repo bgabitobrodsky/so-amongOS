@@ -78,7 +78,7 @@ int max(int a, int b);
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_archivos archivos;
-extern t_bitacora** bitacoras;
+extern t_list* bitacoras;
 extern int* posiciciones_bitacora;
 
 #endif
