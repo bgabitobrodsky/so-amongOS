@@ -67,7 +67,7 @@ int reconocer_comando(char* str) {
 	}
 
 	if (comparar_strings(palabras[0],"OBTENER_BITACORA")) {
-		if (contador == 1) {
+		if (contador == 2) {
 			liberar_puntero_doble(palabras);
 			return OBTENER_BITACORA;
 		}
