@@ -6,7 +6,7 @@ t_config* config_mongo;
 t_archivos archivos;
 t_list* bitacoras;
 
-void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
+void inicializar_archivos(char* path_files) { // TODO: Puede romper
 	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
@@ -22,8 +22,49 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
 	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
 
-	// TODO: Verificacion y setteo del SuperBloque
-	// TODO: Verificacion y operaciones sobre Blocks
+	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
+	int filedescriptor_comida      = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
+	int filedescriptor_basura      = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
+    int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT);
+    int filedescriptor_blocks      = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+
+	FILE* file_oxigeno     = fdopen(filedescriptor_oxigeno, "r+");
+	FILE* file_comida      = fdopen(filedescriptor_comida, "r+");
+	FILE* file_basura      = fdopen(filedescriptor_basura, "r+");
+    FILE* file_superbloque = fdopen(filedescriptor_superbloque, "r+");
+    FILE* file_blocks      = fdopen(filedescriptor_blocks, "r+");
+
+	archivos.oxigeno      = file_oxigeno;
+	archivos.comida       = file_comida;
+	archivos.basura       = file_basura;
+    archivos.superbloque  = file_superbloque;
+    archivos.blocks       = file_blocks;
+	archivo.path_blocks   = path_blocks; // Actualizar struct
+
+	iniciar_superbloque(file_superbloque);
+	iniciar_blocks(file_blocks, filedescriptor_blocks); // Actualizar struct
+
+	free(path_oxigeno);
+	free(path_comida);
+	free(path_basura);
+	free(path_superbloque);
+}
+
+void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede romper, actualizar conforme arriba
+	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
+	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
+
+	char* path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
+	sprintf(path_comida, "%s/Comida.ims", path_files);
+
+	char* path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
+	sprintf(path_basura, "%s/Basura.ims", path_files);
+
+	char* path_superbloque = malloc((strlen(path_files)+1) + strlen("/SuperBloque.ims"));
+	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); 
+
+	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
+	sprintf(path_blocks, "%s/Blocks.ims", path_files);
 
 	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
 	int filedescriptor_comida      = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
@@ -38,17 +79,14 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
     FILE* file_blocks      = fdopen(filedescriptor_blocks, "r+");
 
 	archivos.oxigeno      = file_oxigeno;
-	archivos.path_oxigeno = path_oxigeno;
-
 	archivos.comida       = file_comida;
-	archivos.path_comida  = path_comida;
-
 	archivos.basura       = file_basura;
-	archivos.path_basura  = path_basura;
-
     archivos.superbloque  = file_superbloque;
     archivos.blocks       = file_blocks;
 
+	free(path_oxigeno);
+	free(path_comida);
+	free(path_basura);
 	free(path_superbloque);
 	free(path_blocks);
 }
@@ -89,14 +127,22 @@ void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, re
 
 void agregar(FILE* archivo, int cantidad, char tipo) {
 	pthread_mutex_lock(conseguir_semaforo(tipo));
+
+	// TODO: Buscar bloques en Blocks
+
+	// TODO: Deberia hacer putc en un cierto bloque
     for(int i = 0; i < cantidad; i++) {
 		putc(tipo, archivo);
 	}
+
     pthread_mutex_unlock(conseguir_semaforo(tipo));
 }
 
-void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {
-    for(int i = 0; i < cantidad; i++) {
+void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {   
+	// TODO: Buscar bloques en Blocks
+	
+	// TODO: Deberia hacer putc en un cierto bloque
+	for(int i = 0; i < cantidad; i++) {
 		putc(tipo, archivo);
 	}
 }
@@ -109,6 +155,7 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	for (c = getc(archivo); c != EOF; c = getc(archivo))
         contador++;
 
+	// TODO: Cambiar logica, tendria que reescribir todo el Blocks
 	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso
     fclose(archivo);
 	archivo = fopen(path, "w"); // Reseteo archivo
@@ -139,21 +186,6 @@ FILE* conseguir_archivo(int codigo) {
 			break;
 		case BASURA:
 			return archivos.basura;
-			break;
-	}
-	return NULL;
-}
-
-char* conseguir_path(int codigo) {
-	switch(codigo) {
-		case OXIGENO:
-			return archivos.path_oxigeno;
-			break;
-		case COMIDA:
-			return archivos.path_comida;
-			break;
-		case BASURA:
-			return archivos.path_basura;
 			break;
 	}
 	return NULL;

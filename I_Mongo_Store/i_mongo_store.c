@@ -122,7 +122,7 @@ void iniciar_file_system() {
 
 	if ((stat(path_directorio, &dir) != -1)) {
 		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");
-		inicializar_archivos(path_files); // TODO: Revisar si open() funca como fopen()
+		inicializar_archivos_preexistentes(path_files); // TODO: Revisar si open() funca como fopen()
 	}
 	else {
 		mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow
