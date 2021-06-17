@@ -133,6 +133,7 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques[], uint32_t* cant_bloque
 
 	for(int j = 0; j < cant_bloques; j++) {
 		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1); i++) { // Cambiar Macro por revision al Superbloque
+			
 			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == NULL) {
 				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
 				cantidad_alcanzada++;
@@ -143,6 +144,7 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques[], uint32_t* cant_bloque
 			}
 		}
 	}
+	
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -166,7 +168,7 @@ void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hac
 
 	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
 
-	if (offset == -1) {
+	if (offset < 0) { // Falto agregar cantidad, dada por offset
 		// TODO: Asignar bloque nuevo y asignar ahi
 	}
 	else if (offset < 100) { // No paso bloques
@@ -187,12 +189,9 @@ void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hac
 }
 
 void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explotar en manejo de fopens, revisar
-	char c;
-	int contador = 0;
-
 	pthread_mutex_lock(&mutex_blocks); 
 
-	// TODO: Debera escribir NULL donde estaba el char en el mapa, en ultima posicion	
+	// TODO: Debera escribir NULL donde estaba el char en el mapa, en ultima posicion posible	
 
     pthread_mutex_unlock(&mutex_blocks);
 }
