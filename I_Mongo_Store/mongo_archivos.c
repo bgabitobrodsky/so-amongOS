@@ -22,6 +22,9 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
 	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
 
+	// TODO: Verificacion y setteo del SuperBloque
+	// TODO: Verificacion y operaciones sobre Blocks
+
 	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
 	int filedescriptor_comida      = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
 	int filedescriptor_basura      = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
