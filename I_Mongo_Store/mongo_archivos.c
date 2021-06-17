@@ -34,15 +34,18 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar
     FILE* file_superbloque = fdopen(filedescriptor_superbloque, "r+");
     FILE* file_blocks      = fdopen(filedescriptor_blocks, "r+");
 
-	archivos.oxigeno     = file_oxigeno;
-	archivos.comida      = file_comida;
-	archivos.basura      = file_basura;
-    archivos.superbloque = file_superbloque;
-    archivos.blocks      = file_blocks;
+	archivos.oxigeno      = file_oxigeno;
+	archivos.path_oxigeno = path_oxigeno;
 
-	free(path_oxigeno);
-	free(path_comida);
-	free(path_basura);
+	archivos.comida       = file_comida;
+	archivos.path_comida  = path_comida;
+
+	archivos.basura       = file_basura;
+	archivos.path_basura  = path_basura;
+
+    archivos.superbloque  = file_superbloque;
+    archivos.blocks       = file_blocks;
+
 	free(path_superbloque);
 	free(path_blocks);
 }
@@ -76,7 +79,7 @@ void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, re
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 	else{
-		quitar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+		quitar(conseguir_archivo(codigo_archivo), conseguir_path(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 }
@@ -95,7 +98,7 @@ void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {
 	}
 }
 
-void quitar(FILE* archivo, int cantidad, char tipo) {
+void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explotar en manejo de fopens, revisar
 	char c;
 	int contador = 0;
 
@@ -105,9 +108,9 @@ void quitar(FILE* archivo, int cantidad, char tipo) {
 
 	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso
     fclose(archivo);
-	fopen(archivo, "w"); // Reseteo archivo
+	archivo = fopen(path, "w"); // Reseteo archivo
 	fclose(archivo);
-	fopen(archivo, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
+	archivo = fopen(path, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
     
     agregar_unlocked(archivo, nueva_cantidad, tipo);
     pthread_mutex_unlock(conseguir_semaforo(tipo));
@@ -133,6 +136,21 @@ FILE* conseguir_archivo(int codigo) {
 			break;
 		case BASURA:
 			return archivos.basura;
+			break;
+	}
+	return NULL;
+}
+
+char* conseguir_path(int codigo) {
+	switch(codigo) {
+		case OXIGENO:
+			return archivos.path_oxigeno;
+			break;
+		case COMIDA:
+			return archivos.path_comida;
+			break;
+		case BASURA:
+			return archivos.path_basura;
 			break;
 	}
 	return NULL;
