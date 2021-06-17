@@ -4,9 +4,7 @@
 t_log* logger_mongo;
 t_config* config_mongo;
 t_archivos archivos;
-t_bitacora** bitacoras; // Especie de mapa para las bitacoras
-int* posiciciones_bitacora; // 0 si libre, 1 si ocupado, mismo tamaño que bitacoras
-
+t_list* bitacoras = list_create();
 
 void inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar archivos de metadata
 	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
