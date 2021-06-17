@@ -13,14 +13,15 @@
 //#include <comms/estructuras.h>
 //#include <comms/socketes.h>
 
-void atender_clientes(int socket_hijo);
-void escuchar_miram(void* args);
-t_PCB* crear_pcb(char* path);
-t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 /**
  * MANEJO DE MEMORIA
 **/
+
+void atender_clientes(void*);
+void proceso_handler(void* args);
+t_PCB* crear_pcb(char* path);
+t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 typedef struct pagina {
     int base;
@@ -53,6 +54,7 @@ segmento* crear_segmento(int tam);
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
 pagina* crear_pagina();
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
+
 
 
 #endif /* MI_RAM_HQ_H_ */

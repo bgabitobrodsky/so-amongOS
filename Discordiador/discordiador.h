@@ -28,6 +28,8 @@ void iniciar_planificacion();
 void listar_tripulantes();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
+
+// Funciones semi muertas
 int pedir_tarea(int id_tripulante);
 void realizar_tarea(t_tarea tarea);
 
@@ -43,9 +45,9 @@ void iniciar_hilo_tripulante(void* funcion);
 t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
-//t_tripulante* crear_tripulante(t_TCB* un_tcb);
 t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion);
-void enlistar_tripulante();
+void enlistar_algun_tripulante();
+void enlistar_este_tripulante(t_TCB* tripulante);
 
 // PROCESOS
 //t_patota* crear_patota(t_PCB* un_pcb);
@@ -54,8 +56,9 @@ int nuevo_pid();
 t_list* lista_tripulantes_patota(t_PCB* pcb);
 
 // FUNCIONES AUXILIARES
-
 int esta_en_lista(t_list* lista, int elemento);
+int esta_tcb_en_lista(t_list* lista, t_TCB* elemento);
+void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento);
 int sonIguales(int elemento1, int elemento2);
 char* fecha_y_hora();
 
