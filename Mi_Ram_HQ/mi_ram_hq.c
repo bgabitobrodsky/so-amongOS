@@ -8,6 +8,8 @@
 // TODO: por alguna razon, no funcionan los printf en este modulo.
 
 #include "mi_ram_hq.h"
+#include <comms/generales.h>
+
 
 #define	IP_MI_RAM_HQ config_get_string_value(config_miramhq, "IP")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config_miramhq, "PUERTO")
@@ -41,9 +43,10 @@ int main(int argc, char** argv) {
 
     //int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     int socket_oyente = crear_socket_oyente("127.0.0.1", "25430");
+
     //proceso_handler((void*) socket_oyente);//debug
 
-    args_escuchar args_miram;
+  args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
 	pthread_t hilo_escucha;
@@ -57,7 +60,6 @@ int main(int argc, char** argv) {
 
 	return EXIT_SUCCESS;
 }
-
 
 void proceso_handler(void* args) {
 	args_escuchar* p = malloc(sizeof(args_escuchar));
@@ -95,6 +97,7 @@ void proceso_handler(void* args) {
 		}
 	}
 }
+
 
 
 

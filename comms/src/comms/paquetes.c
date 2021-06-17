@@ -13,7 +13,7 @@ t_buffer* serializar_tcb(t_TCB tcb) {
 
     t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*5 + sizeof(char));
     buffer->tamanio_estructura = sizeof(uint32_t)*5 + sizeof(char);  // Se le da el tamanio del struct del parametro
-
+    // estructura NO se debe liberar!!
     void* estructura = malloc(buffer->tamanio_estructura); // Se utiliza intermediario
     int desplazamiento = 0; // Desplazamiento para calcular que tanto tengo que correr para que no se sobrepisen cosas del array estructura
 
@@ -31,24 +31,22 @@ t_buffer* serializar_tcb(t_TCB tcb) {
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
-    free(estructura);
     return buffer;
-
 }
 
 // Serializa un struct tarea a un buffer
 t_buffer* serializar_tarea(t_tarea tarea) {
 
-    t_buffer* buffer = malloc((sizeof(t_buffer)));
-    buffer->tamanio_estructura = 5 * sizeof(uint32_t) + sizeof(tarea.nombre) + 1;
+    t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = (5 * sizeof(uint32_t)) + tarea.largo_nombre + 1;
 
     void* estructura = malloc((buffer->tamanio_estructura));
     int desplazamiento = 0;
     
     memcpy(estructura + desplazamiento, &tarea.largo_nombre, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tarea.nombre, sizeof(tarea.nombre) + 1);
-    desplazamiento += sizeof(tarea.nombre) + 1;
+    memcpy(estructura + desplazamiento, tarea.nombre, (tarea.largo_nombre + 1));
+    desplazamiento += (tarea.largo_nombre + 1);
     memcpy(estructura + desplazamiento, &tarea.parametro, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
     memcpy(estructura + desplazamiento, &tarea.coord_x, sizeof(uint32_t));
@@ -184,9 +182,9 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
         case TAREA:
             intermediario->codigo_operacion = TAREA;
-            t_tarea* tarea = desserializar_tarea(paquete->buffer->estructura); 
-            intermediario->tarea = tarea;
-            free(tarea);
+
+            // asignar un malloc? tienes idea de lo loco que se oye eso?
+            intermediario->tarea = desserializar_tarea(paquete->buffer);
             break;
 
         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
@@ -233,8 +231,9 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
 
     memcpy(&(tarea->largo_nombre), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    tarea->nombre = malloc(tarea->largo_nombre);
-    memcpy(tarea->nombre, estructura, tarea->largo_nombre);
+    tarea->nombre = malloc(tarea->largo_nombre +1);
+    memcpy(tarea->nombre, estructura, (tarea->largo_nombre +1));
+    estructura += tarea->largo_nombre + 1;
     memcpy(&(tarea->parametro), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
     memcpy(&(tarea->coord_x), estructura, sizeof(uint32_t));
@@ -242,7 +241,6 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
     memcpy(&(tarea->coord_y), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
     memcpy(&(tarea->duracion), estructura, sizeof(uint32_t));
-    estructura += sizeof(uint32_t);
 
     return tarea;
 }
