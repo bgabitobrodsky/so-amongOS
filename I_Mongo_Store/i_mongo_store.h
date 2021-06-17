@@ -13,6 +13,7 @@
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_archivos archivos;
+extern t_list* bitacoras;
 
 void escuchar_mongo(void* args);
 void sabotaje(int socket_discordiador);
