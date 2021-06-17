@@ -8,28 +8,17 @@
 #ifndef I_MONGO_STORE_H_
 #define I_MONGO_STORE_H_
 
-#include "utils.h"
-//#include <pthread.h>
-//#include <readline/readline.h>
-//#include<comms/paquetes.h>
-//#include<comms/estructuras.h>
-//#include<unistd.h>
-//#include<stdio.h>
-//#include<stdlib.h>
-//#include<commons/log.h>
-//#include<commons/string.h>
-//#include<commons/config.h>
-//#include<comms/socketes.h>
+#include "mongo_tripulantes.h"
 
-typedef struct{
-
-    char* punto_montaje;
-    int puerto;
-    int tiempo_sincronizacion;
-    char** posiciones_sabotaje;
-    
-} config_mongo_t;
+extern t_log* logger_mongo;
+extern t_config* config_mongo;
+extern t_archivos archivos;
+extern t_list* bitacoras;
 
 void escuchar_mongo(void* args);
+void sabotaje(int socket_discordiador);
+void iniciar_file_system();
+void cerrar_archivos();
+void cerrar_mutexs();
 
 #endif /* I_MONGO_STORE_H_ */

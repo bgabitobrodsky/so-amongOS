@@ -21,8 +21,8 @@
 //#include <comms/socketes.h>
 
 
-void atender_clientes(int socket_hijo);
-void escuchar_miram(void* args);
+void atender_clientes(void*);
+void proceso_handler(void* args);
 t_PCB* crear_pcb(char* path);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 

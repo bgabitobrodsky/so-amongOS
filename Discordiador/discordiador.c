@@ -109,6 +109,7 @@ int main() {
     printf("Duracion: %i\n", est->tarea->duracion);
 */
 
+
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
         pthread_t hiloConsola;
