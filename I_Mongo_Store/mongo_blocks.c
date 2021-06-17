@@ -24,7 +24,7 @@ void iniciar_blocks(FILE* archivo, int filedescriptor) {
     uint32_t* block_size;
     fread(block_size, sizeof(uint32_t), 1, archivos.superbloque);
 
-    fseek(archivos.superbloque, strlen("BLOCKS=", SEEK_CUR));
+    fseek(archivos.superbloque, strlen("BLOCKS="), SEEK_CUR));
     uint32_t* size;
     fread(size, sizeof(uint32_t), 1, archivos.superbloque);
 
