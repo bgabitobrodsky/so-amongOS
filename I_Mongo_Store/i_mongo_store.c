@@ -88,16 +88,26 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
 }
 
 void sabotaje(int socket_discordiador) {
+	sigset_t set;
+	sigemptyset(&set);
+	int sig;
+	int *sigptr = &sig;
+	sigemptyset(&set);
+	sigaddset(&set, SIGINT);
+	sigprocmask( SIG_BLOCK, &set, NULL );
+	
 	while(1) {
-		/* wait(SIGUSR1);
-		log_info(logger_mongo, "Se detecto un sabotaje.\n");
-		enviar_codigo(SABOTAJE, socket_discordiador);
-		wait(verificacion);
-		t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
-		reparar(mensaje);
-		log_info(logger_mongo, "Se reparo el sabotaje.\n");
-		signal(reparado);
-		free(mensaje); */
+		/* if (sigwait(&set, sigptr) == SIGUSR1) { // Revisar funcionamiento
+			log_info(logger_mongo, "Se detecto un sabotaje.\n");
+			enviar_codigo(SABOTAJE, socket_discordiador);
+			wait(verificacion);
+			t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
+			reparar(mensaje);
+			log_info(logger_mongo, "Se reparo el sabotaje.\n");
+			signal(reparado);
+			free(mensaje); 
+			sigemptyset(&set);
+		} */
 	}
 }
 
