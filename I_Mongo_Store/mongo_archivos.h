@@ -21,6 +21,9 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#define TAMANIO_BLOQUE 64
+#define CANTIDAD_BLOQUES 64 
+
 /* ESTRUCTURAS PROPIAS */
 
 typedef struct{

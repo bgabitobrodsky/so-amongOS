@@ -1,10 +1,10 @@
 include "mongo_blocks.h"
 
 void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
-    uint32_t block_size = 64; // Bytes
-    uint32_t size = 64;
-    void* puntero_a_bits = malloc(8);
-    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, 8, LSB_FIRST); 
+    uint32_t block_size = TAMANIO_BLOQUE; // Bytes
+    uint32_t size = CANTIDAD_BLOQUES;
+    void* puntero_a_bits = malloc(TAMANIO_BLOQUE/8);
+    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, TAMANIO_BLOQUE/8, LSB_FIRST); 
 
     for(int i; i < 64; i++) {
         bitarray_clean_bit(bitmap, i);

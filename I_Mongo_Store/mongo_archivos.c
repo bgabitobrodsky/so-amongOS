@@ -127,26 +127,78 @@ void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, re
 	}
 }
 
-void agregar(FILE* archivo, int cantidad, char tipo) {
+int asignar_primer_bloque_libre(uint32_t* lista_bloques[], uint32_t* cant_bloques, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
+	void* mapa = archivos.mapa_blocks;
+
+	for(int j = 0; j < cant_bloques; j++) {
+		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1); i++) { // Cambiar Macro por revision al Superbloque
+			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == NULL) {
+				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
+				return 0;
+			}
+		}
+	}
+	return -1;
+}
+
+void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hacer mallocs previos
 	pthread_mutex_lock(&mutex_blocks); // Declarar mutex
 
 	// TODO: Buscar bloques en Blocks
 	FILE* archivo = conseguir_archivo_char(tipo);
 
-	// TODO: Deberia hacer putc en un cierto bloque
-    for(int i = 0; i < cantidad; i++) {
-		putc(tipo, archivo);
+	fseek(archivo, sizeof("SIZE="), SEEK_SET);
+	uint32_t* tamanio_archivo;
+	fread(tamanio_archivo, sizeof(uint32_t), 1, archivo);
+
+	fseek(archivo, sizeof("BLOCK_COUNT="), SEEK_CUR);
+	uint32_t* cant_bloques;
+	fread(cant_bloques, sizeof(uint32_t), 1, archivo);
+
+	fseek(archivo, sizeof("BLOCKS="), SEEK_CUR);
+	uint32_t* lista_bloques[] = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
+	fread(lista_bloques, sizeof(uint32_t), *cant_bloques, archivo);
+
+	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, tipo);
+
+	if (offset == -1) {
+		// TODO: Asignar bloque nuevo y asignar ahi
 	}
+	else {
+		msync(archivos.mapa_blocks, offset + 1);
+		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
+	}
+
+	// TODO: Actualizar MD5 correspondiente, podria estar aparte y tener mutex propio
 
     pthread_mutex_unlock(&mutex_blocks);
 }
 
 void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {   
+
 	// TODO: Buscar bloques en Blocks
-	
-	// TODO: Deberia hacer putc en un cierto bloque
-	for(int i = 0; i < cantidad; i++) {
-		putc(tipo, archivo);
+	FILE* archivo = conseguir_archivo_char(tipo);
+
+	fseek(archivo, sizeof("SIZE="), SEEK_SET);
+	uint32_t* tamanio_archivo;
+	fread(tamanio_archivo, sizeof(uint32_t), 1, archivo);
+
+	fseek(archivo, sizeof("BLOCK_COUNT="), SEEK_CUR);
+	uint32_t* cant_bloques;
+	fread(cant_bloques, sizeof(uint32_t), 1, archivo);
+
+	fseek(archivo, sizeof("BLOCKS="), SEEK_CUR);
+	uint32_t* lista_bloques[] = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
+	fread(lista_bloques, sizeof(uint32_t), *cant_bloques, archivo);
+
+	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, tipo);
+
+	if (offset == -1) {
+		// TODO: Asignar bloque nuevo y asignar ahi
+	}
+	else {
+		msync(archivos.mapa_blocks, offset + 1);
+		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 }
 
