@@ -12,8 +12,9 @@
 #define	IP_MI_RAM_HQ config_get_string_value(config, "IP")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO")
 #define TAMANIO_MEMORIA config_get_int_value(config, "TAMANIO_MEMORIA")
+#define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
+#define CRITERIO_SELECCION config_get_string_value(config, "CRITERIO_SELECCION")
 
-void* memoria_principal;
 t_log* logger;
 t_config* config;
 
@@ -27,29 +28,33 @@ int main(int argc, char** argv) {
 	// Reinicio el log
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
+
+	// Inicializar
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
 
-	//char* memoria = malloc(TAMANIO_MEMORIA);
-	char* memoria = malloc(2048);
+	iniciar_memoria();
 
 	lista_tcb = list_create();
 	lista_pcb = list_create();
 
     //int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
-    int socket_oyente = crear_socket_oyente("127.0.0.1", "25430");
     //escuchar_miram((void*) socket_oyente);//debug
+    
+	int socket_oyente = crear_socket_oyente(IP, PUERTO);
 
     args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_miram, (void*) &args_miram);
-	pthread_join(hilo_escucha, NULL);
 
+	pthread_join(hilo_escucha, NULL);
 	close(socket_oyente);
+
 	log_destroy(logger);
 	config_destroy(config);
+	free(memoria_principal)
 	free(memoria);
 
 	return EXIT_SUCCESS;
@@ -79,7 +84,7 @@ void atender_clientes(int socket_hijo) { // TODO miram no termina ni siquiera si
 					break;
 
 				case RECIBIR_PCB:
-					//log_info(logger, "Recibo una pcb\n");
+					log_info(logger, "Recibo un pcb\n");
 					//list_add(lista_pcb, (void*) mensaje_recibido->pcb);
 					//almacenar_pcb(mensaje_recibido); //TODO en un futuro, capaz no podamos recibir el PCB por quedarnos sin memoria
 					free(mensaje_recibido->pcb);
@@ -164,4 +169,27 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb.puntero_a_pcb = 7;
 
 	return tcb;
+}
+
+
+
+tabla_segmentos* crear_tabla_segmentos(uint32_t pid){
+	tabla_segmentos* nueva_tabla = malloc(sizeof(tabla_segmentos));
+	nueva_tabla->pid = pid;
+	nueva_tabla->segmentos = list_create();
+	return nueva_tabla;
+}
+
+void iniciar_memoria(){
+	memoria_principal = malloc(TAMANIO_MEMORIA);
+	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
+		log_info(logger,"Se inicia memoria con esquema se SEGMENTACION");
+		segmentos = list_create();
+	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
+		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
+		paginas = list_create();
+	}else{
+		log_error(logger,"Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
+	}
 }
