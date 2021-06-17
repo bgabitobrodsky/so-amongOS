@@ -83,12 +83,14 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 	archivos.basura       = file_basura;
     archivos.superbloque  = file_superbloque;
     archivos.blocks       = file_blocks;
+	archivos.path_blocks  = path_blocks;
+	
+	iniciar_blocks(file_blocks, filedescriptor_blocks); // Revisar si mmap tiene efecto
 
 	free(path_oxigeno);
 	free(path_comida);
 	free(path_basura);
 	free(path_superbloque);
-	free(path_blocks);
 }
 
 /* void alterar(int codigo_archivo, int cantidad) {
@@ -116,26 +118,27 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 
 void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, revisar si funciona
 	if (cantidad >= 0){
-		agregar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+		agregar(cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 	else{
-		quitar(conseguir_archivo(codigo_archivo), conseguir_path(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+		quitar(cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 }
 
 void agregar(FILE* archivo, int cantidad, char tipo) {
-	pthread_mutex_lock(conseguir_semaforo(tipo));
+	pthread_mutex_lock(&mutex_blocks); // Declarar mutex
 
 	// TODO: Buscar bloques en Blocks
+	FILE* archivo = conseguir_archivo_char(tipo);
 
 	// TODO: Deberia hacer putc en un cierto bloque
     for(int i = 0; i < cantidad; i++) {
 		putc(tipo, archivo);
 	}
 
-    pthread_mutex_unlock(conseguir_semaforo(tipo));
+    pthread_mutex_unlock(&mutex_blocks);
 }
 
 void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {   
@@ -151,7 +154,7 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	char c;
 	int contador = 0;
 
-	pthread_mutex_lock(conseguir_semaforo(tipo));
+	pthread_mutex_lock(&mutex_blocks); 
 	for (c = getc(archivo); c != EOF; c = getc(archivo))
         contador++;
 
@@ -163,7 +166,7 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	archivo = fopen(path, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
     
     agregar_unlocked(archivo, nueva_cantidad, tipo);
-    pthread_mutex_unlock(conseguir_semaforo(tipo));
+    pthread_mutex_unlock(&mutex_blocks);
 }
 
 char* conseguir_tipo(char tipo) {
@@ -173,6 +176,16 @@ char* conseguir_tipo(char tipo) {
         return "Comida";
     if (tipo == 'B')
         return "Basura";
+    return NULL;
+}
+
+FILE* conseguir_archivo_char(char tipo) {
+	if (tipo == 'O')
+        return archivos.oxigeno;
+    if (tipo == 'C')
+        return archivos.comida;
+    if (tipo == 'B')
+        return archivos.basura;
     return NULL;
 }
 
@@ -204,16 +217,6 @@ char conseguir_char(int codigo) {
 			break;
 	}
 	return '\0';
-}
-
-pthread_mutex_t* conseguir_semaforo(char tipo) {
-    if (tipo == 'O')
-        return &mutex_oxigeno;
-    if (tipo == 'C')
-        return &mutex_comida;
-    if (tipo == 'B')
-        return &mutex_basura;
-    return NULL;
 }
 
 int max (int a, int b) {

@@ -10,21 +10,21 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
         bitarray_clean_bit(bitmap, i);
     }
 
-    fwrite("BITE_SIZE = ", strlen("BITE_SIZE = "), 1, archivo);
+    fwrite("BITE_SIZE=", strlen("BITE_SIZE="), 1, archivo);
     fwrite(block_size, sizeof(uint32_t), 1, archivo);
 
-    fwrite("BLOCKS = ", strlen("BLOCKS = "), 1, archivo);
+    fwrite("BLOCKS=", strlen("BLOCKS="), 1, archivo);
     fwrite(size, sizeof(uint32_t), 1, archivo);
 
     fwrite(bitmap, sizeof(bitmap), 1, archivo);
 }
 
 void iniciar_blocks(FILE* archivo, int filedescriptor) {
-    fseek(archivos.superbloque, strlen("BITE_SIZE = "), SEEK_SET);
+    fseek(archivos.superbloque, strlen("BITE_SIZE="), SEEK_SET);
     uint32_t* block_size;
     fread(block_size, sizeof(uint32_t), 1, archivos.superbloque);
 
-    fseek(archivos.superbloque, strlen("BLOCKS = ", SEEK_CUR));
+    fseek(archivos.superbloque, strlen("BLOCKS=", SEEK_CUR));
     uint32_t* size;
     fread(size, sizeof(uint32_t), 1, archivos.superbloque);
 
