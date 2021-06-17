@@ -18,6 +18,7 @@ void liberar_puntero_doble(char** palabra);
 t_tarea* crear_tarea(char* string_tarea);
 char* leer_archivo_entero(char* path);
 int comparar_strings(char* str, char* str2);
+int contar_palabras(char** palabras);
 
 // Monitores
 void monitor_cola_push(pthread_mutex_t semaforo, t_queue* cola, void* elemento_a_insertar);

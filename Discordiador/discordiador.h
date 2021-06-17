@@ -24,8 +24,9 @@
 // Funciones PRINCIPALES
 void leer_consola();
 void iniciar_patota(char* leido);
-void iniciar_planificacion();
 void listar_tripulantes();
+void expulsar_tripulante(char* leido);
+void iniciar_planificacion();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
 
@@ -40,7 +41,6 @@ void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
 
 
 // HILOS
-void expulsar_tripulante(char* leido);
 void iniciar_hilo_tripulante(void* funcion);
 t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);

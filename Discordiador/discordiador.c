@@ -66,52 +66,14 @@ int main() {
     iniciar_colas();
     iniciar_semaforos();
 
-
-    /*
-    t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
-
-	printf("Largo nombre: %i\n", t->largo_nombre);
-	printf("Nombre: %s\n", t->nombre);
-	printf("Parametros: %i\n", t->parametro);
-	printf("Cordenada en X: %i\n", t->coord_x);
-	printf("Cordenada en Y: %i\n", t->coord_y);
-	printf("Duracion: %i\n", t->duracion);
-
-    t_buffer* b = serializar_tarea(*t);
-    t_tarea* t2 = desserializar_tarea(b);
-
-	printf("Largo nombre: %i\n", t2->largo_nombre);
-	printf("Nombre: %s\n", t2->nombre);
-	printf("Parametros: %i\n", t2->parametro);
-	printf("Cordenada en X: %i\n", t2->coord_x);
-	printf("Cordenada en Y: %i\n", t2->coord_y);
-	printf("Duracion: %i\n", t2->duracion);
-	*/
-
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     //socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     //socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
 
-    //enviar_codigo(PEDIR_TAREA, socket_a_mi_ram_hq);
-
-	t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
-	t_buffer* b = serializar_tarea(*t);
-	empaquetar_y_enviar(b, TAREA, socket_a_mi_ram_hq);
-	/*
-    t_estructura* est = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-    printf("Tarea recibida! ");
-    printf("Largo nombre: %i\n", est->tarea->largo_nombre);
-    printf("Nombre: %s\n", est->tarea->nombre);
-    printf("Parametros: %i\n", est->tarea->parametro);
-    printf("Cordenada en X: %i\n", est->tarea->coord_x);
-    printf("Cordenada en Y: %i\n", est->tarea->coord_y);
-    printf("Duracion: %i\n", est->tarea->duracion);
-*/
-
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
-
+    	leer_consola();
         pthread_t hiloConsola;
         pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
         pthread_detach(hiloConsola);
@@ -204,30 +166,21 @@ void iniciar_patota(char* leido) {
 
     printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
-    int contador = 0;
-    while (palabras[contador] != NULL) {
-        contador++;
-    }
-
     int i = 0;
 
     // pasarle el pcb a ram y matarlo
     t_PCB* pcb = crear_pcb(path);
     char* archivo_tareas = leer_archivo_entero(path);
     if (archivo_tareas != NULL){
-        //enviar_archivo_a_ram(archivo_tareas, socket_a_mi_ram_hq);
-        free(archivo_tareas);
+    	t_archivo_tareas cont_arc;
+    	cont_arc.texto = archivo_tareas;
+    	cont_arc.largo_texto = strlen(archivo_tareas) + 1;
+    	cont_arc.pid = pcb->PID;
+    	t_buffer* contenido_archivo = serializar_archivo_tareas(cont_arc);
+    	empaquetar_y_enviar(contenido_archivo, ARCHIVO_TAREAS, socket_a_mi_ram_hq);
     }
 
-    // Pasar la variable a RAM
-
-    // RAM VERSION:
-    // recibe el mensaje (la variable con el archivo entero)
-    // spliteamos en base al salto de linea \n
-    // nos devuelve un array de tareas
-
     t_TCB* aux;
-
 
     while (palabras[i+3] != NULL){
         printf("POSICION %d: %s \n", i+1, palabras[i+3]);
@@ -255,7 +208,6 @@ void iniciar_patota(char* leido) {
     }
 
     free(pcb);
-    //free(aux);
     liberar_puntero_doble(palabras);
 }
 
@@ -359,6 +311,7 @@ void pausar_planificacion() {
 
 void obtener_bitacora(char* leido) {
     printf("Obtener Bitacora\n");
+    enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
 }
 
 void expulsar_tripulante(char* leido) {

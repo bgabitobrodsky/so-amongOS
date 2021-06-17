@@ -31,6 +31,19 @@ typedef struct hilo_tripulante{
 
 char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 
+void gestionar_tareas (t_archivo_tareas* archivo_tareas){
+	char** string_tareas = string_split(archivo_tareas->texto, "\n");
+	int cantidad_tareas = contar_palabras(string_tareas);
+	int pid_patota = archivo_tareas->pid;
+
+	for (int i = 0; i < cantidad_tareas; i++){
+		//
+		// t_tarea* tarea = crear_tarea(string_tareas[i]);
+		// hacer algo con esta tarea
+		//
+	}
+}
+
 int main(int argc, char** argv) {
 	logger_miramhq = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config_miramhq = config_create("mi_ram_hq.config");
@@ -46,12 +59,16 @@ int main(int argc, char** argv) {
 
     //proceso_handler((void*) socket_oyente);//debug
 
-  args_escuchar args_miram;
+    args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) proceso_handler, (void*) &args_miram);
+
+	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
+
+
 
 	close(socket_oyente);
 	log_destroy(logger_miramhq);
@@ -110,9 +127,16 @@ void atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue
 	while(flag) {
 		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);
 
-		sleep(1); //para que no se rompa en casos de bug o tiempos de espera
+		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera
 
 		switch(mensaje_recibido->codigo_operacion) {
+
+			case ARCHIVO_TAREAS:
+				log_info(logger_miramhq, "Recibido contenido del archivo\n");
+				printf("\tpid:%i. \n\tlongitud; %i. \n%s\n", mensaje_recibido->archivo_tareas->pid, mensaje_recibido->archivo_tareas->largo_texto, mensaje_recibido->archivo_tareas->texto);
+				gestionar_tareas(mensaje_recibido->archivo_tareas);
+				sleep(1);
+				break;
 
 			case MENSAJE:
 				log_info(logger_miramhq, "Mensaje recibido\n");

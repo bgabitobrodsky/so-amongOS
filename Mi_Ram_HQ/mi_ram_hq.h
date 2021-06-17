@@ -20,7 +20,7 @@
 //#include <comms/estructuras.h>
 //#include <comms/socketes.h>
 
-
+void gestionar_tareas (t_archivo_tareas*);
 void atender_clientes(void*);
 void proceso_handler(void* args);
 t_PCB* crear_pcb(char* path);

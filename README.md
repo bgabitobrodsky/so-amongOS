@@ -1,6 +1,13 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+17/06/2021
++ INICIAR_PATOTA es completamente funcional.
++ Agregadas funciones para leer archivos.
++ Agregadas funcionalidades del I-Mongo-Store.
++ Agregadas funciones de serialización y estructuras de archivo de tareas.
++ Agregada recepción de tareas en RAM.
+
 14/06/2021
 + Nos mudamos a monitores!
 + DIseñados monitores para colas y listas.
