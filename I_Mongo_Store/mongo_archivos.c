@@ -127,18 +127,23 @@ void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, re
 	}
 }
 
-int asignar_primer_bloque_libre(uint32_t* lista_bloques[], uint32_t* cant_bloques, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
+int asignar_primer_bloque_libre(uint32_t* lista_bloques[], uint32_t* cant_bloques, int cantidad_deseada; char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
 	void* mapa = archivos.mapa_blocks;
+	int cantidad_alcanzada = 0;
 
 	for(int j = 0; j < cant_bloques; j++) {
 		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1); i++) { // Cambiar Macro por revision al Superbloque
 			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == NULL) {
 				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
-				return 0;
+				cantidad_alcanzada++;
+			}
+
+			if (cantidad_alcanzada == cantidad_deseada) {
+				return j * 100 + i;
 			}
 		}
 	}
-	return -1;
+	return cantidad_alcanzada - cantidad_deseada;
 }
 
 void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hacer mallocs previos
@@ -159,13 +164,20 @@ void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hac
 	uint32_t* lista_bloques[] = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
 	fread(lista_bloques, sizeof(uint32_t), *cant_bloques, archivo);
 
-	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, tipo);
+	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
 
 	if (offset == -1) {
 		// TODO: Asignar bloque nuevo y asignar ahi
 	}
-	else {
+	else if (offset < 100) { // No paso bloques
 		msync(archivos.mapa_blocks, offset + 1);
+		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
+	}
+	else if (offset > 100) { // Se paso bloques
+		int cant_bloques = offset / 100;
+		offset = offset % 100;
+		
+		msync(archivos.mapa_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1); // Cambiar macro por lo de Superbloque
 		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 
@@ -174,50 +186,14 @@ void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hac
     pthread_mutex_unlock(&mutex_blocks);
 }
 
-void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {   
-
-	// TODO: Buscar bloques en Blocks
-	FILE* archivo = conseguir_archivo_char(tipo);
-
-	fseek(archivo, sizeof("SIZE="), SEEK_SET);
-	uint32_t* tamanio_archivo;
-	fread(tamanio_archivo, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, sizeof("BLOCK_COUNT="), SEEK_CUR);
-	uint32_t* cant_bloques;
-	fread(cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, sizeof("BLOCKS="), SEEK_CUR);
-	uint32_t* lista_bloques[] = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), *cant_bloques, archivo);
-
-	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, tipo);
-
-	if (offset == -1) {
-		// TODO: Asignar bloque nuevo y asignar ahi
-	}
-	else {
-		msync(archivos.mapa_blocks, offset + 1);
-		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
-	}
-}
-
 void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explotar en manejo de fopens, revisar
 	char c;
 	int contador = 0;
 
 	pthread_mutex_lock(&mutex_blocks); 
-	for (c = getc(archivo); c != EOF; c = getc(archivo))
-        contador++;
 
-	// TODO: Cambiar logica, tendria que reescribir todo el Blocks
-	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso
-    fclose(archivo);
-	archivo = fopen(path, "w"); // Reseteo archivo
-	fclose(archivo);
-	archivo = fopen(path, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar
-    
-    agregar_unlocked(archivo, nueva_cantidad, tipo);
+	// TODO: Debera escribir NULL donde estaba el char en el mapa, en ultima posicion	
+
     pthread_mutex_unlock(&mutex_blocks);
 }
 
