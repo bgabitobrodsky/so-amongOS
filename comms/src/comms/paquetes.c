@@ -199,6 +199,12 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
             intermediario->tid_condenado = deserializar_tid(paquete->buffer);
             break;
 
+        case PEDIR_TAREA:
+        	intermediario->codigo_operacion = PEDIR_TAREA;
+        	intermediario->tid_condenado = malloc(sizeof(uint32_t));
+            intermediario->tid_condenado = deserializar_tid(paquete->buffer);
+            break;
+
         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
         case OXIGENO:
         case COMIDA:

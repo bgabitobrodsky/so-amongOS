@@ -141,3 +141,21 @@ void iniciar_semaforos(){
 	pthread_mutex_init(&sem_lista_new, NULL);
 	pthread_mutex_init(&sem_cola_ready, NULL);
 }
+
+void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket) {
+
+	t_archivo_tareas cont_arc;
+	cont_arc.texto = archivo_tareas;
+	cont_arc.largo_texto = strlen(archivo_tareas) + 1;
+	cont_arc.pid = pid;
+	t_buffer* contenido_archivo = serializar_archivo_tareas(cont_arc);
+	empaquetar_y_enviar(contenido_archivo, ARCHIVO_TAREAS, socket);
+
+}
+
+void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket){
+	t_sigkill tripulante;
+	tripulante.tid = tid;
+	t_buffer* buffer_tripulante = serializar_tid(tripulante);
+	empaquetar_y_enviar(buffer_tripulante, PEDIR_TAREA, socket);
+}

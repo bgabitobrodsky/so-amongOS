@@ -1,6 +1,10 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+18/06/2021
++ Arreglada enlistar_algun_tripulante y eliminada enlistar_este_tripulante.
++ Pedido de tareas resuelto desde la parte de discordiador.
+
 17/06/2021
 + Agregadas funcionalidades de segmentación y compactación a Mi_Ram_HQ
 + Agregadas varias funciones de serializacion.
