@@ -43,10 +43,16 @@ int main(int argc, char** argv){
 }
 
 
+/*
+ void escuchar_mongo(int args) { // args no se cierra, fijarse donde cerrarlo
+
+    int socket_escucha = args;
+ */
 void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
     args_escuchar *p = malloc(sizeof(args_escuchar));
     p = args;
     int socket_escucha = p->socket_oyente;
+
     int es_discordiador = 1;
 
     struct sockaddr_storage direccion_a_escuchar;
@@ -123,11 +129,11 @@ void iniciar_file_system() {
 	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 	char* path_files = malloc(strlen(path_directorio) + strlen("/Files") + 1);
 	strncpy(path_files, path_directorio, strlen(path_directorio) + 1);
-	sprintf(path_files, "/Files");
+	path_files = strcat(path_files, "/Files");
 
 	char* path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
 	strncpy(path_bitacoras , path_files, strlen(path_files) + 1);
-	sprintf(path_bitacoras, "/Bitacoras");
+	path_bitacoras = strcat(path_bitacoras, "/Bitacoras");
 
 	if ((stat(path_directorio, &dir) != -1)) {
 		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");

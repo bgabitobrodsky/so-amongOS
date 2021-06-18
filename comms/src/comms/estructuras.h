@@ -9,10 +9,10 @@
 #include <stdint.h>
 
 /* ENUMS */
-//                      				ESTRUCTURAS                          		COSAS FILESYSTEM            ACCIONES BITACORA                                                           CODIGOS UNICOS: MONGO           	DISCORDIADOR                    GENERALES
-enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, ARCHIVO_TAREAS,     OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,     MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION };
+//                      						ESTRUCTURAS                          					COSAS FILESYSTEM            ACCIONES BITACORA                                                           CODIGOS UNICOS: MONGO           	DISCORDIADOR                    GENERALES
+enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL,     OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,     MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO };
 
-enum estados { NEW, READY, EXCECUTING, BLOCKED};
+enum estados { NEW, READY, EXEC, BLOCKED};
 
 /* ESTRUCTURAS */
 
@@ -65,12 +65,19 @@ typedef struct {
 
 } t_archivo_tareas;
 
+typedef struct {
+
+	uint32_t tid;
+
+} t_sigkill;
+
 typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct de una funcion
 
     t_TCB* tcb;
     t_PCB* pcb;
     t_tarea* tarea;
     t_archivo_tareas* archivo_tareas;
+    t_sigkill* tid_condenado;
     int codigo_operacion;
     int cantidad; // Revisar funcs paquetes
 
@@ -82,5 +89,11 @@ typedef struct {
 
 } args_escuchar;
 
+typedef struct hilo_tripulante{
+	int socket;
+	char* ip_cliente;
+	char* puerto_cliente;
+	void (*atender)(char*);
+} hilo_tripulante;
 
 #endif

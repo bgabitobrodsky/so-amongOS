@@ -2,6 +2,9 @@
 
 ### Registro de cambios
 17/06/2021
++ Agregadas funcionalidades de segmentación y compactación a Mi_Ram_HQ
++ Agregadas varias funciones de serializacion.
++ EXPULSAR_TRIPULANTE esta terminado en el modulo discordiador.
 + INICIAR_PATOTA es completamente funcional.
 + Agregadas funciones para leer archivos.
 + Agregadas funcionalidades del I-Mongo-Store.
@@ -19,6 +22,11 @@
 11/06/2021
 + Se pudo enviar y recibir TCBs de RAM a DISCORDIADOR bidireccionalmente.
 + Arregladas funciones de serializar y desserializar TCB.
+
+11/06/2021
++ Se pudo enviar y recibir TCBs de RAM a DISCORDIADOR bidireccionalmente.
++ Arregladas funciones de serializar y desserializar TCB.
++ Creadas funciones para crear TCB y PCB en ram (a comentar).
 
 10/06/2021
 + FInalizados los siguientes TODO:  

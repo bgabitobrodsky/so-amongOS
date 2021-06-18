@@ -21,6 +21,10 @@
 //#include <commons/collections/queue.h>
 //#include <commons/collections/list.h>
 
+//FUnciones de testeo
+void funcion_hilo();
+void iniciar_hilo();
+
 // Funciones PRINCIPALES
 void leer_consola();
 void iniciar_patota(char* leido);
@@ -30,12 +34,8 @@ void iniciar_planificacion();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
 
-// Funciones semi muertas
-int pedir_tarea(int id_tripulante);
-void realizar_tarea(t_tarea tarea);
-
 // Funciones de conexiones y sockets
-void escuchar_discordiador(void* args);
+void proceso_handler(void* args);
 void atender_clientes();
 void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
 
