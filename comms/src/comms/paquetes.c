@@ -193,6 +193,12 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
             intermediario->archivo_tareas = deserializar_archivo_tareas(paquete->buffer);
             break;
 
+        case T_SIGKILL:
+        	intermediario->codigo_operacion = T_SIGKILL;
+        	intermediario->tid_condenado = malloc(sizeof(uint32_t));
+            intermediario->tid_condenado = deserializar_tid(paquete->buffer);
+            break;
+
         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
         case OXIGENO:
         case COMIDA:
@@ -262,7 +268,7 @@ t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
     t_buffer* buffer = malloc(sizeof(t_buffer));
     buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;
 
-    void* estructura = malloc((buffer->tamanio_estructura));
+    void* estructura = malloc(buffer->tamanio_estructura);
     int desplazamiento = 0;
 
     memcpy(estructura + desplazamiento, &texto_archivo.largo_texto, sizeof(uint32_t));
@@ -291,4 +297,27 @@ t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
     memcpy(&(texto_archivo->pid), estructura, sizeof(uint32_t));
 
     return texto_archivo;
+}
+
+t_buffer* serializar_tid(t_sigkill t_kill) {
+
+    t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = sizeof(uint32_t);
+
+    void* estructura = malloc(buffer->tamanio_estructura);
+    memcpy(estructura, &t_kill.tid, sizeof(uint32_t));
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_sigkill* deserializar_tid(t_buffer* buffer) {
+
+	t_sigkill* trip_kill = malloc(sizeof(t_sigkill));
+    void* estructura = buffer->estructura;
+
+    memcpy(&(trip_kill->tid), estructura, sizeof(uint32_t));
+
+    return trip_kill;
 }

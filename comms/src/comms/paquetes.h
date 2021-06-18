@@ -35,6 +35,7 @@ void eliminar_paquete(t_paquete* paquete);
 t_buffer* serializar_cantidad(int cantidad);
 t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer);
 t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo);
-
+t_buffer* serializar_tid(t_sigkill t_kill);
+t_sigkill* deserializar_tid(t_buffer* buffer);
 
 #endif
