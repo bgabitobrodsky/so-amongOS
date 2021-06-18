@@ -6,7 +6,7 @@ t_config* config_mongo;
 t_archivos archivos;
 t_list* bitacoras;
 
-void inicializar_archivos(char* path_files) { // TODO: Puede romper
+void inicializar_archivos(char* path_files) { // TODO: Rompe cuando existe fs
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
@@ -53,7 +53,7 @@ void alterar(int codigo_archivo, int cantidad) {
 		agregar(conseguir_archivo(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
-	else{
+	else {
 		quitar(conseguir_archivo(codigo_archivo), conseguir_path(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}

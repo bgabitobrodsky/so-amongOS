@@ -167,7 +167,7 @@ void iniciar_file_system() {
 	if ((stat(path_directorio, &dir) != -1)) {
 		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");
 		// Se hacen las asignaciones para que todo funcione bien (rompe por cambios)
-		inicializar_archivos(path_files); // TODO: Revisar si open() funca como fopen()
+		inicializar_archivos(path_files); 
 	}
 	else {
 		// Como no hay carpetas, se crean
