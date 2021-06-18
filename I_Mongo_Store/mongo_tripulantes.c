@@ -10,7 +10,7 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 			free(mensaje->tcb);
 		} 	
 		else {
-			if (mensaje->codigo_operacion >= BASURA && mensaje->codigo_operacion <= SABOTAJE) {
+			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion <= SABOTAJE) {
 				modificar_bitacora(mensaje->codigo_operacion, mensaje->tcb);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
