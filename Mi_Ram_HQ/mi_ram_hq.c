@@ -47,10 +47,14 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 
-	segmento* seg = asignar_segmento(sizeof(int));
+
+	segmento* seg = asignar_segmento(sizeof(char[2]));
 	segmento* seg2 = asignar_segmento(sizeof(char));
-	segmento* seg3 = asignar_segmento(sizeof(char[10]));
-	segmento* seg4 = asignar_segmento(sizeof(t_TCB));
+	segmento* seg3 = asignar_segmento(sizeof(char));
+	liberar_segmento(0);
+	liberar_segmento(3);
+	compactacion();
+	segmento* seg4 = asignar_segmento(sizeof(char));
 	printSegmentosList();
 
     //int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
@@ -199,6 +203,68 @@ void ordenar_segmentos(){
     return;
 }
 
+void liberar_segmento(int base){
+    for(int i = 0; i<list_size(segmentos);i++){
+        segmento* x = list_get(segmentos, i);
+        if(x->base == base) {
+            x->libre = true;
+            log_info(logger, "Se elimina el segmento con base %d", x->base);
+        }
+    }
+    ordenar_segmentos();
+}
+
+void compactacion(){
+    log_debug(logger, "Se comienza la compactacion");
+    int size = list_size(segmentos);
+    for(int i=0; i<size;i++){
+        segmento* segmento_libre = list_get(segmentos, i);
+        if(segmento_libre->libre){
+            for(int z = i+1; z < size; z++){
+                segmento* segmento_ocupado = list_get(segmentos, z);
+                if(!segmento_ocupado->libre){
+
+                    // Movemos primero la memoria real
+                    /*memcpy(TAMANIO_MEMORIA + segmento_libre->base,
+                           segmento_ocupado->mensaje->puntero_a_memoria,
+                           segmento_ocupado->mensaje->tam);
+                    segmento_ocupado->mensaje->puntero_a_memoria = TAMANIO_MEMORIA + segmento_libre->base;
+					*/
+
+                    // Despues acomodamos las estrucuras
+                    segmento_ocupado->base = segmento_libre->base;
+                    segmento_libre->base += segmento_ocupado->tam;
+
+                    ordenar_segmentos();
+                    unificar_segmentos_libres();
+                    size = list_size(segmentos);
+                    break;
+                }
+            }
+        }
+    }
+    return;
+}
+
+// Recorro la tabla, si encuentro dos segmentos libres consecutivos los uno
+void unificar_segmentos_libres(){
+    int size = list_size(segmentos);
+    for(int i=0; i<size-1; i++){
+
+        segmento* una_segmento = list_get(segmentos, i);
+        segmento* siguiente_segmento = list_get(segmentos, i + 1);
+
+        if (una_segmento->libre && siguiente_segmento->libre){
+            una_segmento->tam += siguiente_segmento->tam;
+            list_remove(segmentos, i+1);
+            free(siguiente_segmento);
+            size = list_size(segmentos);
+            i = 0;
+        }
+    }
+    return;
+}
+
 segmento* crear_segmento(int base, int tam, bool libre){
     segmento* nuevo_segmento = malloc(sizeof(segmento));
     nuevo_segmento->base = base;
@@ -235,6 +301,7 @@ segmento* first_fit(int tam){
 }
 
 segmento* best_fit(int tam){
+	//TODO: Se puede mejorar la algoritmia, ahora recorre todo 2 veces, podria ir seleccionando al mejor candidato mientras recorre la primera vez
     int size = list_size(segmentos);
     t_list* candidatos = list_create();
     for(int i=0; i<size; i++){
@@ -290,6 +357,8 @@ segmento* asignar_segmento(int tam){
 
 			return nuevo_segmento;
 		}
+	}else{
+		//TODO
 	}
 }
 
@@ -316,6 +385,7 @@ void iniciar_memoria(){
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
 		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
 		paginas = list_create();
+		//Crear todas las paginas disponibles
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);

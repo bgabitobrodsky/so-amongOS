@@ -50,14 +50,19 @@ typedef struct tabla_segmentos {
     t_list* segmentos_tcb;
 } tabla_segmentos;
 
+
+segmento* asignar_segmento(int tam);
+segmento* buscar_segmento_libre(int tam);
 segmento* best_fit(int tam);
 segmento* first_fit(int tam);
 segmento* crear_segmento(int base,int tam,bool libre);
+void liberar_segmento(int base);
+
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
-pagina* crear_pagina();
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
-segmento* buscar_segmento_libre(int tam);
-segmento* asignar_segmento(int tam);
+
+pagina* crear_pagina();
+
 void iniciar_memoria();
 void printSegmentosList();
 
