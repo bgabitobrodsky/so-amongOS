@@ -1,0 +1,795 @@
+[1mdiff --git a/Discordiador/discordiador.c b/Discordiador/discordiador.c[m
+[1mindex 0456df2..2874e7a 100644[m
+[1m--- a/Discordiador/discordiador.c[m
+[1m+++ b/Discordiador/discordiador.c[m
+[36m@@ -18,7 +18,7 @@[m
+ #define QUANTUM config_get_int_value(config, "QUANTUM")[m
+ #define RETARDO_CICLO_CPU config_get_int_value(config, "RETARDO_CICLO_CPU")[m
+ #define DURACION_SABOTAJE config_get_int_value(config, "DURACION_SABOTAJE")[m
+[31m-#define LIMIT_CONNECTIONS 10[m
+[32m+[m
+ #define MIN(a,b) (((a)<(b))?(a):(b))[m
+ #define MAX(a,b) (((a)>(b))?(a):(b))[m
+ [m
+[36m@@ -47,12 +47,16 @@[m [mchar estado_tripulante[4] = {'N', 'R', 'E', 'B'};[m
+ int planificacion_activa = 0;[m
+ int sistema_activo = 1;[m
+ [m
+[31m-typedef struct hilo_tripulante{[m
+[31m-	int socket;[m
+[31m-	char* ip_cliente;[m
+[31m-	char* puerto_cliente;[m
+[31m-	void (*atender)(char*);[m
+[31m-} hilo_tripulante;[m
+[32m+[m[32m/* TODO: Replantear.[m
+[32m+[m[32mvoid enviar_archivo_a_ram(char* contenido, int socket){[m
+[32m+[m[32m    t_buffer* b_archivo= serializar_archivo_tareas(contenido);[m
+[32m+[m[32m    empaquetar_y_enviar(b_archivo, CONTENIDO_ARCHIVO_TAREAS, socket);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mt_buffer* serializar_archivo_tareas(char*);[m
+[32m+[m
+[32m+[m[32mchar* desserializar_archivo_tareas(t_buffer*);[m
+[32m+[m[32m*/[m
+ [m
+ int main() {[m
+     logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);[m
+[36m@@ -79,10 +83,11 @@[m [mint main() {[m
+         /*[m
+         args_escuchar args_disc;[m
+         args_disc.socket_oyente = socket_a_mi_ram_hq;[m
+[31m-        pthread_t hilo_escucha;[m
+[31m-        pthread_create(&hilo_escucha, NULL, (void*) proceso_handler, &args_disc);[m
+[32m+[m[32m        pthread_t hilo_escucha_ram;[m
+[32m+[m[32m        pthread_create(&hilo_escucha_ram, NULL, (void*) escuchar_discordiador, &args_disc);[m
+         pthread_join(hilo_escucha, NULL);[m
+         */[m
+[32m+[m
+     }[m
+ [m
+     while(sistema_activo){[m
+[36m@@ -128,7 +133,8 @@[m [mvoid leer_consola() {[m
+                     break;[m
+ [m
+                 case OBTENER_BITACORA:[m
+[31m-                    obtener_bitacora(leido);[m
+[32m+[m[32m                    //obtener_bitacora(leido);[m
+[32m+[m[41m                [m	[32miniciar_hilo();[m
+                     break;[m
+ [m
+                 case EXPULSAR_TRIPULANTE:[m
+[36m@@ -141,7 +147,7 @@[m [mvoid leer_consola() {[m
+ [m
+                 case APAGAR_SISTEMA:[m
+                     sistema_activo = 0;[m
+[31m-                    exit(1);[m
+[32m+[m[32m                    exit(1); //sin esto se BUGGEA DURO[m
+                     break;[m
+ [m
+                 case NO_CONOCIDO:[m
+[36m@@ -220,7 +226,7 @@[m [mvoid iniciar_planificacion() {[m
+     // TODO NO TESTEADO, y eliminar redundancia.[m
+     while(planificacion_activa && list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){[m
+         t_TCB* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);[m
+[31m-        aux_tripulante->estado_tripulante = estado_tripulante[EXEC];[m
+[32m+[m[32m        aux_tripulante->estado_tripulante = estado_tripulante[EXCECUTING];[m
+ [m
+         monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);[m
+ [m
+[36m@@ -239,6 +245,7 @@[m [mvoid iniciar_planificacion() {[m
+     }[m
+ }[m
+ [m
+[32m+[m[32m//void tripulante[m
+ [m
+ void listar_tripulantes() { //TODO falta testear[m
+ [m
+[36m@@ -309,31 +316,32 @@[m [mvoid obtener_bitacora(char* leido) {[m
+ }[m
+ [m
+ void expulsar_tripulante(char* leido) {[m
+[31m-    printf("Expulsar Tripulante\n");[m
+[32m+[m[32m    printf("Expulsar Tripulante");[m
+     char** palabras = string_split(leido, " ");[m
+     int tid_tripulante_a_expulsar = atoi(palabras[1]);[m
+ [m
+[31m-    t_sigkill tripulante_tid;[m
+[31m-    tripulante_tid.tid = tid_tripulante_a_expulsar;[m
+[31m-    t_buffer* b_tid = serializar_tid(tripulante_tid);[m
+[31m-    empaquetar_y_enviar(b_tid, T_SIGKILL, socket_a_mi_ram_hq);[m
+[31m-[m
+[31m-    // TODO: EN el caso de que el tripulante este en discordiador, eliminarlo tambien.[m
+[31m-[m
+[31m-    t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);[m
+[31m-    if(respuesta->codigo_operacion == EXITO){[m
+[31m-    	log_info(logger, "Tripulante expulsado, TID: %d", tid_tripulante_a_expulsar);[m
+[31m-    }[m
+[31m-    else if (respuesta->codigo_operacion == FALLO){[m
+[31m-    	log_info(logger, "No existe el tripulante. TID: %d", tid_tripulante_a_expulsar);[m
+[31m-    }[m
+[31m-    else{[m
+[31m-    	log_info(logger, "Error desconocido");[m
+[31m-    }[m
+[32m+[m[32m    // TODO CODEAR[m
+[32m+[m[32m    // Le pedimos a RAM que elimine el tcb[m
+[32m+[m[32m    // Sacamos el tripulante de la lista (puede estar en CUALQUIER lista)[m
+[32m+[m[32m    // EN el caso de que el tripulante este en discordiador, eliminarlo tambien segun su estado[m
+ [m
+[32m+[m[32m    printf("Tripulante expulsado: TID %d\n", tid_tripulante_a_expulsar);[m
+[32m+[m[32m    log_info(logger, "Tripulante expulsado: TID %d\n", tid_tripulante_a_expulsar);[m
+     liberar_puntero_doble(palabras);[m
+ }[m
+ [m
+[32m+[m[32m/*int pedir_tarea(int id_tripulante){[m
+[32m+[m[32m    t_paquete* paquete = crear_paquete(PEDIR_TAREA); // BORRAR ESTA COSA BONITA[m
+[32m+[m[32m    agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int)); // BORRAR ESTA COSA BONITA[m
+[32m+[m[32m    enviar_paquete(paquete,socket_a_mi_ram_hq); // BORRAR ESTA COSA BONITA[m
+[32m+[m[32m    return 1;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvoid realizar_tarea(t_tarea tarea){[m
+[32m+[m
+[32m+[m[32m}*/[m
+[32m+[m
+[32m+[m
+ char* fecha_y_hora() {[m
+     time_t tiempo = time(NULL);[m
+     struct tm tiempoLocal = *localtime(&tiempo);[m
+[36m@@ -376,78 +384,91 @@[m [mvoid enlistar_algun_tripulante(){ //TODO no testeado, SEBA[m
+     tripulante_a_ready->estado_tripulante = estado_tripulante[READY];[m
+ }[m
+ [m
+[32m+[m[32mvoid escuchar_discordiador(void* args) { // TODO No se libera args, ver donde liberar[m
+[32m+[m[32m    args_escuchar* p = malloc(sizeof(args_escuchar));[m
+[32m+[m[32m    p = args;[m
+[32m+[m[32m    int socket_escucha = p->socket_oyente;[m
+[32m+[m
+[32m+[m[32m    struct sockaddr_storage direccion_a_escuchar;[m
+[32m+[m[32m    socklen_t tamanio_direccion;[m
+[32m+[m[32m    int socket_especifico;[m
+[32m+[m
+[32m+[m[32m    if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado[m
+[32m+[m[32m        printf("Error al configurar recepcion de mensajes\n");[m
+[32m+[m
+[32m+[m[32m    struct sigaction sa;[m
+[32m+[m[32m        sa.sa_handler = sigchld_handler;[m
+[32m+[m[32m        sigemptyset(&sa.sa_mask);[m
+[32m+[m[32m        sa.sa_flags = SA_RESTART;[m
+[32m+[m[32m        if (sigaction(SIGCHLD, &sa, NULL) == -1) {[m
+[32m+[m[32m            printf("Error al limpiar procesos\n");[m
+[32m+[m[32m            exit(1);[m
+[32m+[m[32m        }[m
+ [m
+[31m-void proceso_handler(void* args) {[m
+[31m-	args_escuchar* p = malloc(sizeof(args_escuchar));[m
+[31m-	p = args;[m
+[31m-	int socket_escucha = p->socket_oyente;[m
+[31m-	//int socket_escucha = (int) args; //Tema de testeos, no borrar[m
+[31m-[m
+[31m-    int addrlen, socket_especifico;[m
+[31m-    struct sockaddr_in address;[m
+[31m-[m
+[31m-    addrlen = sizeof(address);[m
+[31m-[m
+[31m-	// struct sockaddr_storage direccion_a_escuchar;[m
+[31m-	// socklen_t tamanio_direccion;[m
+[31m-[m
+[31m-	if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)[m
+[31m-		printf("Error al configurar recepcion de mensajes\n");[m
+[31m-[m
+[31m-	while (1) {[m
+[31m-		if ((socket_especifico = accept(socket_escucha, (struct sockaddr*) &address, (socklen_t *) &addrlen)) > 0) {[m
+[31m-			// Maté la verificación[m
+[31m-			log_info(logger, "Se conecta un nuevo proceso");[m
+[31m-[m
+[31m-			hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));[m
+[31m-[m
+[31m-			parametros->socket = socket_especifico;[m
+[31m-			//parametros->ip_cliente = inet_ntoa(address.sin_addr);[m
+[31m-			//parametros->puerto_cliente = ntohs(address.sin_port);[m
+[31m-[m
+[31m-			pthread_t un_hilo_tripulante;[m
+[32m+[m[32m    while (1) {[m
+[32m+[m[32m            tamanio_direccion = sizeof(direccion_a_escuchar);[m
+[32m+[m[32m            socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha[m
+ [m
+[31m-			pthread_create(&un_hilo_tripulante, NULL, (void*) atender_clientes, (void *) parametros);[m
+[32m+[m[32m            if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente[m
+[32m+[m[32m                close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas[m
+[32m+[m[32m                //atender_clientes(socket_especifico); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso[m
+[32m+[m[32m                printf("Recibido, gracias cliente");[m
+[32m+[m[32m                close(socket_especifico); // Cumple proposito, se cierra socket hijo[m
+[32m+[m[32m                exit(0);[m
+[32m+[m[32m            }[m
+ [m
+[31m-			pthread_detach(un_hilo_tripulante);[m
+[31m-		}[m
+[31m-	}[m
+[32m+[m[32m            close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo[m
+[32m+[m[32m        }[m
+ }[m
+ [m
+[31m-void atender_clientes(void* param) {[m
+[31m-	hilo_tripulante* parametros = param;[m
+[31m-[m
+[31m-	int flag = 1;[m
+[31m-	log_info(logger, "Atendiendo. %i\n", parametros->socket);[m
+[32m+[m[32m/*[m
+[32m+[m[32mvoid atender_clientes(int socket_hijo) {[m
+[32m+[m[32m    int flag = 1;[m
+[32m+[m[32m        while(flag) { //TODO cambiar por do while  y liberar la estructura[m
+[32m+[m[32m            t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion[m
+[32m+[m[32m            //sleep(1); //no quitar. sirve para testeos[m
+[32m+[m
+[32m+[m[32m            switch(mensaje_recibido->codigo_operacion) {[m
+[32m+[m[32m                case MENSAJE:[m
+[32m+[m[32m                    log_info(logger_miramhq, "Mensaje recibido");[m
+[32m+[m[32m                    break;[m
+ [m
+[31m-	while(flag) {[m
+[31m-		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);[m
+[32m+[m[32m                case PEDIR_TAREA:[m
+[32m+[m[32m                    log_info(logger_miramhq, "Pedido de tarea recibido");[m
+[32m+[m[32m                    break;[m
+ [m
+[31m-		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera[m
+[32m+[m[32m                case COD_TAREA:[m
+[32m+[m[32m                    printf("Recibo una tarea");[m
+[32m+[m[32m                    break;[m
+ [m
+[31m-        switch(mensaje_recibido->codigo_operacion) {[m
+[31m-            case EXITO:[m
+[31m-                log_info(logger, "Mensaje recibido");[m
+[31m-                break;[m
+[32m+[m[32m                case RECIBIR_PCB:[m
+[32m+[m[32m                    printf("Recibo una pcb");[m
+[32m+[m[32m                    list_add(lista_pcb, (void*) mensaje_recibido->pcb);[m
+[32m+[m[32m                    enviar_codigo(RECEPCION, socket_hijo);[m
+[32m+[m[32m                    //almacenar_pcb(mensaje_recibido); TODO en un futuro, capaz no podamos recibir el PCB por quedarnos sin memoria[m
+[32m+[m[32m                    break;[m
+ [m
+[31m-            case FALLO:[m
+[31m-                log_info(logger, "Pedido de tarea recibido");[m
+[31m-                break;[m
+[32m+[m[32m                case RECIBIR_TCB:[m
+[32m+[m[32m                    printf("Recibo una tcb");[m
+[32m+[m[32m                    list_add(lista_tcb, (void*) mensaje_recibido->tcb);[m
+[32m+[m[32m                    enviar_codigo(RECEPCION, socket_hijo);[m
+[32m+[m[32m                    break;[m
+ [m
+[31m-            case DESCONEXION:[m
+[31m-                log_info(logger, "Se desconecto el modulo");[m
+[31m-                flag = 0;[m
+[31m-                break;[m
+[32m+[m[32m                case DESCONEXION:[m
+[32m+[m[32m                    log_info(logger_miramhq, "Se desconecto el modulo");[m
+[32m+[m[32m                    flag = 0;[m
+[32m+[m[32m                    break;[m
+ [m
+[31m-            default:[m
+[31m-                log_info(logger, "Se recibio un codigo invalido.");[m
+[31m-                break;[m
+[32m+[m[32m                default:[m
+[32m+[m[32m                    log_info(logger_miramhq, "Se recibio un codigo invalido.");[m
+[32m+[m[32m                    break;[m
+[32m+[m[32m            }[m
+         }[m
+[31m-		free(mensaje_recibido);[m
+[31m-	}[m
+ [m
+ }[m
+[32m+[m[32m*/[m
+ [m
+[32m+[m[32m//TODO posiblemente, cambiar la serializacion para que se puedan serializar punteros de tcb[m
+ void enviar_tcb_a_ram(t_TCB un_tcb, int socket){[m
+     t_buffer* buffer_tcb = serializar_tcb(un_tcb);[m
+     empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);[m
+[36m@@ -502,6 +523,19 @@[m [mvoid iniciar_hilo_tripulante(void* funcion){[m
+     pthread_create(&hilo1, NULL, funcion, NULL);[m
+ }[m
+ [m
+[32m+[m[32mvoid iniciar_hilo(){[m
+[32m+[m[32m    pthread_t hilo1;[m
+[32m+[m[32m    pthread_create(&hilo1, NULL, funcion_hilo, NULL);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvoid funcion_hilo() {[m
+[32m+[m	[32mint socket_tripulante = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);[m
+[32m+[m	[32menviar_codigo(PRIMERA_CONEXION, socket_tripulante);[m
+[32m+[m	[32mempaquetar_y_enviar(serializar_cantidad(7), BASURA, socket_tripulante);[m
+[32m+[m	[32mempaquetar_y_enviar(serializar_cantidad(-4), BASURA, socket_tripulante);[m
+[32m+[m
+[32m+[m[32m}[m
+[32m+[m
+ [m
+ t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){[m
+ 	// No asigna siguiente instruccion[m
+[36m@@ -532,6 +566,7 @@[m [mt_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){[m
+ t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){[m
+     t_TCB* un_tcb = crear_puntero_tcb(pcb, tid, posicion);[m
+     //t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);[m
+[31m-    iniciar_hilo_tripulante(funcion);[m
+[32m+[m[32m    //iniciar_hilo_tripulante(funcion);[m
+[32m+[m[32m    iniciar_hilo(); //Funcion de testeo, antes estaba la linea de arrba[m
+     return un_tcb;[m
+ }[m
+[1mdiff --git a/Discordiador/discordiador.h b/Discordiador/discordiador.h[m
+[1mindex e25cbb6..d7b5123 100644[m
+[1m--- a/Discordiador/discordiador.h[m
+[1m+++ b/Discordiador/discordiador.h[m
+[36m@@ -21,6 +21,9 @@[m
+ //#include <commons/collections/queue.h>[m
+ //#include <commons/collections/list.h>[m
+ [m
+[32m+[m[32mvoid funcion_hilo();[m
+[32m+[m[32mvoid iniciar_hilo();[m
+[32m+[m
+ // Funciones PRINCIPALES[m
+ void leer_consola();[m
+ void iniciar_patota(char* leido);[m
+[36m@@ -30,8 +33,12 @@[m [mvoid iniciar_planificacion();[m
+ void pausar_planificacion();[m
+ void obtener_bitacora(char* leido);[m
+ [m
+[32m+[m[32m// Funciones semi muertas[m
+[32m+[m[32mint pedir_tarea(int id_tripulante);[m
+[32m+[m[32mvoid realizar_tarea(t_tarea tarea);[m
+[32m+[m
+ // Funciones de conexiones y sockets[m
+[31m-void proceso_handler(void* args);[m
+[32m+[m[32mvoid escuchar_discordiador(void* args);[m
+ void atender_clientes();[m
+ void enviar_tcb_a_ram(t_TCB un_tcb, int socket);[m
+ [m
+[1mdiff --git a/Discordiador/utils.h b/Discordiador/utils.h[m
+[1mindex 04af987..9904989 100644[m
+[1m--- a/Discordiador/utils.h[m
+[1m+++ b/Discordiador/utils.h[m
+[36m@@ -45,7 +45,7 @@[m [mtypedef enum{[m
+ 	INICIAR_PATOTA,[m
+ 	EXIT,[m
+ 	HELP,[m
+[31m-	APAGAR_SISTEMA[m
+[32m+[m	[32mAPAGAR_SISTEMA,[m
+ 	[m
+ } comando_cod;[m
+ [m
+[1mdiff --git a/I_Mongo_Store/i_mongo_store.c b/I_Mongo_Store/i_mongo_store.c[m
+[1mindex dd83384..423170d 100644[m
+[1m--- a/I_Mongo_Store/i_mongo_store.c[m
+[1m+++ b/I_Mongo_Store/i_mongo_store.c[m
+[36m@@ -29,9 +29,10 @@[m [mint main(int argc, char** argv){[m
+ 	pthread_mutex_init(&mutex_basura, NULL);[m
+ [m
+ 	pthread_t hilo_escucha;[m
+[31m-	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);[m
+[32m+[m	[32m//pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);[m
+[32m+[m	[32mescuchar_mongo(socket_oyente);[m
+ [m
+[31m-	pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba[m
+[32m+[m	[32m//pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba[m
+ [m
+ 	cerrar_archivos();[m
+ 	cerrar_mutexs();[m
+[36m@@ -43,10 +44,9 @@[m [mint main(int argc, char** argv){[m
+ }[m
+ [m
+ [m
+[31m-void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo[m
+[31m-    args_escuchar *p = malloc(sizeof(args_escuchar));[m
+[31m-    p = args;[m
+[31m-    int socket_escucha = p->socket_oyente;[m
+[32m+[m[32mvoid escuchar_mongo(int args) { // args no se cierra, fijarse donde cerrarlo[m
+[32m+[m
+[32m+[m[32m    int socket_escucha = args;[m
+     int es_discordiador = 1;[m
+ [m
+     struct sockaddr_storage direccion_a_escuchar;[m
+[36m@@ -57,40 +57,39 @@[m [mvoid escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo[m
+         log_info(logger_mongo, "Error al configurar recepcion de mensajes\n"); // Se verifica[m
+ [m
+     struct sigaction sa;[m
+[31m-    sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos[m
+[31m-    sigemptyset(&sa.sa_mask);[m
+[31m-    sa.sa_flags = SA_RESTART;[m
+[31m-    if (sigaction(SIGCHLD, &sa, NULL) == -1) {[m
+[31m-        log_info(logger_mongo, "Error al limpiar procesos\n");[m
+[31m-        exit(1);[m
+[31m-    }[m
+[31m-[m
+[31m-	while (1) { // Loop infinito donde aceptara clientes[m
+[32m+[m[32m        sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos[m
+[32m+[m[32m        sigemptyset(&sa.sa_mask);[m
+[32m+[m[32m        sa.sa_flags = SA_RESTART;[m
+[32m+[m[32m        if (sigaction(SIGCHLD, &sa, NULL) == -1) {[m
+[32m+[m[32m            log_info(logger_mongo, "Error al limpiar procesos\n");[m
+[32m+[m[32m            exit(1);[m
+[32m+[m[32m        }[m
+[32m+[m[32mwhile (1) { // Loop infinito donde aceptara clientes[m
+         tamanio_direccion = sizeof(direccion_a_escuchar);[m
+         socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha[m
+ [m
+[31m-		if (socket_especifico != -1) {[m
+[31m-        	if (es_discordiador == 1) {[m
+[31m-        		es_discordiador = 0;[m
+[31m-[m
+[31m-            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente[m
+[31m-                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas[m
+[31m-                	log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");[m
+[31m-                	sabotaje(socket_especifico);[m
+[31m-                	es_discordiador = 0;[m
+[31m-                	close(socket_especifico); // Cumple proposito, se cierra socket hijo[m
+[31m-                	exit(0); // Returnea[m
+[31m-            	}[m
+[31m-        	}[m
+[31m-        	else {[m
+[31m-            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente[m
+[31m-                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas[m
+[31m-                	manejo_tripulante(socket_especifico);[m
+[31m-                	close(socket_especifico); // Cumple proposito, se cierra socket hijo[m
+[31m-                	exit(0); // Returnea[m
+[31m-            	}[m
+[31m-        	}[m
+[31m-		}[m
+[32m+[m[32m        if(socket_especifico != -1){[m
+[32m+[m[32m        if (es_discordiador == 1) {[m
+[32m+[m[32m            es_discordiador = 0;[m
+[32m+[m
+[32m+[m[32m            if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente[m
+[32m+[m[32m                close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas[m
+[32m+[m[32m                log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");[m
+[32m+[m[32m                sabotaje(socket_especifico);[m
+[32m+[m[32m                es_discordiador = 0;[m
+[32m+[m[32m                close(socket_especifico); // Cumple proposito, se cierra socket hijo[m
+[32m+[m[32m                exit(0); // Returnea[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m[32m        else {[m
+[32m+[m[32m            if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente[m
+[32m+[m[32m                close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas[m
+[32m+[m[32m                manejo_tripulante(socket_especifico);[m
+[32m+[m[32m                close(socket_especifico); // Cumple proposito, se cierra socket hijo[m
+[32m+[m[32m                exit(0); // Returnea[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m[32m        }[m
+ [m
+         close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo[m
+     }[m
+[36m@@ -123,20 +122,20 @@[m [mvoid iniciar_file_system() {[m
+ 	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");[m
+ 	char* path_files = malloc(strlen(path_directorio) + strlen("/Files") + 1);[m
+ 	strncpy(path_files, path_directorio, strlen(path_directorio) + 1);[m
+[31m-	sprintf(path_files, "/Files");[m
+[32m+[m	[32mpath_files = strcat(path_files, "/Files");[m
+ [m
+ 	char* path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);[m
+ 	strncpy(path_bitacoras , path_files, strlen(path_files) + 1);[m
+[31m-	sprintf(path_bitacoras, "/Bitacoras");[m
+[32m+[m	[32mpath_bitacoras = strcat(path_bitacoras, "/Bitacoras");[m
+ [m
+ 	if ((stat(path_directorio, &dir) != -1)) {[m
+ 		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");[m
+ 		inicializar_archivos(path_files); // TODO: Revisar si open() funca como fopen()[m
+ 	}[m
+ 	else {[m
+[31m-		mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow[m
+[31m-		mkdir(path_files, 0777);[m
+[31m-		mkdir(path_bitacoras, 0777);[m
+[32m+[m		[32mint a = mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow[m
+[32m+[m		[32mint b = mkdir(path_files, 0777);[m
+[32m+[m		[32mint c = mkdir(path_bitacoras, 0777);[m
+ 		log_info(logger_mongo, "Se creo un FileSystem.\n");[m
+ [m
+ 		inicializar_archivos(path_files);[m
+[1mdiff --git a/I_Mongo_Store/i_mongo_store.h b/I_Mongo_Store/i_mongo_store.h[m
+[1mindex 848a022..d32868f 100644[m
+[1m--- a/I_Mongo_Store/i_mongo_store.h[m
+[1m+++ b/I_Mongo_Store/i_mongo_store.h[m
+[36m@@ -15,7 +15,8 @@[m [mextern t_config* config_mongo;[m
+ extern t_archivos archivos;[m
+ extern t_list* bitacoras;[m
+ [m
+[31m-void escuchar_mongo(void* args);[m
+[32m+[m[32m//void escuchar_mongo(void* args);[m
+[32m+[m[32mvoid escuchar_mongo(int args);[m
+ void sabotaje(int socket_discordiador);[m
+ void iniciar_file_system();[m
+ void cerrar_archivos();[m
+[1mdiff --git a/I_Mongo_Store/mongo_archivos.c b/I_Mongo_Store/mongo_archivos.c[m
+[1mindex 053157e..b4a91c8 100644[m
+[1m--- a/I_Mongo_Store/mongo_archivos.c[m
+[1m+++ b/I_Mongo_Store/mongo_archivos.c[m
+[36m@@ -25,30 +25,16 @@[m [mvoid inicializar_archivos(char* path_files) { // TODO: Puede romper, implementar[m
+ 	// TODO: Verificacion y setteo del SuperBloque[m
+ 	// TODO: Verificacion y operaciones sobre Blocks[m
+ [m
+[31m-	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes[m
+[31m-	int filedescriptor_comida      = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   [m
+[31m-	int filedescriptor_basura      = open(path_basura, O_RDWR | O_APPEND | O_CREAT);[m
+[31m-    int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT);[m
+[31m-    int filedescriptor_blocks      = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);[m
+[31m-[m
+[31m-	FILE* file_oxigeno     = fdopen(filedescriptor_oxigeno, "r+");[m
+[31m-	FILE* file_comida      = fdopen(filedescriptor_comida, "r+");[m
+[31m-	FILE* file_basura      = fdopen(filedescriptor_basura, "r+");[m
+[31m-    FILE* file_superbloque = fdopen(filedescriptor_superbloque, "r+");[m
+[31m-    FILE* file_blocks      = fdopen(filedescriptor_blocks, "r+");[m
+[31m-[m
+[31m-	archivos.oxigeno      = file_oxigeno;[m
+[31m-	archivos.path_oxigeno = path_oxigeno;[m
+[32m+[m	[32marchivos.oxigeno     = fopen(path_oxigeno, "w+");[m
+[32m+[m	[32marchivos.comida      = fopen(path_comida, "w+");[m
+[32m+[m	[32marchivos.basura      = fopen(path_basura, "w+");[m
+[32m+[m	[32marchivos.superbloque = fopen(path_superbloque, "w+");[m
+[32m+[m	[32marchivos.blocks      = fopen(path_blocks, "w+");[m
+ [m
+[31m-	archivos.comida       = file_comida;[m
+[32m+[m	[32marchivos.path_oxigeno = path_oxigeno;[m
+ 	archivos.path_comida  = path_comida;[m
+[31m-[m
+[31m-	archivos.basura       = file_basura;[m
+ 	archivos.path_basura  = path_basura;[m
+ [m
+[31m-    archivos.superbloque  = file_superbloque;[m
+[31m-    archivos.blocks       = file_blocks;[m
+[31m-[m
+ 	free(path_superbloque);[m
+ 	free(path_blocks);[m
+ }[m
+[36m@@ -82,41 +68,48 @@[m [mvoid alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, re[m
+ 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));[m
+ 	}[m
+ 	else{[m
+[32m+[m		[32mlog_info(logger_mongo, "Entro al else");[m
+ 		quitar(conseguir_archivo(codigo_archivo), conseguir_path(codigo_archivo), cantidad, conseguir_char(codigo_archivo));[m
+ 		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));[m
+ 	}[m
+ }[m
+ [m
+ void agregar(FILE* archivo, int cantidad, char tipo) {[m
+[31m-	pthread_mutex_lock(conseguir_semaforo(tipo));[m
+[31m-    for(int i = 0; i < cantidad; i++) {[m
+[31m-		putc(tipo, archivo);[m
+[31m-	}[m
+[31m-    pthread_mutex_unlock(conseguir_semaforo(tipo));[m
+[32m+[m	[32m//pthread_mutex_lock(conseguir_semaforo(tipo));[m
+[32m+[m
+[32m+[m	[32mfflush(archivo);[m
+[32m+[m	[32mfor(int i = 0; i < cantidad; i++) {[m
+[32m+[m			[32mputc(tipo, archivo);[m
+[32m+[m		[32m}[m
+[32m+[m	[32mfflush(archivo);[m
+[32m+[m[32m   // pthread_mutex_unlock(conseguir_semaforo(tipo));[m
+ }[m
+ [m
+ void agregar_unlocked(FILE* archivo, int cantidad, char tipo) {[m
+[31m-    for(int i = 0; i < cantidad; i++) {[m
+[31m-		putc(tipo, archivo);[m
+[31m-	}[m
+[32m+[m	[32mfflush(archivo);[m
+[32m+[m	[32mfor(int i = 0; i < cantidad; i++) {[m
+[32m+[m			[32mputc(tipo, archivo);[m
+[32m+[m		[32m}[m
+[32m+[m	[32mfflush(archivo);[m
+ }[m
+ [m
+ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explotar en manejo de fopens, revisar[m
+ 	char c;[m
+ 	int contador = 0;[m
+[31m-[m
+[31m-	pthread_mutex_lock(conseguir_semaforo(tipo));[m
+[32m+[m	[32mlog_info(logger_mongo, "path: %s", path);[m
+[32m+[m	[32m//pthread_mutex_lock(conseguir_semaforo(tipo));[m
+ 	for (c = getc(archivo); c != EOF; c = getc(archivo))[m
+         contador++;[m
+[31m-[m
+[32m+[m	[32mlog_info(logger_mongo, "Contador: %d", contador);[m
+ 	int nueva_cantidad = max(contador + cantidad, 0); // Cantidad es negativo en este caso[m
+[32m+[m	[32mlog_info(logger_mongo, "Nueva cantidad: %d", nueva_cantidad);[m
+     fclose(archivo);[m
+[31m-	archivo = fopen(path, "w"); // Reseteo archivo[m
+[31m-	fclose(archivo);[m
+[31m-	archivo = fopen(path, "r+"); // Lo reabro con r+ para no joder otras funciones, revisar[m
+[32m+[m[32m    log_info(logger_mongo, "archivo cerrado");[m
+[32m+[m	[32marchivo = fopen(path, "w+"); // Lo reabro con r+ para no joder otras funciones, revisar[m
+[32m+[m	[32mlog_info(logger_mongo, "Archivo reabrido");[m
+     [m
+     agregar_unlocked(archivo, nueva_cantidad, tipo);[m
+[31m-    pthread_mutex_unlock(conseguir_semaforo(tipo));[m
+[32m+[m[32m    //pthread_mutex_unlock(conseguir_semaforo(tipo));[m
+ }[m
+ [m
+ char* conseguir_tipo(char tipo) {[m
+[1mdiff --git a/I_Mongo_Store/mongo_tripulantes.c b/I_Mongo_Store/mongo_tripulantes.c[m
+[1mindex 7d64581..e050657 100644[m
+[1m--- a/I_Mongo_Store/mongo_tripulantes.c[m
+[1m+++ b/I_Mongo_Store/mongo_tripulantes.c[m
+[36m@@ -5,9 +5,9 @@[m [mvoid manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu[m
+ 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);[m
+ [m
+ 		if (mensaje->codigo_operacion == PRIMERA_CONEXION) { // TODO: Agregar codigo[m
+[31m-			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante); // TODO: Ver como se mandan tripulantes[m
+ 			log_info(logger_mongo, "Se creo la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));[m
+[31m-			free(mensaje->tcb);[m
+[32m+[m			[32mcrear_estructuras_tripulante(mensaje->tcb, socket_tripulante); // TODO: Ver como se mandan tripulantes[m
+[32m+[m			[32m//free(mensaje->tcb);[m
+ 		} 	[m
+ 		else {[m
+ 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion <= SABOTAJE) {[m
+[36m@@ -32,16 +32,17 @@[m [mvoid manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu[m
+ }[m
+ [m
+ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: Verificar estructura, funcion boceto[m
+[31m-	char* path_bitacoras = config_get_string_value(config_mongo, "PUNTO_MONTAJE");[m
+[32m+[m	[32mchar* path_files = config_get_string_value(config_mongo, "PUNTO_MONTAJE");[m
+[32m+[m
+[32m+[m	[32mchar* path_bitacoras = malloc((strlen(path_files)+1) + strlen("/Files/Bitacoras"));[m
+ 	sprintf(path_bitacoras, "/Files/Bitacoras");[m
+ 	[m
+[31m-	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante%s.ims") + 1);[m
+[32m+[m	[32mchar* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);[m
+ 	sprintf(path_tripulante, "%s/Tripulante%s.ims", path_bitacoras, string_itoa(tcb->TID)); // TODO: Revisar funcionamiento de esta linea y ver identificador[m
+ [m
+ 	int file_descriptor_tripulante = open(path_tripulante, O_RDWR | O_APPEND | O_CREAT);[m
+ [m
+ 	FILE* file_tripulante = fdopen(file_descriptor_tripulante, "r+");[m
+[31m-	[m
+ 	acomodar_bitacora(file_tripulante, tcb);[m
+ }[m
+ [m
+[1mdiff --git a/Mi_Ram_HQ/mi_ram_hq.c b/Mi_Ram_HQ/mi_ram_hq.c[m
+[1mindex 032b0e2..8cb2560 100644[m
+[1m--- a/Mi_Ram_HQ/mi_ram_hq.c[m
+[1m+++ b/Mi_Ram_HQ/mi_ram_hq.c[m
+[36m@@ -14,7 +14,6 @@[m
+ #define	IP_MI_RAM_HQ config_get_string_value(config_miramhq, "IP")[m
+ #define PUERTO_MI_RAM_HQ config_get_string_value(config_miramhq, "PUERTO")[m
+ #define TAMANIO_MEMORIA config_get_int_value(config_miramhq, "TAMANIO_MEMORIA")[m
+[31m-#define LIMIT_CONNECTIONS 10[m
+ [m
+ // Vars globales[m
+ t_log* logger_miramhq;[m
+[36m@@ -93,7 +92,7 @@[m [mvoid proceso_handler(void* args) {[m
+ 	// struct sockaddr_storage direccion_a_escuchar;[m
+ 	// socklen_t tamanio_direccion;[m
+ [m
+[31m-	if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)[m
+[32m+[m	[32mif (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado[m
+ 		printf("Error al configurar recepcion de mensajes\n");[m
+ [m
+ 	while (1) {[m
+[36m@@ -167,16 +166,6 @@[m [mvoid atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue[m
+ 				//printf("Tripulante 1 pos: %c %c\n", (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);[m
+ 				break;[m
+ [m
+[31m-			case T_SIGKILL:[m
+[31m-				log_info(logger_miramhq, "Expulsar Tripulante.");[m
+[31m-				// TODO: GABITO Y JULIA[m
+[31m-				// verifica si existe[m
+[31m-				// si existe mandame un enviar_codigo(EXITO, parametros->socket);[m
+[31m-				// si no existe, mandame un enviar_codigo(FALLO, parametros->socket);[m
+[31m-				log_info(logger_miramhq, "%i -KILLED", mensaje_recibido->tid_condenado->tid);[m
+[31m-				enviar_codigo(EXITO, parametros->socket);[m
+[31m-				break;[m
+[31m-[m
+ 			case DESCONEXION:[m
+ 				log_info(logger_miramhq, "Se desconecto un cliente.");[m
+ 				flag = 0;[m
+[1mdiff --git a/README.md b/README.md[m
+[1mindex d644e51..91d4585 100644[m
+[1m--- a/README.md[m
+[1m+++ b/README.md[m
+[36m@@ -2,8 +2,6 @@[m
+ [m
+ ### Registro de cambios[m
+ 17/06/2021[m
+[31m-+ Agregadas varias funciones de serializacion.[m
+[31m-+ EXPULSAR_TRIPULANTE esta terminado en el modulo discordiador.[m
+ + INICIAR_PATOTA es completamente funcional.[m
+ + Agregadas funciones para leer archivos.[m
+ + Agregadas funcionalidades del I-Mongo-Store.[m
+[1mdiff --git a/comms/src/comms/estructuras.h b/comms/src/comms/estructuras.h[m
+[1mindex b42082d..e37cefb 100644[m
+[1m--- a/comms/src/comms/estructuras.h[m
+[1m+++ b/comms/src/comms/estructuras.h[m
+[36m@@ -9,10 +9,10 @@[m
+ #include <stdint.h>[m
+ [m
+ /* ENUMS */[m
+[31m-//                      						ESTRUCTURAS                          					COSAS FILESYSTEM            ACCIONES BITACORA                                                           CODIGOS UNICOS: MONGO           	DISCORDIADOR                    GENERALES[m
+[31m-enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL,     OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,     MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO };[m
+[32m+[m[32m//                      				ESTRUCTURAS                          		COSAS FILESYSTEM            ACCIONES BITACORA                                                           CODIGOS UNICOS: MONGO           	DISCORDIADOR                    GENERALES[m
+[32m+[m[32menum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, ARCHIVO_TAREAS,     OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,     MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION };[m
+ [m
+[31m-enum estados { NEW, READY, EXEC, BLOCKED};[m
+[32m+[m[32menum estados { NEW, READY, EXCECUTING, BLOCKED};[m
+ [m
+ /* ESTRUCTURAS */[m
+ [m
+[36m@@ -65,19 +65,12 @@[m [mtypedef struct {[m
+ [m
+ } t_archivo_tareas;[m
+ [m
+[31m-typedef struct {[m
+[31m-[m
+[31m-	uint32_t tid;[m
+[31m-[m
+[31m-} t_sigkill;[m
+[31m-[m
+ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct de una funcion[m
+ [m
+     t_TCB* tcb;[m
+     t_PCB* pcb;[m
+     t_tarea* tarea;[m
+     t_archivo_tareas* archivo_tareas;[m
+[31m-    t_sigkill* tid_condenado;[m
+     int codigo_operacion;[m
+     int cantidad; // Revisar funcs paquetes[m
+ [m
+[1mdiff --git a/comms/src/comms/paquetes.c b/comms/src/comms/paquetes.c[m
+[1mindex 85ac234..28689c0 100644[m
+[1m--- a/comms/src/comms/paquetes.c[m
+[1m+++ b/comms/src/comms/paquetes.c[m
+[36m@@ -193,12 +193,6 @@[m [mt_estructura* recepcion_y_deserializacion(int socket_receptor) {[m
+             intermediario->archivo_tareas = deserializar_archivo_tareas(paquete->buffer);[m
+             break;[m
+ [m
+[31m-        case T_SIGKILL:[m
+[31m-        	intermediario->codigo_operacion = T_SIGKILL;[m
+[31m-        	intermediario->tid_condenado = malloc(sizeof(uint32_t));[m
+[31m-            intermediario->tid_condenado = deserializar_tid(paquete->buffer);[m
+[31m-            break;[m
+[31m-[m
+         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz[m
+         case OXIGENO:[m
+         case COMIDA:[m
+[36m@@ -268,7 +262,7 @@[m [mt_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {[m
+     t_buffer* buffer = malloc(sizeof(t_buffer));[m
+     buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;[m
+ [m
+[31m-    void* estructura = malloc(buffer->tamanio_estructura);[m
+[32m+[m[32m    void* estructura = malloc((buffer->tamanio_estructura));[m
+     int desplazamiento = 0;[m
+ [m
+     memcpy(estructura + desplazamiento, &texto_archivo.largo_texto, sizeof(uint32_t));[m
+[36m@@ -298,26 +292,3 @@[m [mt_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {[m
+ [m
+     return texto_archivo;[m
+ }[m
+[31m-[m
+[31m-t_buffer* serializar_tid(t_sigkill t_kill) {[m
+[31m-[m
+[31m-    t_buffer* buffer = malloc(sizeof(t_buffer));[m
+[31m-    buffer->tamanio_estructura = sizeof(uint32_t);[m
+[31m-[m
+[31m-    void* estructura = malloc(buffer->tamanio_estructura);[m
+[31m-    memcpy(estructura, &t_kill.tid, sizeof(uint32_t));[m
+[31m-[m
+[31m-    buffer->estructura = estructura;[m
+[31m-[m
+[31m-    return buffer;[m
+[31m-}[m
+[31m-[m
+[31m-t_sigkill* deserializar_tid(t_buffer* buffer) {[m
+[31m-[m
+[31m-	t_sigkill* trip_kill = malloc(sizeof(t_sigkill));[m
+[31m-    void* estructura = buffer->estructura;[m
+[31m-[m
+[31m-    memcpy(&(trip_kill->tid), estructura, sizeof(uint32_t));[m
+[31m-[m
+[31m-    return trip_kill;[m
+[31m-}[m
+[1mdiff --git a/comms/src/comms/paquetes.h b/comms/src/comms/paquetes.h[m
+[1mindex 85cab45..f906d11 100644[m
+[1m--- a/comms/src/comms/paquetes.h[m
+[1m+++ b/comms/src/comms/paquetes.h[m
+[36m@@ -35,7 +35,6 @@[m [mvoid eliminar_paquete(t_paquete* paquete);[m
+ t_buffer* serializar_cantidad(int cantidad);[m
+ t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer);[m
+ t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo);[m
+[31m-t_buffer* serializar_tid(t_sigkill t_kill);[m
+[31m-t_sigkill* deserializar_tid(t_buffer* buffer);[m
+[32m+[m
+ [m
+ #endif[m

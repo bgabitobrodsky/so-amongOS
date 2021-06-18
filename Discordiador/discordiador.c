@@ -128,7 +128,9 @@ void leer_consola() {
                     break;
 
                 case OBTENER_BITACORA:
-                    obtener_bitacora(leido);
+                    //obtener_bitacora(leido);
+                	//Para testeo, despues hay que eliminar iniciar_hilo ydescomentar obtener_bitacora()
+                	iniciar_hilo();
                     break;
 
                 case EXPULSAR_TRIPULANTE:
@@ -500,6 +502,21 @@ int nuevo_pid(){
 void iniciar_hilo_tripulante(void* funcion){
     pthread_t hilo1;
     pthread_create(&hilo1, NULL, funcion, NULL);
+}
+
+//Funcion de testeo
+void iniciar_hilo(){
+    pthread_t hilo1;
+    pthread_create(&hilo1, NULL, funcion_hilo, NULL);
+}
+
+//Funcion de testeo
+void funcion_hilo() {
+	int socket_tripulante = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
+	enviar_codigo(PRIMERA_CONEXION, socket_tripulante);
+	empaquetar_y_enviar(serializar_cantidad(7), BASURA, socket_tripulante);
+	empaquetar_y_enviar(serializar_cantidad(-4), BASURA, socket_tripulante);
+
 }
 
 

@@ -21,6 +21,10 @@
 //#include <commons/collections/queue.h>
 //#include <commons/collections/list.h>
 
+//FUnciones de testeo
+void funcion_hilo();
+void iniciar_hilo();
+
 // Funciones PRINCIPALES
 void leer_consola();
 void iniciar_patota(char* leido);
