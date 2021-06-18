@@ -84,8 +84,6 @@ int main(int argc, char** argv) {
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
 
-
-
 	close(socket_oyente);
 
 	log_destroy(logger);
@@ -190,6 +188,7 @@ void atender_clientes(void* param) {
 			case DESCONEXION:
 				log_info(logger, "Se desconecto un cliente.");
 				flag = 0;
+				// close(parametros->socket);
 				break;
 
 			default:
