@@ -2,6 +2,8 @@
 
 ### Registro de cambios
 17/06/2021
++ Agregadas varias funciones de serializacion.
++ EXPULSAR_TRIPULANTE esta terminado en el modulo discordiador.
 + INICIAR_PATOTA es completamente funcional.
 + Agregadas funciones para leer archivos.
 + Agregadas funcionalidades del I-Mongo-Store.

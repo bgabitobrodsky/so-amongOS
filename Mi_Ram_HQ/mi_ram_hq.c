@@ -14,6 +14,7 @@
 #define	IP_MI_RAM_HQ config_get_string_value(config_miramhq, "IP")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config_miramhq, "PUERTO")
 #define TAMANIO_MEMORIA config_get_int_value(config_miramhq, "TAMANIO_MEMORIA")
+#define LIMIT_CONNECTIONS 10
 
 // Vars globales
 t_log* logger_miramhq;
@@ -92,7 +93,7 @@ void proceso_handler(void* args) {
 	// struct sockaddr_storage direccion_a_escuchar;
 	// socklen_t tamanio_direccion;
 
-	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
+	if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)
 		printf("Error al configurar recepcion de mensajes\n");
 
 	while (1) {
@@ -164,6 +165,16 @@ void atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue
 				list_add(lista_tcb, (void*) mensaje_recibido->tcb);
 				free(mensaje_recibido->tcb);
 				//printf("Tripulante 1 pos: %c %c\n", (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
+				break;
+
+			case T_SIGKILL:
+				log_info(logger_miramhq, "Expulsar Tripulante.");
+				// TODO: GABITO Y JULIA
+				// verifica si existe
+				// si existe mandame un enviar_codigo(EXITO, parametros->socket);
+				// si no existe, mandame un enviar_codigo(FALLO, parametros->socket);
+				log_info(logger_miramhq, "%i -KILLED", mensaje_recibido->tid_condenado->tid);
+				enviar_codigo(EXITO, parametros->socket);
 				break;
 
 			case DESCONEXION:
