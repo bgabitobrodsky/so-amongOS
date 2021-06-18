@@ -24,13 +24,6 @@ t_config* config;
 t_list* lista_tcb;
 t_list* lista_pcb;	
 
-typedef struct hilo_tripulante{
-	int socket;
-	char* ip_cliente;
-	char* puerto_cliente;
-	void (*atender)(char*);
-} hilo_tripulante;
-
 char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 
 void gestionar_tareas (t_archivo_tareas* archivo_tareas){

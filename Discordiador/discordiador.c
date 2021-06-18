@@ -7,7 +7,6 @@
  Description : El discordiador
  ============================================================================
  */
-//TODO: Implementar HANDLER de ESCUCHAR
 
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -47,13 +46,6 @@ char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
 
-typedef struct hilo_tripulante{
-	int socket;
-	char* ip_cliente;
-	char* puerto_cliente;
-	void (*atender)(char*);
-} hilo_tripulante;
-
 int main() {
     logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
     config = config_create("discordiador.config");
@@ -63,9 +55,7 @@ int main() {
     iniciar_semaforos();
 
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
-    //socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
-    //socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
 
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
@@ -128,9 +118,7 @@ void leer_consola() {
                     break;
 
                 case OBTENER_BITACORA:
-                    //obtener_bitacora(leido);
-                	//Para testeo, despues hay que eliminar iniciar_hilo ydescomentar obtener_bitacora()
-                	iniciar_hilo();
+                    obtener_bitacora(leido);
                     break;
 
                 case EXPULSAR_TRIPULANTE:
@@ -154,6 +142,9 @@ void leer_consola() {
         free(leido);
 
     } while (comando != EXIT);
+
+    sistema_activo = 0;
+
 }
 
 void iniciar_patota(char* leido) {
@@ -168,13 +159,9 @@ void iniciar_patota(char* leido) {
     // pasarle el pcb a ram y matarlo
     t_PCB* pcb = crear_pcb(path);
     char* archivo_tareas = leer_archivo_entero(path);
+
     if (archivo_tareas != NULL){
-    	t_archivo_tareas cont_arc;
-    	cont_arc.texto = archivo_tareas;
-    	cont_arc.largo_texto = strlen(archivo_tareas) + 1;
-    	cont_arc.pid = pcb->PID;
-    	t_buffer* contenido_archivo = serializar_archivo_tareas(cont_arc);
-    	empaquetar_y_enviar(contenido_archivo, ARCHIVO_TAREAS, socket_a_mi_ram_hq);
+    	enviar_archivo_tareas(archivo_tareas, pcb->PID, socket_a_mi_ram_hq);
     }
 
     t_TCB* aux;
@@ -219,7 +206,7 @@ void iniciar_planificacion() {
 
     int tiempo_restante = aux_tarea->duracion;
 
-    // TODO NO TESTEADO, y eliminar redundancia.
+    // TODO NO TESTEADO
     while(planificacion_activa && list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){
         t_TCB* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
         aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
@@ -240,7 +227,6 @@ void iniciar_planificacion() {
         }
     }
 }
-
 
 void listar_tripulantes() { //TODO falta testear
 
@@ -320,10 +306,10 @@ void expulsar_tripulante(char* leido) {
     t_buffer* b_tid = serializar_tid(tripulante_tid);
     empaquetar_y_enviar(b_tid, T_SIGKILL, socket_a_mi_ram_hq);
 
-    // TODO: EN el caso de que el tripulante este en discordiador, eliminarlo tambien.
-
     t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
     if(respuesta->codigo_operacion == EXITO){
+    	// TODO: EN el caso de que el tripulante este en discordiador, eliminarlo tambien
+    	// monitor_lista_dos_parametros(sem_lista_new, eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) tid_tripulante_a_expulsar);
     	log_info(logger, "Tripulante expulsado, TID: %d", tid_tripulante_a_expulsar);
     }
     else if (respuesta->codigo_operacion == FALLO){
@@ -472,7 +458,6 @@ void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento){
     return aux;
 }
 
-
 /*
 t_patota* crear_patota(t_PCB* un_pcb){
     t_patota* patota = malloc(sizeof(t_patota));
@@ -502,21 +487,6 @@ int nuevo_pid(){
 void iniciar_hilo_tripulante(void* funcion){
     pthread_t hilo1;
     pthread_create(&hilo1, NULL, funcion, NULL);
-}
-
-//Funcion de testeo
-void iniciar_hilo(){
-    pthread_t hilo1;
-    pthread_create(&hilo1, NULL, funcion_hilo, NULL);
-}
-
-//Funcion de testeo
-void funcion_hilo() {
-	int socket_tripulante = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
-	enviar_codigo(PRIMERA_CONEXION, socket_tripulante);
-	empaquetar_y_enviar(serializar_cantidad(7), BASURA, socket_tripulante);
-	empaquetar_y_enviar(serializar_cantidad(-4), BASURA, socket_tripulante);
-
 }
 
 

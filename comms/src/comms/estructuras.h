@@ -89,5 +89,11 @@ typedef struct {
 
 } args_escuchar;
 
+typedef struct hilo_tripulante{
+	int socket;
+	char* ip_cliente;
+	char* puerto_cliente;
+	void (*atender)(char*);
+} hilo_tripulante;
 
 #endif
