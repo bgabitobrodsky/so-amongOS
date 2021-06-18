@@ -14,14 +14,17 @@
 //#include <comms/socketes.h>
 
 
-/**
- * MANEJO DE MEMORIA
-**/
 
+
+void gestionar_tareas (t_archivo_tareas*);
 void atender_clientes(void*);
 void proceso_handler(void* args);
 t_PCB* crear_pcb(char* path);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
+
+/**
+ * MANEJO DE MEMORIA
+**/
 
 typedef struct pagina {
     int base;

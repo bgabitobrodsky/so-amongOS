@@ -7,10 +7,10 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 		if (mensaje->codigo_operacion == PRIMERA_CONEXION) { // TODO: Agregar codigo
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante); // TODO: Ver como se mandan tripulantes
 			log_info(logger_mongo, "Se creo la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
-			free(mensaje->tcb);
+			//free(mensaje->tcb);
 		} 	
 		else {
-			if (mensaje->codigo_operacion >= BASURA && mensaje->codigo_operacion <= SABOTAJE) {
+			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion <= SABOTAJE) {
 				modificar_bitacora(mensaje->codigo_operacion, mensaje->tcb);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
@@ -32,10 +32,11 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 }
 
 void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: Verificar estructura, funcion boceto
-	char* path_bitacoras = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
+	char* path_files = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
+	char* path_bitacoras = malloc((strlen(path_files)+1) + strlen("/Files/Bitacoras"));
 	sprintf(path_bitacoras, "/Files/Bitacoras");
 	
-	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante%s.ims") + 1);
+	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);
 	sprintf(path_tripulante, "%s/Tripulante%s.ims", path_bitacoras, string_itoa(tcb->TID)); // TODO: Revisar funcionamiento de esta linea y ver identificador
 
 	int file_descriptor_tripulante = open(path_tripulante, O_RDWR | O_APPEND | O_CREAT);

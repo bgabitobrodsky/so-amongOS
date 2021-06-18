@@ -90,3 +90,12 @@ void* monitor_lista_dos_parametros(pthread_mutex_t semaforo, void*(*operacion)(t
 	pthread_mutex_unlock(&semaforo);
 	return aux;
 }
+
+int contar_palabras (char** palabras){
+	int contador = 0;
+
+    while (palabras[contador] != NULL && palabras[contador] != '\0') {
+        contador++;
+    }
+    return contador;
+}

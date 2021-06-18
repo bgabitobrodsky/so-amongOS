@@ -159,8 +159,8 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     // If que maneja llegada de codigos de operacion unicamente (TODO CODIGO UNICO DEBE ESTAR DESPUES DE SABOTAJE)
     if (paquete->codigo_operacion >= SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash
-        eliminar_paquete(paquete); 
-        printf("paquete eliminado.");
+        intermediario->codigo_operacion = paquete->codigo_operacion;
+    	eliminar_paquete(paquete);
         return intermediario;
     }
 
@@ -177,14 +177,26 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
         case RECIBIR_TCB:
         	intermediario->codigo_operacion = RECIBIR_TCB;
         	intermediario->tcb = malloc(sizeof(uint32_t)*5 + sizeof(char));
-            intermediario->tcb = desserializar_tcb(paquete->buffer);
+            intermediario->tcb = deserializar_tcb(paquete->buffer);
             break;
 
         case TAREA:
             intermediario->codigo_operacion = TAREA;
 
             // asignar un malloc? tienes idea de lo loco que se oye eso?
-            intermediario->tarea = desserializar_tarea(paquete->buffer);
+            intermediario->tarea = deserializar_tarea(paquete->buffer);
+            break;
+
+        case ARCHIVO_TAREAS:
+        	intermediario->codigo_operacion = ARCHIVO_TAREAS;
+        	intermediario->archivo_tareas = malloc(paquete->buffer->tamanio_estructura);
+            intermediario->archivo_tareas = deserializar_archivo_tareas(paquete->buffer);
+            break;
+
+        case T_SIGKILL:
+        	intermediario->codigo_operacion = T_SIGKILL;
+        	intermediario->tid_condenado = malloc(sizeof(uint32_t));
+            intermediario->tid_condenado = deserializar_tid(paquete->buffer);
             break;
 
         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
@@ -203,7 +215,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
 // Pasa un struct buffer a un tcb
 // Se explica deserializacion en esta funcion
-t_TCB* desserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se esta pasando paquete->buffer->estructura, ver si es error
+t_TCB* deserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se esta pasando paquete->buffer->estructura, ver si es error
 
 	t_TCB* tcb = malloc(sizeof(uint32_t)*5 + sizeof(char)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
@@ -224,7 +236,7 @@ t_TCB* desserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se est
 }
 
 // Pasa un struct buffer a una tarea
-t_tarea* desserializar_tarea(t_buffer* buffer) {
+t_tarea* deserializar_tarea(t_buffer* buffer) {
 
     t_tarea* tarea = malloc(sizeof(t_tarea));
     void* estructura = buffer->estructura;
@@ -249,4 +261,63 @@ void eliminar_paquete(t_paquete* paquete) {
 	//free(paquete->buffer->estructura); // TODO: Ver si se puede descomentar
 	free(paquete->buffer);
 	free(paquete);
+}
+
+t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
+
+    t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;
+
+    void* estructura = malloc(buffer->tamanio_estructura);
+    int desplazamiento = 0;
+
+    memcpy(estructura + desplazamiento, &texto_archivo.largo_texto, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, texto_archivo.texto, (texto_archivo.largo_texto + 1));
+    desplazamiento += (texto_archivo.largo_texto + 1);
+    memcpy(estructura + desplazamiento, &texto_archivo.pid, sizeof(uint32_t));
+
+    buffer->estructura = estructura;
+
+    free(texto_archivo.texto);
+
+    return buffer;
+}
+
+t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
+
+	t_archivo_tareas* texto_archivo = malloc(sizeof(t_archivo_tareas));
+    void* estructura = buffer->estructura;
+
+    memcpy(&(texto_archivo->largo_texto), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    texto_archivo->texto = malloc(texto_archivo->largo_texto + 1);
+    memcpy(texto_archivo->texto, estructura, (texto_archivo->largo_texto + 1));
+    estructura += (texto_archivo->largo_texto + 1);
+    memcpy(&(texto_archivo->pid), estructura, sizeof(uint32_t));
+
+    return texto_archivo;
+}
+
+t_buffer* serializar_tid(t_sigkill t_kill) {
+
+    t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = sizeof(uint32_t);
+
+    void* estructura = malloc(buffer->tamanio_estructura);
+    memcpy(estructura, &t_kill.tid, sizeof(uint32_t));
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_sigkill* deserializar_tid(t_buffer* buffer) {
+
+	t_sigkill* trip_kill = malloc(sizeof(t_sigkill));
+    void* estructura = buffer->estructura;
+
+    memcpy(&(trip_kill->tid), estructura, sizeof(uint32_t));
+
+    return trip_kill;
 }

@@ -18,7 +18,7 @@
 #define QUANTUM config_get_int_value(config, "QUANTUM")
 #define RETARDO_CICLO_CPU config_get_int_value(config, "RETARDO_CICLO_CPU")
 #define DURACION_SABOTAJE config_get_int_value(config, "DURACION_SABOTAJE")
-
+#define LIMIT_CONNECTIONS 10
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -47,16 +47,12 @@ char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
 
-/* TODO: Replantear.
-void enviar_archivo_a_ram(char* contenido, int socket){
-    t_buffer* b_archivo= serializar_archivo_tareas(contenido);
-    empaquetar_y_enviar(b_archivo, CONTENIDO_ARCHIVO_TAREAS, socket);
-}
-
-t_buffer* serializar_archivo_tareas(char*);
-
-char* desserializar_archivo_tareas(t_buffer*);
-*/
+typedef struct hilo_tripulante{
+	int socket;
+	char* ip_cliente;
+	char* puerto_cliente;
+	void (*atender)(char*);
+} hilo_tripulante;
 
 int main() {
     logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
@@ -66,52 +62,14 @@ int main() {
     iniciar_colas();
     iniciar_semaforos();
 
-
-    /*
-    t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
-
-	printf("Largo nombre: %i\n", t->largo_nombre);
-	printf("Nombre: %s\n", t->nombre);
-	printf("Parametros: %i\n", t->parametro);
-	printf("Cordenada en X: %i\n", t->coord_x);
-	printf("Cordenada en Y: %i\n", t->coord_y);
-	printf("Duracion: %i\n", t->duracion);
-
-    t_buffer* b = serializar_tarea(*t);
-    t_tarea* t2 = desserializar_tarea(b);
-
-	printf("Largo nombre: %i\n", t2->largo_nombre);
-	printf("Nombre: %s\n", t2->nombre);
-	printf("Parametros: %i\n", t2->parametro);
-	printf("Cordenada en X: %i\n", t2->coord_x);
-	printf("Cordenada en Y: %i\n", t2->coord_y);
-	printf("Duracion: %i\n", t2->duracion);
-	*/
-
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     //socket_a_mi_ram_hq = crear_socket_cliente("127.0.0.1", "25430");
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     //socket_a_mongo_store = crear_socket_cliente("127.0.0.1", "4000");
 
-    //enviar_codigo(PEDIR_TAREA, socket_a_mi_ram_hq);
-
-	t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
-	t_buffer* b = serializar_tarea(*t);
-	empaquetar_y_enviar(b, TAREA, socket_a_mi_ram_hq);
-	/*
-    t_estructura* est = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-    printf("Tarea recibida! ");
-    printf("Largo nombre: %i\n", est->tarea->largo_nombre);
-    printf("Nombre: %s\n", est->tarea->nombre);
-    printf("Parametros: %i\n", est->tarea->parametro);
-    printf("Cordenada en X: %i\n", est->tarea->coord_x);
-    printf("Cordenada en Y: %i\n", est->tarea->coord_y);
-    printf("Duracion: %i\n", est->tarea->duracion);
-*/
-
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
-
+    	leer_consola();
         pthread_t hiloConsola;
         pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
         pthread_detach(hiloConsola);
@@ -121,11 +79,10 @@ int main() {
         /*
         args_escuchar args_disc;
         args_disc.socket_oyente = socket_a_mi_ram_hq;
-        pthread_t hilo_escucha_ram;
-        pthread_create(&hilo_escucha_ram, NULL, (void*) escuchar_discordiador, &args_disc);
+        pthread_t hilo_escucha;
+        pthread_create(&hilo_escucha, NULL, (void*) proceso_handler, &args_disc);
         pthread_join(hilo_escucha, NULL);
         */
-
     }
 
     while(sistema_activo){
@@ -171,7 +128,9 @@ void leer_consola() {
                     break;
 
                 case OBTENER_BITACORA:
-                    obtener_bitacora(leido);
+                    //obtener_bitacora(leido);
+                	//Para testeo, despues hay que eliminar iniciar_hilo ydescomentar obtener_bitacora()
+                	iniciar_hilo();
                     break;
 
                 case EXPULSAR_TRIPULANTE:
@@ -184,7 +143,7 @@ void leer_consola() {
 
                 case APAGAR_SISTEMA:
                     sistema_activo = 0;
-                    exit(1); //sin esto se BUGGEA DURO
+                    exit(1);
                     break;
 
                 case NO_CONOCIDO:
@@ -204,30 +163,21 @@ void iniciar_patota(char* leido) {
 
     printf("PATOTA: cantidad de tripulantes %d, url: %s \n", cantidadTripulantes, path);
 
-    int contador = 0;
-    while (palabras[contador] != NULL) {
-        contador++;
-    }
-
     int i = 0;
 
     // pasarle el pcb a ram y matarlo
     t_PCB* pcb = crear_pcb(path);
     char* archivo_tareas = leer_archivo_entero(path);
     if (archivo_tareas != NULL){
-        //enviar_archivo_a_ram(archivo_tareas, socket_a_mi_ram_hq);
-        free(archivo_tareas);
+    	t_archivo_tareas cont_arc;
+    	cont_arc.texto = archivo_tareas;
+    	cont_arc.largo_texto = strlen(archivo_tareas) + 1;
+    	cont_arc.pid = pcb->PID;
+    	t_buffer* contenido_archivo = serializar_archivo_tareas(cont_arc);
+    	empaquetar_y_enviar(contenido_archivo, ARCHIVO_TAREAS, socket_a_mi_ram_hq);
     }
 
-    // Pasar la variable a RAM
-
-    // RAM VERSION:
-    // recibe el mensaje (la variable con el archivo entero)
-    // spliteamos en base al salto de linea \n
-    // nos devuelve un array de tareas
-
     t_TCB* aux;
-
 
     while (palabras[i+3] != NULL){
         printf("POSICION %d: %s \n", i+1, palabras[i+3]);
@@ -255,7 +205,6 @@ void iniciar_patota(char* leido) {
     }
 
     free(pcb);
-    //free(aux);
     liberar_puntero_doble(palabras);
 }
 
@@ -273,7 +222,7 @@ void iniciar_planificacion() {
     // TODO NO TESTEADO, y eliminar redundancia.
     while(planificacion_activa && list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){
         t_TCB* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-        aux_tripulante->estado_tripulante = estado_tripulante[EXCECUTING];
+        aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
 
         monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
 
@@ -292,7 +241,6 @@ void iniciar_planificacion() {
     }
 }
 
-//void tripulante
 
 void listar_tripulantes() { //TODO falta testear
 
@@ -359,34 +307,34 @@ void pausar_planificacion() {
 
 void obtener_bitacora(char* leido) {
     printf("Obtener Bitacora\n");
+    enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
 }
 
 void expulsar_tripulante(char* leido) {
-    printf("Expulsar Tripulante");
+    printf("Expulsar Tripulante\n");
     char** palabras = string_split(leido, " ");
     int tid_tripulante_a_expulsar = atoi(palabras[1]);
 
-    // TODO CODEAR
-    // Le pedimos a RAM que elimine el tcb
-    // Sacamos el tripulante de la lista (puede estar en CUALQUIER lista)
-    // EN el caso de que el tripulante este en discordiador, eliminarlo tambien segun su estado
+    t_sigkill tripulante_tid;
+    tripulante_tid.tid = tid_tripulante_a_expulsar;
+    t_buffer* b_tid = serializar_tid(tripulante_tid);
+    empaquetar_y_enviar(b_tid, T_SIGKILL, socket_a_mi_ram_hq);
 
-    printf("Tripulante expulsado: TID %d\n", tid_tripulante_a_expulsar);
-    log_info(logger, "Tripulante expulsado: TID %d\n", tid_tripulante_a_expulsar);
+    // TODO: EN el caso de que el tripulante este en discordiador, eliminarlo tambien.
+
+    t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+    if(respuesta->codigo_operacion == EXITO){
+    	log_info(logger, "Tripulante expulsado, TID: %d", tid_tripulante_a_expulsar);
+    }
+    else if (respuesta->codigo_operacion == FALLO){
+    	log_info(logger, "No existe el tripulante. TID: %d", tid_tripulante_a_expulsar);
+    }
+    else{
+    	log_info(logger, "Error desconocido");
+    }
+
     liberar_puntero_doble(palabras);
 }
-
-/*int pedir_tarea(int id_tripulante){
-    t_paquete* paquete = crear_paquete(PEDIR_TAREA); // BORRAR ESTA COSA BONITA
-    agregar_a_paquete(paquete, (void*) id_tripulante, sizeof(int)); // BORRAR ESTA COSA BONITA
-    enviar_paquete(paquete,socket_a_mi_ram_hq); // BORRAR ESTA COSA BONITA
-    return 1;
-}
-
-void realizar_tarea(t_tarea tarea){
-
-}*/
-
 
 char* fecha_y_hora() {
     time_t tiempo = time(NULL);
@@ -430,91 +378,78 @@ void enlistar_algun_tripulante(){ //TODO no testeado, SEBA
     tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
 }
 
-void escuchar_discordiador(void* args) { // TODO No se libera args, ver donde liberar
-    args_escuchar* p = malloc(sizeof(args_escuchar));
-    p = args;
-    int socket_escucha = p->socket_oyente;
 
-    struct sockaddr_storage direccion_a_escuchar;
-    socklen_t tamanio_direccion;
-    int socket_especifico;
+void proceso_handler(void* args) {
+	args_escuchar* p = malloc(sizeof(args_escuchar));
+	p = args;
+	int socket_escucha = p->socket_oyente;
+	//int socket_escucha = (int) args; //Tema de testeos, no borrar
 
-    if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
-        printf("Error al configurar recepcion de mensajes\n");
+    int addrlen, socket_especifico;
+    struct sockaddr_in address;
 
-    struct sigaction sa;
-        sa.sa_handler = sigchld_handler;
-        sigemptyset(&sa.sa_mask);
-        sa.sa_flags = SA_RESTART;
-        if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-            printf("Error al limpiar procesos\n");
-            exit(1);
-        }
+    addrlen = sizeof(address);
 
-    while (1) {
-            tamanio_direccion = sizeof(direccion_a_escuchar);
-            socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
+	// struct sockaddr_storage direccion_a_escuchar;
+	// socklen_t tamanio_direccion;
 
-            if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
-                close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-                //atender_clientes(socket_especifico); // Funcion enviada por parametro con puntero para que ejecuten los hijos del proceso
-                printf("Recibido, gracias cliente");
-                close(socket_especifico); // Cumple proposito, se cierra socket hijo
-                exit(0);
-            }
+	if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)
+		printf("Error al configurar recepcion de mensajes\n");
 
-            close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
-        }
+	while (1) {
+		if ((socket_especifico = accept(socket_escucha, (struct sockaddr*) &address, (socklen_t *) &addrlen)) > 0) {
+			// Maté la verificación
+			log_info(logger, "Se conecta un nuevo proceso");
+
+			hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
+
+			parametros->socket = socket_especifico;
+			//parametros->ip_cliente = inet_ntoa(address.sin_addr);
+			//parametros->puerto_cliente = ntohs(address.sin_port);
+
+			pthread_t un_hilo_tripulante;
+
+			pthread_create(&un_hilo_tripulante, NULL, (void*) atender_clientes, (void *) parametros);
+
+			pthread_detach(un_hilo_tripulante);
+		}
+	}
 }
 
-/*
-void atender_clientes(int socket_hijo) {
-    int flag = 1;
-        while(flag) { //TODO cambiar por do while  y liberar la estructura
-            t_estructura* mensaje_recibido = recepcion_y_deserializacion(socket_hijo); // Hay que pasarle en func hijos dentro de socketes.c al socket hijo, y actualizar los distintos punteros a funcion
-            //sleep(1); //no quitar. sirve para testeos
+void atender_clientes(void* param) {
+	hilo_tripulante* parametros = param;
 
-            switch(mensaje_recibido->codigo_operacion) {
-                case MENSAJE:
-                    log_info(logger_miramhq, "Mensaje recibido");
-                    break;
+	int flag = 1;
+	log_info(logger, "Atendiendo. %i\n", parametros->socket);
 
-                case PEDIR_TAREA:
-                    log_info(logger_miramhq, "Pedido de tarea recibido");
-                    break;
+	while(flag) {
+		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);
 
-                case COD_TAREA:
-                    printf("Recibo una tarea");
-                    break;
+		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera
 
-                case RECIBIR_PCB:
-                    printf("Recibo una pcb");
-                    list_add(lista_pcb, (void*) mensaje_recibido->pcb);
-                    enviar_codigo(RECEPCION, socket_hijo);
-                    //almacenar_pcb(mensaje_recibido); TODO en un futuro, capaz no podamos recibir el PCB por quedarnos sin memoria
-                    break;
+        switch(mensaje_recibido->codigo_operacion) {
+            case EXITO:
+                log_info(logger, "Mensaje recibido");
+                break;
 
-                case RECIBIR_TCB:
-                    printf("Recibo una tcb");
-                    list_add(lista_tcb, (void*) mensaje_recibido->tcb);
-                    enviar_codigo(RECEPCION, socket_hijo);
-                    break;
+            case FALLO:
+                log_info(logger, "Pedido de tarea recibido");
+                break;
 
-                case DESCONEXION:
-                    log_info(logger_miramhq, "Se desconecto el modulo");
-                    flag = 0;
-                    break;
+            case DESCONEXION:
+                log_info(logger, "Se desconecto el modulo");
+                flag = 0;
+                break;
 
-                default:
-                    log_info(logger_miramhq, "Se recibio un codigo invalido.");
-                    break;
-            }
+            default:
+                log_info(logger, "Se recibio un codigo invalido.");
+                break;
         }
+		free(mensaje_recibido);
+	}
 
 }
-*/
 
-//TODO posiblemente, cambiar la serializacion para que se puedan serializar punteros de tcb
 void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
     t_buffer* buffer_tcb = serializar_tcb(un_tcb);
     empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
@@ -567,6 +502,21 @@ int nuevo_pid(){
 void iniciar_hilo_tripulante(void* funcion){
     pthread_t hilo1;
     pthread_create(&hilo1, NULL, funcion, NULL);
+}
+
+//Funcion de testeo
+void iniciar_hilo(){
+    pthread_t hilo1;
+    pthread_create(&hilo1, NULL, funcion_hilo, NULL);
+}
+
+//Funcion de testeo
+void funcion_hilo() {
+	int socket_tripulante = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
+	enviar_codigo(PRIMERA_CONEXION, socket_tripulante);
+	empaquetar_y_enviar(serializar_cantidad(7), BASURA, socket_tripulante);
+	empaquetar_y_enviar(serializar_cantidad(-4), BASURA, socket_tripulante);
+
 }
 
 

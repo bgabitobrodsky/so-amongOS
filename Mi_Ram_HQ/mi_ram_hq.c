@@ -16,6 +16,7 @@
 #define TAMANIO_MEMORIA config_get_int_value(config, "TAMANIO_MEMORIA")
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define CRITERIO_SELECCION config_get_string_value(config, "CRITERIO_SELECCION")
+#define LIMIT_CONNECTIONS 10
 
 t_log* logger;
 t_config* config;
@@ -31,6 +32,19 @@ typedef struct hilo_tripulante{
 } hilo_tripulante;
 
 char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
+
+void gestionar_tareas (t_archivo_tareas* archivo_tareas){
+	char** string_tareas = string_split(archivo_tareas->texto, "\n");
+	int cantidad_tareas = contar_palabras(string_tareas);
+	int pid_patota = archivo_tareas->pid;
+
+	for (int i = 0; i < cantidad_tareas; i++){
+		//
+		// t_tarea* tarea = crear_tarea(string_tareas[i]);
+		// hacer algo con esta tarea
+		//
+	}
+}
 
 int main(int argc, char** argv) {
 	
@@ -57,18 +71,17 @@ int main(int argc, char** argv) {
 	segmento* seg4 = asignar_segmento(sizeof(char));
 	printSegmentosList();
 
-    //int socket_oyente = crear_socket_oyente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
-    //escuchar_miram((void*) socket_oyente);//debug
-    
-	int socket_oyente = crear_socket_oyente(IP, PUERTO);
-
-  	args_escuchar args_miram;
+    args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) proceso_handler, (void*) &args_miram);
+
+	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
-	
+
+
+
 	close(socket_oyente);
 
 	log_destroy(logger);
@@ -92,7 +105,7 @@ void proceso_handler(void* args) {
 	// struct sockaddr_storage direccion_a_escuchar;
 	// socklen_t tamanio_direccion;
 
-	if (listen(socket_escucha, 10) == -1) //TODO esto esta hardcodeado
+	if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)
 		log_error(logger,"Error al configurar recepcion de mensajes");
 
 	while (1) {
@@ -127,9 +140,16 @@ void atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue
 	while(flag) {
 		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);
 
-		sleep(1); //para que no se rompa en casos de bug o tiempos de espera
+		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera
 
 		switch(mensaje_recibido->codigo_operacion) {
+
+			case ARCHIVO_TAREAS:
+				log_info(logger_miramhq, "Recibido contenido del archivo\n");
+				printf("\tpid:%i. \n\tlongitud; %i. \n%s\n", mensaje_recibido->archivo_tareas->pid, mensaje_recibido->archivo_tareas->largo_texto, mensaje_recibido->archivo_tareas->texto);
+				gestionar_tareas(mensaje_recibido->archivo_tareas);
+				sleep(1);
+				break;
 
 			case MENSAJE:
 				log_info(logger, "Mensaje recibido\n");
@@ -157,6 +177,16 @@ void atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue
 				list_add(lista_tcb, (void*) mensaje_recibido->tcb);
 				free(mensaje_recibido->tcb);
 				//printf("Tripulante 1 pos: %c %c\n", (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
+				break;
+
+			case T_SIGKILL:
+				log_info(logger_miramhq, "Expulsar Tripulante.");
+				// TODO: GABITO Y JULIA
+				// verifica si existe
+				// si existe mandame un enviar_codigo(EXITO, parametros->socket);
+				// si no existe, mandame un enviar_codigo(FALLO, parametros->socket);
+				log_info(logger_miramhq, "%i -KILLED", mensaje_recibido->tid_condenado->tid);
+				enviar_codigo(EXITO, parametros->socket);
 				break;
 
 			case DESCONEXION:

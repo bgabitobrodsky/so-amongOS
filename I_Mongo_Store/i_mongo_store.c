@@ -43,48 +43,63 @@ int main(int argc, char** argv){
 }
 
 
+/*
+ void escuchar_mongo(int args) { // args no se cierra, fijarse donde cerrarlo
+
+    int socket_escucha = args;
+ */
 void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
-	args_escuchar *p = malloc(sizeof(args_escuchar));
-	p = args;
-	int socket_escucha = p->socket_oyente;
-	int es_discordiador = 1;
+    args_escuchar *p = malloc(sizeof(args_escuchar));
+    p = args;
+    int socket_escucha = p->socket_oyente;
 
-	struct sockaddr_storage direccion_a_escuchar;
-	socklen_t tamanio_direccion;
-	int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
+    int es_discordiador = 1;
 
-	if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
-		log_info(logger_mongo, "Error al configurar recepcion de mensajes\n"); // Se verifica
+    struct sockaddr_storage direccion_a_escuchar;
+    socklen_t tamanio_direccion;
+    int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
 
-	struct sigaction sa;
-		sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos
-		sigemptyset(&sa.sa_mask);
-		sa.sa_flags = SA_RESTART;
-		if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-			log_info(logger_mongo, "Error al limpiar procesos\n");
-			exit(1);
-		}
+    if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
+        log_info(logger_mongo, "Error al configurar recepcion de mensajes\n"); // Se verifica
+
+    struct sigaction sa;
+    sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+        log_info(logger_mongo, "Error al limpiar procesos\n");
+        exit(1);
+    }
 
 	while (1) { // Loop infinito donde aceptara clientes
-		tamanio_direccion = sizeof(direccion_a_escuchar);
-		socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
+        tamanio_direccion = sizeof(direccion_a_escuchar);
+        socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
 
-		if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
-			close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-			if (es_discordiador) {
-				log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
-				sabotaje(socket_especifico);
-				es_discordiador = 0;
-			}
-			else {
-				manejo_tripulante(socket_especifico);
-			}
-			close(socket_especifico); // Cumple proposito, se cierra socket hijo
-			exit(0); // Returnea
+		if (socket_especifico != -1) {
+        	if (es_discordiador == 1) {
+        		es_discordiador = 0;
+
+            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
+                	log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
+                	sabotaje(socket_especifico);
+                	es_discordiador = 0;
+                	close(socket_especifico); // Cumple proposito, se cierra socket hijo
+                	exit(0); // Returnea
+            	}
+        	}
+        	else {
+            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
+                	manejo_tripulante(socket_especifico);
+                	close(socket_especifico); // Cumple proposito, se cierra socket hijo
+                	exit(0); // Returnea
+            	}
+        	}
 		}
 
-		close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
-	}
+        close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+    }
 }
 
 void sabotaje(int socket_discordiador) {
@@ -114,11 +129,11 @@ void iniciar_file_system() {
 	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 	char* path_files = malloc(strlen(path_directorio) + strlen("/Files") + 1);
 	strncpy(path_files, path_directorio, strlen(path_directorio) + 1);
-	sprintf(path_files, "/Files");
+	path_files = strcat(path_files, "/Files");
 
 	char* path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
 	strncpy(path_bitacoras , path_files, strlen(path_files) + 1);
-	sprintf(path_bitacoras, "/Bitacoras");
+	path_bitacoras = strcat(path_bitacoras, "/Bitacoras");
 
 	if ((stat(path_directorio, &dir) != -1)) {
 		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");
