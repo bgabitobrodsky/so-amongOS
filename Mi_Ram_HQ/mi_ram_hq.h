@@ -45,16 +45,20 @@ typedef struct tabla_paginas {
 
 typedef struct tabla_segmentos {
     uint32_t pid;
-    t_list* segmentos;
+    segmento* segmento_pcb;
+    segmento* segmento_tareas;
+    t_list* segmentos_tcb;
 } tabla_segmentos;
 
-void* memoria_principal;
-
-segmento* crear_segmento(int tam);
+segmento* best_fit(int tam);
+segmento* first_fit(int tam);
+segmento* crear_segmento(int base,int tam,bool libre);
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
 pagina* crear_pagina();
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
-
-
+segmento* buscar_segmento_libre(int tam);
+segmento* asignar_segmento(int tam);
+void iniciar_memoria();
+void printSegmentosList();
 
 #endif /* MI_RAM_HQ_H_ */
