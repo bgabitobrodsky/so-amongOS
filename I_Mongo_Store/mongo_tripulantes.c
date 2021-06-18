@@ -2,28 +2,36 @@
 
 void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enunciado la implementacion
 	while(1) {
+		// Se espera a ver que manda el tripulante
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
 
-		if (mensaje->codigo_operacion == PRIMERA_CONEXION) { // TODO: Agregar codigo
+		// Si es primera conexion, se crea la bitacora y se asigna a la lista
+		if (mensaje->codigo_operacion == PRIMERA_CONEXION) {
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante); // TODO: Ver como se mandan tripulantes
 			log_info(logger_mongo, "Se creo la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 			//free(mensaje->tcb);
-		} 	
+		}
+		// Si no lo es, puede ser o agregar/quitar recursos o cambiar informacion en la bitacora
 		else {
-			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion <= SABOTAJE) {
+			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
+			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
 				modificar_bitacora(mensaje->codigo_operacion, mensaje->tcb);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
+			// Si es otro codigo, debera ser un cambio (tal vez agregar comprobacion para evitar errores de los que codean el Discordiador)
 			else {
 				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 			}
 		}
 
+		// Ultimo mensaje del tripulante, al morir o algo, sera la desconexion, lo cual borra la bitacora y libera los recursos
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
 			borrar_bitacora(mensaje->tcb);
 			log_info(logger_mongo, "Se desconecto el tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 			free(mensaje);
+
+			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
 			exit(0);
 		}
 
@@ -32,21 +40,24 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 }
 
 void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: Verificar estructura, funcion boceto
-	char* path_files = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
-	char* path_bitacoras = malloc((strlen(path_files)+1) + strlen("/Files/Bitacoras"));
+	// Se obtiene el path donde se crean las bitacoras
+	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
+	char* path_bitacoras = malloc((strlen(path_directorio)+1) + strlen("/Files/Bitacoras"));
 	sprintf(path_bitacoras, "/Files/Bitacoras");
 	
+	// Se obtiene el path particular del tripulante, identificado con su TID
 	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);
 	sprintf(path_tripulante, "%s/Tripulante%s.ims", path_bitacoras, string_itoa(tcb->TID)); // TODO: Revisar funcionamiento de esta linea y ver identificador
 
-	int file_descriptor_tripulante = open(path_tripulante, O_RDWR | O_APPEND | O_CREAT);
-
-	FILE* file_tripulante = fdopen(file_descriptor_tripulante, "r+");
+	// Se crea el archivo del tripulante y se lo abre
+	FILE* file_tripulante = fopen(path_tripulante, "w+");
 	
+	// Se lo guarda en la bitacora
 	acomodar_bitacora(file_tripulante, tcb);
 }
 
 void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
+	// Se utiliza un struct que conoce al tripulante y a su archivo, para luego saber donde se realizan los cambios pedidos por el mismo
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->tripulante = tcb;
