@@ -64,31 +64,33 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
         log_info(logger_mongo, "Error al limpiar procesos\n");
         exit(1);
     }
-	
+
 	while (1) { // Loop infinito donde aceptara clientes
         tamanio_direccion = sizeof(direccion_a_escuchar);
         socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
 
-        if (es_discordiador == 1) {
-            es_discordiador = 0;
+		if (socket_especifico != -1) {
+        	if (es_discordiador == 1) {
+        		es_discordiador = 0;
 
-            if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
-                close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-                log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
-                sabotaje(socket_especifico);
-                es_discordiador = 0;
-                close(socket_especifico); // Cumple proposito, se cierra socket hijo
-                exit(0); // Returnea
-            }
-        }
-        else {
-            if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
-                close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-                manejo_tripulante(socket_especifico);
-                close(socket_especifico); // Cumple proposito, se cierra socket hijo
-                exit(0); // Returnea
-            }
-        }
+            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
+                	log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
+                	sabotaje(socket_especifico);
+                	es_discordiador = 0;
+                	close(socket_especifico); // Cumple proposito, se cierra socket hijo
+                	exit(0); // Returnea
+            	}
+        	}
+        	else {
+            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
+                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
+                	manejo_tripulante(socket_especifico);
+                	close(socket_especifico); // Cumple proposito, se cierra socket hijo
+                	exit(0); // Returnea
+            	}
+        	}
+		}
 
         close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
     }
