@@ -2,6 +2,7 @@
 
 ### Registro de cambios
 17/06/2021
++ Agregadas funcionalidades de segmentación y compactación a Mi_Ram_HQ
 + Agregadas varias funciones de serializacion.
 + EXPULSAR_TRIPULANTE esta terminado en el modulo discordiador.
 + INICIAR_PATOTA es completamente funcional.
