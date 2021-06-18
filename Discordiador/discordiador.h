@@ -47,7 +47,6 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion);
 void enlistar_algun_tripulante();
-void enlistar_este_tripulante(t_TCB* tripulante);
 
 // PROCESOS
 //t_patota* crear_patota(t_PCB* un_pcb);

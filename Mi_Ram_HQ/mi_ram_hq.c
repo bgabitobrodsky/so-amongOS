@@ -5,8 +5,6 @@
  *      Author: utnso
  */
 
-// TODO: por alguna razon, no funcionan los printf en este modulo.
-
 #include "mi_ram_hq.h"
 #include <comms/generales.h>
 
@@ -39,6 +37,18 @@ void gestionar_tareas (t_archivo_tareas* archivo_tareas){
 	}
 }
 
+void gestionar_pedido_tarea(int tid, int socket){
+	// si necesitas el pid, es este
+	int pid = tid / 10000;
+	// para enviarme una tarea:
+	// t_buffer* buffer_tarea = serializar_tarea(t_tarea una_tarea);
+	// empaquetar_y_enviar(buffer_tarea, TAREA, socket);
+	//
+	// si sale mal por alguna razon o no hay tarea;
+	// enviar_codigo(FALLO, socket);
+}
+
+
 int main(int argc, char** argv) {
 	
 	// Reinicio el log
@@ -64,6 +74,7 @@ int main(int argc, char** argv) {
 	segmento* seg4 = asignar_segmento(sizeof(char));
 	printSegmentosList();
 
+	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
@@ -121,10 +132,7 @@ void proceso_handler(void* args) {
 	}
 }
 
-
-
-
-void atender_clientes(void* param) { // TODO miram no termina ni siquiera si muere discordiador. una forma de arreglarlo es hacer que estas funciones devuelvan valores.
+void atender_clientes(void* param) {
 	hilo_tripulante* parametros = param;
 
 	int flag = 1;
@@ -138,7 +146,7 @@ void atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue
 		switch(mensaje_recibido->codigo_operacion) {
 
 			case ARCHIVO_TAREAS:
-				log_info(logger_miramhq, "Recibido contenido del archivo\n");
+				log_info(logger, "Recibido contenido del archivo\n");
 				printf("\tpid:%i. \n\tlongitud; %i. \n%s\n", mensaje_recibido->archivo_tareas->pid, mensaje_recibido->archivo_tareas->largo_texto, mensaje_recibido->archivo_tareas->texto);
 				gestionar_tareas(mensaje_recibido->archivo_tareas);
 				sleep(1);
@@ -150,16 +158,13 @@ void atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue
 
 			case PEDIR_TAREA:
 				log_info(logger, "Pedido de tarea recibido\n");
-				break;
-
-			case COD_TAREA:
-				log_info(logger, "Recibo una tarea\n");
-				//free(mensaje_recibido->tarea);
+				log_info(logger, "Tripulante: %i\n", mensaje_recibido->tid_condenado->tid);
+				// TODO: GABITO Y JULIA
+				// gestionar_pedido_tarea(mensaje_recibido->tid_condenado->tid, parametros->socket);
 				break;
 
 			case RECIBIR_PCB:
 				//log_info(logger, "Recibo una pcb\n");
-				//list_add(lista_pcb, (void*) mensaje_recibido->pcb);
 				//almacenar_pcb(mensaje_recibido); //TODO en un futuro, capaz no podamos recibir el PCB por quedarnos sin memoria
 				free(mensaje_recibido->pcb);
 				break;
@@ -173,12 +178,12 @@ void atender_clientes(void* param) { // TODO miram no termina ni siquiera si mue
 				break;
 
 			case T_SIGKILL:
-				log_info(logger_miramhq, "Expulsar Tripulante.");
+				log_info(logger, "Expulsar Tripulante.");
 				// TODO: GABITO Y JULIA
 				// verifica si existe
 				// si existe mandame un enviar_codigo(EXITO, parametros->socket);
 				// si no existe, mandame un enviar_codigo(FALLO, parametros->socket);
-				log_info(logger_miramhq, "%i -KILLED", mensaje_recibido->tid_condenado->tid);
+				log_info(logger, "%i -KILLED", mensaje_recibido->tid_condenado->tid);
 				enviar_codigo(EXITO, parametros->socket);
 				break;
 

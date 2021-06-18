@@ -8,6 +8,9 @@
  ============================================================================
  */
 
+// TODO: agregar a los monitorees verificaciones por si alguien intenta quitar cosas
+// de una lista vacia.
+
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
 #define IP_I_MONGO_STORE config_get_string_value(config, "IP_I_MONGO_STORE")
@@ -56,7 +59,6 @@ int main() {
 
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
-
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
     	leer_consola();
@@ -316,7 +318,7 @@ void expulsar_tripulante(char* leido) {
     	log_info(logger, "No existe el tripulante. TID: %d", tid_tripulante_a_expulsar);
     }
     else{
-    	log_info(logger, "Error desconocido");
+    	log_info(logger, "Error desconocido.\n");
     }
 
     liberar_puntero_doble(palabras);
@@ -349,19 +351,32 @@ int sonIguales(int elemento1, int elemento2){
         return elemento1 == elemento2;
     }
 
+void enlistar_algun_tripulante(){
+	if (!list_is_empty(lista_tripulantes_new)){
+		t_TCB* tripulante_a_ready = monitor_lista_dos_parametros(sem_lista_new, (void*) list_remove, lista_tripulantes_new, (void*) 0 );
+		monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, tripulante_a_ready);
+		pedir_tarea_a_mi_ram_hq(tripulante_a_ready->TID, socket_a_mi_ram_hq);
 
-void enlistar_este_tripulante(t_TCB* aux){ //TODO no testeado, SEBA
-    t_TCB* tripulante_a_ready = monitor_lista_dos_parametros(sem_lista_new, (void*) eliminar_tcb_de_lista, lista_tripulantes_new, aux);
-    monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, tripulante_a_ready);
-    //asignar tarea
-    tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
-}
+		t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
 
-void enlistar_algun_tripulante(){ //TODO no testeado, SEBA
-    t_TCB* tripulante_a_ready = monitor_lista_dos_parametros(sem_lista_new, (void*) list_remove, lista_tripulantes_new, (void*) 1 );
-    monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, tripulante_a_ready);
-    //asignar tarea
-    tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
+		if(respuesta->codigo_operacion == TAREA){
+			// TODO RELLENAR LUEGO DE MUDARNOS DE T_TCB A TRIPULANTES
+			// tripulante_a_ready->tarea = respuesta->tarea;
+		}
+		else if (respuesta->codigo_operacion == FALLO){
+			log_info(logger, "No se recibio ninguna tarea.\n Codigo de error: FALLO\n");
+		}
+		else{
+			log_info(logger, "Error desconocido, no se recibio ninguna tarea.\n");
+		}
+
+		// Como son punteros, al cambiar el estado a esa posicion de memoria tambien
+		// se lo cambia al elemento de la cola
+		tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
+	}
+	else {
+		log_info(logger, "No hay ningun tripulante listo para ser enlistado.\n");
+	}
 }
 
 
