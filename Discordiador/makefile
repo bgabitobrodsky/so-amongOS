@@ -1,5 +1,5 @@
 TARGET = discordiador
-LIBS = -lcommons -lreadline -lpthread -lcomms
+LIBS = -lcommons -lreadline -lpthread -lcomms -llibcunit1 -llibcunit1-dev -llibcunit1-doc
 CC = gcc
 CFLAGS = -g -Wall
 

@@ -33,6 +33,7 @@
 #include <stddef.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
+#include <CUnit/Basic.h>
 
 typedef enum{
 
@@ -60,6 +61,7 @@ extern t_list* lista_tripulantes_block;
 extern t_list* lista_tripulantes;
 
 extern t_queue* cola_tripulantes_ready;
+extern t_queue* cola_tripulantes_new;
 
 extern pthread_mutex_t sem_lista_exec;
 extern pthread_mutex_t sem_lista_new;
@@ -70,6 +72,8 @@ int reconocer_comando(char* str);
 void help_comandos();
 void iniciar_listas();
 void iniciar_colas();
+void iniciar_listas_();
+void iniciar_colas_();
 void iniciar_semaforos();
 void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket);
 void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
@@ -77,5 +81,9 @@ void enviar_pid_a_ram(uint32_t pid, int socket);
 void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
 int esta_tcb_en_lista(t_list* lista, int elemento);
 void* eliminar_tcb_de_lista(t_list* lista, int elemento);
+t_tarea crear_tarea_();
+void son_pcb_iguales(t_PCB pcb_1, t_PCB pcb_2); //TODO tipo de retorno
+void son_tcb_iguales(t_TCB tcb_1, t_TCB tcb_2); //TODO tipo de retorno
+void son_tareas_iguales(t_tarea tarea_1, t_tarea tarea_2); //TODO tipo de retorno
 
 #endif /* DISCORDIADOR_UTILS_H_ */
