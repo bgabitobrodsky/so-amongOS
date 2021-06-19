@@ -23,15 +23,12 @@ void pausar_planificacion();
 void obtener_bitacora(char* leido);
 
 // HILOS
-void iniciar_hilo_tripulante(void* funcion);
 t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
-
-t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion);
 void enlistar_algun_tripulante();
 
 // PROCESOS
-//t_patota* crear_patota(t_PCB* un_pcb);
+// t_patota* crear_patota(t_PCB* un_pcb);
 t_PCB* crear_pcb(char* path);
 int nuevo_pid();
 t_list* lista_tripulantes_patota(uint32_t pid);

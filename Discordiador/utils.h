@@ -56,12 +56,14 @@ extern t_list* lista_pids;
 extern t_list* lista_patotas;
 extern t_list* lista_tripulantes_new;
 extern t_list* lista_tripulantes_exec;
+extern t_list* lista_tripulantes_block;
 
 extern t_queue* cola_tripulantes_ready;
 
 extern pthread_mutex_t sem_lista_exec;
 extern pthread_mutex_t sem_lista_new;
 extern pthread_mutex_t sem_cola_ready;
+extern pthread_mutex_t sem_lista_block;
 
 int reconocer_comando(char* str);
 void help_comandos();

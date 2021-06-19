@@ -36,11 +36,13 @@ t_list* lista_pids;
 t_list* lista_patotas;
 t_list* lista_tripulantes_new;
 t_list* lista_tripulantes_exec;
+t_list* lista_tripulantes_block;
 
 t_queue* cola_tripulantes_ready;
 
-pthread_mutex_t sem_lista_exec;
 pthread_mutex_t sem_lista_new;
+pthread_mutex_t sem_lista_exec;
+pthread_mutex_t sem_lista_block;
 pthread_mutex_t sem_cola_ready;
 
 // Variables de discordiador
@@ -243,7 +245,6 @@ void pausar_planificacion() {
 
 void obtener_bitacora(char* leido) {
     printf("Obtener Bitacora\n");
-    enviar_codigo(MENSAJE, socket_a_mi_ram_hq);
 }
 
 void expulsar_tripulante(char* leido) {
@@ -326,12 +327,6 @@ int nuevo_pid(){
     }
 }
 
-void iniciar_hilo_tripulante(void* funcion){
-    pthread_t hilo1;
-    pthread_create(&hilo1, NULL, funcion, NULL);
-}
-
-
 t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
 	// No asigna siguiente instruccion
     t_TCB* tcb = malloc(sizeof(t_TCB));
@@ -356,13 +351,6 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
     tcb.puntero_a_pcb = (uint32_t) pcb;
 
     return tcb;
-}
-
-t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){
-    t_TCB* un_tcb = crear_puntero_tcb(pcb, tid, posicion);
-    //t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);
-    iniciar_hilo_tripulante(funcion);
-    return un_tcb;
 }
 
 void leer_consola() {
