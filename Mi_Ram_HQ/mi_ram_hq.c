@@ -461,7 +461,7 @@ void iniciar_memoria(){
 		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
 		paginas = list_create();
 
-		int cantidad_paginas = memoria_principal/TAMANIO_PAGINA;
+		int cantidad_paginas = TAMANIO_MEMORIA/TAMANIO_PAGINA;
 		
 		for(int i=0; i < cantidad_paginas ; i++) {
 			pagina* pagina = crear_pagina(TAMANIO_PAGINA * i, true);
