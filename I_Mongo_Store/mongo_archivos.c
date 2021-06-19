@@ -7,42 +7,39 @@ t_archivos archivos;
 t_list* bitacoras;
 
 void inicializar_archivos(char* path_files) { // TODO: Puede romper
+	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
+	// Se obtiene el path al archivo comida dentro de la carpeta files
 	char* path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
 	sprintf(path_comida, "%s/Comida.ims", path_files);
 
+	// Se obtiene el path al archivo basura dentro de la carpeta files
 	char* path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
+	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_superbloque = malloc((strlen(path_files)+1) + strlen("/SuperBloque.ims"));
 	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); // TODO: Implementar cosas con el superbloque
 
+	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
-	sprintf(path_blocks, "%s/Blocks.ims", path_files); // TODO: Implementar cosas con el block
+	sprintf(path_blocks, "%s/Blocks.ims", path_files);
 
-	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
-	int filedescriptor_comida      = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
-	int filedescriptor_basura      = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
-    int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT);
-    int filedescriptor_blocks      = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+    int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+	archivo.path_blocks       = path_blocks; // Actualizar struct
 
-	FILE* file_oxigeno     = fdopen(filedescriptor_oxigeno, "r+");
-	FILE* file_comida      = fdopen(filedescriptor_comida, "r+");
-	FILE* file_basura      = fdopen(filedescriptor_basura, "r+");
-    FILE* file_superbloque = fdopen(filedescriptor_superbloque, "r+");
-    FILE* file_blocks      = fdopen(filedescriptor_blocks, "r+");
+	// Abro los archivos o los creo en modo escritura y lectura (se borran contenidos previos, salvarlos)
+	// Se guarda todo en un struct para uso en distintas funciones
+	archivos.oxigeno     = fopen(path_oxigeno, "w+");
+	archivos.comida      = fopen(path_comida, "w+");
+	archivos.basura      = fopen(path_basura, "w+");
+	archivos.superbloque = fopen(path_superbloque, "w+");
+	archivos.blocks      = fdopen(filedescriptor_blocks, "w+");
 
-	archivos.oxigeno      = file_oxigeno;
-	archivos.comida       = file_comida;
-	archivos.basura       = file_basura;
-    archivos.superbloque  = file_superbloque;
-    archivos.blocks       = file_blocks;
-	archivo.path_blocks   = path_blocks; // Actualizar struct
-
-	iniciar_superbloque(file_superbloque);
-	iniciar_blocks(file_blocks, filedescriptor_blocks); // Actualizar struct
+	iniciar_superbloque(archivos.superbloque);
+	iniciar_blocks(archivos.blocks , filedescriptor_blocks); // Actualizar struct
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -51,41 +48,38 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 }
 
 void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede romper, actualizar conforme arriba
+	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	char* path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
+	// Se obtiene el path al archivo comida dentro de la carpeta files
 	char* path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
 	sprintf(path_comida, "%s/Comida.ims", path_files);
 
+	// Se obtiene el path al archivo basura dentro de la carpeta files
 	char* path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
+	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_superbloque = malloc((strlen(path_files)+1) + strlen("/SuperBloque.ims"));
-	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); 
+	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); // TODO: Implementar cosas con el superbloque
 
+	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_files);
 
-	int filedescriptor_oxigeno     = open(path_oxigeno, O_RDWR | O_APPEND | O_CREAT); // TODO: Ver que son esas constantes
-	int filedescriptor_comida      = open(path_comida, O_RDWR | O_APPEND | O_CREAT);   
-	int filedescriptor_basura      = open(path_basura, O_RDWR | O_APPEND | O_CREAT);
-    int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT);
-    int filedescriptor_blocks      = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+    int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+	archivo.path_blocks       = path_blocks; // Actualizar struct
 
-	FILE* file_oxigeno     = fdopen(filedescriptor_oxigeno, "r+");
-	FILE* file_comida      = fdopen(filedescriptor_comida, "r+");
-	FILE* file_basura      = fdopen(filedescriptor_basura, "r+");
-    FILE* file_superbloque = fdopen(filedescriptor_superbloque, "r+");
-    FILE* file_blocks      = fdopen(filedescriptor_blocks, "r+");
+	// Abro los archivos o los creo en modo escritura y lectura (deben existir archivos)
+	// Se guarda todo en un struct para uso en distintas funciones
+	archivos.oxigeno     = fopen(path_oxigeno, "r+");
+	archivos.comida      = fopen(path_comida, "r+");
+	archivos.basura      = fopen(path_basura, "r+");
+	archivos.superbloque = fopen(path_superbloque, "r+");
+	archivos.blocks      = fdopen(filedescriptor_blocks, "r+");
 
-	archivos.oxigeno      = file_oxigeno;
-	archivos.comida       = file_comida;
-	archivos.basura       = file_basura;
-    archivos.superbloque  = file_superbloque;
-    archivos.blocks       = file_blocks;
-	archivos.path_blocks  = path_blocks;
-	
-	iniciar_blocks(file_blocks, filedescriptor_blocks); // Revisar si mmap tiene efecto
+	iniciar_blocks(archivos.blocks , filedescriptor_blocks); // Actualizar struct
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -93,30 +87,7 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 	free(path_superbloque);
 }
 
-/* void alterar(int codigo_archivo, int cantidad) {
-	switch(codigo_archivo) { 
-		case OXIGENO:
-			if (cantidad >= 0) 
-				agregar(archivos.oxigeno, cantidad, 'O');
-			else
-				quitar(archivos.oxigeno, cantidad, 'O');
-			break;
-		case COMIDA: 
-			if (cantidad >= 0) 
-				agregar(archivos.comida, cantidad, 'C');
-			else
-				quitar(archivos.comida, cantidad, 'C');
-			break;
-		case BASURA: 
-			if (cantidad >= 0) 
-				agregar(archivos.basura, cantidad, 'B');
-			else
-				quitar(archivos.basura, cantidad, 'B');
-			break;
-	}
-} */
-
-void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, revisar si funciona
+void alterar(int codigo_archivo, int cantidad) {  
 	if (cantidad >= 0){
 		agregar(cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
@@ -127,14 +98,14 @@ void alterar(int codigo_archivo, int cantidad) {  // Alternativa mas prolija, re
 	}
 }
 
-int asignar_primer_bloque_libre(uint32_t* lista_bloques[], uint32_t* cant_bloques, int cantidad_deseada; char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
+int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
 	void* mapa = archivos.mapa_blocks;
 	int cantidad_alcanzada = 0;
 
 	for(int j = 0; j < cant_bloques; j++) {
-		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1); i++) { // Cambiar Macro por revision al Superbloque
+		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != NULL; i++) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == NULL) {
+			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == NULL) { 
 				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
 				cantidad_alcanzada++;
 			}
@@ -151,20 +122,21 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques[], uint32_t* cant_bloque
 void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hacer mallocs previos
 	pthread_mutex_lock(&mutex_blocks); // Declarar mutex
 
-	// TODO: Buscar bloques en Blocks
 	FILE* archivo = conseguir_archivo_char(tipo);
 
 	fseek(archivo, sizeof("SIZE="), SEEK_SET);
-	uint32_t* tamanio_archivo;
-	fread(tamanio_archivo, sizeof(uint32_t), 1, archivo);
+	uint32_t tamanio_archivo;
+	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, sizeof("BLOCK_COUNT="), SEEK_CUR);
-	uint32_t* cant_bloques;
-	fread(cant_bloques, sizeof(uint32_t), 1, archivo);
+	fseek(archivo, sizeof("BLOCK_COUNT="), SEEK_CUR); 
+	uint32_t cant_bloques;
+	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
 	fseek(archivo, sizeof("BLOCKS="), SEEK_CUR);
-	uint32_t* lista_bloques[] = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), *cant_bloques, archivo);
+	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
+	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+
+	// TODO: En vez de recibir char por parametro, buscarlo en metadata
 
 	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
 
