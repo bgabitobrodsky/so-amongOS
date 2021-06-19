@@ -221,15 +221,43 @@ void test_tabla_segmentos(){
 	print_tablas_segmentos_info();
 }
 
-void test_gestionar_tarea(){
+void test_gestionar_tarea(int pid){
 	t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
 	archivo->texto = "GENERAR_OXIGENO 12;2;3;5\nGENERAR_OXIGENO 12;2;3;5\nGENERAR_OXIGENO 12;2;3;5";
 	archivo->largo_texto = 74;
-	archivo->pid = 1;
+	archivo->pid = pid;
 
 	gestionar_tareas(archivo);
+    free(archivo);
 	print_segmentos_info();
 	print_tablas_segmentos_info();
+}
+
+void test_gestionar_tcb(){
+	test_gestionar_tarea(1);
+
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 1;
+    tcb->coord_y = 2;
+    tcb->estado_tripulante = 'N';
+    gestionar_tcb(tcb);
+    free(tcb);
+
+    t_TCB* tcb2 = malloc(sizeof(t_TCB));
+    tcb2->TID = 10002;
+    tcb2->coord_x = 1;
+    tcb2->coord_y = 2;
+    tcb2->estado_tripulante = 'N';
+    gestionar_tcb(tcb2);
+    free(tcb2);
+
+	print_segmentos_info();
+	print_tablas_segmentos_info();
+    tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(1);
+    segmento* segmento_tcb = (segmento*) list_get(tabla->segmentos_tcb, 1);
+    t_TCB* tcb_recuperado = memoria_principal + segmento_tcb->base;
+    log_debug(logger,"El tid del segundo tripulante es: %d", tcb_recuperado->TID);
 }
 
 void print_segmentos_info() {

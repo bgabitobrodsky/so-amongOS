@@ -30,5 +30,7 @@ void print_segmentos_info();
 void print_tablas_info();
 void test_segmentos();
 void test_tabla_segmentos();
+void test_gestionar_tarea(int pid);
+void test_gestionar_tcb();
 
 #endif /* SEGMENTACION_H_ */
