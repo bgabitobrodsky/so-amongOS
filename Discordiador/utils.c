@@ -159,3 +159,10 @@ void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket){
 	t_buffer* buffer_tripulante = serializar_tid(tripulante);
 	empaquetar_y_enviar(buffer_tripulante, PEDIR_TAREA, socket);
 }
+
+void enviar_pid_a_ram(uint32_t pid, int socket){
+	t_sigkill patota;
+	patota.tid = pid;
+	t_buffer* pid_buffer = serializar_tid(patota);
+	empaquetar_y_enviar(pid_buffer, LISTAR_POR_PID, socket);
+}

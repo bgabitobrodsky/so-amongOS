@@ -72,8 +72,6 @@ int main() {
         pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
         pthread_detach(hiloConsola);
 
-        //pthread_join(hiloConsola, NULL);
-
         /*
         args_escuchar args_disc;
         args_disc.socket_oyente = socket_a_mi_ram_hq;
@@ -261,10 +259,6 @@ void listar_tripulantes() {
             printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
         }
     }
-    // NO LIBERAR
-    // list_destroy(lista_tripulantes_de_una_patota);
-    // free(aux_p);
-    // free(aux_t);
 }
 
 t_list* lista_tripulantes_patota(uint32_t pid){
@@ -296,7 +290,7 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 
 	lista_new_aux =	list_filter(lista_tripulantes_new, condicion);
 
-	//list_add_all(lista_tripulantes_patota, lista_new_aux);
+	list_add_all(lista_tripulantes_patota, lista_new_aux);
 
     // list_destroy(aux_lista_tripulantes); CREO que debo destrozar esto LUEGO de usarla en la funcion anterior
 
@@ -373,78 +367,6 @@ void enlistar_algun_tripulante(){
 	}
 }
 
-
-void proceso_handler(void* args) {
-	args_escuchar* p = malloc(sizeof(args_escuchar));
-	p = args;
-	int socket_escucha = p->socket_oyente;
-	//int socket_escucha = (int) args; //Tema de testeos, no borrar
-
-    int addrlen, socket_especifico;
-    struct sockaddr_in address;
-
-    addrlen = sizeof(address);
-
-	// struct sockaddr_storage direccion_a_escuchar;
-	// socklen_t tamanio_direccion;
-
-	if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)
-		printf("Error al configurar recepcion de mensajes\n");
-
-	while (1) {
-		if ((socket_especifico = accept(socket_escucha, (struct sockaddr*) &address, (socklen_t *) &addrlen)) > 0) {
-			// Maté la verificación
-			log_info(logger, "Se conecta un nuevo proceso");
-
-			hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
-
-			parametros->socket = socket_especifico;
-			//parametros->ip_cliente = inet_ntoa(address.sin_addr);
-			//parametros->puerto_cliente = ntohs(address.sin_port);
-
-			pthread_t un_hilo_tripulante;
-
-			pthread_create(&un_hilo_tripulante, NULL, (void*) atender_clientes, (void *) parametros);
-
-			pthread_detach(un_hilo_tripulante);
-		}
-	}
-}
-
-void atender_clientes(void* param) {
-	hilo_tripulante* parametros = param;
-
-	int flag = 1;
-	log_info(logger, "Atendiendo. %i\n", parametros->socket);
-
-	while(flag) {
-		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);
-
-		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera
-
-        switch(mensaje_recibido->codigo_operacion) {
-            case EXITO:
-                log_info(logger, "Mensaje recibido");
-                break;
-
-            case FALLO:
-                log_info(logger, "Pedido de tarea recibido");
-                break;
-
-            case DESCONEXION:
-                log_info(logger, "Se desconecto el modulo");
-                flag = 0;
-                break;
-
-            default:
-                log_info(logger, "Se recibio un codigo invalido.");
-                break;
-        }
-		free(mensaje_recibido);
-	}
-
-}
-
 void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
     t_buffer* buffer_tcb = serializar_tcb(un_tcb);
     empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
@@ -513,7 +435,7 @@ t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
 }
 
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
-	// No asigna siguiente instruccion
+
     t_TCB tcb;
     tcb.TID = tid;
     tcb.estado_tripulante = estado_tripulante[NEW];

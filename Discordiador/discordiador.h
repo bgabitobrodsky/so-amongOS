@@ -35,8 +35,6 @@ void pausar_planificacion();
 void obtener_bitacora(char* leido);
 
 // Funciones de conexiones y sockets
-void proceso_handler(void* args);
-void atender_clientes();
 void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
 
 
