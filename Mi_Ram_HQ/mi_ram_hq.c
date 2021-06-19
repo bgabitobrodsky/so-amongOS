@@ -76,21 +76,7 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 
-	log_info(logger,"Se crea la tabla de segmentos");
-	tabla_segmentos* tabla = crear_tabla_segmentos(1);
-	tabla->segmento_pcb = asignar_segmento(2);
-
-	indice_tabla* indice = malloc(sizeof(indice_tabla));
-	indice->tabla = tabla;
-	indice->pid = 1;
-
-	printSegmentosList();
-	tablas = list_create();
-	list_add(tablas,indice);
-	log_debug(logger,"indice agregado a la lista de indices");
-
-	tabla_segmentos* t_seg = buscar_tabla(1);
-	log_debug(logger,"Base del segmento pcb %d",t_seg->segmento_pcb->base);
+	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     args_escuchar args_miram;
@@ -428,6 +414,7 @@ tabla_paginas* crear_tabla_paginas(uint32_t pid){
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
+
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 		log_info(logger,"Se inicia memoria con esquema se SEGMENTACION");
 		segmentos = list_create();
