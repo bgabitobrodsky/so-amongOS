@@ -102,8 +102,6 @@ int main(int argc, char** argv) {
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
 
-
-
 	close(socket_oyente);
 
 	log_destroy(logger);
@@ -196,7 +194,7 @@ void atender_clientes(void* param) {
 				break;
 
 			case T_SIGKILL:
-				log_info(logger, "Expulsar Tripulante.");
+				log_info(logger, "Expulsar Tripulante.\n");
 				// TODO: GABITO Y JULIA
 				// verifica si existe
 				// si existe mandame un enviar_codigo(EXITO, parametros->socket);
@@ -205,9 +203,17 @@ void atender_clientes(void* param) {
 				enviar_codigo(EXITO, parametros->socket);
 				break;
 
+			case LISTAR_POR_PID:
+				log_info(logger, "Recibido pedido de tripulantes.\n");
+				// TODO: GABITO Y JULIA
+				// consultarme que hacer aca
+				enviar_codigo(EXITO, parametros->socket);
+				break;
+
 			case DESCONEXION:
-				log_info(logger, "Se desconecto un cliente.");
+				log_info(logger, "Se desconecto un cliente.\n");
 				flag = 0;
+				// close(parametros->socket);
 				break;
 
 			default:

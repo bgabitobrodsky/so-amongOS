@@ -8,8 +8,7 @@
  ============================================================================
  */
 
-// TODO: agregar a los monitorees verificaciones por si alguien intenta quitar cosas
-// de una lista vacia.
+// TODO: agregar a los monitorees verificaciones por si alguien intenta quitar cosas de una lista vacia.
 
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -48,6 +47,13 @@ pthread_mutex_t sem_cola_ready;
 char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
+
+void enviar_pid_a_ram(uint32_t pid, int socket){
+	t_sigkill patota;
+	patota.tid = pid;
+	t_buffer* pid_buffer = serializar_tid(patota);
+	empaquetar_y_enviar(pid_buffer, LISTAR_POR_PID, socket);
+}
 
 int main() {
     logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
@@ -230,63 +236,78 @@ void iniciar_planificacion() {
     }
 }
 
-void listar_tripulantes() { //TODO falta testear
+void listar_tripulantes() {
 
-    printf("listar Tripulantes\n");
+    printf(">>> Listar Tripulantes\n\n");
 
     char* fechaHora = fecha_y_hora();
 
-    printf("Estado de la nave: %s\n", fechaHora);
+    printf(">>> Estado de la nave: %s\n\n", fechaHora);
 
     t_PCB* aux_p;
     t_TCB* aux_t;
+    t_list* lista_tripulantes_de_una_patota;
+    list_add(lista_patotas, aux_p);
 
     int i,j;
 
     for(i = 0; i < list_size(lista_patotas); i++){
         aux_p = list_get(lista_patotas, i);
 
-        for(j = 0; j < list_size(lista_tripulantes_patota(aux_p)); j++){
-            aux_t = list_get(lista_tripulantes_patota(aux_p), j);
-            printf("Tripulante: %d\tPatota: %d\tStatus: %i", aux_t->TID, ((t_PCB*) (aux_t->puntero_a_pcb))->PID, aux_t->estado_tripulante);
-            printf("Status: %d\t", ((t_PCB*) (aux_t->puntero_a_pcb))->PID);
+        lista_tripulantes_de_una_patota = lista_tripulantes_patota(aux_p->PID);
+
+        for(j = 0; j < list_size(lista_tripulantes_patota(aux_p->PID)); j++){
+            aux_t = list_get(lista_tripulantes_de_una_patota, j);
+            printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
         }
     }
-
-    free(aux_p);
-    free(aux_t);
+    // NO LIBERAR
+    // list_destroy(lista_tripulantes_de_una_patota);
+    // free(aux_p);
+    // free(aux_t);
 }
 
-t_list* lista_tripulantes_patota(t_PCB* pcb){ //TODO codear
+t_list* lista_tripulantes_patota(uint32_t pid){
+    // Necesito listar todos los tripulantes que estan en RAM, y los que estan en NEW en discordiador
+	t_list* lista_tripulantes_patota = list_create();
 
-    // Necesito listar todos los tripulantes que estan en RAM, y los que estan en NEW
-    // Primero; le mando a ram el PID o el PCB (posiblemente este).
-    // Segundo, RAM ejecuta su funcion y me devuelve los tripulantes con ese PCB asociado
-    // Tercero, los guardo en una lista
-    // Cuarto, si lo tenemos diseñado que los tripulantes de NEW no esten en RAM,
-    // que es lo teoricamente correcto, entonces verifico lo mismo con la lista o cola de NEW
-    // de discordiador y uno las dos listas
-    // Quinto: devuelvo la lista
+	enviar_pid_a_ram(pid, socket_a_mi_ram_hq);
 
-    // t_list* aux_lista_tripulantes = list_create();
-    // pedido_ram_tripulantes (t_PCB* pcb);
-    // aux_lista_tripulantes = recibir_tripulantes_de_ram();
-    // sacar lista_tripulantes_new_de_esa_patota, de Discordiador con las funciones de list.h;
-    // juntar(aux_lista_tripulantes, lista_tripulantes_new_de_esa_patota);
-    // return aux_lista_tripulantes;
-    // list_destroy(aux_lista_tripulantes); debo destrozar esto LUEGO de usarla en la funcion anterior
+	t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
 
-    return NULL;
+	// Segun este planteo, nos manda uno por uno los tripulantes.
+	// Es posible plantearlo a que mande una lista con todos.
+	while(respuesta->codigo_operacion != EXITO){
+		list_add(lista_tripulantes_patota, respuesta->tcb);
+		//free(respuesta->tcb);
+		//free(respuesta);
+		respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+	}
+	if(respuesta->codigo_operacion == FALLO){
+    	log_info(logger, "Error al pedir los tripulantes para listar.\n");
+    	log_info(logger, "Codigo de error: FALLO\n");
+	}
+
+	t_list* lista_new_aux = list_create();
+
+    bool condicion(void* elemento1){
+        return ((((t_TCB*) elemento1)->TID / 10000) == pid);
+    }
+
+	lista_new_aux =	list_filter(lista_tripulantes_new, condicion);
+
+	//list_add_all(lista_tripulantes_patota, lista_new_aux);
+
+    // list_destroy(aux_lista_tripulantes); CREO que debo destrozar esto LUEGO de usarla en la funcion anterior
+
+	bool ordenar_por_tid(void* un_elemento, void* otro_elemento){
+	     return ((((t_TCB*) un_elemento)->TID) < (((t_TCB*) otro_elemento)->TID));
+	}
+
+	list_sort(lista_tripulantes_patota, ordenar_por_tid);
+
+    return lista_tripulantes_patota;
 }
-
-/*
-void lista_tripulantes_patota_version_RAM(t_PCB* pcb){
-
-    // verifico que el pcb/patota esta en la lista de pcbs/patotas
-    // en una lista de tripulantes, me quedo con aquellos que cumplan que su puntero_a_pcb es igual al pcb que tenemos.
-    // envio esa lista a Discordiador, o bien enviarlos uno por uno que puede ser mas facil
-
-}*/
 
 void pausar_planificacion() {
     printf("Pausar Planificacion\n");
@@ -323,33 +344,6 @@ void expulsar_tripulante(char* leido) {
 
     liberar_puntero_doble(palabras);
 }
-
-char* fecha_y_hora() {
-    time_t tiempo = time(NULL);
-    struct tm tiempoLocal = *localtime(&tiempo);
-    static char fecha_Hora[70];
-    char *formato = "%d-%m-%Y %H:%M:%S";
-    int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);
-
-    if (bytesEscritos != 0) {
-        return fecha_Hora;
-    }
-    else {
-        return "Error formateando fecha";
-    }
-}
-
-int esta_en_lista(t_list* lista, int elemento){
-    bool contiene(void* elemento1){
-    return sonIguales(elemento, (int) elemento1);
-    }
-    int a = list_any_satisfy(lista, contiene);
-    return a;
-}
-
-int sonIguales(int elemento1, int elemento2){
-        return elemento1 == elemento2;
-    }
 
 void enlistar_algun_tripulante(){
 	if (!list_is_empty(lista_tripulantes_new)){

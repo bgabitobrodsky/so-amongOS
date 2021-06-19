@@ -52,14 +52,11 @@ void enlistar_algun_tripulante();
 //t_patota* crear_patota(t_PCB* un_pcb);
 t_PCB* crear_pcb(char* path);
 int nuevo_pid();
-t_list* lista_tripulantes_patota(t_PCB* pcb);
+t_list* lista_tripulantes_patota(uint32_t pid);
 
 // FUNCIONES AUXILIARES
-int esta_en_lista(t_list* lista, int elemento);
 int esta_tcb_en_lista(t_list* lista, t_TCB* elemento);
 void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento);
-int sonIguales(int elemento1, int elemento2);
-char* fecha_y_hora();
 
 
 #endif /* DISCORDIADOR_H_ */
