@@ -52,13 +52,12 @@ typedef struct {
 typedef struct {
 
     FILE* oxigeno;
-    char* path_oxigeno;
     FILE* comida;
-    char* path_comida;
     FILE* basura;
-    char* path_basura;
     FILE* superbloque;
     FILE* blocks;
+    char* path_blocks;
+    void* mapa_blocks;
 
 } t_archivos;
 
