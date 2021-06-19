@@ -57,6 +57,8 @@ typedef struct indice_tabla {
     uint32_t pid;
     void* tabla;
 } indice_tabla;
+
+
 t_list* indices;
 
 
@@ -70,7 +72,10 @@ void liberar_segmento(int base);
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
 indice_tabla* crear_indice(int pid, void* tabla);
-pagina* crear_pagina(int base, bool libre);
+marco* crear_marco(int base, bool libre);
+void liberar_marco(int base);
+marco* buscar_marco_libre();
+marco* asignar_marco();
 
 void* buscar_tabla(int pid);
 

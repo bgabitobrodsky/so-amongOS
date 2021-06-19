@@ -79,8 +79,6 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 
-	pagina* pag= list_get(paginas,3);
-	log_info(logger,"pagina 3, base: %d", pag->base);
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 /*
@@ -260,22 +258,19 @@ void liberar_segmento(int base){
         segmento* x = list_get(segmentos, i);
         if(x->base == base) {
             x->libre = true;
-            log_info(logger, "Se elimina el segmento con base %d", x->base);
+            log_info(logger, "Se libera el segmento con base %d", x->base);
         }
     }
     ordenar_segmentos();
 }
 
-// void liberar_pagina(int base){
-//     for(int i = 0; i<list_size(paginas);i++){
-//         pagina* x = list_get(paginas, i);
-//         if(x->base == base) {
-//             x->libre = true;
-//             log_info(logger, "Se elimina la página con base %d", x->base);
-//         }
-//     }
-//     ordenar_segmentos();
-// }
+
+void liberar_marco(int num_marco){
+    marco* x = list_get(marcos, num_marco);
+    x->libre = true;
+    log_info(logger, "Se libera el marco %d", num_marco);
+
+}
 
 
 void compactacion(){
@@ -339,12 +334,12 @@ segmento* crear_segmento(int base, int tam, bool libre){
 }
 
 
-pagina* crear_pagina(int base, bool libre){
-    pagina* nueva_pagina = malloc(sizeof(pagina));
-    nueva_pagina->base = base;
-    nueva_pagina->libre = libre;
+marco* crear_marco(int base, bool libre){
+    marco* nueva_marco = malloc(sizeof(marco));
+    nueva_marco->base = base;
+    nueva_marco->libre = libre;
 
-    return nueva_pagina;
+    return nueva_marco;
 }
 
 
@@ -361,6 +356,21 @@ segmento* buscar_segmento_libre(int tam){
         exit(EXIT_FAILURE);
     }
 }
+
+marco* buscar_marco_libre(){
+    int size = list_size(marcos);
+	for(int i=0; i<size; i++){
+        marco* x = list_get(marcos, i);
+        if(x->libre == true ){
+            log_info(logger, "Marco libre encontrado (base: %d)", x->base);
+            return x;
+        }
+    }
+    log_warning(logger, "No se encontró marco");
+    return NULL;
+}
+
+
 
 segmento* first_fit(int tam){
     int size = list_size(segmentos);
@@ -437,6 +447,22 @@ segmento* asignar_segmento(int tam){
 	}
 }
 
+marco* asignar_marco(){
+	marco* marco_libre = buscar_marco_libre();
+	if(marco_libre != NULL){
+		//Si el marco es del tamaño justo, no tengo que reordenar
+		marco_libre->libre = false;
+		log_info(logger,"Marco asignado (base:%d)", marco_libre->base);
+		return marco_libre;
+	}
+	else{
+		//TODO
+	}
+}
+
+
+
+
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid){
 	tabla_segmentos* nueva_tabla = malloc(sizeof(tabla_segmentos));
 	nueva_tabla->segmentos_tcb = list_create();
@@ -459,14 +485,14 @@ void iniciar_memoria(){
 		list_add(segmentos,segmento_principal);
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
 		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
-		paginas = list_create();
+		marcos = list_create();
 
-		int cantidad_paginas = TAMANIO_MEMORIA/TAMANIO_PAGINA;
+		int cantidad_marcos = TAMANIO_MEMORIA/TAMANIO_PAGINA;
 		
-		for(int i=0; i < cantidad_paginas ; i++) {
-			pagina* pagina = crear_pagina(TAMANIO_PAGINA * i, true);
+		for(int i=0; i < cantidad_marcos ; i++) {
+			marco* marco = crear_marco(TAMANIO_PAGINA * i, true);
 
-			list_add(paginas,pagina);
+			list_add(marcos,marco);
 		}
 
 	}else{
