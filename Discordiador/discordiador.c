@@ -49,8 +49,6 @@ char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
 
-t_PCB* pcb_3;
-
 void enviar_pid_a_ram(uint32_t pid, int socket){
 	t_sigkill patota;
 	patota.tid = pid;
@@ -68,25 +66,6 @@ int main() {
 
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
-
-    t_PCB* pcb_1 = crear_pcb("uno");
-    t_PCB* pcb_2 = crear_pcb("dos");
-    pcb_3 = crear_pcb("tres");
-    t_TCB* tcb_11 = crear_puntero_tcb(pcb_1, 10001, "0|5");
-    t_TCB* tcb_12 = crear_puntero_tcb(pcb_1, 10002, "1|1");
-    t_TCB* tcb_13 = crear_puntero_tcb(pcb_1, 10003, "2|2");
-    t_TCB* tcb_21 = crear_puntero_tcb(pcb_2, 20001, "0|5");
-    t_TCB* tcb_31 = crear_puntero_tcb(pcb_3, 30001, "0|5");
-
-    list_add(lista_patotas, pcb_1);
-    list_add(lista_patotas, pcb_2);
-    list_add(lista_patotas, pcb_3);
-    list_add(lista_tripulantes_new, tcb_11);
-    list_add(lista_tripulantes_new, tcb_12);
-    list_add(lista_tripulantes_new, tcb_13);
-    list_add(lista_tripulantes_new, tcb_21);
-    list_add(lista_tripulantes_new, tcb_31);
-
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
     	leer_consola();
@@ -268,25 +247,30 @@ void listar_tripulantes() {
 
     t_PCB* aux_p;
     t_TCB* aux_t;
+    t_list* lista_tripulantes_de_una_patota;
 
     int i,j;
 
     for(i = 0; i < list_size(lista_patotas); i++){
         aux_p = list_get(lista_patotas, i);
 
+        lista_tripulantes_de_una_patota = lista_tripulantes_patota(aux_p->PID);
+
         for(j = 0; j < list_size(lista_tripulantes_patota(aux_p->PID)); j++){
-            aux_t = list_get(lista_tripulantes_patota(aux_p->PID), j);
+            aux_t = list_get(lista_tripulantes_de_una_patota, j);
             printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, ((t_PCB*) (aux_t->puntero_a_pcb))->PID, aux_t->estado_tripulante);
         }
     }
-
-    free(aux_p);
-    free(aux_t);
+    // NO LIBERAR
+    // list_destroy(lista_tripulantes_de_una_patota);
+    // free(aux_p);
+    // free(aux_t);
 }
 
-t_list* lista_tripulantes_patota(uint32_t pid){ //TODO testear
+t_list* lista_tripulantes_patota(uint32_t pid){
     // Necesito listar todos los tripulantes que estan en RAM, y los que estan en NEW en discordiador
 	t_list* lista_tripulantes_patota = list_create();
+	/*
 	enviar_pid_a_ram(pid, socket_a_mi_ram_hq);
 
 	t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
@@ -304,6 +288,8 @@ t_list* lista_tripulantes_patota(uint32_t pid){ //TODO testear
     	log_info(logger, "Codigo de error: FALLO\n");
 	}
 
+	// añade todos los elementos de la segunda a la primera
+*/
 	t_list* lista_new_aux = list_create();
 
     bool condicion(void* elemento1){
@@ -315,6 +301,12 @@ t_list* lista_tripulantes_patota(uint32_t pid){ //TODO testear
 	list_add_all(lista_tripulantes_patota, lista_new_aux);
 
     // list_destroy(aux_lista_tripulantes); CREO que debo destrozar esto LUEGO de usarla en la funcion anterior
+
+	bool ordenar_por_tid(void* un_elemento, void* otro_elemento){
+	     return ((((t_TCB*) un_elemento)->TID) < (((t_TCB*) otro_elemento)->TID));
+	}
+
+	list_sort(lista_tripulantes_patota, ordenar_por_tid);
 
     return lista_tripulantes_patota;
 }
