@@ -8,8 +8,7 @@
  ============================================================================
  */
 
-// TODO: agregar a los monitorees verificaciones por si alguien intenta quitar cosas
-// de una lista vacia.
+// TODO: agregar a los monitorees verificaciones por si alguien intenta quitar cosas de una lista vacia.
 
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -248,6 +247,7 @@ void listar_tripulantes() {
     t_PCB* aux_p;
     t_TCB* aux_t;
     t_list* lista_tripulantes_de_una_patota;
+    list_add(lista_patotas, aux_p);
 
     int i,j;
 
@@ -258,7 +258,7 @@ void listar_tripulantes() {
 
         for(j = 0; j < list_size(lista_tripulantes_patota(aux_p->PID)); j++){
             aux_t = list_get(lista_tripulantes_de_una_patota, j);
-            printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, ((t_PCB*) (aux_t->puntero_a_pcb))->PID, aux_t->estado_tripulante);
+            printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
         }
     }
     // NO LIBERAR
@@ -270,7 +270,7 @@ void listar_tripulantes() {
 t_list* lista_tripulantes_patota(uint32_t pid){
     // Necesito listar todos los tripulantes que estan en RAM, y los que estan en NEW en discordiador
 	t_list* lista_tripulantes_patota = list_create();
-	/*
+
 	enviar_pid_a_ram(pid, socket_a_mi_ram_hq);
 
 	t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
@@ -288,8 +288,6 @@ t_list* lista_tripulantes_patota(uint32_t pid){
     	log_info(logger, "Codigo de error: FALLO\n");
 	}
 
-	// añade todos los elementos de la segunda a la primera
-*/
 	t_list* lista_new_aux = list_create();
 
     bool condicion(void* elemento1){
@@ -298,7 +296,7 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 
 	lista_new_aux =	list_filter(lista_tripulantes_new, condicion);
 
-	list_add_all(lista_tripulantes_patota, lista_new_aux);
+	//list_add_all(lista_tripulantes_patota, lista_new_aux);
 
     // list_destroy(aux_lista_tripulantes); CREO que debo destrozar esto LUEGO de usarla en la funcion anterior
 
