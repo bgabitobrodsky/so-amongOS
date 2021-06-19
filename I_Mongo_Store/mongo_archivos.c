@@ -38,6 +38,8 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 	archivos.superbloque = fopen(path_superbloque, "w+");
 	archivos.blocks      = fdopen(filedescriptor_blocks, "w+");
 
+	// TODO: Escribir metadata inicial para los archivos, darles un bloque
+
 	iniciar_superbloque(archivos.superbloque);
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
 
@@ -89,7 +91,10 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 }
 
 void asignar_nuevo_bloque(FILE* archivo) {
-
+	// Verificar bitmap de superbloque
+	// Elegir el primer libre
+	// Ocuparlo en bitmap
+	// Llenar metadata con nuevos datos
 }
 
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
@@ -134,8 +139,49 @@ int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, i
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
-void actualizar_MDR5(FILE* archivo) {
+void actualizar_MD5(FILE* archivo) {
+	fseek(archivo, strlen("SIZE="), SEEK_SET);
+	uint32_t tamanio_archivo;
+	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
+	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR); 
+	uint32_t cant_bloques;
+	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
+
+	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
+	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+
+	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
+	char tipo;
+	fread(&tipo, sizeof(char), 1, archivo);
+
+	freopen(archivo, "w+");
+
+	char* size = "SIZE=";
+	char* block_count = "BLOCK_COUNT=";
+	char* blocks = "BLOCKS=";
+	char* caracter = "CARACTER_LLENADO=";
+	char* md5 = "MD5_ARCHIVO=";
+	char* md5_dato = crear_md5();
+
+	fwrite(&size, strlen(size), 1, archivo);
+	fwrite(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
+	fwrite(&block_count, strlen(block_count), 1, archivo);
+	fwrite(&cant_bloques, sizeof(uint32_t), 1, archivo);
+	fwrite(&blocks, strlen(blocks), 1, archivo);
+	fwrite(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fwrite(&caracter, strlen(caracter), 1, archivo);
+	fwrite(&tipo, sizeof(char), 1, archivo);
+	fwrite(&md5, strlen(md5), 1, archivo);
+	fwrite(&md5_dato, strlen(md5_dato), 1, archivo);
+
+	free(size);
+	free(block_count);
+	free(blocks);
+	free(caracter);
+	free(md5);
+	free(md5_dato)
 }
 
 void alterar(int codigo_archivo, int cantidad) {  
@@ -188,7 +234,7 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
 		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 
-	actualizar_MDR5(archivo);
+	actualizar_MD5(archivo);
 
     pthread_mutex_unlock(&mutex_blocks);
 }
@@ -230,7 +276,7 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 
-	actualizar_MDR5(archivo);
+	actualizar_MD5(archivo);
 
     pthread_mutex_unlock(&mutex_blocks);
 }
@@ -276,5 +322,28 @@ int max (int a, int b) {
 	}
 	else {
 		return b;
+	}
+}
+
+char* crear_md5() { // String de 32 
+	char* md5 = malloc(sizeof(char) * 32);
+
+	for (int i = 0; i < 32; i++){
+		md5[i] = char_random();
+	}
+
+	return md5;
+}
+
+char char_random() {
+	int seleccion = rand() % 2;
+
+	switch (seleccion) {
+		case 0:
+			return (char) (rand() % 9 + 48); // Devuelve un numero por ASCII
+			break;
+		case 1:
+			return (char) (rand() % 26 + 65); // Devuelve un alfa por ASCII
+			break;
 	}
 }

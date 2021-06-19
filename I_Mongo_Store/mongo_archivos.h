@@ -72,7 +72,7 @@ void inicializar_archivos_preexistentes(char* path_files);
 void asignar_nuevo_bloque(FILE* archivo);
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo);
 int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo);
-void actualizar_MDR5(FILE* archivo);
+void actualizar_MD5(FILE* archivo);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(FILE* archivo, int cantidad);
 void quitar(FILE* archivo, int cantidad);
