@@ -133,6 +133,7 @@ void iniciar_listas() {
 	lista_pids = list_create();
 	lista_patotas = list_create();
 	lista_tripulantes_block = list_create();
+	lista_tripulantes = list_create();
 
 }
 void iniciar_colas() {
@@ -186,21 +187,22 @@ void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
 
 }
 
-int esta_tcb_en_lista(t_list* lista, t_TCB* elemento){
+int esta_tcb_en_lista(t_list* lista, int elemento){
 
     bool contains(void* elemento1){
-        return (elemento->TID == ((t_TCB*) elemento1)->TID);
+        return (elemento == ((t_TCB*) elemento1)->TID);
     }
     bool a = list_any_satisfy(lista, contains);
     return a;
 
 }
 
-void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento){
+void* eliminar_tcb_de_lista(t_list* lista, int elemento){
 
     bool contains(void* elemento1){
-        return (elemento->TID == ((t_TCB*) elemento1)->TID);
+        return (elemento == ((t_TCB*) elemento1)->TID);
         }
+
     t_TCB* aux = list_remove_by_condition(lista, contains);
     return aux;
 
