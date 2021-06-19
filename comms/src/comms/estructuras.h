@@ -19,27 +19,9 @@ enum estados { NEW, READY, EXEC, BLOCKED};
 typedef struct {
 
     uint32_t PID;
-
-} t_patota;
-
-typedef struct {
-
-    uint32_t PID;
     uint32_t direccion_tareas;
 
 } t_PCB;
-
-typedef struct {
-
-    uint32_t TID;
-    char estado_tripulante;
-    uint32_t coord_x;
-    uint32_t coord_y;
-    t_tarea tarea;
-    void funcion;
-
-} t_tripulante;
-
 
 typedef struct {
 
@@ -101,5 +83,22 @@ typedef struct hilo_tripulante{
 	char* puerto_cliente;
 	void (*atender)(char*);
 } hilo_tripulante;
+
+typedef struct {
+
+    uint32_t TID;
+    char estado_tripulante;
+    uint32_t coord_x;
+    uint32_t coord_y;
+    t_tarea tarea;
+    void (*funcion);
+
+} t_tripulante;
+
+typedef struct {
+
+    uint32_t PID;
+
+} t_patota;
 
 #endif
