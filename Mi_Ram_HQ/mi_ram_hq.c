@@ -30,6 +30,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 	int pid_patota = archivo->pid;
 	size_t tamanio_tareas = archivo->largo_texto * sizeof(char);
 
+	log_debug(logger, "Comienza la creación de PCB y persistencia de datos de la patota con PID: %d", pid_patota);
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid_patota);
 		if(tabla == NULL){ 
@@ -57,6 +58,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
+	log_debug(logger,"Se termino la creación de PCB y persistencia de datos de la patota con PID: %d", pid_patota);
 }
 
 void gestionar_tcb(t_TCB* tcb){
