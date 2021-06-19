@@ -2,6 +2,7 @@
 
 ### Registro de cambios
 18/06/2021
++ Revividas las estructuras t_tripulante y t_patota volvieron.
 + Solucionado el problema de no poder eliminar al tripulante tambien del modulo discordiador.
 + LISTAR_TRIPULANTES aceptablemente funcional.
 + Arreglada enlistar_algun_tripulante y eliminada enlistar_este_tripulante.

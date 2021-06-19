@@ -100,7 +100,6 @@ void iniciar_patota(char* leido) {
 
     int i = 0;
 
-    // pasarle el pcb a ram y matarlo
     t_PCB* pcb = crear_pcb(path);
     list_add(lista_patotas, pcb);
     char* archivo_tareas = leer_archivo_entero(path);
@@ -318,14 +317,6 @@ void enlistar_algun_tripulante(){
 	}
 }
 
-/*
-t_patota* crear_patota(t_PCB* un_pcb){
-    t_patota* patota = malloc(sizeof(t_patota));
-    patota -> pcb = un_pcb;
-    //patota -> archivo_de_tareas
-    return patota;
-}*/
-
 t_PCB* crear_pcb(char* path){
 
     t_PCB* pcb = malloc(sizeof(t_PCB));
@@ -431,5 +422,26 @@ void leer_consola() {
     } while (comando != EXIT);
 
     sistema_activo = 0;
+
+}
+
+t_patota* crear_patota(uint32_t un_pid){
+
+    t_patota* patota = malloc(sizeof(t_patota));
+    patota ->PID = un_pid;
+    return patota;
+
+}
+
+
+t_tripulante* crear_tripulante(int tid, int x, int y, char estado){
+
+	t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+	tripulante->TID = tid;
+	tripulante->coord_x = x;
+	tripulante->coord_y = y;
+	tripulante->estado_tripulante = estado;
+
+    return tripulante;
 
 }
