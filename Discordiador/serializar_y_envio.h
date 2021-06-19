@@ -3,7 +3,7 @@
 
 #include "discordiador.h"
 
-int main();
+int CUmain();
 void test_crear_tcb();
 void test_serializar_tcb();
 void test_serializar_tarea();

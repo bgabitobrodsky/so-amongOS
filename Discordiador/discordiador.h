@@ -11,6 +11,7 @@
 #include "utils.h"
 
 //FUnciones de testeo
+int correr_tests();
 void funcion_hilo();
 void iniciar_hilo();
 

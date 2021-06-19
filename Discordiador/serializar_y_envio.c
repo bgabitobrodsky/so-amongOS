@@ -1,6 +1,6 @@
 #include "serializar_y_envio.h"
 
-int correr_tests() {
+int CUmain() {
 	CU_initialize_registry();
 
 	CU_pSuite serializacion = CU_add_suite("Suite de serializado", NULL, NULL);
@@ -21,14 +21,16 @@ int correr_tests() {
 }
 
 void test_crear_tcb() {
-	t_PCB* pcb = crear_pcb("No importa");
+	t_PCB* pcb = malloc(sizeof(t_PCB));
+	pcb = crear_pcb("No importa");
 	t_TCB un_tcb = crear_tcb(pcb, 0, "0|0");
 	CU_ASSERT_EQUAL(un_tcb.TID, 0);
 	CU_ASSERT_EQUAL(un_tcb.coord_x, 0);
 	CU_ASSERT_EQUAL(un_tcb.coord_y, 0);
 	CU_ASSERT_EQUAL(un_tcb.estado_tripulante, 'N');
-	CU_ASSERT_EQUAL(un_tcb.puntero_a_pcb, &pcb);
+	//CU_ASSERT_EQUAL(un_tcb.puntero_a_pcb, &pcb);
 	//TODO CU_ASSERT_EQUAL(un_tcb->siguiente_instruccion, );
+	free(pcb);
 }
 
 void test_serializar_tcb() {

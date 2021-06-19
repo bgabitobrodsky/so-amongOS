@@ -34,6 +34,7 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 #include <CUnit/Basic.h>
+#include "serializar_y_envio.h"
 
 typedef enum{
 

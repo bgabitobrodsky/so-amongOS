@@ -219,7 +219,7 @@ void iniciar_listas_() {
 void iniciar_colas_() {
 
 	cola_tripulantes_ready = queue_create();
-	cola_tripulantes_new= queue_create();
+	//cola_tripulantes_new   = queue_create();
 
 }
 
