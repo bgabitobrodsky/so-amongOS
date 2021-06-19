@@ -57,7 +57,7 @@ typedef struct indice_tabla {
     uint32_t pid;
     void* tabla;
 } indice_tabla;
-t_list* tablas;
+t_list* indices;
 
 
 segmento* asignar_segmento(int tam);
@@ -69,12 +69,15 @@ void liberar_segmento(int base);
 
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
-
+indice_tabla* crear_indice(int pid, void* tabla);
 pagina* crear_pagina();
 
 void* buscar_tabla(int pid);
 
 void iniciar_memoria();
-void printSegmentosList();
+void print_segmentos_info();
+void print_tablas_info();
 
+void test_segmentos();
+void test_tabla_segmentos();
 #endif /* MI_RAM_HQ_H_ */
