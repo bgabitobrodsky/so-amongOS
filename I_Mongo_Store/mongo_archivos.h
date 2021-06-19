@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <commons/log.h>
+#include <commons/bitarray.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <commons/string.h>
@@ -68,15 +69,15 @@ pthread_mutex_t mutex_comida;
 pthread_mutex_t mutex_basura;
 
 void inicializar_archivos(char* path_files);
+void inicializar_archivos_preexistentes(char* path_files);
 void alterar(int codigo_archivo, int cantidad);
+int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo);
 void agregar(FILE* archivo, int cantidad, char tipo);
-void agregar_unlocked(FILE* archivo, int cantidad, char tipo);
 void quitar(FILE* archivo, char* path, int cantidad, char tipo);
 char* conseguir_tipo(char tipo);
+FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo(int codigo);
-char* conseguir_path(int codigo);
 char conseguir_char(int codigo);
-pthread_mutex_t* conseguir_semaforo(char tipo);
 int max(int a, int b);
 
 extern t_log* logger_mongo;

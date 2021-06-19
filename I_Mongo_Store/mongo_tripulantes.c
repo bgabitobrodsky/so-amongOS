@@ -63,6 +63,8 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	nueva_bitacora->tripulante = tcb;
 
 	list_add(bitacoras, nueva_bitacora);
+
+	// TODO: Darle al menos un bloque a bitacora
 }
 
 void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir comportamiento
