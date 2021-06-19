@@ -8,8 +8,6 @@
  ============================================================================
  */
 
-// TODO: agregar a los monitorees verificaciones por si alguien intenta quitar cosas de una lista vacia.
-
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
 #define IP_I_MONGO_STORE config_get_string_value(config, "IP_I_MONGO_STORE")
