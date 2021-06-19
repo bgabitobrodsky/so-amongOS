@@ -126,31 +126,6 @@ void help_comandos() {
 
 }
 
-void iniciar_listas() {
-
-	lista_tripulantes_new = list_create();
-	lista_tripulantes_exec = list_create();
-	lista_pids = list_create();
-	lista_patotas = list_create();
-	lista_tripulantes_block = list_create();
-	lista_tripulantes = list_create();
-
-}
-void iniciar_colas() {
-
-	cola_tripulantes_ready = queue_create();
-
-}
-
-void iniciar_semaforos(){
-
-	pthread_mutex_init(&sem_lista_exec, NULL);
-	pthread_mutex_init(&sem_lista_new, NULL);
-	pthread_mutex_init(&sem_cola_ready, NULL);
-	pthread_mutex_init(&sem_lista_block, NULL);
-
-}
-
 void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket) {
 
 	t_archivo_tareas cont_arc;
@@ -214,14 +189,25 @@ void iniciar_listas() {
 	lista_tripulantes_exec = list_create();
 	lista_pids = list_create();
 	lista_patotas = list_create();
+	lista_tripulantes_block = list_create();
+	lista_tripulantes = list_create();
 
 }
 void iniciar_colas() {
 
 	cola_tripulantes_ready = queue_create();
-	cola_tripulantes_new= queue_create();
 
 }
+
+void iniciar_semaforos(){
+
+	pthread_mutex_init(&sem_lista_exec, NULL);
+	pthread_mutex_init(&sem_lista_new, NULL);
+	pthread_mutex_init(&sem_cola_ready, NULL);
+	pthread_mutex_init(&sem_lista_block, NULL);
+
+}
+
 
 void liberar_puntero_doble(char** palabras){
 	int contador = 0;
