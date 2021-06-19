@@ -94,7 +94,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	// Verificar bitmap de superbloque
 	// Elegir el primer libre
 	// Ocuparlo en bitmap
-	// Llenar metadata con nuevos datos
+	// Llenar metadata con nuevos datos (distinguir entre tripu y recursos)
 }
 
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
