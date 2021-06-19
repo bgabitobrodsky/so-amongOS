@@ -2,6 +2,7 @@
 
 ### Registro de cambios
 18/06/2021
++ LISTAR_TRIPULANTES aceptablemente funcional.
 + Arreglada enlistar_algun_tripulante y eliminada enlistar_este_tripulante.
 + Pedido de tareas resuelto desde la parte de discordiador.
 

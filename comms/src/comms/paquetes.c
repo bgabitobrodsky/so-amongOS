@@ -102,8 +102,6 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
     void* mensaje = malloc(tamanio_mensaje);
     int desplazamiento = 0;
 
-    // TODO seba: por que esto no te tiro error antes? solo tiene un argumento paquete = realloc(sizeof(int) + sizeof(uint32_t) + sizeof(buffer->tamanio_estructura));
-
     memcpy(mensaje + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
     desplazamiento += sizeof(int);
     memcpy(mensaje + desplazamiento, &(paquete->buffer->tamanio_estructura), sizeof(uint32_t));
@@ -194,13 +192,9 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
             break;
 
         case T_SIGKILL:
-        	intermediario->codigo_operacion = T_SIGKILL;
-        	intermediario->tid_condenado = malloc(sizeof(uint32_t));
-            intermediario->tid_condenado = deserializar_tid(paquete->buffer);
-            break;
-
         case PEDIR_TAREA:
-        	intermediario->codigo_operacion = PEDIR_TAREA;
+        case LISTAR_POR_PID:
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
         	intermediario->tid_condenado = malloc(sizeof(uint32_t));
             intermediario->tid_condenado = deserializar_tid(paquete->buffer);
             break;
