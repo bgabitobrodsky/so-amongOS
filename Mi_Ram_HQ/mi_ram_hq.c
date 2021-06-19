@@ -26,29 +26,35 @@ t_list* lista_pcb;
 char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 
 void gestionar_tareas (t_archivo_tareas* archivo_tareas){
-	char** string_tareas = string_split(archivo_tareas->texto, "\n");
-	int cantidad_tareas = contar_palabras(string_tareas);
 	int pid_patota = archivo_tareas->pid;
-	t_list* lista_tareas = list_create();
-	size_t tamanio_lista_tareas = 0;
-
-	for (int i = 0; i < cantidad_tareas; i++){
-		t_tarea* tarea = crear_tarea(string_tareas[i]);
-		tamanio_lista_tareas += tamanio_tarea(tarea);
-		list_add(lista_tareas,tarea);
-	}
+	size_t tamanio_tareas = archivo_tareas->largo_texto * sizeof(char);
 
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-		segmento* segmento_libre = asignar_segmento(tamanio_lista_tareas);
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid_patota);
-		memcpy(memoria_principal + segmento_libre->base, lista_tareas, tamanio_lista_tareas);
-
-		if(tabla != NULL){ 
-			tabla->segmento_tareas = segmento_libre;
-		}else{
+		if(tabla == NULL){ 
 			tabla = crear_tabla_segmentos(pid_patota);
-			tabla->segmento_tareas = segmento_libre;
 		}
+		
+		//Creamos segmento para tareas y lo guardamos en la tabla de la patota
+		segmento* segmento_tareas = asignar_segmento(tamanio_tareas);
+		void* puntero_a_tareas = memcpy(memoria_principal + segmento_tareas->base, archivo_tareas->texto, tamanio_tareas);
+		tabla->segmento_tareas = segmento_libre;
+		
+		//Creamos el PCB
+		t_PCB* pcb = malloc(sizeof(t_PCB));
+		pcb->pid = pid_patota;
+		pcb->direccion_tareas = puntero_a_tareas;
+
+		//Creamos el segmento para el PCB y lo guardamos en la tabla de la patota
+		segmento* segmento_pcb = asignar_segmento(sizeof(t_PCB));
+		memcpy(memoria_principal + segmento_pcb->base, pcb, sizeof(t_PCB));
+		tabla->segmento_pcb = segmento_pcb;
+
+	}else if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+
+	}else{
+		log_error(logger, "Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -440,12 +446,14 @@ segmento* asignar_segmento(int tam){
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid){
 	tabla_segmentos* nueva_tabla = malloc(sizeof(tabla_segmentos));
 	nueva_tabla->segmentos_tcb = list_create();
+	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
 	return nueva_tabla;
 }
 
 tabla_paginas* crear_tabla_paginas(uint32_t pid){
 	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
 	nueva_tabla->paginas = list_create();
+	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
 	return nueva_tabla;
 }
 
