@@ -57,7 +57,7 @@ typedef struct indice_tabla {
     uint32_t pid;
     void* tabla;
 } indice_tabla;
-t_list* tablas;
+t_list* indices;
 
 
 segmento* asignar_segmento(int tam);
