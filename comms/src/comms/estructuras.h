@@ -46,7 +46,7 @@ typedef struct { // Puede estar de mas
 } t_tripulante;
 */
 
-typedef struct {
+typedef struct t_tarea{
 
     uint32_t largo_nombre;
     char* nombre;
@@ -57,7 +57,7 @@ typedef struct {
 
 } t_tarea;
 
-typedef struct {
+typedef struct t_archivo_tareas{
 
 	uint32_t largo_texto;
     char* texto;

@@ -10,7 +10,7 @@
 //#include <commons/log.h>
 //#include <commons/config.h>
 //#include <comms/paquetes.h>
-//#include <comms/estructuras.h>
+#include <comms/estructuras.h>
 //#include <comms/socketes.h>
 
 
@@ -25,6 +25,8 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 /**
  * MANEJO DE MEMORIA
 **/
+
+void* memoria_principal;
 
 typedef struct pagina {
     int base;
@@ -42,16 +44,20 @@ t_list* segmentos;
 
 
 typedef struct tabla_paginas {
-    uint32_t pid;
     t_list* paginas;
 } tabla_paginas;
 
 typedef struct tabla_segmentos {
-    uint32_t pid;
     segmento* segmento_pcb;
     segmento* segmento_tareas;
     t_list* segmentos_tcb;
 } tabla_segmentos;
+
+typedef struct indice_tabla {
+    uint32_t pid;
+    void* tabla;
+} indice_tabla;
+t_list* tablas;
 
 
 segmento* asignar_segmento(int tam);
@@ -65,6 +71,8 @@ tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
 
 pagina* crear_pagina();
+
+void* buscar_tabla(int pid);
 
 void iniciar_memoria();
 void printSegmentosList();
