@@ -1,6 +1,39 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+18/06/2021
++ Revividas las estructuras t_tripulante y t_patota volvieron.
++ Solucionado el problema de no poder eliminar al tripulante tambien del modulo discordiador.
++ LISTAR_TRIPULANTES aceptablemente funcional.
++ Arreglada enlistar_algun_tripulante y eliminada enlistar_este_tripulante.
++ Pedido de tareas resuelto desde la parte de discordiador.
+
+17/06/2021
++ Agregadas funcionalidades de segmentación y compactación a Mi_Ram_HQ
++ Agregadas varias funciones de serializacion.
++ EXPULSAR_TRIPULANTE esta terminado en el modulo discordiador.
++ INICIAR_PATOTA es completamente funcional.
++ Agregadas funciones para leer archivos.
++ Agregadas funcionalidades del I-Mongo-Store.
++ Agregadas funciones de serialización y estructuras de archivo de tareas.
++ Agregada recepción de tareas en RAM.
+
+14/06/2021
++ Nos mudamos a monitores!
++ DIseñados monitores para colas y listas.
++ Modificada eliminar_tcb_de_lista para hacerla polimorfica.
+
+13/06/2021
++ Agregada funcion para eliminar punteros dobles en DIscordiador, y arregladas algunas perdidas de bytes, cortesia de Valgrind.
+
+11/06/2021
++ Se pudo enviar y recibir TCBs de RAM a DISCORDIADOR bidireccionalmente.
++ Arregladas funciones de serializar y desserializar TCB.
+
+11/06/2021
++ Se pudo enviar y recibir TCBs de RAM a DISCORDIADOR bidireccionalmente.
++ Arregladas funciones de serializar y desserializar TCB.
++ Creadas funciones para crear TCB y PCB en ram (a comentar).
 
 13/06/2021
 + Agregada funcion para eliminar punteros dobles en DIscordiador, y arregladas algunas perdidas de bytes, cortesia de Valgrind.

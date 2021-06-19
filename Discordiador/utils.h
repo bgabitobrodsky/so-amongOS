@@ -17,6 +17,7 @@
 #include <comms/estructuras.h>
 #include <comms/paquetes.h>
 #include <comms/socketes.h>
+#include <comms/generales.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -51,20 +52,30 @@ typedef enum{
 extern t_config* config;
 extern t_log* logger;
 
-extern t_list* lista_tripulantes_new;
-extern t_list* lista_tripulantes_exec;
 extern t_list* lista_pids;
 extern t_list* lista_patotas;
+extern t_list* lista_tripulantes_new;
+extern t_list* lista_tripulantes_exec;
+extern t_list* lista_tripulantes_block;
+extern t_list* lista_tripulantes;
 
-extern t_queue* cola_tripulantes_new;
 extern t_queue* cola_tripulantes_ready;
 
+extern pthread_mutex_t sem_lista_exec;
+extern pthread_mutex_t sem_lista_new;
+extern pthread_mutex_t sem_cola_ready;
+extern pthread_mutex_t sem_lista_block;
+
 int reconocer_comando(char* str);
-int comparar_strings(char* str, char* str2);
 void help_comandos();
 void iniciar_listas();
 void iniciar_colas();
-void liberar_puntero_doble(char** palabra);
-
+void iniciar_semaforos();
+void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket);
+void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
+void enviar_pid_a_ram(uint32_t pid, int socket);
+void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
+int esta_tcb_en_lista(t_list* lista, int elemento);
+void* eliminar_tcb_de_lista(t_list* lista, int elemento);
 
 #endif /* DISCORDIADOR_UTILS_H_ */
