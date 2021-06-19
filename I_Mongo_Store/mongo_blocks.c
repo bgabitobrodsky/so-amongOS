@@ -19,7 +19,7 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
     fwrite(bitmap, sizeof(bitmap), 1, archivo);
 }
 
-void iniciar_blocks(FILE* archivo, int filedescriptor) {
+void iniciar_blocks(int filedescriptor_blocks) {
     fseek(archivos.superbloque, strlen("BITE_SIZE="), SEEK_SET);
     uint32_t block_size;
     fread(&block_size, sizeof(uint32_t), 1, archivos.superbloque);
@@ -28,7 +28,7 @@ void iniciar_blocks(FILE* archivo, int filedescriptor) {
     uint32_t size;
     fread(&size, sizeof(uint32_t), 1, archivos.superbloque);
 
-    void* mapa = mmap(NULL, block_size * size, PROT_NONE, MAP_SHARED, filedescriptor, 0); // Revisar flags
+    void* mapa = mmap(NULL, block_size * size, PROT_NONE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
 
     memcpy(archivos.mapa_blocks, mapa, sizeof(mapa)); // Actualizar struct
 }

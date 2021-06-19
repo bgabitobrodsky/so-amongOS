@@ -21,7 +21,7 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 
 	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_superbloque = malloc((strlen(path_files)+1) + strlen("/SuperBloque.ims"));
-	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); // TODO: Implementar cosas con el superbloque
+	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files);
 
 	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
@@ -39,7 +39,7 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 	archivos.blocks      = fdopen(filedescriptor_blocks, "w+");
 
 	iniciar_superbloque(archivos.superbloque);
-	iniciar_blocks(archivos.blocks , filedescriptor_blocks); // Actualizar struct
+	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -62,7 +62,7 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 
 	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_superbloque = malloc((strlen(path_files)+1) + strlen("/SuperBloque.ims"));
-	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); // TODO: Implementar cosas con el superbloque
+	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); 
 
 	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
 	char* path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
@@ -79,7 +79,8 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 	archivos.superbloque = fopen(path_superbloque, "r+");
 	archivos.blocks      = fdopen(filedescriptor_blocks, "r+");
 
-	iniciar_blocks(archivos.blocks , filedescriptor_blocks); // Actualizar struct
+	// TODO: Verificar si esta mappeado
+	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
 
 	free(path_oxigeno);
 	free(path_comida);

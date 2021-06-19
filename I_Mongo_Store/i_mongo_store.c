@@ -158,11 +158,11 @@ void iniciar_file_system() {
 	// Se verifica si ya tengo carpetas hechas, o sea, un filesystem
 	if ((stat(path_directorio, &dir) != -1)) {
 		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");
-		inicializar_archivos_preexistentes(path_files); // TODO: Revisar si open() funca como fopen()
+		inicializar_archivos_preexistentes(path_files); 
 	}
 	else {
 		// Como no hay carpetas, se crean
-		mkdir(path_directorio, 0777); // TODO: Revisar que es lo de la derecha de mkdir, sacado de stackoverflow
+		mkdir(path_directorio, 0777);
 		mkdir(path_files, 0777);
 		mkdir(path_bitacoras, 0777);
 		log_info(logger_mongo, "Se creo un FileSystem.\n");
