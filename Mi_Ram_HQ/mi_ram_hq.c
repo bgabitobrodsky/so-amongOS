@@ -63,7 +63,33 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 
 void gestionar_tcb(t_TCB* tcb){
 	int pid = tcb->TID / 10000;
-	//size_t tamanio_tcb = sizeof()
+	size_t tamanio_tcb = sizeof(t_TCB);
+	log_debug(logger, "Comienza la creación del TCB y su persistencia del tripulante con TID: %d", tcb->TID);
+	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+		if(tabla == NULL){ 
+			tabla = crear_tabla_segmentos(pid);
+		}
+		
+		//Creamos segmento para el tcb y lo guardamos en la tabla de la patota
+		segmento* segmento_tcb = asignar_segmento(tamanio_tcb);
+			// direccion donde está guardado el pcb
+		void* puntero_a_pcb = memoria_principal + tabla->segmento_pcb->base; 
+		tcb->puntero_a_pcb = puntero_a_pcb;
+			// direccion donde está guardada la string de tareas, como estoy creando el tcb, la siguiente tarea va a ser la primera
+		void* puntero_a_tareas = memoria_principal + tabla->segmento_tareas->base; 
+		tcb->siguiente_instruccion = puntero_a_tareas;
+
+		memcpy(memoria_principal + segmento_tcb->base, tcb, sizeof(t_TCB));
+		list_add(tabla->segmentos_tcb, segmento_tcb);
+	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+
+	}else{
+		log_error(logger, "Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
+	}
+	log_debug(logger,"Se termino la creación de TCB y su persistencia del tripulante con TID: %d", tcb->TID);
+
 }
 
 void gestionar_pedido_tarea(int tid, int socket){
@@ -92,7 +118,7 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_gestionar_tarea();
+	test_gestionar_tcb();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 /*
