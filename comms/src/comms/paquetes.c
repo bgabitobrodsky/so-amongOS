@@ -31,6 +31,7 @@ t_buffer* serializar_tcb(t_TCB tcb) {
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
+    free(estructura);
     return buffer;
 }
 

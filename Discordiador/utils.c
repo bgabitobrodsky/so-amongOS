@@ -207,3 +207,31 @@ void* eliminar_tcb_de_lista(t_list* lista, int elemento){
     return aux;
 
 }
+
+void iniciar_listas() {
+
+	lista_tripulantes_new = list_create();
+	lista_tripulantes_exec = list_create();
+	lista_pids = list_create();
+	lista_patotas = list_create();
+
+}
+void iniciar_colas() {
+
+	cola_tripulantes_ready = queue_create();
+	cola_tripulantes_new= queue_create();
+
+}
+
+void liberar_puntero_doble(char** palabras){
+	int contador = 0;
+
+	while (palabras[contador] != NULL) {
+		contador++;
+	}
+
+	for(int i = 0; i<contador; i++){
+		free(palabras[i]);
+	}
+	free(palabras);
+}

@@ -12,6 +12,7 @@
 #define	IP config_get_string_value(config, "IP")
 #define PUERTO config_get_string_value(config, "PUERTO")
 #define TAMANIO_MEMORIA config_get_int_value(config, "TAMANIO_MEMORIA")
+#define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define CRITERIO_SELECCION config_get_string_value(config, "CRITERIO_SELECCION")
 #define LIMIT_CONNECTIONS 10
@@ -78,7 +79,10 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 
-	
+	pagina* pag= list_get(paginas,3);
+	log_info(logger,"pagina 3, base: %d", pag->base);
+
+	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 /*
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     args_escuchar args_miram;
@@ -262,6 +266,18 @@ void liberar_segmento(int base){
     ordenar_segmentos();
 }
 
+// void liberar_pagina(int base){
+//     for(int i = 0; i<list_size(paginas);i++){
+//         pagina* x = list_get(paginas, i);
+//         if(x->base == base) {
+//             x->libre = true;
+//             log_info(logger, "Se elimina la página con base %d", x->base);
+//         }
+//     }
+//     ordenar_segmentos();
+// }
+
+
 void compactacion(){
     log_debug(logger, "Se comienza la compactacion");
     int size = list_size(segmentos);
@@ -321,6 +337,17 @@ segmento* crear_segmento(int base, int tam, bool libre){
 
     return nuevo_segmento;
 }
+
+
+pagina* crear_pagina(int base, bool libre){
+    pagina* nueva_pagina = malloc(sizeof(pagina));
+    nueva_pagina->base = base;
+    nueva_pagina->libre = libre;
+
+    return nueva_pagina;
+}
+
+
 
 segmento* buscar_segmento_libre(int tam){
 	if (strcmp(CRITERIO_SELECCION, "FF") == 0) {
@@ -433,7 +460,15 @@ void iniciar_memoria(){
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
 		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
 		paginas = list_create();
-		//Crear todas las paginas disponibles
+
+		int cantidad_paginas = TAMANIO_MEMORIA/TAMANIO_PAGINA;
+		
+		for(int i=0; i < cantidad_paginas ; i++) {
+			pagina* pagina = crear_pagina(TAMANIO_PAGINA * i, true);
+
+			list_add(paginas,pagina);
+		}
+
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);

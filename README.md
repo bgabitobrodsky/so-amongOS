@@ -35,6 +35,13 @@
 + Arregladas funciones de serializar y desserializar TCB.
 + Creadas funciones para crear TCB y PCB en ram (a comentar).
 
+13/06/2021
++ Agregada funcion para eliminar punteros dobles en DIscordiador, y arregladas algunas perdidas de bytes, cortesia de Valgrind.
+
+11/06/2021
++ Se pudo enviar y recibir TCBs de RAM a DISCORDIADOR bidireccionalmente (NOTA: TID no se actualiza en RAM).
++ Arregladas funciones de serializar y desserializar TCB.
+
 10/06/2021
 + FInalizados los siguientes TODO:  
     - GENERALIZAR LOS ARGS DE TODOS LOS  ESCUCHAR.  

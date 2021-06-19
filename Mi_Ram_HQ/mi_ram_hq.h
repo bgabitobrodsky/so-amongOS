@@ -70,7 +70,7 @@ void liberar_segmento(int base);
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
 indice_tabla* crear_indice(int pid, void* tabla);
-pagina* crear_pagina();
+pagina* crear_pagina(int base, bool libre);
 
 void* buscar_tabla(int pid);
 
