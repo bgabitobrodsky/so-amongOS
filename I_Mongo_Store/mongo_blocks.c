@@ -30,5 +30,5 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     void* mapa = mmap(NULL, block_size * size, PROT_NONE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
 
-    memcpy(archivos.mapa_blocks, mapa, sizeof(mapa)); // Actualizar struct
+    memcpy(archivos.mapa_blocks, mapa, sizeof(mapa)); 
 }

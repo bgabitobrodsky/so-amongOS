@@ -94,6 +94,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	// Verificar bitmap de superbloque
 	// Elegir el primer libre
 	// Ocuparlo en bitmap
+	// Se lo asigna a archivo
 	// Llenar metadata con nuevos datos (distinguir entre tripu y recursos)
 }
 
@@ -118,15 +119,15 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
-int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo) {
+int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
 	void* mapa = archivos.mapa_blocks;
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
 		for (int i = TAMANIO_BLOQUE; tipo != *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != NULL; i--) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == tipo) { 
-				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = NULL;
+			if (*(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) == tipo) { 
+				*(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = NULL;
 				cantidad_alcanzada++;
 			}
 
@@ -198,8 +199,6 @@ void alterar(int codigo_archivo, int cantidad) {
 void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs previos
 	pthread_mutex_lock(&mutex_blocks); // Declarar mutex
 
-	FILE* archivo = conseguir_archivo_char(tipo);
-
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
 	uint32_t tamanio_archivo;
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
@@ -265,14 +264,14 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	if (offset < 0) { // Se quiso quitar mas de lo existente, no hace nada (queda para comprension)
 	}
 	else if (offset < 100) { // No paso bloques
-		msync(archivos.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE  + 1);
+		msync(archivos.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1);
 		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
-		msync(archivos.mapa_blocks, lista_bloques[(cant_bloques - cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1); // Cambiar macro por lo de Superbloque
+		msync(archivos.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1); // Cambiar macro por lo de Superbloque
 		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 
@@ -325,7 +324,7 @@ int max (int a, int b) {
 	}
 }
 
-char* crear_md5() { // String de 32 
+char* crear_md5() { // String de 32
 	char* md5 = malloc(sizeof(char) * 32);
 
 	for (int i = 0; i < 32; i++){
