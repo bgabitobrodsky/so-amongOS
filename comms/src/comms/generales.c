@@ -99,3 +99,31 @@ int contar_palabras (char** palabras){
     }
     return contador;
 }
+
+char* fecha_y_hora() {
+    time_t tiempo = time(NULL);
+    struct tm tiempoLocal = *localtime(&tiempo);
+    static char fecha_Hora[70];
+    char *formato = "%d-%m-%Y %H:%M:%S";
+    int bytesEscritos = strftime(fecha_Hora, sizeof fecha_Hora, formato, &tiempoLocal);
+
+    if (bytesEscritos != 0) {
+        return fecha_Hora;
+    }
+    else {
+        return "Error formateando fecha";
+    }
+}
+
+int esta_en_lista(t_list* lista, int elemento){
+    bool contiene(void* elemento1){
+    return sonIguales(elemento, (int) elemento1);
+    }
+    int a = list_any_satisfy(lista, contiene);
+    return a;
+}
+
+int sonIguales(int elemento1, int elemento2){
+    return elemento1 == elemento2;
+}
+

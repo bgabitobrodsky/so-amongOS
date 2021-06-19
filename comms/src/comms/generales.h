@@ -19,6 +19,9 @@ t_tarea* crear_tarea(char* string_tarea);
 char* leer_archivo_entero(char* path);
 int comparar_strings(char* str, char* str2);
 int contar_palabras(char** palabras);
+char* fecha_y_hora();
+int esta_en_lista(t_list* lista, int elemento);
+int sonIguales(int elemento1, int elemento2);
 
 // Monitores
 void monitor_cola_push(pthread_mutex_t semaforo, t_queue* cola, void* elemento_a_insertar);
