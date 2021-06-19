@@ -48,13 +48,6 @@ char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
 
-void enviar_pid_a_ram(uint32_t pid, int socket){
-	t_sigkill patota;
-	patota.tid = pid;
-	t_buffer* pid_buffer = serializar_tid(patota);
-	empaquetar_y_enviar(pid_buffer, LISTAR_POR_PID, socket);
-}
-
 int main() {
     logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
     config = config_create("discordiador.config");
@@ -92,65 +85,6 @@ int main() {
     log_destroy(logger);
 
     return EXIT_SUCCESS;
-}
-
-void leer_consola() {
-    char* leido;
-    int comando;
-
-    do {
-
-        leido = readline(">>>");
-
-        if (strlen(leido) > 0) {
-            comando = reconocer_comando(leido);
-
-            switch (comando) {
-
-                case INICIAR_PATOTA:
-                    iniciar_patota(leido);
-                    break;
-
-                case INICIAR_PLANIFICACION:
-                    iniciar_planificacion();
-                    break;
-
-                case LISTAR_TRIPULANTES:
-                    listar_tripulantes();
-                    break;
-
-                case PAUSAR_PLANIFICACION:
-                    pausar_planificacion();
-                    break;
-
-                case OBTENER_BITACORA:
-                    obtener_bitacora(leido);
-                    break;
-
-                case EXPULSAR_TRIPULANTE:
-                    expulsar_tripulante(leido);
-                    break;
-
-                case HELP:
-                    help_comandos();
-                    break;
-
-                case APAGAR_SISTEMA:
-                    sistema_activo = 0;
-                    exit(1);
-                    break;
-
-                case NO_CONOCIDO:
-                    break;
-            }
-        }
-
-        free(leido);
-
-    } while (comando != EXIT);
-
-    sistema_activo = 0;
-
 }
 
 void iniciar_patota(char* leido) {
@@ -245,7 +179,6 @@ void listar_tripulantes() {
     t_PCB* aux_p;
     t_TCB* aux_t;
     t_list* lista_tripulantes_de_una_patota;
-    list_add(lista_patotas, aux_p);
 
     int i,j;
 
@@ -367,28 +300,6 @@ void enlistar_algun_tripulante(){
 	}
 }
 
-void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
-    t_buffer* buffer_tcb = serializar_tcb(un_tcb);
-    empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
-    // NOTA: si se libera el buffer, tira error de doble free.
-}
-
-int esta_tcb_en_lista(t_list* lista, t_TCB* elemento){
-    bool contains(void* elemento1){
-        return (elemento->TID == ((t_TCB*) elemento1)->TID);
-        }
-    bool a = list_any_satisfy(lista, contains);
-    return a;
-}
-
-void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento){
-    bool contains(void* elemento1){
-        return (elemento->TID == ((t_TCB*) elemento1)->TID);
-        }
-    t_TCB* aux = list_remove_by_condition(lista, contains);
-    return aux;
-}
-
 /*
 t_patota* crear_patota(t_PCB* un_pcb){
     t_patota* patota = malloc(sizeof(t_patota));
@@ -452,4 +363,63 @@ t_TCB* iniciar_tcb(void* funcion, t_PCB* pcb, int tid, char* posicion){
     //t_tripulante* nuestro_tripulante = crear_tripulante(un_tcb);
     iniciar_hilo_tripulante(funcion);
     return un_tcb;
+}
+
+void leer_consola() {
+    char* leido;
+    int comando;
+
+    do {
+
+        leido = readline(">>>");
+
+        if (strlen(leido) > 0) {
+            comando = reconocer_comando(leido);
+
+            switch (comando) {
+
+                case INICIAR_PATOTA:
+                    iniciar_patota(leido);
+                    break;
+
+                case INICIAR_PLANIFICACION:
+                    iniciar_planificacion();
+                    break;
+
+                case LISTAR_TRIPULANTES:
+                    listar_tripulantes();
+                    break;
+
+                case PAUSAR_PLANIFICACION:
+                    pausar_planificacion();
+                    break;
+
+                case OBTENER_BITACORA:
+                    obtener_bitacora(leido);
+                    break;
+
+                case EXPULSAR_TRIPULANTE:
+                    expulsar_tripulante(leido);
+                    break;
+
+                case HELP:
+                    help_comandos();
+                    break;
+
+                case APAGAR_SISTEMA:
+                    sistema_activo = 0;
+                    exit(1);
+                    break;
+
+                case NO_CONOCIDO:
+                    break;
+            }
+        }
+
+        free(leido);
+
+    } while (comando != EXIT);
+
+    sistema_activo = 0;
+
 }

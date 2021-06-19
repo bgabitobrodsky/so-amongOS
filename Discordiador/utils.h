@@ -71,5 +71,8 @@ void iniciar_semaforos();
 void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket);
 void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
 void enviar_pid_a_ram(uint32_t pid, int socket);
+void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
+int esta_tcb_en_lista(t_list* lista, t_TCB* elemento);
+void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento);
 
 #endif /* DISCORDIADOR_UTILS_H_ */

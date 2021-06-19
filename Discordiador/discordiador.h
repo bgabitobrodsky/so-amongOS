@@ -9,34 +9,18 @@
 #define DISCORDIADOR_H_
 
 #include "utils.h"
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <commons/log.h>
-//#include <commons/config.h>
-//#include <commons/string.h>
-//#include <pthread.h>
-//#include <readline/readline.h>
-//#include <time.h>
-//#include <stddef.h>
-//#include <commons/collections/queue.h>
-//#include <commons/collections/list.h>
 
 //FUnciones de testeo
 void funcion_hilo();
 void iniciar_hilo();
 
 // Funciones PRINCIPALES
-void leer_consola();
 void iniciar_patota(char* leido);
 void listar_tripulantes();
 void expulsar_tripulante(char* leido);
 void iniciar_planificacion();
 void pausar_planificacion();
 void obtener_bitacora(char* leido);
-
-// Funciones de conexiones y sockets
-void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
-
 
 // HILOS
 void iniciar_hilo_tripulante(void* funcion);
@@ -53,8 +37,7 @@ int nuevo_pid();
 t_list* lista_tripulantes_patota(uint32_t pid);
 
 // FUNCIONES AUXILIARES
-int esta_tcb_en_lista(t_list* lista, t_TCB* elemento);
-void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento);
+void leer_consola();
 
 
 #endif /* DISCORDIADOR_H_ */

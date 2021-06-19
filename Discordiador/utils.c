@@ -166,3 +166,24 @@ void enviar_pid_a_ram(uint32_t pid, int socket){
 	t_buffer* pid_buffer = serializar_tid(patota);
 	empaquetar_y_enviar(pid_buffer, LISTAR_POR_PID, socket);
 }
+
+void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
+    t_buffer* buffer_tcb = serializar_tcb(un_tcb);
+    empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
+}
+
+int esta_tcb_en_lista(t_list* lista, t_TCB* elemento){
+    bool contains(void* elemento1){
+        return (elemento->TID == ((t_TCB*) elemento1)->TID);
+        }
+    bool a = list_any_satisfy(lista, contains);
+    return a;
+}
+
+void* eliminar_tcb_de_lista(t_list* lista, t_TCB* elemento){
+    bool contains(void* elemento1){
+        return (elemento->TID == ((t_TCB*) elemento1)->TID);
+        }
+    t_TCB* aux = list_remove_by_condition(lista, contains);
+    return aux;
+}
