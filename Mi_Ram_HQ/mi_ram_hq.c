@@ -36,12 +36,14 @@ void gestionar_tareas (t_archivo_tareas* archivo_tareas){
 		tamanio_lista_tareas += tamanio_tarea(tarea);
 		list_add(lista_tareas,tarea);
 	}
+
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		segmento* segmento_libre = asignar_segmento(tamanio_lista_tareas);
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid_patota);
+		memcpy(memoria_principal + segmento_libre->base, lista_tareas, tamanio_lista_tareas);
+
 		if(tabla != NULL){ 
 			tabla->segmento_tareas = segmento_libre;
-			memcpy(memoria_principal + segmento_libre->base, lista_tareas, tamanio_lista_tareas);
 		}else{
 			tabla = crear_tabla_segmentos(pid_patota);
 			tabla->segmento_tareas = segmento_libre;
@@ -76,22 +78,8 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 
-	log_info(logger,"Se crea la tabla de segmentos");
-	tabla_segmentos* tabla = crear_tabla_segmentos(1);
-	tabla->segmento_pcb = asignar_segmento(2);
-
-	indice_tabla* indice = malloc(sizeof(indice_tabla));
-	indice->tabla = tabla;
-	indice->pid = 1;
-
-	printSegmentosList();
-	tablas = list_create();
-	list_add(tablas,indice);
-	log_debug(logger,"indice agregado a la lista de indices");
-
-	tabla_segmentos* t_seg = buscar_tabla(1);
-	log_debug(logger,"Base del segmento pcb %d",t_seg->segmento_pcb->base);
-
+	
+/*
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
@@ -101,8 +89,8 @@ int main(int argc, char** argv) {
 
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
-
 	close(socket_oyente);
+*/
 
 	log_destroy(logger);
 	config_destroy(config);
@@ -243,6 +231,14 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb.siguiente_instruccion = 5; //TODO
 	tcb.puntero_a_pcb = 7;
 	return tcb;
+}
+
+indice_tabla* crear_indice(int pid, void* tabla){
+	log_info(logger,"Se crea indice para la tabla de la patota %d",pid);
+	indice_tabla* nuevo_indice = malloc(sizeof(indice_tabla));
+	nuevo_indice->pid = pid;
+	nuevo_indice->tabla = tabla;
+	return nuevo_indice;
 }
 
 void ordenar_segmentos(){
@@ -428,6 +424,7 @@ tabla_paginas* crear_tabla_paginas(uint32_t pid){
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
+	indices = list_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 		log_info(logger,"Se inicia memoria con esquema se SEGMENTACION");
 		segmentos = list_create();
@@ -444,25 +441,86 @@ void iniciar_memoria(){
 }
 
 void* buscar_tabla(int pid){
-	log_info(logger,"Se comienza la busqueda por el pid: %d",pid);
-
-	bool criterio(void* indice){
-		indice_tabla* in = (indice_tabla*) indice;
-		return in->pid == pid;
+	bool criterio(void* un_indice){
+		indice_tabla* indice = (indice_tabla*) un_indice;
+		return indice->pid == pid;
 	}
-	indice_tabla* indice = (indice_tabla*) list_find(tablas, criterio);
 	
-	log_info(logger,"Indice encontrado %d",indice->pid);
+	log_debug(logger,"Se comienza la busqueda de tabla de pid: %d",pid);
 
-	return indice->tabla;
+	indice_tabla* indice = (indice_tabla*) list_find(indices, criterio);
+	if(indice != NULL){
+		log_debug(logger,"Tabla encontrada, pid: %d",indice->pid);
+		return indice->tabla;
+	}
+	log_debug(logger,"Tabla no encontrada");
+	return NULL;
 }
 
-void printSegmentosList() {
+void test_segmentos(){
+	segmento* seg = asignar_segmento(sizeof(char[2]));
+	segmento* seg2 = asignar_segmento(sizeof(char));
+	segmento* seg3 = asignar_segmento(sizeof(char));
+	liberar_segmento(0);
+	liberar_segmento(3);
+	compactacion();
+	segmento* seg4 = asignar_segmento(sizeof(char));
+	print_segmentos_info();
+}
+
+void test_tabla_segmentos(){
+	log_info(logger,"Se crea la tabla de segmentos pid: 1");
+	tabla_segmentos* tabla1 = crear_tabla_segmentos(1);
+	log_info(logger,"Se crea segmento para pcb 1");
+	tabla1->segmento_pcb = asignar_segmento(8);
+	log_info(logger,"Segmento para pcb creado 1, base: %d", tabla1->segmento_pcb->base);
+	log_info(logger,"Se crea segmento para tareas 1");
+	tabla1->segmento_tareas = asignar_segmento(45);
+	log_info(logger,"Segmento para tareas creado 1, base: %d", tabla1->segmento_tareas->base);
+
+	list_add(indices,crear_indice(1, (void*) tabla1));
+
+	log_info(logger,"Se crea la tabla de segmentos pid: 2");
+	tabla_segmentos* tabla2 = crear_tabla_segmentos(2);
+	log_info(logger,"Se crea segmento para pcb 2");
+	tabla2->segmento_pcb = asignar_segmento(8);
+	log_info(logger,"Segmento para pcb creado 2, base: %d", tabla2->segmento_pcb->base);
+	log_info(logger,"Se crea segmento para tareas 2");
+	tabla2->segmento_tareas = asignar_segmento(21);
+	log_info(logger,"Segmento para tareas creado 2, base: %d", tabla2->segmento_tareas->base);
+
+	list_add(indices,crear_indice(2, (void*) tabla2));
+	
+	tabla_segmentos* t_seg = buscar_tabla(2);
+	log_info(logger,"Base del segmento de tareas de la tabla 2: %d",t_seg->segmento_tareas->base);
+
+	print_segmentos_info();
+	print_tablas_segmentos_info();
+}
+
+void print_segmentos_info() {
     int size = list_size(segmentos);
-    printf("<--------------------------------------------\n");
+    printf("\n<------ SEGMENTOS -----------\n");
     for(int i=0; i<size; i++) {
         segmento *s = list_get(segmentos, i);
-        printf("base: %d, tam: %d, is_free: %s\n", s->base, s->tam, s->libre ? "true" : "false");
+        printf("base: %d, tam: %d, libre: %s\n", s->base, s->tam, s->libre ? "true" : "false");
     }
-    printf("-------------------------------------------->\n");
+    printf("------------------->\n");
+}
+
+void print_tablas_segmentos_info(){
+	int size = list_size(indices);
+	printf("\n<----- TABLAS DE SEGMENTOS ---------------------\n");
+	for(int i = 0; i < size; i++) {
+        indice_tabla* index = list_get(indices, i);
+		tabla_segmentos* tabla = (tabla_segmentos*) index->tabla;
+		printf("Tabla pid: %d\n", index->pid);
+		printf("\t Segmento PCB:\n");
+		printf("\t\t base: %d\n",tabla->segmento_pcb->base);
+		printf("\t\t tam: %d\n",tabla->segmento_pcb->tam);
+		printf("\t Segmento Tarea:\n");
+		printf("\t\t base: %d\n",tabla->segmento_tareas->base);
+		printf("\t\t tam: %d\n",tabla->segmento_tareas->tam);
+    }
+	printf("------------------>\n");
 }
