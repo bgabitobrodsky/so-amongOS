@@ -88,15 +88,8 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 	free(path_superbloque);
 }
 
-void alterar(int codigo_archivo, int cantidad) {  
-	if (cantidad >= 0){
-		agregar(cantidad, conseguir_char(codigo_archivo));
-		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
-	}
-	else{
-		quitar(cantidad, conseguir_char(codigo_archivo));
-		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
-	}
+void asignar_nuevo_bloque(FILE* archivo) {
+
 }
 
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
@@ -120,43 +113,82 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
-void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hacer mallocs previos
+int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo) {
+	void* mapa = archivos.mapa_blocks;
+	int cantidad_alcanzada = 0;
+
+	for(int j = cant_bloques; j < 0; j--) {
+		for (int i = TAMANIO_BLOQUE; tipo != *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != NULL; i--) { // Cambiar Macro por revision al Superbloque
+			
+			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == tipo) { 
+				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = NULL;
+				cantidad_alcanzada++;
+			}
+
+			if (cantidad_alcanzada == cantidad_deseada) {
+				return j * 100 + i;
+			}
+		}
+	}
+	
+	return cantidad_alcanzada - cantidad_deseada;
+}
+
+void actualizar_MDR5(FILE* archivo) {
+
+}
+
+void alterar(int codigo_archivo, int cantidad) {  
+	if (cantidad >= 0){
+		agregar(conseguir_archivo(codigo_archivo), cantidad);
+		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
+	}
+	else{
+		quitar(conseguir_archivo(codigo_archivo), cantidad);
+		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
+	}
+}
+
+void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs previos
 	pthread_mutex_lock(&mutex_blocks); // Declarar mutex
 
 	FILE* archivo = conseguir_archivo_char(tipo);
 
-	fseek(archivo, sizeof("SIZE="), SEEK_SET);
+	fseek(archivo, strlen("SIZE="), SEEK_SET);
 	uint32_t tamanio_archivo;
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, sizeof("BLOCK_COUNT="), SEEK_CUR); 
+	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR); 
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, sizeof("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
 	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
 
-	// TODO: En vez de recibir char por parametro, buscarlo en metadata
+	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
+	char tipo;
+	fread(&tipo, sizeof(char), 1, archivo);
 
 	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
 
 	if (offset < 0) { // Falto agregar cantidad, dada por offset
-		// TODO: Asignar bloque nuevo y asignar ahi
+		asignar_nuevo_bloque(archivo);
+		agregar(archivo, offset * -1); // Recursividad con la cantidad que falto
 	}
 	else if (offset < 100) { // No paso bloques
 		msync(archivos.mapa_blocks, offset + 1);
 		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 	else if (offset > 100) { // Se paso bloques
-		int cant_bloques = offset / 100;
+		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
 		msync(archivos.mapa_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1); // Cambiar macro por lo de Superbloque
 		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
 	}
 
-	// TODO: Actualizar MD5 correspondiente, podria estar aparte y tener mutex propio
+	actualizar_MDR5(archivo);
 
     pthread_mutex_unlock(&mutex_blocks);
 }
@@ -164,7 +196,41 @@ void agregar(FILE* archivo, int cantidad, char tipo) { // Puede que haya que hac
 void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explotar en manejo de fopens, revisar
 	pthread_mutex_lock(&mutex_blocks); 
 
-	// TODO: Debera escribir NULL donde estaba el char en el mapa, en ultima posicion posible	
+	FILE* archivo = conseguir_archivo_char(tipo);
+
+	fseek(archivo, strlen("SIZE="), SEEK_SET);
+	uint32_t tamanio_archivo;
+	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
+
+	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR); 
+	uint32_t cant_bloques;
+	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
+
+	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
+	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+
+	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
+	char tipo;
+	fread(&tipo, sizeof(char), 1, archivo);
+
+	int offset = quitar_ultimo_bloque_libre(lista_bloques, cant_bloques, cantidad * -1, tipo);
+
+	if (offset < 0) { // Se quiso quitar mas de lo existente, no hace nada (queda para comprension)
+	}
+	else if (offset < 100) { // No paso bloques
+		msync(archivos.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE  + 1);
+		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
+	}
+	else if (offset > 100) { // Se paso bloques
+		int cant_bloques_local = offset / 100;
+		offset = offset % 100;
+		
+		msync(archivos.mapa_blocks, lista_bloques[(cant_bloques - cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1); // Cambiar macro por lo de Superbloque
+		sleep(config_get_int_value(config_mongo, TIEMPO_SINCRONIZACION));
+	}
+
+	actualizar_MDR5(archivo);
 
     pthread_mutex_unlock(&mutex_blocks);
 }
@@ -202,21 +268,6 @@ FILE* conseguir_archivo(int codigo) {
 			break;
 	}
 	return NULL;
-}
-
-char conseguir_char(int codigo) {
-	switch(codigo) {
-		case OXIGENO:
-			return 'O';
-			break;
-		case COMIDA:
-			return 'C';
-			break;
-		case BASURA:
-			return 'B';
-			break;
-	}
-	return '\0';
 }
 
 int max (int a, int b) {
