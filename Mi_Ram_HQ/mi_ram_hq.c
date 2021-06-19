@@ -28,12 +28,24 @@ void gestionar_tareas (t_archivo_tareas* archivo_tareas){
 	char** string_tareas = string_split(archivo_tareas->texto, "\n");
 	int cantidad_tareas = contar_palabras(string_tareas);
 	int pid_patota = archivo_tareas->pid;
+	t_list* lista_tareas = list_create();
+	size_t tamanio_lista_tareas = 0;
 
 	for (int i = 0; i < cantidad_tareas; i++){
-		//
-		// t_tarea* tarea = crear_tarea(string_tareas[i]);
-		// hacer algo con esta tarea
-		//
+		t_tarea* tarea = crear_tarea(string_tareas[i]);
+		tamanio_lista_tareas += tamanio_tarea(tarea);
+		list_add(lista_tareas,tarea);
+	}
+	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		segmento* segmento_libre = asignar_segmento(tamanio_lista_tareas);
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid_patota);
+		if(tabla != NULL){ 
+			tabla->segmento_tareas = segmento_libre;
+			memcpy(memoria_principal + segmento_libre->base, lista_tareas, tamanio_lista_tareas);
+		}else{
+			tabla = crear_tabla_segmentos(pid_patota);
+			tabla->segmento_tareas = segmento_libre;
+		}
 	}
 }
 
@@ -64,15 +76,21 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 
+	log_info(logger,"Se crea la tabla de segmentos");
+	tabla_segmentos* tabla = crear_tabla_segmentos(1);
+	tabla->segmento_pcb = asignar_segmento(2);
 
-	segmento* seg = asignar_segmento(sizeof(char[2]));
-	segmento* seg2 = asignar_segmento(sizeof(char));
-	segmento* seg3 = asignar_segmento(sizeof(char));
-	liberar_segmento(0);
-	liberar_segmento(3);
-	compactacion();
-	segmento* seg4 = asignar_segmento(sizeof(char));
+	indice_tabla* indice = malloc(sizeof(indice_tabla));
+	indice->tabla = tabla;
+	indice->pid = 1;
+
 	printSegmentosList();
+	tablas = list_create();
+	list_add(tablas,indice);
+	log_debug(logger,"indice agregado a la lista de indices");
+
+	tabla_segmentos* t_seg = buscar_tabla(1);
+	log_debug(logger,"Base del segmento pcb %d",t_seg->segmento_pcb->base);
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     args_escuchar args_miram;
@@ -398,19 +416,18 @@ segmento* asignar_segmento(int tam){
 
 tabla_segmentos* crear_tabla_segmentos(uint32_t pid){
 	tabla_segmentos* nueva_tabla = malloc(sizeof(tabla_segmentos));
-	nueva_tabla->pid = pid;
 	nueva_tabla->segmentos_tcb = list_create();
 	return nueva_tabla;
 }
 
 tabla_paginas* crear_tabla_paginas(uint32_t pid){
 	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
-	nueva_tabla->pid = pid;
 	nueva_tabla->paginas = list_create();
 	return nueva_tabla;
 }
 
 void iniciar_memoria(){
+	memoria_principal = malloc(TAMANIO_MEMORIA);
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 		log_info(logger,"Se inicia memoria con esquema se SEGMENTACION");
 		segmentos = list_create();
@@ -426,6 +443,19 @@ void iniciar_memoria(){
 	}
 }
 
+void* buscar_tabla(int pid){
+	log_info(logger,"Se comienza la busqueda por el pid: %d",pid);
+
+	bool criterio(void* indice){
+		indice_tabla* in = (indice_tabla*) indice;
+		return in->pid == pid;
+	}
+	indice_tabla* indice = (indice_tabla*) list_find(tablas, criterio);
+	
+	log_info(logger,"Indice encontrado %d",indice->pid);
+
+	return indice->tabla;
+}
 
 void printSegmentosList() {
     int size = list_size(segmentos);

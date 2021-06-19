@@ -21,4 +21,6 @@
 extern t_log* logger;
 extern t_config* config;
 
+size_t tamanio_tarea(t_tarea* tarea);
+
 #endif /* MI_RAM_HQ_UTILS_H_ */
