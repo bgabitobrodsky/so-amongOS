@@ -107,8 +107,8 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, mapa);
 
-	t_bitarray* bitmap;
-	bitmap = bitarray_create_with_mode(bitmap, CANTIDAD_BLOQUES, LSB_FIRST);
+	t_bitarray* bitmap = malloc(sizeof(t_bitarray));
+	bitmap = bitarray_create_with_mode(bitmap->bitarray, CANTIDAD_BLOQUES, LSB_FIRST);
 	fread(bitmap->bitarray, sizeof(1/CHAR_BIT), CANTIDAD_BLOQUES, mapa); //CHAR_BIT: represents the number of bits in a char
 	int bit_libre = -1;
 
@@ -237,7 +237,7 @@ void alterar(int codigo_archivo, int cantidad) {
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 	else{
-		quitar(conseguir_archivo(codigo_archivo), conseguir_path(codigo_archivo), cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
+		quitar(conseguir_archivo(codigo_archivo), conseguir_path(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
 		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 }
@@ -255,7 +255,7 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
 
 	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
@@ -267,15 +267,16 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
 		asignar_nuevo_bloque(archivo);
 		agregar(archivo, offset * -1); // Recursividad con la cantidad que falto
 	}
-	else if (offset < 100) { // No paso bloques
-		msync(archivos.mapa_blocks, offset + 1);
+	else if (offset < 100) { // No paso bloques. ¿No sería CANTIDAD_BLOQUES?
+		msync(archivos.mapa_blocks, offset + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
-		msync(archivos.mapa_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1); // Cambiar macro por lo de Superbloque
+					        //Acá iría cant_bloques_local?
+		msync(archivos.mapa_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
@@ -297,7 +298,7 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 
 	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	fread(&tipo, sizeof(char), 1, archivo);
@@ -307,20 +308,35 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	if (offset < 0) { // Se quiso quitar mas de lo existente, no hace nada (queda para comprension)
 	}
 	else if (offset < 100) { // No paso bloques
-		msync(archivos.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1);
+		msync(archivos.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
-		msync(archivos.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1); // Cambiar macro por lo de Superbloque
+		msync(archivos.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
 	actualizar_MD5(archivo);
 
     pthread_mutex_unlock(&mutex_blocks);
+}
+
+char conseguir_char(int codigo_operacion) {
+	switch(codigo_operacion) {
+	case OXIGENO:
+		return 'O';
+		break;
+	case COMIDA:
+		return 'C';
+		break;
+	case BASURA:
+		return 'B';
+		break;
+	}
+	return '\0';
 }
 
 char* conseguir_tipo(char tipo) {
@@ -331,6 +347,27 @@ char* conseguir_tipo(char tipo) {
     if (tipo == 'B')
         return "Basura";
     return NULL;
+}
+
+char* conseguir_path(int codigo_archivo) {
+	char* punto_monaje = PUNTO_MONTAJE;
+	char* path_file = malloc(strlen(punto_monaje) + 1 + strlen("/Files/123456.ims"));
+	switch(codigo_archivo) {
+	case BASURA:
+		sprintf(path_file, "%s/Files/Basura.ims", punto_monaje);
+		return path_file;
+		break;
+	case COMIDA:
+		sprintf(path_file, "%s/Files/Comida.ims", punto_monaje);
+		return path_file;
+		break;
+	case OXIGENO:
+		path_file = realloc(path_file, (strlen(punto_monaje) + 1 + strlen("/Files/123456.ims")));
+		sprintf(path_file, "%s/Files/Oxigeno.ims", punto_monaje);
+		return path_file;
+		break;
+	}
+	return "No encontrado";
 }
 
 FILE* conseguir_archivo_char(char tipo) {
@@ -356,6 +393,26 @@ FILE* conseguir_archivo(int codigo) {
 			break;
 	}
 	return NULL;
+}
+
+char* conseguir_nombre(FILE* archivo) {
+	int codigo_archivo;
+	char caracter = caracter_llenado_archivo(archivo);
+
+	switch(caracter) {
+	case 'O':
+		codigo_archivo = OXIGENO;
+		break;
+
+	case 'B':
+		codigo_archivo = BASURA;
+		break;
+	case 'C':
+		codigo_archivo = COMIDA;
+		break;
+	}
+
+	return conseguir_path(codigo_archivo);
 }
 
 int max (int a, int b) {
@@ -422,7 +479,7 @@ uint32_t* lista_bloques_archvio(FILE* archivo) {
 
 	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	return lista_bloques;
 }
@@ -438,7 +495,7 @@ uint32_t* lista_bloques_archvio(FILE* archivo) {
 
 	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	t_list* t_lista_bloques = list_create();
 	for(int i = 0; i < cant_bloques; i++) {
@@ -459,9 +516,9 @@ char caracter_llenado_archivo(FILE* archivo) {
 
 	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
-	char caracter_llenado = malloc(sizeof(char));
+	char caracter_llenado;
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	fread(&caracter_llenado, sizeof(char), 1, archivo);
 
@@ -479,7 +536,7 @@ char* md5_archivo(FILE* archivo) {
 
 	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
@@ -503,13 +560,14 @@ void escribir_archivo(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques
 
 	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques); // Esto deberia reventar mas fuerte que Hiroshima
-	fread(lista_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
 	fread(&tipo, sizeof(char), 1, archivo);
 
-	freopen(archivo, "w+");
+	char* nombre_archivo = conseguir_nombre(archivo);
+	freopen(nombre_archivo, "w+", archivo);
 
 	char* size = "SIZE=";
 	char* block_count = "BLOCK_COUNT=";
@@ -522,7 +580,7 @@ void escribir_archivo(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques
 	fwrite(&block_count, strlen(block_count), 1, archivo);
 	fwrite(&cantidad_bloques, sizeof(uint32_t), 1, archivo);
 	fwrite(&blocks, strlen(blocks), 1, archivo);
-	fwrite(list_bloques, sizeof(uint32_t), &cant_bloques, archivo);
+	fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
 	fwrite(&caracter, strlen(caracter), 1, archivo);
 	fwrite(&caracter_llenado, sizeof(char), 1, archivo);
 	fwrite(&md5, strlen(md5), 1, archivo);

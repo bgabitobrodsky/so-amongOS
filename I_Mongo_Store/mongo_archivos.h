@@ -25,6 +25,7 @@
 
 #define TAMANIO_BLOQUE 64
 #define CANTIDAD_BLOQUES 64 
+#define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 
 /* ESTRUCTURAS PROPIAS */
 
@@ -75,6 +76,7 @@ pthread_mutex_t mutex_blocks;
 void inicializar_archivos(char* path_files);
 void inicializar_archivos_preexistentes(char* path_files);
 void asignar_nuevo_bloque(FILE* archivo);
+void asignar_bloque(FILE* archivo, int bit_libre); //TODO
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 void actualizar_MD5(FILE* archivo);
@@ -86,6 +88,7 @@ char conseguir_char(int codigo_archivo);
 FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo(int codigo);
 char* conseguir_path(int codigo_archivo);
+char* conseguir_nombre(FILE* archivo);
 int max(int a, int b);
 char char_random();
 

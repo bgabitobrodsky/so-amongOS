@@ -99,7 +99,7 @@ int obtener_indice_bitacora(t_TCB* tcb) { // TODO: Implementar
 char* fpath_bitacoras() {
 	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 	char* path_bitacoras = malloc((strlen(path_directorio)+1) + strlen("/Files/Bitacoras"));
-	char* path_directorio_aux;
+	char* path_directorio_aux = malloc(strlen(path_directorio) + 1);
 	strcpy(path_directorio_aux, path_directorio);
 	path_bitacoras = strcat(path_directorio_aux, "/Files/Bitacoras");
 	return path_bitacoras;
@@ -107,7 +107,7 @@ char* fpath_bitacoras() {
 
 char* fpath_tripulante(char* path_bitacoras, t_TCB* tcb) {
 	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);
-	char* path_bitacoras_aux;
+	char* path_bitacoras_aux = malloc(strlen(path_bitacoras) + 1);
 	strcpy(path_bitacoras_aux, path_bitacoras);
 	path_tripulante = strcat(path_bitacoras_aux, "/Tripulante");
 	path_tripulante = strcat(path_tripulante, string_itoa(tcb->TID));
