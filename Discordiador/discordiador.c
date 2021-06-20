@@ -61,19 +61,20 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
+    iniciar_patota("INICIAR_PATOTA 5 Oxigeno.ims 1|1 2|2 3|3");
+
+    test_serializar_tcb();
+
+	log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int)tcb->TID, (char) tcb->estado_tripulante, (int) tcb->coord_x, (int) tcb->coord_y);
+
+
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
+
     	leer_consola();
         pthread_t hiloConsola;
         pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
         pthread_detach(hiloConsola);
 
-        /*
-        args_escuchar args_disc;
-        args_disc.socket_oyente = socket_a_mi_ram_hq;
-        pthread_t hilo_escucha;
-        pthread_create(&hilo_escucha, NULL, (void*) proceso_handler, &args_disc);
-        pthread_join(hilo_escucha, NULL);
-        */
     }
 
     while(sistema_activo){
@@ -216,6 +217,7 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 		//free(respuesta->tcb);
 		//free(respuesta);
 		respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+		printf("Recibo un tcb. \n");
 	}
 	if(respuesta->codigo_operacion == FALLO){
     	log_info(logger, "Error al pedir los tripulantes para listar.\n");
@@ -444,4 +446,22 @@ t_tripulante* crear_tripulante(int tid, int x, int y, char estado){
 
     return tripulante;
 
+}
+
+test_serializar_tcb(){
+    t_TCB tcb;
+
+    tcb.TID = 10001;
+    tcb.estado_tripulante = estado_tripulante[NEW];
+    tcb.coord_x = 1;
+    tcb.coord_y = 1;
+    tcb.siguiente_instruccion = 0;
+    tcb.puntero_a_pcb = 0;
+
+	log_info(logger, "TCB antes de serializar:\n");
+	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb.TID, (char) tcb.estado_tripulante,(int) tcb.coord_x, (int) tcb.coord_y);
+	t_buffer* b = serializar_tcb(tcb);
+	t_TCB* tcb_deserializado = deserializar_tcb(b);
+	log_info(logger, "TCB despues de serializar:\n");
+	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb_deserializado->TID, (char) tcb_deserializado->estado_tripulante,(int) tcb_deserializado->coord_x, (int) tcb_deserializado->coord_y);
 }

@@ -37,5 +37,7 @@ t_tripulante* crear_tripulante(int tid, int x, int y, char estado);
 // FUNCIONES AUXILIARES
 void leer_consola();
 
+// TESTS
+void test_serializar_tcb();
 
 #endif /* DISCORDIADOR_H_ */
