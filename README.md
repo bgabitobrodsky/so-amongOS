@@ -1,6 +1,14 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+20/06/2021
++ Iniciado planteamiento de tripulantes.
++ Planteado movimiento en el tablero.
+
+19/06/2021
++ LISTAR_TRIPULANTES completamente funcional.
++ Iniciado trabajo en conjunto con RAM.
+
 18/06/2021
 + Revividas las estructuras t_tripulante y t_patota.
 + Solucionado el problema de no poder eliminar al tripulante tambien del modulo discordiador.

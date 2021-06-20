@@ -45,9 +45,17 @@ pthread_mutex_t sem_lista_block;
 pthread_mutex_t sem_cola_ready;
 
 // Variables de discordiador
-char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
+char estado_tripulante[5] = {'N', 'R', 'E', 'B', 'F'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
+
+enum {
+	QUIETO, IZQUIERDA, DERECHA, ARRIBA, ABAJO
+};
+
+enum {
+	GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
+};
 
 int main() {
 
@@ -94,24 +102,32 @@ void iniciar_patota(char* leido) {
 
     int i = 0;
 
-    t_PCB* pcb = crear_pcb(path);
-    list_add(lista_patotas, pcb);
+    t_patota* patota = malloc(sizeof(t_patota));
+    patota->PID = nuevo_pid();
+    list_add(lista_patotas, patota);
+
     char* archivo_tareas = leer_archivo_entero(path);
 
     if (archivo_tareas != NULL){
-    	enviar_archivo_tareas(archivo_tareas, pcb->PID, socket_a_mi_ram_hq);
+    	enviar_archivo_tareas(archivo_tareas, patota->PID, socket_a_mi_ram_hq);
+    	// enviar_archivo_tareas(archivo_tareas, pcb->PID, socket_a_mi_ram_hq);
     }
 
+    // t_tripulante* aux;
     t_TCB* aux;
 
     while (palabras[i+3] != NULL){
         printf("POSICION %d: %s \n", i+1, palabras[i+3]);
         // void* funcion = pedir_funcion()
-        // aux = iniciar_tcb(NULL, pcb, ((pcb->PID)*10000) + i+1, palabras[i+3]);
-        aux = crear_puntero_tcb(pcb, ((pcb->PID)*10000) + i+1, palabras[i+3]);
+        // aux = crear_puntero_tripulante(((patota->PID)*10000) + i+1, palabras[i+3]);
+        aux = crear_puntero_tcb(0, ((patota->PID)*10000) + i+1, palabras[i+3]);
+        // enviar_tripulante_a_ram(*aux, socket_a_mi_ram_hq);
         enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
+        // list_add(lista_tripulantes, aux);
         list_add(lista_tripulantes, aux);
+        // monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
         monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
+        // printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
         printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
 
         // free(aux); // no liberar
@@ -121,17 +137,21 @@ void iniciar_patota(char* leido) {
     for(int j = i+1; j <= cantidadTripulantes; j++){
         printf("POSICION %d: 0|0\n", j);
         // void* funcion = pedir_funcion()
-        // aux = iniciar_tcb(NULL, pcb, ((pcb->PID)*10000) + j, "0|0");
-        aux = crear_puntero_tcb(pcb, ((pcb->PID)*10000) + j, "0|0");
+        // aux = crear_puntero_tripulante((patota->PID)*10000) + j, "0|0");
+        aux = crear_puntero_tcb(0, ((patota->PID)*10000) + j, "0|0");
+        // enviar_tripulante_a_ram(*aux, socket_a_mi_ram_hq);
         enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
+        // list_add(lista_tripulantes, aux);
         list_add(lista_tripulantes, aux);
+        // monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
         monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
+        // printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
         printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
 
         // free(aux); // no liberar
     }
 
-    // free(pcb); // no liberar
+    // free(patota); // no liberar
     liberar_puntero_doble(palabras);
 
 }
@@ -155,7 +175,9 @@ void iniciar_planificacion() {
         monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
 
         if(comparar_strings(ALGORITMO, "FIFO")){
-            free(aux_tripulante);
+        	// enlistar_algun_tripulante();
+        	// mandar_a_trabajar(aux_tripulante);
+            // free(aux_tripulante); // cuando termina de trabajar lo libero che?
         }
         else if(comparar_strings(ALGORITMO, "RR")){
             sleep(MIN(tiempo_restante, QUANTUM)*RETARDO_CICLO_CPU);
@@ -169,8 +191,6 @@ void iniciar_planificacion() {
 }
 
 void listar_tripulantes() {
-
-    printf(">>> Listar Tripulantes\n\n");
 
     char* fechaHora = fecha_y_hora();
 
@@ -203,8 +223,6 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 
 	t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
 
-	// Segun este planteo, nos manda uno por uno los tripulantes.
-	// Es posible plantearlo a que mande una lista con todos.
 	while(respuesta->codigo_operacion != EXITO){
 		list_add(lista_tripulantes_patota, respuesta->tcb);
 		//free(respuesta->tcb);
@@ -283,6 +301,171 @@ void expulsar_tripulante(char* leido) {
 
 }
 
+void tripulante(t_tripulante* un_tripulante){
+
+	iniciar_tripulante(un_tripulante);
+
+	// TODO: ERROR, ESTO ES CUANDO EL TRIPULANTE PASE A EXEC
+	while(un_tripulante->estado_tripulante == estado_tripulante[EXIT]){
+		while(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
+			realizar_tarea(un_tripulante);
+			// pedir_otra_tarea();
+		}
+	};
+
+}
+
+void iniciar_tripulante(t_tripulante* un_tripulante){
+	// Se verifica que se creo bien y se enlista
+	if (un_tripulante->estado_tripulante == estado_tripulante[NEW]){
+		enlistarse(un_tripulante);
+	}
+	else {
+		log_debug(logger, "Por un motivo desconocido, el tripulante se ha creado en un estado distinto a NEW. ");
+	}
+}
+
+void enlistarse(t_tripulante* un_tripulante){
+	// Se le asigna la tarea y se lo pasa a READY
+	pedir_tarea_a_mi_ram_hq(un_tripulante->TID, socket_a_mi_ram_hq);
+
+	t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+
+	if(respuesta->codigo_operacion == TAREA){
+		un_tripulante->tarea = *(respuesta->tarea);
+	}
+	else if (respuesta->codigo_operacion == FALLO){
+		log_info(logger, "No se recibio ninguna tarea.\n Codigo de error: FALLO\n");
+	}
+	else{
+		log_info(logger, "Error desconocido, no se recibio ninguna tarea.\n");
+	}
+
+	un_tripulante->estado_tripulante = estado_tripulante[READY];
+
+	monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
+
+}
+
+void realizar_tarea(t_tripulante* un_tripulante){
+
+	// TODO TODO SE DEBE PODER INTERRUMPIR EN CASO DE QUERER DETENER LAS COSAS
+
+	int codigo_tarea = identificar_tarea(un_tripulante->tarea.nombre);
+
+	switch(codigo_tarea){
+
+		case GENERAR_OXIGENO:
+			llegar_a_destino(un_tripulante);
+			break;
+
+		case CONSUMIR_OXIGENO:
+			llegar_a_destino(un_tripulante);
+			break;
+
+		case GENERAR_COMIDA:
+			llegar_a_destino(un_tripulante);
+			break;
+
+		case CONSUMIR_COMIDA:
+			llegar_a_destino(un_tripulante);
+			break;
+
+		case GENERAR_BASURA:
+			llegar_a_destino(un_tripulante);
+			break;
+
+		case DESCARTAR_BASURA:
+			llegar_a_destino(un_tripulante);
+			break;
+
+		default:
+			llegar_a_destino(un_tripulante);
+			no_me_despierten_estoy_trabajando(un_tripulante);
+			break;
+	}
+}
+
+
+int identificar_tarea(char* nombre_recibido){
+
+	if(comparar_strings(nombre_recibido, "GENERAR_OXIGENO")){
+		return GENERAR_OXIGENO;
+	}
+	else if(comparar_strings(nombre_recibido, "CONSUMIR_OXIGENO")){
+		return CONSUMIR_OXIGENO;
+	}
+	else if(comparar_strings(nombre_recibido, "GENERAR_COMIDA")){
+		return GENERAR_COMIDA;
+	}
+	else if(comparar_strings(nombre_recibido, "CONSUMIR_COMIDA")){
+		return CONSUMIR_COMIDA;
+	}
+	else if(comparar_strings(nombre_recibido, "GENERAR_BASURA")){
+		return GENERAR_BASURA;
+	}
+
+	return OTRA_TAREA;
+
+}
+
+void llegar_a_destino(t_tripulante* un_tripulante){
+
+	uint32_t origen_x = un_tripulante->coord_x;
+	uint32_t origen_y = un_tripulante->coord_y;
+	uint32_t destino_x = un_tripulante->tarea.coord_x;
+	uint32_t destino_y = un_tripulante->tarea.coord_y;
+
+	uint32_t distancia_x = abs(destino_x - origen_x);
+	uint32_t distancia_y = abs(destino_y - origen_y);
+
+	// TODO: esto es, si no esta detenido todo
+	// while(){
+
+		// Se mueve primero en la x y luego en la y
+		while(distancia_x != 0){
+
+			if(destino_x > origen_x){
+				sleep(RETARDO_CICLO_CPU);
+				un_tripulante->coord_x++; // el eje positivo es hacia la derecha?
+				distancia_x--;
+			}
+			else if (destino_x < origen_x){
+				sleep(RETARDO_CICLO_CPU);
+				un_tripulante->coord_x--;
+				distancia_x--;
+			}
+
+
+		}
+
+		while(distancia_y != 0){
+			if(destino_y > origen_y){
+				sleep(RETARDO_CICLO_CPU);
+				un_tripulante->coord_y++; // el eje positivo es hacia arriba?
+				distancia_y--;
+			}
+			else if (destino_x < origen_x){
+				sleep(RETARDO_CICLO_CPU);
+				un_tripulante->coord_y--;
+				distancia_y--;
+			}
+		}
+
+
+	// }
+
+}
+
+void no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante){
+	// El tripulante realiza sus tareas.
+	// while(un_tripulante->tarea->duracion > 0 && NO ESTA TODO PARADO){
+	while(un_tripulante->tarea.duracion > 0 ){
+		sleep(RETARDO_CICLO_CPU);
+		un_tripulante->tarea.duracion--;
+	}
+}
+
 void enlistar_algun_tripulante(){
 
 	if (!list_is_empty(lista_tripulantes_new)){
@@ -308,15 +491,6 @@ void enlistar_algun_tripulante(){
 	else {
 		log_info(logger, "No hay ningun tripulante listo para ser enlistado.\n");
 	}
-}
-
-t_PCB* crear_pcb(char* path){
-
-    t_PCB* pcb = malloc(sizeof(t_PCB));
-    pcb -> PID = (uint32_t) nuevo_pid();
-    pcb -> direccion_tareas = (uint32_t) path;
-    return pcb;
-
 }
 
 int nuevo_pid(){
@@ -347,6 +521,7 @@ t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
 
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 
+	// No asigna siguiente instruccion
     t_TCB tcb;
     tcb.TID = tid;
     tcb.estado_tripulante = estado_tripulante[NEW];
@@ -365,7 +540,7 @@ void leer_consola() {
 
     do {
 
-        leido = readline(">>>");
+        leido = readline(">>> ");
 
         if (strlen(leido) > 0) {
             comando = reconocer_comando(leido);

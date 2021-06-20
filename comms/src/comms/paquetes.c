@@ -167,9 +167,6 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     // Switch estructuras y cosas del fylesystem
     switch (paquete->codigo_operacion) { 
-    	case RECIBIR_PCB:
-    		intermediario->codigo_operacion = RECIBIR_PCB;
-    		break;
 
         case RECIBIR_TCB:
         	intermediario->codigo_operacion = RECIBIR_TCB;
