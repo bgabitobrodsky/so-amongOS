@@ -86,16 +86,6 @@ int reconocer_comando(char* str) {
 		}
 	}
 
-	if (comparar_strings(palabras[0],"EXIT")) {
-		if (contador == 1) {
-			liberar_puntero_doble(palabras);
-			return EXIT;
-		}
-		else {
-			printf("Error de parametros: EXIT\n");
-		}
-	}
-
 	if (comparar_strings(palabras[0],"APAGAR_SISTEMA")) {
 		if (contador == 1) {
 			liberar_puntero_doble(palabras);
@@ -123,6 +113,7 @@ void help_comandos() {
 	printf("- LISTAR_TRIPULANTES\n");
 	printf("- EXPULSAR_TRIPULANTE <codigo_de_tripulante>\n");
 	printf("- OBTENER_BITACORA <codigo_de_tripulante>\n");
+	printf("- APAGAR_SISTEMA\n");
 
 }
 
