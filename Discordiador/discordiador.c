@@ -62,11 +62,7 @@ int main() {
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     iniciar_patota("INICIAR_PATOTA 5 Oxigeno.ims 1|1 2|2 3|3");
-
-    test_serializar_tcb();
-
-	log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int)tcb->TID, (char) tcb->estado_tripulante, (int) tcb->coord_x, (int) tcb->coord_y);
-
+    listar_tripulantes();
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -217,7 +213,7 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 		//free(respuesta->tcb);
 		//free(respuesta);
 		respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-		printf("Recibo un tcb. \n");
+		// printf("Recibo un tcb. \n");
 	}
 	if(respuesta->codigo_operacion == FALLO){
     	log_info(logger, "Error al pedir los tripulantes para listar.\n");
@@ -232,7 +228,8 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 
 	lista_new_aux =	list_filter(lista_tripulantes_new, condicion);
 
-	list_add_all(lista_tripulantes_patota, lista_new_aux);
+	// TODO: Hablar con gabito
+	// list_add_all(lista_tripulantes_patota, lista_new_aux);
 
 	bool ordenar_por_tid(void* un_elemento, void* otro_elemento){
 	     return ((((t_TCB*) un_elemento)->TID) < (((t_TCB*) otro_elemento)->TID));
@@ -263,9 +260,7 @@ void expulsar_tripulante(char* leido) {
     char** palabras = string_split(leido, " ");
     int tid_tripulante_a_expulsar = atoi(palabras[1]);
 
-    t_sigkill tripulante_tid;
-    tripulante_tid.tid = tid_tripulante_a_expulsar;
-    t_buffer* b_tid = serializar_tid(tripulante_tid);
+    t_buffer* b_tid = serializar_entero(tid_tripulante_a_expulsar);
     empaquetar_y_enviar(b_tid, T_SIGKILL, socket_a_mi_ram_hq);
 
     t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
@@ -448,7 +443,8 @@ t_tripulante* crear_tripulante(int tid, int x, int y, char estado){
 
 }
 
-test_serializar_tcb(){
+void test_serializar_tcb(){
+
     t_TCB tcb;
 
     tcb.TID = 10001;
@@ -460,8 +456,24 @@ test_serializar_tcb(){
 
 	log_info(logger, "TCB antes de serializar:\n");
 	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb.TID, (char) tcb.estado_tripulante,(int) tcb.coord_x, (int) tcb.coord_y);
+
 	t_buffer* b = serializar_tcb(tcb);
 	t_TCB* tcb_deserializado = deserializar_tcb(b);
+
 	log_info(logger, "TCB despues de serializar:\n");
 	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb_deserializado->TID, (char) tcb_deserializado->estado_tripulante,(int) tcb_deserializado->coord_x, (int) tcb_deserializado->coord_y);
+
+}
+
+void test_iniciar_patota(){
+
+	iniciar_patota("INICIAR_PATOTA 5 Oxigeno.ims 1|1 2|2 3|3");
+
+}
+
+void test_listar_tripulantes(){
+
+	test_iniciar_patota();
+	listar_tripulantes();
+
 }
