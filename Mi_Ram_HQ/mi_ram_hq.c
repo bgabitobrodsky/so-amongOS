@@ -51,6 +51,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		memcpy(memoria_principal + segmento_pcb->base, pcb, sizeof(t_PCB));
 		tabla->segmento_pcb = segmento_pcb;
 
+
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid_patota);
 		if(tabla == NULL){ 
@@ -63,11 +64,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		for(int i = 0; i  cant_marcos_tarea; i++){
 			marco* marco_tareas = asignar_marco();
 			// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-			pagina* pagina = malloc(sizeof(pagina));
-			
-			pagina->puntero_marco = marco_tareas;
-			pagina->tamaño_ocupado = TAMANIO_PAGINA;
-
+			pagina* pagina = crear_pagina(marco_tareas, TAMANIO_PAGINA);
 			list_add(tabla->paginas,pagina);			
 		}
 
@@ -76,24 +73,11 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		if(marco_incompleto != 0){
 			marco* marco_tareas = asignar_marco();
 			// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-			pagina* pagina = malloc(sizeof(pagina));
-			
-			pagina->puntero_marco = marco_tareas;
-			pagina->tamaño_ocupado = marco_incompleto;
+		
+			pagina* pagina = crear_pagina(marco_tareas, marco_incompleto);
 
 			list_add(tabla->paginas,pagina);			
 		}
-
-
-
-		pagina* crear_pagina(marco* marco, int ocupa){
-			pagina* pagina = malloc(sizeof(marco));
-			pagina->puntero_marco = marco_tareas;
-			pagina->tamaño_ocupado = tam;
-
-			return pagina;
-		}
-
 
 		//consultar si la ultima pagina le sobra lugar
 		//completarla, restarle el tamaño  que falte y repetir lo anterior
@@ -116,11 +100,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 			for(int i = 0; i  cant_marcos_pcb; i++){
 				marco* marco_pcb = asignar_marco();
 				// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-				pagina* pagina = malloc(sizeof(pagina));
-				
-				pagina->puntero_marco = marco_pcb;
-				pagina->tamaño_ocupado = TAMANIO_PAGINA;
-
+				pagina* pagina = crear_pagina(marco_pcb, TAMANIO_PAGINA);
 				list_add(tabla->paginas,pagina);
 			}
 
@@ -129,11 +109,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 			if(marco_incompleto != 0){
 				marco* marco_pcb = asignar_marco();
 				// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-				pagina* pagina = malloc(sizeof(pagina));
-				
-				pagina->puntero_marco = marco_pcb;
-				pagina->tamaño_ocupado = marco_incompleto;
-
+				pagina* pagina = crear_pagina(marco_pcb, marco_incompleto);
 				list_add(tabla->paginas,pagina);			
 			}
 		}
@@ -145,7 +121,13 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 }
 
 
+pagina* crear_pagina(marco* marco, int ocupa){
+	pagina* pagina = malloc(sizeof(pagina));
+	pagina->puntero_marco = marco_tareas;
+	pagina->tamaño_ocupado = tam;
 
+	return pagina;
+}
 
 
 int cantidad_marcos_completos(int tam){
