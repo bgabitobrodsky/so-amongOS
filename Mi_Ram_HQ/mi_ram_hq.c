@@ -81,7 +81,14 @@ void gestionar_tcb(t_TCB* tcb){
 		tcb->siguiente_instruccion = puntero_a_tareas;
 
 		memcpy(memoria_principal + segmento_tcb->base, tcb, sizeof(t_TCB));
-		list_add(tabla->segmentos_tcb, segmento_tcb);
+
+		bool criterio_orden(segmento* seg1, segmento* seg2){
+			t_TCB* tcb1 = memoria_principal + seg1->base;
+			t_TCB* tcb2 = memoria_principal + seg2->base;
+			return tcb1->TID < tcb2->TID;
+		}
+
+		list_add_sorted(tabla->segmentos_tcb, segmento_tcb, criterio_orden);
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 
 	}else{
@@ -352,5 +359,23 @@ void* buscar_tabla(int pid){
 	}
 	log_debug(logger,"Tabla no encontrada");
 	return NULL;
+}
+
+t_TCB* buscar_tcb_por_tid(int tid){
+	int pid = tid / 10000;
+	tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+	// busco en la lista de tcbs en la posicion [tid - 10000 - 1] porque al guardar los tcbs los guardo ordenados por tids
+    segmento* segmento_tcb = (segmento*) list_get(tabla->segmentos_tcb, tid - 10000 - 1); // resto 1 porque el primer TCB siempre tiene tid #0001
+    t_TCB* tcb_recuperado = memoria_principal + segmento_tcb->base;						  // si no resto 1 me agarra el tcb[1] enves del tcb[0]
+	return tcb_recuperado;
+}
+
+t_list* buscar_tcbs_por_pid(int pid){
+	tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+	void* transformer(void* un_segmento){
+		segmento* segmento_tcb = (segmento*) un_segmento;
+		return memoria_principal + segmento_tcb->base;
+	}
+	return list_map(tabla->segmentos_tcb, transformer);
 }
 

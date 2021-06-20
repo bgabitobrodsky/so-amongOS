@@ -179,7 +179,6 @@ tabla_segmentos* crear_tabla_segmentos(uint32_t pid){
 }
 
 
-
 void test_segmentos(){
 	segmento* seg = asignar_segmento(sizeof(char[2]));
 	segmento* seg2 = asignar_segmento(sizeof(char));
@@ -246,7 +245,7 @@ void test_gestionar_tcb(){
 
     t_TCB* tcb2 = malloc(sizeof(t_TCB));
     tcb2->TID = 10002;
-    tcb2->coord_x = 1;
+    tcb2->coord_x = 5;
     tcb2->coord_y = 2;
     tcb2->estado_tripulante = 'N';
     gestionar_tcb(tcb2);
@@ -254,10 +253,11 @@ void test_gestionar_tcb(){
 
 	print_segmentos_info();
 	print_tablas_segmentos_info();
-    tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(1);
-    segmento* segmento_tcb = (segmento*) list_get(tabla->segmentos_tcb, 1);
-    t_TCB* tcb_recuperado = memoria_principal + segmento_tcb->base;
-    log_debug(logger,"El tid del segundo tripulante es: %d", tcb_recuperado->TID);
+    t_TCB* tcb_recuperado = buscar_tcb_por_tid(10002);
+    log_debug(logger,"La coord_x del segundo tripulante buscado por tid es: %d", tcb_recuperado->coord_x);
+    t_list* lista_tcbs = buscar_tcbs_por_pid(1);
+    t_TCB* tcb_recuperado2 = (t_TCB*) list_get(lista_tcbs,1);
+    log_debug(logger,"La coord_x del segundo tripulante buscado por pid es: %d", tcb_recuperado2->coord_x);
 }
 
 void print_segmentos_info() {
