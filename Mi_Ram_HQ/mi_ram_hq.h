@@ -54,6 +54,7 @@ pagina* crear_pagina(int base, bool libre);
 
 indice_tabla* crear_indice(int pid, void* tabla);
 void* buscar_tabla(int pid);
+t_TCB* buscar_tcb(int tid);
 
 
 #endif /* MI_RAM_HQ_H_ */
