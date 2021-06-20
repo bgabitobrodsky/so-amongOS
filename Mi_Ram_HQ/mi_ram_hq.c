@@ -365,19 +365,57 @@ void* buscar_tabla(int pid){
 
 t_TCB* buscar_tcb_por_tid(int tid){
 	int pid = tid / 10000;
-	tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
-	// busco en la lista de tcbs en la posicion [tid - 10000 - 1] porque al guardar los tcbs los guardo ordenados por tids
-    segmento* segmento_tcb = (segmento*) list_get(tabla->segmentos_tcb, tid - 10000 - 1); // resto 1 porque el primer TCB siempre tiene tid #0001
-    t_TCB* tcb_recuperado = memoria_principal + segmento_tcb->base;						  // si no resto 1 me agarra el tcb[1] enves del tcb[0]
-	return tcb_recuperado;
+	
+	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
+		
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+		if(tabla == NULL){
+			return NULL;
+		}
+
+		bool buscador(void* un_segmento){
+			segmento* seg_tcb = (segmento*) un_segmento;
+			t_TCB* tcb = memoria_principal + seg_tcb->base;
+			return tcb->tid == tid;
+		}
+		t_TCB* tcb_recuperado = list_find(tabla->segmentos_tcb, buscador);
+
+		if(tcb_recuperado == NULL){
+			log_warning(logger,"TCB con TID: %d no encontrado", tid);
+			return NULL;
+		}
+
+		log_info(logger,"TCB con TID: %d encontrado", tid);
+		return tcb_recuperado;
+		
+	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
+		
+	}else{
+		log_error(logger,"Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
+	}
 }
 
 t_list* buscar_tcbs_por_pid(int pid){
-	tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
-	void* transformer(void* un_segmento){
-		segmento* segmento_tcb = (segmento*) un_segmento;
-		return memoria_principal + segmento_tcb->base;
-	}
-	return list_map(tabla->segmentos_tcb, transformer);
-}
+	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+		if(tabla == NULL){
+			return NULL;
+		}
+
+		void* transformer(void* un_segmento){
+			segmento* segmento_tcb = (segmento*) un_segmento;
+			return memoria_principal + segmento_tcb->base;
+		}
+		log_info(logger,"Encontrados TCBs de la patota con pid: %d", pid);
+		return list_map(tabla->segmentos_tcb, transformer);
+
+	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
+
+	}else{
+		log_error(logger,"Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
+	}
+	
+}
