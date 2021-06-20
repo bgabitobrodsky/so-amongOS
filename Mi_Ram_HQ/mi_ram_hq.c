@@ -380,3 +380,4 @@ t_list* buscar_tcbs_por_pid(int pid){
 	}
 	return list_map(tabla->segmentos_tcb, transformer);
 }
+
