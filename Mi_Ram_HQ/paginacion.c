@@ -4,6 +4,14 @@
 
 
 
+void agregar_pagina( tabla_paginas* tabla, int tamaño){
+	marco* marco = asignar_marco();
+	// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas); TODO
+	pagina* pagina = crear_pagina(marco, tamaño);
+	list_add(tabla->paginas,pagina);
+}
+
+
 pagina* crear_pagina(marco* marco, int ocupa){
 	pagina* pagina = malloc(sizeof(pagina));
 	pagina->puntero_marco = marco_tareas;

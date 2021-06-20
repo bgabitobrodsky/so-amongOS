@@ -59,24 +59,16 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		}
 
 		// cuantos marcos necesito para guardar el tamaño, que devuelvea una lista de paginas que referencien a los marcos
-		int cant_marcos_tarea = cantidad_marcos_completos(tamanio_tareas);
+		int tam_cant_marcos_tarea = cantidad_marcos_completos(tamanio_tareas);
 
 		for(int i = 0; i  cant_marcos_tarea; i++){
-			marco* marco_tareas = asignar_marco();
-			// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-			pagina* pagina = crear_pagina(marco_tareas, TAMANIO_PAGINA);
-			list_add(tabla->paginas,pagina);			
+			agregar_pagina(tabla, TAMANIO_PAGINA);			
 		}
 
-		int marco_incompleto_tarea = ocupa_marco_incompleto(tamanio_tareas);
+		int tam_marco_incompleto_tarea = ocupa_marco_incompleto(tamanio_tareas);
 
 		if(marco_incompleto != 0){
-			marco* marco_tareas = asignar_marco();
-			// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-		
-			pagina* pagina = crear_pagina(marco_tareas, marco_incompleto);
-
-			list_add(tabla->paginas,pagina);			
+			agregar_pagina(tabla, tam_marco_incompleto);			
 		}
 
 		//consultar si la ultima pagina le sobra lugar
@@ -98,19 +90,13 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		else{
 
 			for(int i = 0; i  cant_marcos_pcb; i++){
-				marco* marco_pcb = asignar_marco();
-				// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-				pagina* pagina = crear_pagina(marco_pcb, TAMANIO_PAGINA);
-				list_add(tabla->paginas,pagina);
+				agregar_pagina(tabla, TAMANIO_PAGINA);
 			}
 
-			int marco_incompleto_pcb = ocupa_marco_incompleto(sizeof(t_PCB));
+			int tam_marco_incompleto_pcb = ocupa_marco_incompleto(sizeof(t_PCB));
 
 			if(marco_incompleto != 0){
-				marco* marco_pcb = asignar_marco();
-				// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas);
-				pagina* pagina = crear_pagina(marco_pcb, marco_incompleto);
-				list_add(tabla->paginas,pagina);			
+				agregar_pagina(tabla, tam_marco_incompleto_pcb);			
 			}
 		}
 	}else{
