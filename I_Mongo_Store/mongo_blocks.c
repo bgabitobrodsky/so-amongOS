@@ -1,10 +1,10 @@
-include "mongo_blocks.h"
+#include "mongo_blocks.h"
 
 void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
     uint32_t block_size = TAMANIO_BLOQUE; // Bytes
     uint32_t size = CANTIDAD_BLOQUES;
-    void* puntero_a_bits = malloc(TAMANIO_BLOQUE * 8);
-    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, TAMANIO_BLOQUE * 8, LSB_FIRST); 
+    void* puntero_a_bits = malloc(TAMANIO_BLOQUE * 8); //De javi: con calloc te inicializa el puntero con todos 0
+    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, TAMANIO_BLOQUE * 8, LSB_FIRST); //De javi: ¿No sería CANTIDAD_BLOQUES?
 
     for(int i; i < CANTIDAD_BLOQUES; i++) {
         bitarray_clean_bit(bitmap, i);
@@ -24,7 +24,7 @@ void iniciar_blocks(int filedescriptor_blocks) {
     uint32_t block_size;
     fread(&block_size, sizeof(uint32_t), 1, archivos.superbloque);
 
-    fseek(archivos.superbloque, strlen("BLOCKS="), SEEK_CUR));
+    fseek(archivos.superbloque, strlen("BLOCKS="), SEEK_CUR);
     uint32_t size;
     fread(&size, sizeof(uint32_t), 1, archivos.superbloque);
 

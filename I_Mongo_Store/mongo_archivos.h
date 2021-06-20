@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/mman.h>
 
 #define TAMANIO_BLOQUE 64
 #define CANTIDAD_BLOQUES 64 
@@ -46,6 +47,9 @@ typedef struct {
 
     t_TCB* tripulante;
     FILE* bitacora_asociada;
+    // ¿Porqué no le pusiste a las bitácoras su tamanio y bloques?
+    int tamanio;
+    int* bloques;
 
 } t_bitacora;
 
@@ -66,20 +70,34 @@ typedef struct {
 pthread_mutex_t mutex_oxigeno;
 pthread_mutex_t mutex_comida;
 pthread_mutex_t mutex_basura;
+pthread_mutex_t mutex_blocks;
 
 void inicializar_archivos(char* path_files);
 void inicializar_archivos_preexistentes(char* path_files);
 void asignar_nuevo_bloque(FILE* archivo);
-int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo);
-int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada; char tipo);
+int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
+int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 void actualizar_MD5(FILE* archivo);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(FILE* archivo, int cantidad);
-void quitar(FILE* archivo, int cantidad);
+void quitar(FILE* archivo, char* path, int cantidad, char tipo);
 char* conseguir_tipo(char tipo);
+char conseguir_char(int codigo_archivo);
 FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo(int codigo);
+char* conseguir_path(int codigo_archivo);
 int max(int a, int b);
+char char_random();
+
+// devuelven la metadata del archivo
+uint32_t tamanio_archivo(FILE* archivo);
+uint32_t cantidad_bloques_archvio(FILE* archivo);
+uint32_t* lista_bloques_archvio(FILE* archivo);
+char caracter_llenado_archivo(FILE* archivo);
+char* md5_archivo(FILE* archivo);
+void escribir_archivo(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques, char caracter_llenado, char* md_5);
+
+
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;

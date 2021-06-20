@@ -9,6 +9,7 @@
 
 #define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP") // Verificar sintaxis
 #define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
+int sistema_activo = 1;
 
 int main(int argc, char** argv){
 
@@ -33,10 +34,14 @@ int main(int argc, char** argv){
 	pthread_mutex_init(&mutex_comida, NULL);
 	pthread_mutex_init(&mutex_basura, NULL);
 
-	pthread_t hilo_escucha; // TODO: Pasarlo directamente a main, hilo al pedo
+	pthread_t hilo_escucha; // TODO: Pasarlo directamente a main, hilo al pedo --> Pero ya está en main...
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
-
+	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba
+
+	/*while(sistema_activo){
+		usleep(1);
+	}*/ //TODO ver cuando debería terminarse el mongo
 
 	// Se cierra todo lo que se usa
 	cerrar_archivos();
@@ -53,7 +58,7 @@ int main(int argc, char** argv){
  void escuchar_mongo(int args) { // args no se cierra, fijarse donde cerrarlo
     int socket_escucha = args;
  */
-void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
+void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerrarlo
     args_escuchar *p = malloc(sizeof(args_escuchar));
     p = args;
     int socket_escucha = p->socket_oyente;
@@ -86,7 +91,7 @@ void escuchar_mongo(void* args) { // args no se cierra, fijarse donde cerrarlo
         	if (es_discordiador == 1) {
         		es_discordiador = 0; // Se cambia flujo para que todo lo subsiguiente sean tripulantes
 
-				// Cambiar fork
+				// TODO Cambiar fork
             	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
                 	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
                 	log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
