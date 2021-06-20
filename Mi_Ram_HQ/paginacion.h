@@ -3,6 +3,8 @@
 
 #include "mi_ram_hq.h"
 
+
+void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamaño);
 void agregar_pagina( tabla_paginas* tabla, int tamaño);
 pagina* crear_pagina(marco* marco, int ocupa);
 int cantidad_marcos_completos(int tam);

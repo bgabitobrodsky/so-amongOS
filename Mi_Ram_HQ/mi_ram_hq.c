@@ -58,18 +58,8 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 			tabla = crear_tabla_paginas(pid_patota);
 		}
 
-		// cuantos marcos necesito para guardar el tamaño, que devuelvea una lista de paginas que referencien a los marcos
-		int tam_cant_marcos_tarea = cantidad_marcos_completos(tamanio_tareas);
 
-		for(int i = 0; i  cant_marcos_tarea; i++){
-			agregar_pagina(tabla, TAMANIO_PAGINA);			
-		}
-
-		int tam_marco_incompleto_tarea = ocupa_marco_incompleto(tamanio_tareas);
-
-		if(marco_incompleto != 0){
-			agregar_pagina(tabla, tam_marco_incompleto);			
-		}
+		agregar_paginas_segun_tamano(tabla, tamanio_tareas);
 
 		//consultar si la ultima pagina le sobra lugar
 		//completarla, restarle el tamaño  que falte y repetir lo anterior
@@ -88,16 +78,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 
 		}
 		else{
-
-			for(int i = 0; i  cant_marcos_pcb; i++){
-				agregar_pagina(tabla, TAMANIO_PAGINA);
-			}
-
-			int tam_marco_incompleto_pcb = ocupa_marco_incompleto(sizeof(t_PCB));
-
-			if(marco_incompleto != 0){
-				agregar_pagina(tabla, tam_marco_incompleto_pcb);			
-			}
+			agregar_paginas_segun_tamano(tabla, sizeof(t_PCB));
 		}
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");

@@ -2,7 +2,19 @@
 #define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
 
 
+void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamaño){
+	int cant_marcos_completos = cantidad_marcos_completos(tamaño);
 
+	for(int i = 0; i < cant_marcos_completos; i++){
+		agregar_pagina(tabla, TAMANIO_PAGINA);			
+	}
+
+	int tam_marco_incompleto = ocupa_marco_incompleto(tamaño);
+
+	if(marco_incompleto != 0){
+		agregar_pagina(tabla, tam_marco_incompleto);			
+	}
+}
 
 void agregar_pagina( tabla_paginas* tabla, int tamaño){
 	marco* marco = asignar_marco();
