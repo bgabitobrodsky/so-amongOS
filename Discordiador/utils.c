@@ -139,18 +139,14 @@ void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket) {
 
 void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket){
 
-	t_sigkill tripulante;
-	tripulante.tid = tid;
-	t_buffer* buffer_tripulante = serializar_tid(tripulante);
+	t_buffer* buffer_tripulante = serializar_entero(tid);
 	empaquetar_y_enviar(buffer_tripulante, PEDIR_TAREA, socket);
 
 }
 
 void enviar_pid_a_ram(uint32_t pid, int socket){
 
-	t_sigkill patota;
-	patota.tid = pid;
-	t_buffer* pid_buffer = serializar_tid(patota);
+	t_buffer* pid_buffer = serializar_entero(pid);
 	empaquetar_y_enviar(pid_buffer, LISTAR_POR_PID, socket);
 
 }
@@ -193,6 +189,7 @@ void iniciar_listas() {
 	lista_tripulantes = list_create();
 
 }
+
 void iniciar_colas() {
 
 	cola_tripulantes_ready = queue_create();

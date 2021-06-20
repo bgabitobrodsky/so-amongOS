@@ -8,7 +8,6 @@
 #include "mi_ram_hq.h"
 #include <comms/generales.h>
 
-
 #define	IP config_get_string_value(config, "IP")
 #define PUERTO config_get_string_value(config, "PUERTO")
 #define TAMANIO_MEMORIA config_get_int_value(config, "TAMANIO_MEMORIA")
@@ -125,13 +124,15 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_gestionar_tcb();
+	// test_gestionar_tcb();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
-/*
+
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
+
+	proceso_handler((void*) &args_miram);
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) proceso_handler, (void*) &args_miram);
@@ -139,7 +140,7 @@ int main(int argc, char** argv) {
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
 	close(socket_oyente);
-*/
+
 
 	log_destroy(logger);
 	config_destroy(config);
@@ -175,7 +176,7 @@ void proceso_handler(void* args) {
 			parametros->socket = socket_especifico;
 			//parametros->ip_cliente = inet_ntoa(address.sin_addr);
 			//parametros->puerto_cliente = ntohs(address.sin_port);
-
+			atender_clientes(parametros);
 			pthread_t un_hilo_tripulante;
 
 			pthread_create(&un_hilo_tripulante, NULL, (void*) atender_clientes, (void *) parametros);
@@ -211,23 +212,15 @@ void atender_clientes(void* param) {
 
 			case PEDIR_TAREA:
 				log_info(logger, "Pedido de tarea recibido\n");
-				log_info(logger, "Tripulante: %i\n", mensaje_recibido->tid_condenado->tid);
+				log_info(logger, "Tripulante: %i\n", mensaje_recibido->tid);
 				// TODO: GABITO Y JULIA
-				// gestionar_pedido_tarea(mensaje_recibido->tid_condenado->tid, parametros->socket);
-				break;
-
-			case RECIBIR_PCB:
-				//log_info(logger, "Recibo una pcb\n");
-				//almacenar_pcb(mensaje_recibido); //TODO en un futuro, capaz no podamos recibir el PCB por quedarnos sin memoria
-				free(mensaje_recibido->pcb);
+				// gestionar_pedido_tarea(mensaje_recibido->tid, parametros->socket);
 				break;
 
 			case RECIBIR_TCB:
-				log_info(logger, "Recibo una tcb\n");
-				log_info(logger, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
+				// log_info(logger, "Recibo una tcb\n");
+				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
 				gestionar_tcb(mensaje_recibido->tcb);
-				free(mensaje_recibido->tcb);
-				//printf("Tripulante 1 pos: %c %c\n", (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
 				break;
 
 			case T_SIGKILL:
@@ -236,15 +229,24 @@ void atender_clientes(void* param) {
 				// verifica si existe
 				// si existe mandame un enviar_codigo(EXITO, parametros->socket);
 				// si no existe, mandame un enviar_codigo(FALLO, parametros->socket);
-				log_info(logger, "%i -KILLED", mensaje_recibido->tid_condenado->tid);
+				log_info(logger, "%i -KILLED", mensaje_recibido->tid);
 				enviar_codigo(EXITO, parametros->socket);
 				break;
 
 			case LISTAR_POR_PID:
 				log_info(logger, "Recibido pedido de tripulantes.\n");
-				// TODO: GABITO Y JULIA
-				// consultarme que hacer aca
+
+				t_list* tcbs_de_esta_patota = list_create();
+				tcbs_de_esta_patota = buscar_tcbs_por_pid(mensaje_recibido->pid);
+
+				for(int i = 0; i < list_size(tcbs_de_esta_patota); i++){
+					t_TCB* aux = list_get(tcbs_de_esta_patota, i);
+					t_buffer* buffer = serializar_tcb(*aux);
+					empaquetar_y_enviar(buffer, RECIBIR_TCB, parametros->socket);
+				}
+
 				enviar_codigo(EXITO, parametros->socket);
+
 				break;
 
 			case DESCONEXION:
@@ -258,7 +260,7 @@ void atender_clientes(void* param) {
 				printf("El codigo es %d\n", mensaje_recibido->codigo_operacion);
 				break;
 		}
-		free(mensaje_recibido);
+		// free(mensaje_recibido);
 	}
 
 }
@@ -378,4 +380,3 @@ t_list* buscar_tcbs_por_pid(int pid){
 	}
 	return list_map(tabla->segmentos_tcb, transformer);
 }
-
