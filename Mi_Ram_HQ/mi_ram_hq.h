@@ -28,12 +28,19 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 void* memoria_principal;
 
-typedef struct pagina {
+typedef struct marco {
     int base;
     bool libre;
     //uint64_t ultimo_uso; // para LRU
+} marco;
+t_list* marcos;
+
+
+typedef struct pagina {
+    marco* puntero_marco;
+    int tamaño_ocupado;
 } pagina;
-t_list* paginas;
+
 
 typedef struct segmento {
     int base;
