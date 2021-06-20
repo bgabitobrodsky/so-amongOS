@@ -62,19 +62,20 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		agregar_paginas_segun_tamano(tabla, tamanio_tareas);
 
 		//consultar si la ultima pagina le sobra lugar
-		//completarla, restarle el tamaño  que falte y repetir lo anterior
+		//completarla, restarle el tamano  que falte y repetir lo anterior
 
 		int cant_marcos_pcb = cantidad_marcos_completos(sizeof(t_PCB));
 
 		size list_size(tabla->paginas);
 		pagina* ultima_pagina = list_get(tabla->paginas, size - 1);
 
-		if(ultima_pagina->tamaño_ocupado <= TAMANIO_PAGINA){
+		if(ultima_pagina->tamano_ocupado <= TAMANIO_PAGINA){
 			// TODO
 			// rellenar ultima pagina
-			// restarle tamaño ya usado a lo que tengo que gurdar
-			//volver a fijarme cuantos marcos completos necesito
-			// repite...
+
+			// Devuelve lo que le sobro
+			int falta_guardar_del_pcb = completar_pagina(ultima_pagina, sizeof(t_PCB), tabla);
+			agregar_paginas_segun_tamano(tabla, falta_guardar_del_pcb);
 
 		}
 		else{

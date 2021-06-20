@@ -4,8 +4,9 @@
 #include "mi_ram_hq.h"
 
 
-void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamaño);
-void agregar_pagina( tabla_paginas* tabla, int tamaño);
+int completar_pagina(pagina* pagina, int tamano, tabla_paginas* tabla);
+void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamano);
+void agregar_pagina( tabla_paginas* tabla, int tamano);
 pagina* crear_pagina(marco* marco, int ocupa);
 int cantidad_marcos_completos(int tam);
 int ocupa_marco_incompleto(int tam);
@@ -25,7 +26,7 @@ t_list* marcos;
 
 typedef struct pagina {
     marco* puntero_marco;
-    int tamaño_ocupado;
+    int tamano_ocupado;
 } pagina;
 
 
