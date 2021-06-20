@@ -86,6 +86,15 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 
 
 
+		pagina* crear_pagina(marco* marco, int ocupa){
+			pagina* pagina = malloc(sizeof(marco));
+			pagina->puntero_marco = marco_tareas;
+			pagina->tamaño_ocupado = tam;
+
+			return pagina;
+		}
+
+
 		//consultar si la ultima pagina le sobra lugar
 		//completarla, restarle el tamaño  que falte y repetir lo anterior
 
@@ -94,8 +103,12 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		size list_size(tabla->paginas);
 		pagina* ultima_pagina = list_get(tabla->paginas, size - 1);
 
-		if(ultima_pagina->tamaño_ocupado != TAMANIO_PAGINA){
+		if(ultima_pagina->tamaño_ocupado <= TAMANIO_PAGINA){
 			// TODO
+			// rellenar ultima pagina
+			// restarle tamaño ya usado a lo que tengo que gurdar
+			//volver a fijarme cuantos marcos completos necesito
+			// repite...
 
 		}
 		else{
@@ -130,6 +143,22 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 	}
 	log_debug(logger,"Se termino la creación de PCB y persistencia de datos de la patota con PID: %d", pid_patota);
 }
+
+
+
+
+
+int cantidad_marcos_completos(int tam){
+	int marcos = tam/TAMANIO_PAGINA  
+	return marcos;
+}
+
+int ocupa_marco_incompleto(int tam){
+	int parte_ocupada = tam % TAMANIO_PAGINA 
+	return parte_ocupada;
+}
+
+
 
 void gestionar_tcb(t_TCB* tcb){
 	int pid = tcb->TID / 10000;
@@ -170,17 +199,6 @@ void gestionar_tcb(t_TCB* tcb){
 }
 
 
-
-
-int cantidad_marcos_completos(int tam){
-	int marcos = tam/TAMANIO_PAGINA  
-	return marcos;
-}
-
-int ocupa_marco_incompleto(int tam){
-	int parte_ocupada = tam % TAMANIO_PAGINA 
-	return parte_ocupada;
-}
 
 
 
