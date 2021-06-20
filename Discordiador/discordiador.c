@@ -61,9 +61,6 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    iniciar_patota("INICIAR_PATOTA 5 Oxigeno.ims 1|1 2|2 3|3");
-    listar_tripulantes();
-
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
     	leer_consola();
@@ -220,13 +217,12 @@ t_list* lista_tripulantes_patota(uint32_t pid){
     	log_info(logger, "Codigo de error: FALLO\n");
 	}
 
-	t_list* lista_new_aux = list_create();
-
     bool condicion(void* elemento1){
         return ((((t_TCB*) elemento1)->TID / 10000) == pid);
     }
 
-	lista_new_aux =	list_filter(lista_tripulantes_new, condicion);
+    // t_list* lista_new_aux = list_create();
+	// lista_new_aux =	list_filter(lista_tripulantes_new, condicion);
 
 	// TODO: Hablar con gabito
 	// list_add_all(lista_tripulantes_patota, lista_new_aux);
@@ -475,5 +471,54 @@ void test_listar_tripulantes(){
 
 	test_iniciar_patota();
 	listar_tripulantes();
+
+}
+
+void test_nuevo_pid(){
+	int i = 0;
+	list_add(lista_pids, (void*) 1);
+	list_add(lista_pids, (void*) 3);
+
+	while (i<10){
+		printf("%d", nuevo_pid());
+		i++;
+	}
+
+	// Resultado:
+	// Los PIDS en la lista son 1 y 3, así que me debe ingresar y printear los primeros 10 pids que no sean esos.
+}
+
+void test_enlistar_algun_tripulante(){
+	t_TCB* tcb = crear_puntero_tcb(0, 5, "8a9");
+	printf("Tripulante. pos: %i %i, tid: %i estado %c \n", (int) tcb->coord_x, (int) tcb->coord_y, (int) tcb->TID, tcb->estado_tripulante);
+
+	monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, tcb);
+	enlistar_algun_tripulante();
+
+	t_TCB* prueba = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
+	printf("Tripulante. pos: %i %i, tid: %i estado %c \n", (int) prueba->coord_x, (int) prueba->coord_y, (int) prueba->TID, prueba->estado_tripulante);
+
+}
+
+void test_serializar_tarea(){
+
+    t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
+
+	printf("Largo nombre: %i\n", t->largo_nombre);
+	printf("Nombre: %s\n", t->nombre);
+	printf("Parametros: %i\n", t->parametro);
+	printf("Cordenada en X: %i\n", t->coord_x);
+	printf("Cordenada en Y: %i\n", t->coord_y);
+	printf("Duracion: %i\n", t->duracion);
+
+    t_buffer* b = serializar_tarea(*t);
+    t_tarea* t2 = deserializar_tarea(b);
+
+	printf("Largo nombre: %i\n", t2->largo_nombre);
+	printf("Nombre: %s\n", t2->nombre);
+	printf("Parametros: %i\n", t2->parametro);
+	printf("Cordenada en X: %i\n", t2->coord_x);
+	printf("Cordenada en Y: %i\n", t2->coord_y);
+	printf("Duracion: %i\n", t2->duracion);
 
 }

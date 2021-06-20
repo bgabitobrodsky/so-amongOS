@@ -41,5 +41,8 @@ void leer_consola();
 void test_serializar_tcb();
 void test_iniciar_patota();
 void test_listar_tripulantes();
+void test_nuevo_pid();
+void test_enlistar_algun_tripulante();
+void test_serializar_tarea();
 
 #endif /* DISCORDIADOR_H_ */
