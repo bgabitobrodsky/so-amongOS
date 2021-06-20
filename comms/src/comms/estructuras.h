@@ -9,8 +9,8 @@
 #include <stdint.h>
 
 /* ENUMS */
-//                      						ESTRUCTURAS                          											COSAS FILESYSTEM            		ACCIONES BITACORA                                                     CODIGOS UNICOS: MONGO           			DISCORDIADOR                    GENERALES								ESTADOS_TRIPULANTE
-enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, 		OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     	SABOTAJE, PRIMERA_CONEXION,     		MENSAJE, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO};
+//                      						ESTRUCTURAS                          							COSAS FILESYSTEM            		ACCIONES BITACORA                                                     		CODIGOS UNICOS: MONGO           					DISCORDIADOR                		GENERALES
+enum codigo_operacion { RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, 		OXIGENO, COMIDA, BASURA,    	MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     	SABOTAJE, PRIMERA_CONEXION,     		MENSAJE, COD_TAREA,     RECEPCION, DESCONEXION, 	EXITO, FALLO};
 
 enum estados { NEW, READY, EXEC, BLOCKED};
 
@@ -66,6 +66,8 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     t_tarea* tarea;
     t_archivo_tareas* archivo_tareas;
     t_sigkill* tid_condenado;
+    int tid;
+    int pid;
     int codigo_operacion;
     int cantidad; // Revisar funcs paquetes
 

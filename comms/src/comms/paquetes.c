@@ -1,7 +1,6 @@
 /*
 
  Funcionalidad de paquetes, cortesia de Nico
- TODO de SEBA, falta testear serializacion, envio y recepcion de tareas.
 
 */
 
@@ -31,7 +30,6 @@ t_buffer* serializar_tcb(t_TCB tcb) {
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
-    free(estructura);
     return buffer;
 }
 
@@ -194,10 +192,13 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
         case T_SIGKILL:
         case PEDIR_TAREA:
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
+            memcpy(&(intermediario->tid), paquete->buffer->estructura, sizeof(uint32_t));
+            break;
+
         case LISTAR_POR_PID:
         	intermediario->codigo_operacion = paquete->codigo_operacion;
-        	intermediario->tid_condenado = malloc(sizeof(uint32_t));
-            intermediario->tid_condenado = deserializar_tid(paquete->buffer);
+            memcpy(&(intermediario->pid), paquete->buffer->estructura, sizeof(uint32_t));
             break;
 
         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
@@ -300,25 +301,15 @@ t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
     return texto_archivo;
 }
 
-t_buffer* serializar_tid(t_sigkill t_kill) {
+t_buffer* serializar_entero(uint32_t numero) {
+    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    buffer->tamanio_estructura = sizeof(int);
 
-    t_buffer* buffer = malloc(sizeof(t_buffer));
-    buffer->tamanio_estructura = sizeof(uint32_t);
+    void* estructura = malloc((buffer->tamanio_estructura));
 
-    void* estructura = malloc(buffer->tamanio_estructura);
-    memcpy(estructura, &t_kill.tid, sizeof(uint32_t));
+    memcpy(estructura, &numero, sizeof(int));
 
     buffer->estructura = estructura;
 
     return buffer;
-}
-
-t_sigkill* deserializar_tid(t_buffer* buffer) {
-
-	t_sigkill* trip_kill = malloc(sizeof(t_sigkill));
-    void* estructura = buffer->estructura;
-
-    memcpy(&(trip_kill->tid), estructura, sizeof(uint32_t));
-
-    return trip_kill;
 }

@@ -16,7 +16,6 @@
 
 
 
-void gestionar_tareas (t_archivo_tareas*);
 void atender_clientes(void*);
 void proceso_handler(void* args);
 t_PCB* crear_pcb(char* path);
@@ -42,23 +41,10 @@ typedef struct pagina {
 } pagina;
 
 
-typedef struct segmento {
-    int base;
-    int tam;
-    bool libre;
-} segmento;
-t_list* segmentos;
-
 
 typedef struct tabla_paginas {
     t_list* paginas;
 } tabla_paginas;
-
-typedef struct tabla_segmentos {
-    segmento* segmento_pcb;
-    segmento* segmento_tareas;
-    t_list* segmentos_tcb;
-} tabla_segmentos;
 
 typedef struct indice_tabla {
     uint32_t pid;
@@ -68,28 +54,19 @@ typedef struct indice_tabla {
 
 t_list* indices;
 
+void iniciar_memoria();
+void gestionar_tareas (t_archivo_tareas*);
+void gestionar_tcb(t_TCB*);
 
-segmento* asignar_segmento(int tam);
-segmento* buscar_segmento_libre(int tam);
-segmento* best_fit(int tam);
-segmento* first_fit(int tam);
-segmento* crear_segmento(int base,int tam,bool libre);
-void liberar_segmento(int base);
-
-tabla_segmentos* crear_tabla_segmentos(uint32_t pid);
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
-indice_tabla* crear_indice(int pid, void* tabla);
 marco* crear_marco(int base, bool libre);
 void liberar_marco(int base);
 marco* buscar_marco_libre();
 marco* asignar_marco();
 
+indice_tabla* crear_indice(int pid, void* tabla);
 void* buscar_tabla(int pid);
+t_TCB* buscar_tcb(int tid);
 
-void iniciar_memoria();
-void print_segmentos_info();
-void print_tablas_info();
 
-void test_segmentos();
-void test_tabla_segmentos();
 #endif /* MI_RAM_HQ_H_ */
