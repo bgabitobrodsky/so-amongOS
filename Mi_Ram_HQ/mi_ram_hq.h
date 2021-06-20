@@ -27,24 +27,6 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 void* memoria_principal;
 
-typedef struct marco {
-    int base;
-    bool libre;
-    //uint64_t ultimo_uso; // para LRU
-} marco;
-t_list* marcos;
-
-
-typedef struct pagina {
-    marco* puntero_marco;
-    int tamaño_ocupado;
-} pagina;
-
-
-
-typedef struct tabla_paginas {
-    t_list* paginas;
-} tabla_paginas;
 
 typedef struct indice_tabla {
     uint32_t pid;
@@ -58,11 +40,6 @@ void iniciar_memoria();
 void gestionar_tareas (t_archivo_tareas*);
 void gestionar_tcb(t_TCB*);
 
-tabla_paginas* crear_tabla_paginas(uint32_t pid);
-marco* crear_marco(int base, bool libre);
-void liberar_marco(int base);
-marco* buscar_marco_libre();
-marco* asignar_marco();
 
 indice_tabla* crear_indice(int pid, void* tabla);
 void* buscar_tabla(int pid);
