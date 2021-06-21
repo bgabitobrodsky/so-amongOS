@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_buscar_siguiente_tarea();
+	test_eliminar_tcb();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
@@ -330,12 +330,12 @@ void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
 	indices = list_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
-		log_info(logger,"Se inicia memoria con esquema se SEGMENTACION");
+		log_debug(logger,"Se inicia memoria con esquema se SEGMENTACION");
 		segmentos = list_create();
 		segmento* segmento_principal = crear_segmento(0,TAMANIO_MEMORIA,true);
 		list_add(segmentos,segmento_principal);
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
-		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
+		log_debug(logger,"Se inicia memoria con esquema de PAGINACION");
 		paginas = list_create();
 
 		int cantidad_paginas = TAMANIO_MEMORIA/TAMANIO_PAGINA;
@@ -365,13 +365,13 @@ void* buscar_tabla(int pid){
 		log_debug(logger,"Tabla encontrada, pid: %d",indice->pid);
 		return indice->tabla;
 	}
-	log_debug(logger,"Tabla no encontrada");
+	log_warning(logger,"Tabla no encontrada");
 	return NULL;
 }
 
 t_TCB* buscar_tcb_por_tid(int tid){
 	int pid = tid / 10000;
-	
+	log_debug(logger,"Comienza la busqueda de TCB por TID: %d", tid);
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 		
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
@@ -392,7 +392,7 @@ t_TCB* buscar_tcb_por_tid(int tid){
 			return NULL;
 		}
 
-		log_info(logger,"TCB con TID: %d encontrado", tid);
+		log_debug(logger,"TCB con TID: %d encontrado", tid);
 		return tcb_recuperado;
 		
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
@@ -404,6 +404,7 @@ t_TCB* buscar_tcb_por_tid(int tid){
 }
 
 t_list* buscar_tcbs_por_pid(int pid){
+	log_debug(logger, "Comienza la busqueda de todos los TCB por pid: %d",pid);
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
@@ -415,7 +416,7 @@ t_list* buscar_tcbs_por_pid(int pid){
 			segmento* segmento_tcb = (segmento*) un_segmento;
 			return memoria_principal + segmento_tcb->base;
 		}
-		log_info(logger,"Encontrados TCBs de la patota con pid: %d", pid);
+		log_debug(logger,"Encontrados TCBs de la patota con pid: %d", pid);
 		return list_map(tabla->segmentos_tcb, transformer);
 
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
@@ -457,7 +458,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		}else{
 			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}
-		log_info(logger,"Se encontro la tarea para el tripulante %d",tid);
+		log_debug(logger,"Se encontro la tarea para el tripulante %d",tid);
 		return tarea;
 			
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
@@ -470,5 +471,35 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		log_warning(logger,"No se encontro la tarea para el tripulante %d",tid);
 		return NULL;
 	}
+}
 
+void eliminar_tcb(int tid){
+	log_debug(logger,"Comenzó el sacrificio del TCB TID: %d", tid);
+	int pid = tid / 10000;
+	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		tabla_segmentos* tabla = buscar_tabla(pid);
+		if(tabla == NULL){
+			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
+		}
+
+		bool buscador(void* un_segmento){
+			segmento* seg_tcb = (segmento*) un_segmento;
+			t_TCB* tcb = memoria_principal + seg_tcb->base;
+			return tcb->TID == tid;
+		}
+		segmento* segmento_tcb = list_find(tabla->segmentos_tcb, buscador);
+		if(segmento_tcb == NULL){
+			log_error(logger, "TCB TID: %d logró escapar, (no se encontró)",tid);
+			return;
+		}
+		liberar_segmento(segmento_tcb->base);
+
+		list_remove_by_condition(tabla->segmentos_tcb, buscador);
+		log_debug(logger,"TID: %d ahora descansa con Odín", tid);
+	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+
+	}else{
+		log_error(logger, "Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
+	}
 }

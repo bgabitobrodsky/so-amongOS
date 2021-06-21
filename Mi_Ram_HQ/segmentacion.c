@@ -24,7 +24,7 @@ void liberar_segmento(int base){
 }
 
 void compactacion(){
-    log_debug(logger, "Se comienza la compactacion");
+    log_info(logger, "Se comienza la compactacion");
     int size = list_size(segmentos);
     for(int i=0; i<size;i++){
         segmento* segmento_libre = list_get(segmentos, i);
@@ -85,10 +85,10 @@ segmento* crear_segmento(int base, int tam, bool libre){
 
 segmento* buscar_segmento_libre(int tam){
 	if (strcmp(CRITERIO_SELECCION, "FF") == 0) {
-        log_debug(logger, "Empieza busqueda FirstFit");
+        log_info(logger, "Empieza busqueda FirstFit");
         return first_fit(tam);
     } else if (strcmp(CRITERIO_SELECCION, "BF") == 0) {
-        log_debug(logger, "Empieza busqueda BestFit");
+        log_info(logger, "Empieza busqueda BestFit");
         return best_fit(tam);
     } else {
         log_error(logger, "Metodo de asignacion desconocido");
@@ -124,7 +124,7 @@ segmento* best_fit(int tam){
             list_add(candidatos, x);
         }
     }
-    log_debug(logger, "Buscando el mejor segmento");
+    log_info(logger, "Buscando el mejor segmento");
     int candidatos_size = list_size(candidatos);
     if(candidatos_size != 0){
         segmento* best_fit;
@@ -221,8 +221,9 @@ void test_tabla_segmentos(){
 }
 
 void test_gestionar_tarea(int pid){
+    log_info(logger,"Creando archivo de tareas");
 	t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
-    strcpy(archivo->texto,"GENERAR_OXIGENO 12;2;3;5\0");
+    archivo->texto = "GENERAR_OXIGENO 12;2;3;5\0";
 	archivo->largo_texto = 25;
 	archivo->pid = pid;
 
@@ -254,11 +255,11 @@ void test_gestionar_tcb(){
 	print_segmentos_info();
 	print_tablas_segmentos_info();
     t_TCB* tcb_recuperado = buscar_tcb_por_tid(10002);
-    log_debug(logger,"La coord_x del segundo tripulante buscado por tid es: %d", tcb_recuperado->coord_x);
+    log_info(logger,"La coord_x del segundo tripulante buscado por tid es: %d", tcb_recuperado->coord_x);
     
     t_list* lista_tcbs = buscar_tcbs_por_pid(1);
     t_TCB* tcb_recuperado2 = (t_TCB*) list_get(lista_tcbs,1);
-    log_debug(logger,"La coord_x del segundo tripulante buscado por pid es: %d", tcb_recuperado2->coord_x);
+    log_info(logger,"La coord_x del segundo tripulante buscado por pid es: %d", tcb_recuperado2->coord_x);
 }
 
 void test_buscar_siguiente_tarea(){
@@ -291,6 +292,37 @@ void test_buscar_siguiente_tarea(){
     }
 }
 
+void test_eliminar_tcb(int tid){
+    t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
+	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5\0";
+	archivo->largo_texto = 50;
+	archivo->pid = 1;
+	gestionar_tareas(archivo);
+    free(archivo);
+
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 1;
+    tcb->coord_y = 2;
+    tcb->estado_tripulante = 'N';
+    gestionar_tcb(tcb);
+    free(tcb);
+
+    t_TCB* tcb2 = malloc(sizeof(t_TCB));
+    tcb2->TID = 10002;
+    tcb2->coord_x = 5;
+    tcb2->coord_y = 2;
+    tcb2->estado_tripulante = 'N';
+    gestionar_tcb(tcb2);
+    free(tcb2);
+
+    print_tablas_segmentos_info();
+
+    eliminar_tcb(10001);
+    eliminar_tcb(10001);
+    print_tablas_segmentos_info();
+}
+
 void print_segmentos_info() {
     int size = list_size(segmentos);
     printf("\n<------ SEGMENTOS -----------\n");
@@ -314,6 +346,13 @@ void print_tablas_segmentos_info(){
 		printf("\t Segmento Tarea:\n");
 		printf("\t\t base: %d\n",tabla->segmento_tareas->base);
 		printf("\t\t tam: %d\n",tabla->segmento_tareas->tam);
+        int size = list_size(tabla->segmentos_tcb);
+        for(int i = 0; i < size; i++){
+            segmento* seg_tcb = list_get(tabla->segmentos_tcb,i);
+            printf("\t Segmento TCB %d:\n",i+1);
+            printf("\t\t base: %d\n",seg_tcb->base);
+            printf("\t\t tam: %d\n",seg_tcb->tam);
+        }
     }
 	printf("------------------>\n");
 }
