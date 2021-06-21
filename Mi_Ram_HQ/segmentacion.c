@@ -323,6 +323,38 @@ void test_eliminar_tcb(int tid){
     print_tablas_segmentos_info();
 }
 
+void test_actualizar_tcb(){
+    t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
+	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5\0";
+	archivo->largo_texto = 50;
+	archivo->pid = 1;
+	gestionar_tareas(archivo);
+    free(archivo);
+
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 1;
+    tcb->coord_y = 2;
+    tcb->estado_tripulante = 'N';
+    gestionar_tcb(tcb);
+    free(tcb);
+
+    t_TCB* tcb2 = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 10;
+    tcb->coord_y = 10;
+    tcb->estado_tripulante = 'E';
+
+    int result = actualizar_tcb(tcb2);
+    if(result){
+        log_debug(logger,"Actualizado con exito");
+        tcb = buscar_tcb_por_tid(10001);
+        log_info(logger,"Nuevas coords: %d, %d. Estado: %c",tcb->coord_x,tcb->coord_y,tcb->estado_tripulante);
+    }else{
+        log_error(logger,"Falló");
+    }
+}
+
 void print_segmentos_info() {
     int size = list_size(segmentos);
     printf("\n<------ SEGMENTOS -----------\n");

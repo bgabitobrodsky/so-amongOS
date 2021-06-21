@@ -56,6 +56,6 @@ indice_tabla* crear_indice(int pid, void* tabla);
 void* buscar_tabla(int pid);
 t_TCB* buscar_tcb(int tid);
 t_tarea* buscar_siguiente_tarea(int tid);
-
+int eliminar_tcb(int tid); // devuelve 1 si todo ok, 0 si falló algo
 
 #endif /* MI_RAM_HQ_H_ */
