@@ -107,8 +107,8 @@ void gestionar_pedido_tarea(int tid, int socket){
 
 	// para enviarme una tarea:
 	if(tarea != NULL){
-		t_buffer* buffer_tarea = serializar_tarea(t_tarea una_tarea);
-		empaquetar_y_enviar(buffer_tarea, TAREA, socket);
+		//t_buffer* buffer_tarea = serializar_tarea(tarea);
+		//empaquetar_y_enviar(buffer_tarea, TAREA, socket);
 	}else{
 		// esto puede ser por algun fallo o porque ya no queden tareas
 		enviar_codigo(FALLO, socket);
@@ -444,18 +444,18 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		
 		segmento* segmento_tareas = tabla->segmento_tareas;
 		
-		char* str_tarea = tcb->siguiente_instruccion;
-		log_info(logger, "Tarea: %s", tcb->siguiente_instruccion);
+		char* puntero_a_tareas = tcb->siguiente_instruccion;
+		char* str_tarea = strtok(puntero_a_tareas,"\n");
+		log_info(logger, "Tarea: %s", str_tarea);
 
 		//se crea la struct de tarea para devolver, despues hay que mandarle free
 		tarea = crear_tarea(str_tarea);
-
-		//me fijo si hay un \n despues de la tarea, si no hay significa que esta era la ultima :'(
-		if(str_tarea[strlen(str_tarea) + 1] == '\n'){
-			tcb->siguiente_instruccion += strlen(str_tarea) + 2; // + 1 por el \0 + 1 por el \n
-		}else{
+		//me fijo si hay un \0 despues de la tarea, si no hay significa que esta era la ultima :'(
+		if(str_tarea[strlen(str_tarea)+1] == '\0'){
 			// no hay proxima tarea
 			tcb->siguiente_instruccion = NULL;
+		}else{
+			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}
 		log_info(logger,"Se encontro la tarea para el tripulante %d",tid);
 		return tarea;

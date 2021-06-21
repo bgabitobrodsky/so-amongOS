@@ -222,7 +222,7 @@ void test_tabla_segmentos(){
 
 void test_gestionar_tarea(int pid){
 	t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
-    strcpy(archivo->texto,"GENERAR_OXIGENO 12;2;3;5");
+    strcpy(archivo->texto,"GENERAR_OXIGENO 12;2;3;5\0");
 	archivo->largo_texto = 25;
 	archivo->pid = pid;
 
@@ -263,8 +263,8 @@ void test_gestionar_tcb(){
 
 void test_buscar_siguiente_tarea(){
     t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
-	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\0\nGENERAR_OXIGENO 12;5;5;5\0";
-	archivo->largo_texto = 51;
+	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5\0";
+	archivo->largo_texto = 75;
 	archivo->pid = 1;
 	gestionar_tareas(archivo);
     free(archivo);
