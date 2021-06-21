@@ -75,6 +75,9 @@ void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
 void enviar_pid_a_ram(uint32_t pid, int socket);
 void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
 int esta_tcb_en_lista(t_list* lista, int elemento);
+int esta_tripulante_en_lista(t_list* lista, int elemento);
 void* eliminar_tcb_de_lista(t_list* lista, int elemento);
+void* eliminar_tripulante_de_lista(t_list* lista, int elemento);
+void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket);
 
 #endif /* DISCORDIADOR_UTILS_H_ */

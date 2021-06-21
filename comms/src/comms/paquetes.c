@@ -214,7 +214,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
 // Pasa un struct buffer a un tcb
 // Se explica deserializacion en esta funcion
-t_TCB* deserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se esta pasando paquete->buffer->estructura, ver si es error
+t_TCB* deserializar_tcb(t_buffer* buffer) {
 
 	t_TCB* tcb = malloc(sizeof(uint32_t)*5 + sizeof(char)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
@@ -309,4 +309,42 @@ t_buffer* serializar_entero(uint32_t numero) {
     buffer->estructura = estructura;
 
     return buffer;
+}
+
+t_buffer* serializar_tripulante(t_tripulante tripulante) {
+
+    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*3 + sizeof(char));
+    buffer->tamanio_estructura = sizeof(uint32_t)*3 + sizeof(char);
+    void* estructura = malloc(buffer->tamanio_estructura);
+    int desplazamiento = 0;
+
+    memcpy(estructura + desplazamiento, &tripulante.TID, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.estado_tripulante, sizeof(char));
+    desplazamiento += sizeof(char);
+    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_tripulante* deserializar_tripulante(t_buffer* buffer) {
+
+	t_tripulante* un_tripulante = malloc(sizeof(uint32_t)*3 + sizeof(char));
+    void* estructura = buffer->estructura;
+
+    memcpy(&(un_tripulante->TID), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(un_tripulante->estado_tripulante), estructura, sizeof(char));
+    estructura += sizeof(char);
+    memcpy(&(un_tripulante->coord_x), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(un_tripulante->coord_y), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+
+    return un_tripulante;
 }
