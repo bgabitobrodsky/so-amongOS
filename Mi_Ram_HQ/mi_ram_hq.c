@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_eliminar_tcb();
+	test_actualizar_tcb();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
@@ -473,13 +473,13 @@ t_tarea* buscar_siguiente_tarea(int tid){
 	}
 }
 
-void eliminar_tcb(int tid){
+int eliminar_tcb(int tid){ // devuelve 1 si todo ok, 0 si falló algo
 	log_debug(logger,"Comenzó el sacrificio del TCB TID: %d", tid);
 	int pid = tid / 10000;
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = buscar_tabla(pid);
 		if(tabla == NULL){
-			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
+			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
 
 		bool buscador(void* un_segmento){
@@ -490,16 +490,30 @@ void eliminar_tcb(int tid){
 		segmento* segmento_tcb = list_find(tabla->segmentos_tcb, buscador);
 		if(segmento_tcb == NULL){
 			log_error(logger, "TCB TID: %d logró escapar, (no se encontró)",tid);
-			return;
+			return 0;
 		}
 		liberar_segmento(segmento_tcb->base);
 
 		list_remove_by_condition(tabla->segmentos_tcb, buscador);
 		log_debug(logger,"TID: %d ahora descansa con Odín", tid);
+		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
+}
+
+int actualizar_tcb(t_TCB* nuevo_tcb){
+	log_debug(logger,"Actualizando TCB TID: %d", nuevo_tcb->TID);
+	t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
+	if(tcb == NULL){
+		return 0;
+	}
+	tcb->coord_x = nuevo_tcb->coord_x;
+	tcb->coord_y = nuevo_tcb->coord_y;
+	tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
+	log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
+	return 1;
 }
