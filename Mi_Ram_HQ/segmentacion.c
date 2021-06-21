@@ -222,8 +222,8 @@ void test_tabla_segmentos(){
 
 void test_gestionar_tarea(int pid){
 	t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
-	archivo->texto = "GENERAR_OXIGENO 12;2;3;5\nGENERAR_OXIGENO 12;2;3;5\nGENERAR_OXIGENO 12;2;3;5";
-	archivo->largo_texto = 74;
+    strcpy(archivo->texto,"GENERAR_OXIGENO 12;2;3;5");
+	archivo->largo_texto = 25;
 	archivo->pid = pid;
 
 	gestionar_tareas(archivo);
@@ -255,9 +255,40 @@ void test_gestionar_tcb(){
 	print_tablas_segmentos_info();
     t_TCB* tcb_recuperado = buscar_tcb_por_tid(10002);
     log_debug(logger,"La coord_x del segundo tripulante buscado por tid es: %d", tcb_recuperado->coord_x);
+    
     t_list* lista_tcbs = buscar_tcbs_por_pid(1);
     t_TCB* tcb_recuperado2 = (t_TCB*) list_get(lista_tcbs,1);
     log_debug(logger,"La coord_x del segundo tripulante buscado por pid es: %d", tcb_recuperado2->coord_x);
+}
+
+void test_buscar_siguiente_tarea(){
+    t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
+	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\0\nGENERAR_OXIGENO 12;5;5;5\0";
+	archivo->largo_texto = 51;
+	archivo->pid = 1;
+	gestionar_tareas(archivo);
+    free(archivo);
+
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 1;
+    tcb->coord_y = 2;
+    tcb->estado_tripulante = 'N';
+    gestionar_tcb(tcb);
+    free(tcb);
+
+    t_tarea* tarea = buscar_siguiente_tarea(10001);
+    if(tarea != NULL){
+        log_debug(logger,"Tarea nombre: %s \t coords: %d, %d \tDuracion: %d",tarea->nombre,tarea->coord_x,tarea->coord_y,tarea->duracion);
+    }
+    t_tarea* tarea2 = buscar_siguiente_tarea(10001);
+    if(tarea2 != NULL){
+        log_debug(logger,"Tarea nombre: %s \t coords: %d, %d \tDuracion: %d",tarea2->nombre,tarea2->coord_x,tarea2->coord_y,tarea2->duracion);
+    }
+    t_tarea* tarea3 = buscar_siguiente_tarea(10001);
+    if(tarea3 != NULL){
+        log_debug(logger,"Tarea nombre: %s \t coords: %d, %d \tDuracion: %d",tarea3->nombre,tarea3->coord_x,tarea3->coord_y,tarea3->duracion);
+    }
 }
 
 void print_segmentos_info() {
