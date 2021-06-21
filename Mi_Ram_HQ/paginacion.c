@@ -9,12 +9,9 @@ int completar_pagina(pagina* pagina, int tamano, tabla_paginas* tabla){
 	// me alcanza con esa pagina?
 	if(espacio_necesario <= TAMANIO_PAGINA){
 		pagina->tamano_ocupado = espacio_necesario;
-		// actualizar_pagina_en_lista(); TODO
 		return 0;
 	}
 	pagina->tamano_ocupado = TAMANIO_PAGINA;
-	// actualizar_pagina_en_lista(); TODO
-
 	int espacio_faltante = espacio_necesario - TAMANIO_PAGINA;
 
 	return espacio_faltante;
@@ -101,4 +98,24 @@ marco* asignar_marco(){
 	else{
 		//TODO
 	}
+}
+
+
+
+
+
+// TEST
+
+void imprimir_paginas(int pid){
+    tabla_paginas* t_pag = buscar_tabla(pid);
+    t_list* paginas = t_pag->paginas;
+
+    printf("\n<------ PAGINAS de tabla %d -----------\n", pid);
+
+    for(int i=0; i<list_size(paginas); i++) {
+        pagina* s = list_get(paginas, i);
+        printf("pagina %d base: %d, tamaño ocupado: %d \n", i + 1 , s->puntero_marco->base, s->tamano_ocupado);
+    }
+    printf("------------------->\n");
+
 }

@@ -64,18 +64,18 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		//consultar si la ultima pagina le sobra lugar
 		//completarla, restarle el tamano  que falte y repetir lo anterior
 
-		int cant_marcos_pcb = cantidad_marcos_completos(sizeof(t_PCB));
 
 		size list_size(tabla->paginas);
 		pagina* ultima_pagina = list_get(tabla->paginas, size - 1);
 
 		if(ultima_pagina->tamano_ocupado <= TAMANIO_PAGINA){
-			// TODO
-			// rellenar ultima pagina
-
 			// Devuelve lo que le sobro
 			int falta_guardar_del_pcb = completar_pagina(ultima_pagina, sizeof(t_PCB), tabla);
-			agregar_paginas_segun_tamano(tabla, falta_guardar_del_pcb);
+			
+			if(falta_guardar_del_pcb > 0){
+				agregar_paginas_segun_tamano(tabla, falta_guardar_del_pcb);	
+			}
+			
 
 		}
 		else{
@@ -162,6 +162,12 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 
+
+	tabla_paginas* tabla = crear_tabla_paginas(1);
+
+	agregar_paginas_segun_tamano(tabla, 300);
+
+	imprimir_paginas(1);
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
