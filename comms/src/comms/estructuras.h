@@ -7,12 +7,14 @@
 #include <errno.h>
 #include <string.h>
 #include <stdint.h>
+#include <commons/collections/list.h>
+
 
 /* ENUMS */
 //                      						ESTRUCTURAS                          							COSAS FILESYSTEM            		ACCIONES BITACORA                                                     		CODIGOS UNICOS: MONGO           					DISCORDIADOR                		GENERALES
 enum codigo_operacion { RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, 		OXIGENO, COMIDA, BASURA,    	MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     	SABOTAJE, PRIMERA_CONEXION,     		MENSAJE, COD_TAREA,     RECEPCION, DESCONEXION, 	EXITO, FALLO};
 
-enum estados { NEW, READY, EXEC, BLOCKED};
+enum estados { NEW, READY, EXEC, BLOCK, EXIT};
 
 /* ESTRUCTURAS */
 
@@ -100,6 +102,7 @@ typedef struct {
 typedef struct {
 
     uint32_t PID;
+    t_list* tareas_patota;
 
 } t_patota;
 

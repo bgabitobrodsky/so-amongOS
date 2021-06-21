@@ -26,6 +26,13 @@ void obtener_bitacora(char* leido);
 t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 void enlistar_algun_tripulante();
+void tripulante(t_tripulante* un_tripulante);
+void iniciar_tripulante(t_tripulante* un_tripulante);
+void enlistarse(t_tripulante* un_tripulante);
+void realizar_tarea(t_tripulante* un_tripulante);
+void llegar_a_destino(t_tripulante* un_tripulante);
+void no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante);
+int identificar_tarea(char* nombre_recibido);
 
 // PROCESOS
 t_patota* crear_patota(uint32_t un_pid);

@@ -15,6 +15,9 @@
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define LIMIT_CONNECTIONS 10
 
+t_list* buscar_tcbs_por_pid(int pid);
+t_TCB* buscar_tcb_por_tid(int tid);
+
 t_log* logger;
 t_config* config;
 
