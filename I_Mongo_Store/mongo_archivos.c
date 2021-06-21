@@ -5,6 +5,7 @@ t_log* logger_mongo;
 t_config* config_mongo;
 t_archivos archivos;
 t_list* bitacoras;
+int random = 0;
 
 void inicializar_archivos(char* path_files) { // TODO: Puede romper
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
@@ -435,16 +436,19 @@ char* crear_md5() { // String de 32
 }
 
 char char_random() {
-	int seleccion = rand() % 2;
+	int seleccion = rand(i) % 2;
 
 	switch (seleccion) {
 		case 0:
-			return (char) (rand() % 9 + 48); // Devuelve un numero por ASCII
+			return (char) (rand(i) % 9 + 48); // Devuelve un numero por ASCII
 			break;
 		case 1:
-			return (char) (rand() % 26 + 65); // Devuelve un alfa por ASCII
+			return (char) (rand(i) % 26 + 65); // Devuelve un alfa por ASCII
 			break;
 	}
+
+	i++;
+
 	return '\0';
 }
 
