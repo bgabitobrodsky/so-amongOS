@@ -32,6 +32,7 @@ int main(int argc, char** argv){
 	pthread_mutex_init(&mutex_oxigeno, NULL);
 	pthread_mutex_init(&mutex_comida, NULL);
 	pthread_mutex_init(&mutex_basura, NULL);
+	// mutex_blocks
 
 	pthread_t hilo_escucha; // TODO: Pasarlo directamente a main, hilo al pedo
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
