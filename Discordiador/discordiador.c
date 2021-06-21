@@ -17,7 +17,6 @@
 #define QUANTUM config_get_int_value(config, "QUANTUM")
 #define RETARDO_CICLO_CPU config_get_int_value(config, "RETARDO_CICLO_CPU")
 #define DURACION_SABOTAJE config_get_int_value(config, "DURACION_SABOTAJE")
-#define LIMIT_CONNECTIONS 10
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -48,10 +47,6 @@ pthread_mutex_t sem_cola_ready;
 char estado_tripulante[5] = {'N', 'R', 'E', 'B', 'F'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
-
-enum {
-	QUIETO, IZQUIERDA, DERECHA, ARRIBA, ABAJO
-};
 
 enum {
 	GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
@@ -110,25 +105,22 @@ void iniciar_patota(char* leido) {
 
     if (archivo_tareas != NULL){
     	enviar_archivo_tareas(archivo_tareas, patota->PID, socket_a_mi_ram_hq);
-    	// enviar_archivo_tareas(archivo_tareas, pcb->PID, socket_a_mi_ram_hq);
     }
 
-    // t_tripulante* aux;
-    t_TCB* aux;
+    t_tripulante* t_aux;
 
     while (palabras[i+3] != NULL){
         printf("POSICION %d: %s \n", i+1, palabras[i+3]);
         // void* funcion = pedir_funcion()
-        // aux = crear_puntero_tripulante(((patota->PID)*10000) + i+1, palabras[i+3]);
-        aux = crear_puntero_tcb(0, ((patota->PID)*10000) + i+1, palabras[i+3]);
-        // enviar_tripulante_a_ram(*aux, socket_a_mi_ram_hq);
-        enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
-        // list_add(lista_tripulantes, aux);
-        list_add(lista_tripulantes, aux);
-        // monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
-        monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
-        // printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
-        printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
+        t_aux = crear_puntero_tripulante(((patota->PID)*10000) + i+1, palabras[i+3]);
+
+        enviar_tripulante_a_ram(*t_aux, socket_a_mi_ram_hq);
+
+        list_add(lista_tripulantes, t_aux);
+
+        monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
+
+        printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)t_aux->TID, (char) t_aux->estado_tripulante, (int) t_aux->coord_x, (int) t_aux->coord_y);
 
         // free(aux); // no liberar
         i++;
@@ -136,17 +128,17 @@ void iniciar_patota(char* leido) {
 
     for(int j = i+1; j <= cantidadTripulantes; j++){
         printf("POSICION %d: 0|0\n", j);
-        // void* funcion = pedir_funcion()
-        // aux = crear_puntero_tripulante((patota->PID)*10000) + j, "0|0");
-        aux = crear_puntero_tcb(0, ((patota->PID)*10000) + j, "0|0");
-        // enviar_tripulante_a_ram(*aux, socket_a_mi_ram_hq);
-        enviar_tcb_a_ram(*aux, socket_a_mi_ram_hq);
-        // list_add(lista_tripulantes, aux);
-        list_add(lista_tripulantes, aux);
-        // monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
-        monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, aux);
-        // printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
-        printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)aux->TID, (char) aux->estado_tripulante, (int) aux->coord_x, (int) aux->coord_y);
+        // void* funcion = pedir_funcion();
+        t_aux = crear_puntero_tripulante(((patota->PID)*10000) + j, "0|0");
+
+        enviar_tripulante_a_ram(*t_aux, socket_a_mi_ram_hq);
+
+        list_add(lista_tripulantes, t_aux);
+
+        monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
+
+        printf("Tripulante %i, estado: %c, pos: %i %i\n", (int)t_aux->TID, (char) t_aux->estado_tripulante, (int) t_aux->coord_x, (int) t_aux->coord_y);
+
 
         // free(aux); // no liberar
     }
@@ -156,6 +148,57 @@ void iniciar_patota(char* leido) {
 
 }
 
+void pausar_planificacion() {
+
+    printf("Pausar Planificacion\n");
+    planificacion_activa = 0;
+
+}
+
+void obtener_bitacora(char* leido) {
+
+    printf("Obtener Bitacora\n");
+
+}
+
+void expulsar_tripulante(char* leido) {
+
+    printf("Expulsar Tripulante\n");
+    char** palabras = string_split(leido, " ");
+    int tid_tripulante_a_expulsar = atoi(palabras[1]);
+
+    t_buffer* b_tid = serializar_entero(tid_tripulante_a_expulsar);
+    empaquetar_y_enviar(b_tid, T_SIGKILL, socket_a_mi_ram_hq);
+
+    t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+
+    if(respuesta->codigo_operacion == EXITO){
+    	if(esta_tripulante_en_lista(lista_tripulantes, tid_tripulante_a_expulsar)){
+    		// t_TCB* aux = eliminar_tcb_de_lista(lista_tripulantes, tid_tripulante_a_expulsar);
+    		t_tripulante* t_aux = eliminar_tripulante_de_lista(lista_tripulantes, tid_tripulante_a_expulsar);
+    		log_info(logger, "Tripulante expulsado, TID: %d\n", tid_tripulante_a_expulsar);
+
+
+    		log_info(logger, "Lugar del deceso: %i|%i\n", t_aux->coord_x, t_aux->coord_y);
+    		// log_info(logger, "Lugar del deceso: %i|%i\n", aux->coord_x, aux->coord_y);
+
+    		free(t_aux );
+    		// free(aux);
+    	}
+    	else{
+    		log_info(logger, "Dicho tripulante no existe en Discordiador.\n");
+    	}
+    }
+    else if (respuesta->codigo_operacion == FALLO){
+    	log_info(logger, "No existe el tripulante. TID: %d\n", tid_tripulante_a_expulsar);
+    }
+    else{
+    	log_info(logger, "Error desconocido.\n");
+    }
+
+    liberar_puntero_doble(palabras);
+
+}
 
 void iniciar_planificacion() {
 
@@ -170,19 +213,19 @@ void iniciar_planificacion() {
 
     // TODO NO TESTEADO
     while(planificacion_activa && list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA)){
-        t_TCB* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
+        t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
         aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
         monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
 
         if(comparar_strings(ALGORITMO, "FIFO")){
-        	// enlistar_algun_tripulante();
+        	enlistar_algun_tripulante();
         	// mandar_a_trabajar(aux_tripulante);
             // free(aux_tripulante); // cuando termina de trabajar lo libero che?
         }
         else if(comparar_strings(ALGORITMO, "RR")){
             sleep(MIN(tiempo_restante, QUANTUM)*RETARDO_CICLO_CPU);
             // actualizar la duracion de la tarea
-            monitor_lista_dos_parametros(sem_lista_exec, (void*)eliminar_tcb_de_lista, lista_tripulantes_exec, aux_tripulante);
+            monitor_lista_dos_parametros(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, aux_tripulante);
             aux_tripulante->estado_tripulante = estado_tripulante[READY];
             monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, aux_tripulante);
             free(aux_tripulante);
@@ -196,8 +239,8 @@ void listar_tripulantes() {
 
     printf(">>> Estado de la nave: %s\n\n", fechaHora);
 
-    t_PCB* aux_p;
-    t_TCB* aux_t;
+    t_patota* aux_p;
+    t_tripulante* aux_t;
     t_list* lista_tripulantes_de_una_patota;
 
     int i,j;
@@ -228,7 +271,6 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 		//free(respuesta->tcb);
 		//free(respuesta);
 		respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-		// printf("Recibo un tcb. \n");
 	}
 	if(respuesta->codigo_operacion == FALLO){
     	log_info(logger, "Error al pedir los tripulantes para listar.\n");
@@ -236,7 +278,7 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 	}
 
     bool condicion(void* elemento1){
-        return ((((t_TCB*) elemento1)->TID / 10000) == pid);
+        return ((((t_tripulante*) elemento1)->TID / 10000) == pid);
     }
 
     // t_list* lista_new_aux = list_create();
@@ -246,7 +288,7 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 	// list_add_all(lista_tripulantes_patota, lista_new_aux);
 
 	bool ordenar_por_tid(void* un_elemento, void* otro_elemento){
-	     return ((((t_TCB*) un_elemento)->TID) < (((t_TCB*) otro_elemento)->TID));
+	     return ((((t_tripulante*) un_elemento)->TID) < (((t_tripulante*) otro_elemento)->TID));
 	}
 
 	list_sort(lista_tripulantes_patota, ordenar_por_tid);
@@ -255,58 +297,12 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 
 }
 
-void pausar_planificacion() {
-
-    printf("Pausar Planificacion\n");
-    planificacion_activa = 0;
-
-}
-
-void obtener_bitacora(char* leido) {
-
-    printf("Obtener Bitacora\n");
-
-}
-
-void expulsar_tripulante(char* leido) {
-
-    printf("Expulsar Tripulante\n");
-    char** palabras = string_split(leido, " ");
-    int tid_tripulante_a_expulsar = atoi(palabras[1]);
-
-    t_buffer* b_tid = serializar_entero(tid_tripulante_a_expulsar);
-    empaquetar_y_enviar(b_tid, T_SIGKILL, socket_a_mi_ram_hq);
-
-    t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-
-    if(respuesta->codigo_operacion == EXITO){
-    	if(esta_tcb_en_lista(lista_tripulantes, tid_tripulante_a_expulsar)){
-    		t_TCB* aux = eliminar_tcb_de_lista(lista_tripulantes, tid_tripulante_a_expulsar);
-    		log_info(logger, "Tripulante expulsado, TID: %d\n", tid_tripulante_a_expulsar);
-    		log_info(logger, "Lugar del deceso: %i|%i\n", aux->coord_x, aux->coord_y);
-    		free(aux);
-    	}
-    	else{
-    		log_info(logger, "Dicho tripulante no existe en Discordiador.\n");
-    	}
-    }
-    else if (respuesta->codigo_operacion == FALLO){
-    	log_info(logger, "No existe el tripulante. TID: %d\n", tid_tripulante_a_expulsar);
-    }
-    else{
-    	log_info(logger, "Error desconocido.\n");
-    }
-
-    liberar_puntero_doble(palabras);
-
-}
-
 void tripulante(t_tripulante* un_tripulante){
 
 	iniciar_tripulante(un_tripulante);
 
 	// TODO: ERROR, ESTO ES CUANDO EL TRIPULANTE PASE A EXEC
-	while(un_tripulante->estado_tripulante == estado_tripulante[EXIT]){
+	while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
 		while(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
 			realizar_tarea(un_tripulante);
 			// pedir_otra_tarea();
@@ -404,6 +400,9 @@ int identificar_tarea(char* nombre_recibido){
 	else if(comparar_strings(nombre_recibido, "GENERAR_BASURA")){
 		return GENERAR_BASURA;
 	}
+	else if(comparar_strings(nombre_recibido, "DESCARTAR_BASURA")){
+		return DESCARTAR_BASURA;
+	}
 
 	return OTRA_TAREA;
 
@@ -469,7 +468,7 @@ void no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante){
 void enlistar_algun_tripulante(){
 
 	if (!list_is_empty(lista_tripulantes_new)){
-		t_TCB* tripulante_a_ready = monitor_lista_dos_parametros(sem_lista_new, (void*) list_remove, lista_tripulantes_new, (void*) 0 );
+		t_tripulante* tripulante_a_ready = monitor_lista_dos_parametros(sem_lista_new, (void*) list_remove, lista_tripulantes_new, (void*) 0);
 		monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, tripulante_a_ready);
 		pedir_tarea_a_mi_ram_hq(tripulante_a_ready->TID, socket_a_mi_ram_hq);
 
@@ -504,6 +503,18 @@ int nuevo_pid(){
         id_patota++;
     }
 }
+
+t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion){
+
+	t_tripulante* un_tripulante = malloc(sizeof(t_tripulante));
+	un_tripulante->TID = tid;
+	un_tripulante->estado_tripulante = estado_tripulante[NEW];
+	un_tripulante->coord_x = posicion[0] - 48; // equivalencia ascii - numero
+	un_tripulante->coord_y = posicion[2] - 48; // equivalencia ascii - numero
+
+	return un_tripulante;
+}
+
 
 t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
 
@@ -695,5 +706,25 @@ void test_serializar_tarea(){
 	printf("Cordenada en X: %i\n", t2->coord_x);
 	printf("Cordenada en Y: %i\n", t2->coord_y);
 	printf("Duracion: %i\n", t2->duracion);
+
+}
+
+void test_serializar_tripulante(){
+
+    t_tripulante un_tripulante;
+
+    un_tripulante.TID = 10001;
+    un_tripulante.estado_tripulante = estado_tripulante[NEW];
+    un_tripulante.coord_x = 1;
+    un_tripulante.coord_y = 1;
+
+	log_info(logger, "Tripulante antes de serializar:\n");
+	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)un_tripulante.TID, (char) un_tripulante.estado_tripulante,(int) un_tripulante.coord_x, (int) un_tripulante.coord_y);
+
+	t_buffer* b = serializar_tripulante(un_tripulante);
+	t_tripulante* un_tripulante_deserializado = deserializar_tripulante(b);
+
+	log_info(logger, "Tripulante despues de serializar:\n");
+	log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)un_tripulante_deserializado->TID, (char) un_tripulante_deserializado->estado_tripulante,(int) un_tripulante_deserializado->coord_x, (int) un_tripulante_deserializado->coord_y);
 
 }

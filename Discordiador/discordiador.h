@@ -25,6 +25,7 @@ void obtener_bitacora(char* leido);
 // HILOS
 t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
+t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion);
 void enlistar_algun_tripulante();
 void tripulante(t_tripulante* un_tripulante);
 void iniciar_tripulante(t_tripulante* un_tripulante);
@@ -51,5 +52,6 @@ void test_listar_tripulantes();
 void test_nuevo_pid();
 void test_enlistar_algun_tripulante();
 void test_serializar_tarea();
+void test_serializar_tripulante();
 
 #endif /* DISCORDIADOR_H_ */

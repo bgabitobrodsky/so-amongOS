@@ -142,6 +142,11 @@ void enviar_pid_a_ram(uint32_t pid, int socket){
 
 }
 
+void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket){
+    t_buffer* buffer_tcb = serializar_tripulante(un_tripulante);
+    empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
+}
+
 void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
 
     t_buffer* buffer_tcb = serializar_tcb(un_tcb);
@@ -159,13 +164,34 @@ int esta_tcb_en_lista(t_list* lista, int elemento){
 
 }
 
+int esta_tripulante_en_lista(t_list* lista, int elemento){
+
+    bool contains(void* elemento1){
+        return (elemento == ((t_tripulante*) elemento1)->TID);
+    }
+    bool a = list_any_satisfy(lista, contains);
+    return a;
+
+}
+
 void* eliminar_tcb_de_lista(t_list* lista, int elemento){
 
     bool contains(void* elemento1){
         return (elemento == ((t_TCB*) elemento1)->TID);
-        }
+    }
 
     t_TCB* aux = list_remove_by_condition(lista, contains);
+    return aux;
+
+}
+
+void* eliminar_tripulante_de_lista(t_list* lista, int elemento){
+
+    bool contains(void* elemento1){
+        return (elemento == ((t_tripulante*) elemento1)->TID);
+    }
+
+    t_tripulante* aux = list_remove_by_condition(lista, contains);
     return aux;
 
 }
