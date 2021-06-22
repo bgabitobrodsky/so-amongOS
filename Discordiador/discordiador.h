@@ -8,18 +8,14 @@
 #ifndef DISCORDIADOR_H_
 #define DISCORDIADOR_H_
 
-<<<<<<< HEAD
 #include "utils.h"
-#include "../comms/src/comms/serializar_y_envio.h"
+#include "../comms/src/comms/envio_y_recepcion.h"
 
 //FUnciones de testeo
-enum {DISCORDIADOR, TEST_SERIALIZACION, TEST_DISCORDIADOR};
+enum {DISCORDIADOR, TEST_SERIALIZACION, TEST_ENVIO_Y_RECEPCION, TEST_DISCORDIADOR};
 int correr_tests(int);
 void funcion_hilo();
 void iniciar_hilo();
-=======
-#include "test_discordiador.h"
->>>>>>> origin/main
 
 // Funciones PRINCIPALES
 void iniciar_patota(char* leido);

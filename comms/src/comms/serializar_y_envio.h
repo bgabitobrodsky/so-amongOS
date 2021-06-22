@@ -5,7 +5,7 @@
 #include "estructuras.h"
 #include "paquetes.h"
 
-int CUmain();
+int CUmain_serializacion();
 void test_serializar_tcb();
 void test_serializar_tarea();
 void test_serializar_vacio();

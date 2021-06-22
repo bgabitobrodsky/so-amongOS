@@ -1,16 +1,16 @@
 #include "serializar_y_envio.h"
 
-int CUmain() {
+int CUmain_serializacion() {
 	CU_initialize_registry();
 
-	/*CU_pSuite serializacion = CU_add_suite("Suite de serializado", NULL, NULL);
-	CU_add_test(serializacion, "serializar tcb exitosamente",  test_serializar_tcb);
+	CU_pSuite serializacion = CU_add_suite("Suite de serializacion", NULL, NULL);
+//	CU_add_test(serializacion, "serializar tcb exitosamente",  test_serializar_tcb);
 	CU_add_test(serializacion, "serializar tarea exitosamente",  test_serializar_tarea);
-	CU_add_test(serializacion, "serializar vacio exitosamente",  test_serializar_vacio);*/
+	CU_add_test(serializacion, "serializar vacio exitosamente",  test_serializar_vacio);
 
-	CU_pSuite desserializacion = CU_add_suite("Suite de desserializado", NULL, NULL);
+	CU_pSuite desserializacion = CU_add_suite("Suite de desserializacion", NULL, NULL);
 	CU_add_test(desserializacion, "desserializar tcb exitosamente",  test_desserializar_tcb);
-//	CU_add_test(desserializacion, "desserializar tarea exitosamente",  test_desserializar_tarea);
+	CU_add_test(desserializacion, "desserializar tarea exitosamente",  test_desserializar_tarea);
 
 	CU_basic_set_mode(CU_BRM_VERBOSE);
 	CU_basic_run_tests();
@@ -18,8 +18,9 @@ int CUmain() {
 
 	return CU_get_error();
 }
-/*
-void test_serializar_tcb() {
+
+//TODO rompe duro
+/*void test_serializar_tcb() {
 	t_PCB pcb = pcb_generico();
 	t_TCB un_tcb = tcb_generico();
 	t_buffer* buffer_tcb = serializar_tcb(un_tcb);
@@ -61,20 +62,19 @@ void test_serializar_tcb() {
 	free(siguiente_instruccion);
 	free(puntero_a_pcb);
 	free(buffer_tcb);
-}
+}*/
 
-void test_serializar_tarea() {
+void test_serializar_tarea() { //TODO corre bien pero no me salen los tests en el resumen
 	t_tarea tarea = tarea_generica();
 	t_buffer* buffer_tarea_serializada = serializar_tarea(tarea);
 
 	int desplazamiento = 0;
 
-	int* coord_x;
-	int* coord_y;
-	int* duracion;
-	char* nombre;
-	int* nombre_largo;
-	uint32_t* parametro;
+	int* coord_x = malloc(sizeof(uint32_t));
+	int* coord_y = malloc(sizeof(uint32_t));
+	int* duracion = malloc(sizeof(uint32_t));
+	int* nombre_largo = malloc(sizeof(uint32_t));
+	uint32_t* parametro = malloc(sizeof(uint32_t));
 
     memcpy(&coord_x, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
@@ -82,18 +82,20 @@ void test_serializar_tarea() {
     desplazamiento += sizeof(char);
     memcpy(&duracion, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(&nombre, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
     memcpy(&nombre_largo, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+
+	char* nombre = malloc(*nombre_largo + 1);
+    memcpy(&nombre, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
     memcpy(&parametro, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
 
     CU_ASSERT_EQUAL(*coord_x, 2);
-	CU_ASSERT_EQUAL(*coord_y, 3);
-	CU_ASSERT_EQUAL(*duracion, 4);
-	CU_ASSERT_EQUAL(*nombre, "Hola, soy una tarea");
-	CU_ASSERT_EQUAL(*nombre_largo, 20);
-	CU_ASSERT_EQUAL(*parametro, 5);
+    CU_ASSERT_EQUAL(*coord_y, 3);
+    CU_ASSERT_EQUAL(*duracion, 4);
+    CU_ASSERT_EQUAL(*nombre, "Hola, soy una tarea");
+    CU_ASSERT_EQUAL(*nombre_largo, 20);
+    CU_ASSERT_EQUAL(*parametro, 5);
 
 	free(coord_x);
 	free(coord_y);
@@ -107,7 +109,7 @@ void test_serializar_vacio() {
 	t_buffer* buffer_vacio = serializar_vacio();
 	CU_ASSERT_EQUAL(buffer_vacio->tamanio_estructura, 0);
 	CU_ASSERT_EQUAL(buffer_vacio->estructura, NULL);
-}*/
+}
 
 void test_desserializar_tcb() {
 	t_PCB pcb = pcb_generico();
@@ -120,9 +122,9 @@ void test_desserializar_tcb() {
 	CU_ASSERT_EQUAL(un_tcb_desserialziado->coord_x, 2);
 	CU_ASSERT_EQUAL(un_tcb_desserialziado->coord_y, 3);
 	CU_ASSERT_EQUAL(un_tcb_desserialziado->siguiente_instruccion, 0);
-	//CU_ASSERT_EQUAL(un_tcb_desserialziado->puntero_a_pcb, &pcb);
+	CU_ASSERT_EQUAL(un_tcb_desserialziado->puntero_a_pcb, &pcb); //TODO rompe
 
-	//son_tcb_iguales(*un_tcb_desserialziado, un_tcb);
+	son_tcb_iguales(*un_tcb_desserialziado, un_tcb);
 }
 
 void test_desserializar_tarea() {
@@ -196,11 +198,20 @@ void son_tcb_iguales(t_TCB tcb_1, t_TCB tcb_2) {
 	CU_ASSERT_EQUAL(tcb_1.puntero_a_pcb, tcb_2.puntero_a_pcb);
 }
 
+void son_tcb_iguales2(t_TCB* tcb_1, t_TCB tcb_2) {
+	CU_ASSERT_EQUAL(tcb_1->TID, tcb_2.TID);
+	CU_ASSERT_EQUAL(tcb_1->estado_tripulante, tcb_2.estado_tripulante);
+	CU_ASSERT_EQUAL(tcb_1->coord_x, tcb_2.coord_x);
+	CU_ASSERT_EQUAL(tcb_1->coord_y, tcb_2.coord_y);
+	CU_ASSERT_EQUAL(tcb_1->siguiente_instruccion, tcb_2.siguiente_instruccion);
+	CU_ASSERT_EQUAL(tcb_1->puntero_a_pcb, tcb_2.puntero_a_pcb);
+}
+
 void son_tareas_iguales(t_tarea tarea_1, t_tarea tarea_2) {
 	CU_ASSERT_EQUAL(tarea_1.coord_x, tarea_2.coord_x);
 	CU_ASSERT_EQUAL(tarea_1.coord_y, tarea_2.coord_y);
 	CU_ASSERT_EQUAL(tarea_1.duracion, tarea_2.duracion);
-	CU_ASSERT_EQUAL(tarea_1.nombre, tarea_2.nombre);
+	CU_ASSERT_EQUAL(tarea_1.nombre, tarea_2.nombre); //TODO rompe
 	CU_ASSERT_EQUAL(tarea_1.largo_nombre, tarea_2.largo_nombre);
 	CU_ASSERT_EQUAL(tarea_1.parametro, tarea_2.parametro);
 }

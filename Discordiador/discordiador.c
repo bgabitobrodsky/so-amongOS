@@ -47,7 +47,7 @@ pthread_mutex_t sem_cola_ready;
 char estado_tripulante[5] = {'N', 'R', 'E', 'B', 'F'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
-int testeo = TEST_SERIALIZACION;
+int testeo = TEST_ENVIO_Y_RECEPCION;
 
 enum {
     GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
@@ -76,7 +76,7 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    test_iniciar_patota();
+//    test_iniciar_patota();
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -105,8 +105,12 @@ int main() {
 int correr_tests(int enumerado) {
 	switch(enumerado) {
 	case TEST_SERIALIZACION:
-		return CUmain();
+		return CUmain_serializacion();
 		break;
+
+	case TEST_ENVIO_Y_RECEPCION:
+		return CUmain_envio_y_recepcion();
+			break;
 
 	case TEST_DISCORDIADOR:
 		break;

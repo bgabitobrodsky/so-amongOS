@@ -56,7 +56,7 @@ t_buffer* serializar_tarea(t_tarea tarea) {
 
     buffer->estructura = estructura;
 
-    free(tarea.nombre); // TODO: Habria que ver si el nombre de la tarea hace falta en src
+    //free(tarea.nombre); // TODO testeo: hacer este free en main
 
     return buffer;
 }
