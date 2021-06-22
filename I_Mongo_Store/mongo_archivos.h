@@ -62,7 +62,7 @@ typedef struct {
     FILE* superbloque;
     FILE* blocks;
     char* path_blocks;
-    void* mapa_blocks;
+    unsigned char* mapa_blocks;
 
 } t_archivos;
 

@@ -44,7 +44,7 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 
 	iniciar_superbloque(archivos.superbloque);
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
-	inicializar_mapa();
+	inicializar_archivos.mapa_blocks();
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -86,7 +86,7 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 
 	// TODO: Verificar si esta mappeado
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
-	inicializar_mapa();
+	inicializar_archivos.mapa_blocks();
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -101,18 +101,18 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 // Llenar metadata con nuevos datos (distinguir entre tripu y recursos)
 
 void asignar_nuevo_bloque(FILE* archivo) {
-	void* mapa = archivos.superbloque;
-	fseek(mapa, strlen("BLOCK_SIZE="), SEEK_SET);
+	void* archivos.mapa_blocks = archivos.superbloque;
+	fseek(archivos.mapa_blocks, strlen("BLOCK_SIZE="), SEEK_SET);
 	uint32_t tamanio_bloque;
-	fread(&tamanio_bloque, sizeof(uint32_t), 1, mapa);
+	fread(&tamanio_bloque, sizeof(uint32_t), 1, archivos.mapa_blocks);
 
-	fseek(mapa, strlen("BLOCK_COUNT="), SEEK_CUR);
+	fseek(archivos.mapa_blocks, strlen("BLOCK_COUNT="), SEEK_CUR);
 	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, mapa);
+	fread(&cant_bloques, sizeof(uint32_t), 1, archivos.mapa_blocks);
 
 	t_bitarray* bitmap = malloc(sizeof(t_bitarray));
 	bitmap = bitarray_create_with_mode(bitmap->bitarray, CANTIDAD_BLOQUES, LSB_FIRST);
-	fread(bitmap->bitarray, sizeof(1/CHAR_BIT), CANTIDAD_BLOQUES, mapa); //CHAR_BIT: represents the number of bits in a char
+	fread(bitmap->bitarray, sizeof(1/CHAR_BIT), CANTIDAD_BLOQUES, archivos.mapa_blocks); //CHAR_BIT: represents the number of bits in a char
 	int bit_libre = -1;
 
 	//Recorro todas las pociciones del bitarray
@@ -148,14 +148,13 @@ void asignar_nuevo_bloque(FILE* archivo) {
 }
 
 /*int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
-	unsigned char* mapa = archivos.mapa_blocks;
 	int cantidad_alcanzada = 0;
 
 	for(int j = 0; j < cant_bloques; j++) {
-		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != ''; i++) { // Cambiar Macro por revision al Superbloque
+		for (int i = 0; tipo != *(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != ''; i++) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == '') { 
-				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
+			if (*(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == '') { 
+				*(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
 				cantidad_alcanzada++;
 			}
 
@@ -169,14 +168,13 @@ void asignar_nuevo_bloque(FILE* archivo) {
 }*/
 
 /*int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
-	unsigned char* mapa = archivos.mapa_blocks;
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
-		for (int i = TAMANIO_BLOQUE; tipo != *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != ''; i--) { // Cambiar Macro por revision al Superbloque
+		for (int i = TAMANIO_BLOQUE; tipo != *(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != ''; i--) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) == tipo) { 
-				*(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = '';
+			if (*(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) == tipo) { 
+				*(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = '';
 				cantidad_alcanzada++;
 			}
 
@@ -271,7 +269,7 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
 		agregar(archivo, offset * -1); // Recursividad con la cantidad que falto
 	}
 	else if (offset < 100) { // No paso bloques. ¿No sería CANTIDAD_BLOQUES?
-		msync(archivos.mapa_blocks, offset + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.archivos.mapa_blocks_blocks, offset + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
@@ -279,7 +277,7 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
 		offset = offset % 100;
 		
 					        //Acá iría cant_bloques_local?
-		msync(archivos.mapa_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.archivos.mapa_blocks_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
@@ -311,14 +309,14 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	if (offset < 0) { // Se quiso quitar mas de lo existente, no hace nada (queda para comprension)
 	}
 	else if (offset < 100) { // No paso bloques
-		msync(archivos.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.archivos.mapa_blocks_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
-		msync(archivos.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.archivos.mapa_blocks_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
