@@ -10,12 +10,12 @@
 
 #include "mongo_tripulantes.h"
 
-typedef struct hilo_tripulante{
+typedef struct {
 	int socket;
 	void (*atender)(char*);
 } hilo_tripulante;
 
-typedef struct hilo_tripulante{
+typedef struct {
 	int socket;
 	void (*atender)(char*);
 } hilo_discordiador;

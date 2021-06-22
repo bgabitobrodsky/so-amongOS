@@ -88,29 +88,26 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 
 		if (socket_especifico != -1) {
 
-			// Se verifica que la primera conexion a Mongo sea del modulo Discordiador, debe ser asi por defecto
-        	if (es_discordiador == 1) {
-        		es_discordiador = 0; // Se cambia flujo para que todo lo subsiguiente sean tripulantes
+		// Se verifica que la primera conexion a Mongo sea del modulo Discordiador, debe ser asi por defecto
+        if (es_discordiador == 1) {
+       		es_discordiador = 0; // Se cambia flujo para que todo lo subsiguiente sean tripulantes
 
-        		hilo_discordiador* parametros = malloc(sizeof(hilo_tripulante));
-        		parametros->socket = socket_especifico;
-        		pthread_t un_hilo_discordiador;
-        		pthread_create(&un_hilo_discordiador, NULL, (void*) sabotaje, (void *) parametros);
-        		//Falta cerrar sockets, hacerlo despues de juntar hilos
-        	}
-        	else { // Flujo para tripulantes
-				// Cambiar fork
-        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
-        		parametros->socket = socket_especifico;
-        		pthread_t un_hilo_tripulante;
-        		pthread_create(&un_hilo_tripulante, NULL, (void*) sabotaje, (void *) parametros);
-        		//Falta cerrar sockets, hacerlo despues de juntar hilos
-            	}
-        	}
-		}
-
-        close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
-    }
+       		hilo_discordiador* parametros = malloc(sizeof(hilo_tripulante));
+       		parametros->socket = socket_especifico;
+       		pthread_t un_hilo_discordiador;
+       		pthread_create(&un_hilo_discordiador, NULL, (void*) sabotaje, (void *) parametros);
+       		//Falta cerrar sockets, hacerlo despues de juntar hilos
+       	}
+       	else { // Flujo para tripulantes
+       		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
+       		parametros->socket = socket_especifico;
+       		pthread_t un_hilo_tripulante;
+       		pthread_create(&un_hilo_tripulante, NULL, (void*) sabotaje, (void *) parametros);
+       		//Falta cerrar sockets, hacerlo despues de juntar hilos
+           	}
+       	}
+	close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+	}
 }
 
 void sabotaje(int socket_discordiador) {
