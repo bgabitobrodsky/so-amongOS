@@ -50,7 +50,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		log_debug(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
 		t_PCB* pcb = malloc(sizeof(t_PCB));
 		pcb->PID = pid_patota;
-		pcb->direccion_tareas = puntero_a_tareas;
+		pcb->direccion_tareas = (uint32_t) puntero_a_tareas;
 		log_debug(logger,"Se termino la creación de PCB con PID: %d", pid_patota);
 
 		//Creamos el segmento para el PCB y lo guardamos en la tabla de la patota
@@ -82,10 +82,10 @@ void gestionar_tcb(t_TCB* tcb){
 		segmento* segmento_tcb = asignar_segmento(tamanio_tcb);
 			// direccion donde está guardado el pcb
 		void* puntero_a_pcb = memoria_principal + tabla->segmento_pcb->base; 
-		tcb->puntero_a_pcb = puntero_a_pcb;
+		tcb->puntero_a_pcb = (uint32_t) puntero_a_pcb;
 			// direccion donde está guardada la string de tareas, como estoy creando el tcb, la siguiente tarea va a ser la primera
 		void* puntero_a_tareas = memoria_principal + tabla->segmento_tareas->base; 
-		tcb->siguiente_instruccion = puntero_a_tareas;
+		tcb->siguiente_instruccion = (uint32_t) puntero_a_tareas;
 
 		memcpy(memoria_principal + segmento_tcb->base, tcb, sizeof(t_TCB));
 
@@ -130,15 +130,13 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_actualizar_tcb();
+	// test_actualizar_tcb();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
-
-	proceso_handler((void*) &args_miram);
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) proceso_handler, (void*) &args_miram);
@@ -182,7 +180,6 @@ void proceso_handler(void* args) {
 			parametros->socket = socket_especifico;
 			//parametros->ip_cliente = inet_ntoa(address.sin_addr);
 			//parametros->puerto_cliente = ntohs(address.sin_port);
-			atender_clientes(parametros);
 			pthread_t un_hilo_tripulante;
 
 			pthread_create(&un_hilo_tripulante, NULL, (void*) atender_clientes, (void *) parametros);
@@ -221,6 +218,7 @@ void atender_clientes(void* param) {
 				log_info(logger, "Tripulante: %i\n", mensaje_recibido->tid);
 				// TODO: GABITO Y JULIA
 				// gestionar_pedido_tarea(mensaje_recibido->tid, parametros->socket);
+				enviar_codigo(FALLO, parametros->socket);
 				break;
 
 			case RECIBIR_TCB:
@@ -437,7 +435,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
-		if(tcb->siguiente_instruccion == NULL){
+		if(tcb->siguiente_instruccion == (uint32_t) NULL){
 			// Ya no quedan tareas
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
 			return NULL;
@@ -445,7 +443,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		
 		segmento* segmento_tareas = tabla->segmento_tareas;
 		
-		char* puntero_a_tareas = tcb->siguiente_instruccion;
+		char* puntero_a_tareas = (char*) tcb->siguiente_instruccion;
 		char* str_tarea = strtok(puntero_a_tareas,"\n");
 		log_info(logger, "Tarea: %s", str_tarea);
 
@@ -454,7 +452,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		//me fijo si hay un \0 despues de la tarea, si no hay significa que esta era la ultima :'(
 		if(str_tarea[strlen(str_tarea)+1] == '\0'){
 			// no hay proxima tarea
-			tcb->siguiente_instruccion = NULL;
+			tcb->siguiente_instruccion = (uint32_t) NULL;
 		}else{
 			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}

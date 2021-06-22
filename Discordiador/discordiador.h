@@ -41,6 +41,7 @@ t_PCB* crear_pcb(char* path);
 int nuevo_pid();
 t_list* lista_tripulantes_patota(uint32_t pid);
 t_tripulante* crear_tripulante(int tid, int x, int y, char estado);
+void crear_hilo_tripulante(t_tripulante* un_tripulante);
 
 // FUNCIONES AUXILIARES
 void leer_consola();
