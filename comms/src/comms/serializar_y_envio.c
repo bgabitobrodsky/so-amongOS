@@ -4,8 +4,6 @@ int CUmain_serializacion() {
 	CU_initialize_registry();
 
 	CU_pSuite serializacion = CU_add_suite("Suite de serializacion", NULL, NULL);
-//	CU_add_test(serializacion, "serializar tcb exitosamente",  test_serializar_tcb);
-	CU_add_test(serializacion, "serializar tarea exitosamente",  test_serializar_tarea);
 	CU_add_test(serializacion, "serializar vacio exitosamente",  test_serializar_vacio);
 
 	CU_pSuite desserializacion = CU_add_suite("Suite de desserializacion", NULL, NULL);
@@ -17,92 +15,6 @@ int CUmain_serializacion() {
 	CU_cleanup_registry();
 
 	return CU_get_error();
-}
-
-//TODO rompe duro
-/*void test_serializar_tcb() {
-	t_PCB pcb = pcb_generico();
-	t_TCB un_tcb = tcb_generico();
-	t_buffer* buffer_tcb = serializar_tcb(un_tcb);
-
-	int desplazamiento = 0;
-
-	int* tid = malloc(sizeof(uint32_t));
-	char* estado_tripulante = malloc(sizeof(char));
-	int* coord_x = malloc(sizeof(uint32_t));
-	int* coord_y = malloc(sizeof(uint32_t));
-	uint32_t* siguiente_instruccion = malloc(sizeof(uint32_t));
-	uint32_t* puntero_a_pcb = malloc(sizeof(uint32_t));
-	memcpy(&tid, buffer_tcb->estructura, sizeof(uint32_t));
-	desplazamiento += sizeof(uint32_t);
-	memcpy(&estado_tripulante, buffer_tcb->estructura + desplazamiento, sizeof(char));
-	desplazamiento += sizeof(char);
-	memcpy(&coord_x, buffer_tcb->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(&coord_y, buffer_tcb->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(&siguiente_instruccion, buffer_tcb->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(&puntero_a_pcb, buffer_tcb->estructura + desplazamiento, sizeof(uint32_t));
-
-
-	CU_ASSERT_EQUAL(buffer_tcb->tamanio_estructura, sizeof(t_TCB));
-	//CU_ASSERT_EQUAL(buffer_tcb->estructura, un_tcb); //TODO
-	CU_ASSERT_EQUAL(*tid, 1);
-	CU_ASSERT_EQUAL(*estado_tripulante, 'N');
-	CU_ASSERT_EQUAL(*coord_x, 2);
-	CU_ASSERT_EQUAL(*coord_y, 3);
-	CU_ASSERT_EQUAL(siguiente_instruccion, 0);
-	CU_ASSERT_EQUAL(*puntero_a_pcb, &pcb);
-
-	free(tid);
-	free(estado_tripulante);
-	free(coord_x);
-	free(coord_y);
-	free(siguiente_instruccion);
-	free(puntero_a_pcb);
-	free(buffer_tcb);
-}*/
-
-void test_serializar_tarea() { //TODO corre bien pero no me salen los tests en el resumen
-	t_tarea tarea = tarea_generica();
-	t_buffer* buffer_tarea_serializada = serializar_tarea(tarea);
-
-	int desplazamiento = 0;
-
-	int* coord_x = malloc(sizeof(uint32_t));
-	int* coord_y = malloc(sizeof(uint32_t));
-	int* duracion = malloc(sizeof(uint32_t));
-	int* nombre_largo = malloc(sizeof(uint32_t));
-	uint32_t* parametro = malloc(sizeof(uint32_t));
-
-    memcpy(&coord_x, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(&coord_y, buffer_tarea_serializada->estructura + desplazamiento, sizeof(char));
-    desplazamiento += sizeof(char);
-    memcpy(&duracion, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(&nombre_largo, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-
-	char* nombre = malloc(*nombre_largo + 1);
-    memcpy(&nombre, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(&parametro, buffer_tarea_serializada->estructura + desplazamiento, sizeof(uint32_t));
-
-    CU_ASSERT_EQUAL(*coord_x, 2);
-    CU_ASSERT_EQUAL(*coord_y, 3);
-    CU_ASSERT_EQUAL(*duracion, 4);
-    CU_ASSERT_EQUAL(*nombre, "Hola, soy una tarea");
-    CU_ASSERT_EQUAL(*nombre_largo, 20);
-    CU_ASSERT_EQUAL(*parametro, 5);
-
-	free(coord_x);
-	free(coord_y);
-	free(duracion);
-	free(nombre);
-	free(nombre_largo);
-	free(parametro);
 }
 
 void test_serializar_vacio() {

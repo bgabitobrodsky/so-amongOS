@@ -47,7 +47,7 @@ pthread_mutex_t sem_cola_ready;
 char estado_tripulante[5] = {'N', 'R', 'E', 'B', 'F'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
-int testeo = DISCORDIADOR;
+int testeo = TEST_SERIALIZACION;
 
 enum {
     GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
