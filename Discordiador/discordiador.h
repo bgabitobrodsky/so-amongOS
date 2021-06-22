@@ -9,9 +9,11 @@
 #define DISCORDIADOR_H_
 
 #include "utils.h"
+#include "../comms/src/comms/serializar_y_envio.h"
 
 //FUnciones de testeo
-int correr_tests();
+enum {DISCORDIADOR, TEST_SERIALIZACION, TEST_DISCORDIADOR};
+int correr_tests(int);
 void funcion_hilo();
 void iniciar_hilo();
 

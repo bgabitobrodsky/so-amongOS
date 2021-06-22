@@ -21,7 +21,7 @@ build/comms/a/%.o: comms/a/%.c
 	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 
 # Add debug parameters and compile
-debug: CC += -DDEBUG -g
+debug: CC += -DDEBUG -g -lcunit
 debug: all
 
 # Clean build files

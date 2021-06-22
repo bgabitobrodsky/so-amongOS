@@ -48,11 +48,11 @@ pthread_mutex_t sem_cola_ready;
 char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
-int testeo = 1;
+int testeo = TEST_SERIALIZACION;
 
 int main() {
 	if(testeo)
-		correr_tests();
+		correr_tests(testeo);
 	else {
 
     logger = log_create("discordiador.log", "discordiador", true, LOG_LEVEL_INFO);
@@ -95,8 +95,16 @@ int main() {
 }
 }
 
-int correr_tests() {
-	return CUmain();
+int correr_tests(int enumerado) {
+	switch(enumerado) {
+	case TEST_SERIALIZACION:
+		return CUmain();
+		break;
+
+	case TEST_DISCORDIADOR:
+		break;
+	}
+	return 1;
 }
 
 void iniciar_patota(char* leido) {
