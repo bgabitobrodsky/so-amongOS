@@ -2,6 +2,7 @@
 
 ### Registro de cambios
 21/06/2021
++ Los tripulantes informan a ram sus movimientos y cambios de estado.
 + Grandes avances en discordiador.
 + Se reciben tareas desde RAM.
 + Los tripulantes son capaces de realizar sus tareas.

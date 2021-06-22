@@ -17,6 +17,7 @@
 
 t_list* buscar_tcbs_por_pid(int pid);
 t_TCB* buscar_tcb_por_tid(int tid);
+int actualizar_tcb(t_TCB* nuevo_tcb);
 
 t_log* logger;
 t_config* config;
@@ -192,10 +193,6 @@ void atender_clientes(void* param) {
 				sleep(1);
 				break;
 
-			case MENSAJE:
-				log_info(logger, "Mensaje recibido\n");
-				break;
-
 			case PEDIR_TAREA:
 				log_info(logger, "Pedido de tarea recibido, tid: %i\n", mensaje_recibido->tid);
 
@@ -216,6 +213,12 @@ void atender_clientes(void* param) {
 				// log_info(logger, "Recibo una tcb\n");
 				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
 				gestionar_tcb(mensaje_recibido->tcb);
+				break;
+
+			case ACTUALIZAR:
+				// log_info(logger, "Recibo pedido de actualizar\n");
+				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
+				actualizar_tcb(mensaje_recibido->tcb);
 				break;
 
 			case T_SIGKILL:
@@ -277,8 +280,8 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	tcb.estado_tripulante = estado_tripulante[NEW];
 	tcb.coord_x = posicion[0];
 	tcb.coord_y = posicion[2];
-	tcb.siguiente_instruccion = 5; //TODO
-	tcb.puntero_a_pcb = 7;
+	tcb.siguiente_instruccion = 0;
+	tcb.puntero_a_pcb = 0;
 	return tcb;
 }
 
