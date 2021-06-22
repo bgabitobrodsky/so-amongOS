@@ -203,6 +203,7 @@ void iniciar_listas() {
 	lista_pids = list_create();
 	lista_patotas = list_create();
 	lista_tripulantes_block = list_create();
+	lista_tripulantes_exit = list_create();
 	lista_tripulantes = list_create();
 
 }
@@ -219,6 +220,7 @@ void iniciar_semaforos(){
 	pthread_mutex_init(&sem_lista_new, NULL);
 	pthread_mutex_init(&sem_cola_ready, NULL);
 	pthread_mutex_init(&sem_lista_block, NULL);
+	pthread_mutex_init(&sem_lista_exit, NULL);
 
 }
 

@@ -216,7 +216,17 @@ void atender_clientes(void* param) {
 			case ACTUALIZAR:
 				// log_info(logger, "Recibo pedido de actualizar\n");
 				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
-				actualizar_tcb(mensaje_recibido->tcb);
+				if(mensaje_recibido->tcb->estado_tripulante == 'F'){
+					if(eliminar_tcb(mensaje_recibido->tcb->TID)){
+						log_info(logger, "Mensaje de %i, termine mi trabajo \n", mensaje_recibido->tcb->TID);
+					}
+					else{
+						log_error(logger, "%i no pudo finalizar.\n", mensaje_recibido->tcb->TID);
+					}
+				}
+				else{
+					actualizar_tcb(mensaje_recibido->tcb);
+				}
 				break;
 
 			case T_SIGKILL:

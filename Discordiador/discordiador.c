@@ -35,19 +35,21 @@ t_list* lista_tripulantes;
 t_list* lista_tripulantes_new;
 t_list* lista_tripulantes_exec;
 t_list* lista_tripulantes_block;
+t_list* lista_tripulantes_exit;
 
 t_queue* cola_tripulantes_ready;
 
 pthread_mutex_t sem_lista_new;
 pthread_mutex_t sem_lista_exec;
 pthread_mutex_t sem_lista_block;
+pthread_mutex_t sem_lista_exit;
 pthread_mutex_t sem_cola_ready;
 
 // Variables de discordiador
 char estado_tripulante[5] = {'N', 'R', 'E', 'B', 'F'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
-int testeo = TEST_SERIALIZACION;
+int testeo = DISCORDIADOR;
 
 enum {
     GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
@@ -76,7 +78,7 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-//    test_iniciar_patota();
+    test_iniciar_planificacion();
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -176,7 +178,9 @@ void iniciar_patota(char* leido) {
 void iniciar_planificacion() {
 
     planificacion_activa = 1;
-
+    log_debug(logger, "\nTripulantes en READY: %i\n", queue_size(cola_tripulantes_ready));
+    log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
+    log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
     // TODO hacer un hilo?
     // while(planificacion_activa){
         while(list_size(lista_tripulantes_exec) < atoi(GRADO_MULTITAREA) && !queue_is_empty(cola_tripulantes_ready)){
@@ -290,12 +294,23 @@ void tripulante(t_tripulante* un_tripulante){
             }
             else if(tarea->codigo_operacion == FALLO){
                 un_tripulante->estado_tripulante = estado_tripulante[EXIT];
+                monitor_lista_dos_parametros(sem_lista_exec, (void*) eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
+                monitor_lista_dos_parametros(sem_lista_exit, (void*) list_add, lista_tripulantes_exit, un_tripulante);
+                // TODO: actualizar socket
                 actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
             }
-            // pedir_otra_tarea();
         }
-    };
+    }
+    // TODO: actualizar socket
+    morir(un_tripulante, socket_a_mi_ram_hq);
 
+}
+
+void morir(t_tripulante* un_tripulante, int socket){
+	// YA ESTA ACTUALIZADO EN RAM, ASI QUE NO HACE FALTA ACTUALIZAR AHI
+	eliminar_tripulante_de_lista(lista_tripulantes, un_tripulante->TID);
+	// monitor_lista_dos_parametros(sem_lista_tripulantes, (void*) eliminar_tripulante_de_lista, lista_tripulantes, un_tripulante->TID);
+	free(un_tripulante);
 }
 
 void iniciar_tripulante(t_tripulante* un_tripulante){

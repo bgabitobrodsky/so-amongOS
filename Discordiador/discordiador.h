@@ -8,7 +8,7 @@
 #ifndef DISCORDIADOR_H_
 #define DISCORDIADOR_H_
 
-#include "utils.h"
+#include "test_discordiador.h"
 #include "../comms/src/comms/envio_y_recepcion.h"
 
 //FUnciones de testeo
@@ -35,6 +35,7 @@ void no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante);
 int identificar_tarea(char* nombre_recibido);
 void crear_hilo_tripulante(t_tripulante* un_tripulante);
 t_list* lista_tripulantes_patota(uint32_t pid);
+void morir(t_tripulante* un_tripulante, int socket);
 
 // FUNCIONES AUXILIARES
 void leer_consola();
