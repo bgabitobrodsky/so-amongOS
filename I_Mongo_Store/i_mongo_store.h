@@ -10,6 +10,16 @@
 
 #include "mongo_tripulantes.h"
 
+typedef struct hilo_tripulante{
+	int socket;
+	void (*atender)(char*);
+} hilo_tripulante;
+
+typedef struct hilo_tripulante{
+	int socket;
+	void (*atender)(char*);
+} hilo_discordiador;
+
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_archivos archivos;

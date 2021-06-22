@@ -11,5 +11,6 @@ extern t_list* bitacoras;
 
 void iniciar_superbloque(FILE* archivo);
 void iniciar_blocks(int filedescriptor_blocks);
+void inicializar_mapa();
 
 #endif

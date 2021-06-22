@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/mman.h>
+#include <time.h>
 
 #define TAMANIO_BLOQUE 64
 #define CANTIDAD_BLOQUES 64 
@@ -81,16 +82,21 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 void actualizar_MD5(FILE* archivo);
 void alterar(int codigo_archivo, int cantidad);
-void agregar(FILE* archivo, int cantidad);
-void quitar(FILE* archivo, char* path, int cantidad, char tipo);
+void agregar(int codigo_archivo, int cantidad);
+void quitar(int codigo_archivo, int cantidad);
 char* conseguir_tipo(char tipo);
 char conseguir_char(int codigo_archivo);
 FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo(int codigo);
 char* conseguir_path(int codigo_archivo);
 char* conseguir_nombre(FILE* archivo);
-int max(int a, int b);
+char* crear_md5();
 char char_random();
+int max(int a, int b);
+int es_recurso(FILE* archivo);
+void asignar_bloque_recurso(FILE* archivo, int bit_libre);
+void asignar_bloque_tripulante(FILE* archivo, int bit_libre);
+void escribir_archivo_tripulante(uint32_t tamanio, uint32_t lista_bloques);
 
 // devuelven la metadata del archivo
 uint32_t tamanio_archivo(FILE* archivo);
@@ -98,7 +104,7 @@ uint32_t cantidad_bloques_archvio(FILE* archivo);
 uint32_t* lista_bloques_archvio(FILE* archivo);
 char caracter_llenado_archivo(FILE* archivo);
 char* md5_archivo(FILE* archivo);
-void escribir_archivo(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques, char caracter_llenado, char* md_5);
+void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques, char caracter_llenado, char* md_5);
 
 
 

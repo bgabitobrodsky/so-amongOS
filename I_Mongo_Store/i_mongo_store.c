@@ -92,22 +92,19 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
         	if (es_discordiador == 1) {
         		es_discordiador = 0; // Se cambia flujo para que todo lo subsiguiente sean tripulantes
 
-				// TODO Cambiar fork
-            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
-                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-                	log_info(logger_mongo, "Se conecto con el modulo Discordiador.\n");
-                	sabotaje(socket_especifico); // Interaccion con Discordiador es solo por el sabotaje
-                	close(socket_especifico); // Cumple proposito, se cierra socket hijo
-                	exit(0); // Returnea
-            	}
+        		hilo_discordiador* parametros = malloc(sizeof(hilo_tripulante));
+        		parametros->socket = socket_especifico;
+        		pthread_t un_hilo_discordiador;
+        		pthread_create(&un_hilo_discordiador, NULL, (void*) sabotaje, (void *) parametros);
+        		//Falta cerrar sockets, hacerlo despues de juntar hilos
         	}
         	else { // Flujo para tripulantes
 				// Cambiar fork
-            	if (!fork()) { // Se crea un proceso hijo si se pudo forkear correctamente
-                	close(socket_escucha); // Cierro escucha en este hilo, total no sirve mas
-                	manejo_tripulante(socket_especifico); // Se pasa a las distintas opciones que puede hacer el tripulante en Mongo
-                	close(socket_especifico); // Cumple proposito, se cierra socket hijo
-                	exit(0); // Returnea
+        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
+        		parametros->socket = socket_especifico;
+        		pthread_t un_hilo_tripulante;
+        		pthread_create(&un_hilo_tripulante, NULL, (void*) sabotaje, (void *) parametros);
+        		//Falta cerrar sockets, hacerlo despues de juntar hilos
             	}
         	}
 		}

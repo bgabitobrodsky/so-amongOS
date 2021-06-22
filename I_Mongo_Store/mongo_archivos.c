@@ -5,7 +5,6 @@ t_log* logger_mongo;
 t_config* config_mongo;
 t_archivos archivos;
 t_list* bitacoras;
-int random = 0;
 
 void inicializar_archivos(char* path_files) { // TODO: Puede romper
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
@@ -44,7 +43,7 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 
 	iniciar_superbloque(archivos.superbloque);
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
-	inicializar_archivos.mapa_blocks();
+	inicializar_mapa();
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -86,7 +85,7 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 
 	// TODO: Verificar si esta mappeado
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
-	inicializar_archivos.mapa_blocks();
+	inicializar_mapa();
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -101,25 +100,26 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 // Llenar metadata con nuevos datos (distinguir entre tripu y recursos)
 
 void asignar_nuevo_bloque(FILE* archivo) {
-	void* archivos.mapa_blocks = archivos.superbloque;
-	fseek(archivos.mapa_blocks, strlen("BLOCK_SIZE="), SEEK_SET);
+	fseek(archivos.superbloque, strlen("BLOCK_SIZE="), SEEK_SET);
 	uint32_t tamanio_bloque;
-	fread(&tamanio_bloque, sizeof(uint32_t), 1, archivos.mapa_blocks);
+	fread(&tamanio_bloque, sizeof(uint32_t), 1, archivos.superbloque);
 
-	fseek(archivos.mapa_blocks, strlen("BLOCK_COUNT="), SEEK_CUR);
+	fseek(archivos.superbloque, strlen("BLOCK_COUNT="), SEEK_CUR);
 	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivos.mapa_blocks);
+	fread(&cant_bloques, sizeof(uint32_t), 1, archivos.superbloque);
 
 	t_bitarray* bitmap = malloc(sizeof(t_bitarray));
-	bitmap = bitarray_create_with_mode(bitmap->bitarray, CANTIDAD_BLOQUES, LSB_FIRST);
-	fread(bitmap->bitarray, sizeof(1/CHAR_BIT), CANTIDAD_BLOQUES, archivos.mapa_blocks); //CHAR_BIT: represents the number of bits in a char
+	bitmap = bitarray_create_with_mode(bitmap->bitarray, cant_bloques, LSB_FIRST);
+	fread(bitmap->bitarray, 1/CHAR_BIT, cant_bloques, archivos.superbloque); //CHAR_BIT: represents the number of bits in a char
 	int bit_libre = -1;
 
-	//Recorro todas las pociciones del bitarray
-	for (int i = 0; i < CANTIDAD_BLOQUES; i++){
+	//Recorro todas las pociciones del bitarray   ... Cambiar el for por un while
+	for (int i = 0; i < (int) cant_bloques; i++){
 		//Entra si el bit del bitmap está en 0 y no se encontro bit_libre (< 0). Se puede mejorar
-		if(!bitarray_test_bit(bitmap, i) && bit_libre  < 0)
+		if(!bitarray_test_bit(bitmap, i) && bit_libre < 0){
 			bit_libre = i;
+			break;
+		}
 	}
 
 	//Si había un bloque libre
@@ -127,33 +127,46 @@ void asignar_nuevo_bloque(FILE* archivo) {
 		//Marco el bit como ocupado
 		bitarray_set_bit(bitmap, bit_libre);
 
-		//Asigno el bloque a un archivo
-		asignar_bloque(archivo, bit_libre); //TODO --> Falta que al bloque se le asigne el archivo correspondiente
+		if(es_recurso(archivo)){ //TODO
+			//Asigno el bloque a un archivo
+			asignar_bloque_recurso(archivo, bit_libre); //TODO --> Falta que al bloque se le asigne el archivo correspondiente
 
-		//Actualizo la metadata del archivo
-		uint32_t tamanio = tamanio_archivo(archivo);
-		uint32_t cantidad_bloques = cantidad_bloques_archvio(archivo) + 1;
-		uint32_t* lista_bloques = lista_bloques_archvio(archivo);
-		lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente
-		//t_list lista_bloques = lista_bloques_archvio(archivo);
-		//list_add(lista_bloques, num_bloque);
-		char caracter_llenado = caracter_llenado_archivo(archivo);
-		char* md5 = md5_archivo(archivo);
+			//Actualizo la metadata del archivo
+			uint32_t tamanio = tamanio_archivo(archivo);
+			uint32_t cantidad_bloques = cantidad_bloques_archvio(archivo) + 1;
+			uint32_t* lista_bloques = lista_bloques_archvio(archivo);
+			lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente
+			//t_list lista_bloques = lista_bloques_archvio(archivo);
+			//list_add(lista_bloques, num_bloque);
+			char caracter_llenado = caracter_llenado_archivo(archivo);
+			char* md5 = md5_archivo(archivo);
 
-		escribir_archivo(archivo, tamanio, cantidad_bloques, lista_bloques, caracter_llenado, md5);
+			escribir_archivo_recurso(archivo, tamanio, cantidad_bloques, lista_bloques, caracter_llenado, md5);
+		}
+		else {
+			asignar_bloque_tripulante(archivo, bit_libre);
+
+			//Actualizo la metadata del archivo
+			uint32_t tamanio = tamanio_archivo(archivo);
+			uint32_t* lista_bloques = lista_bloques_archvio(archivo);
+			uint32_t cantidad_bloques = sizeof(lista_bloques)/sizeof(uint32_t);
+			lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente
+
+			escribir_archivo_tripulante(tamanio, lista_bloques); //TODO
+		}
 	}
 	//Si no había un bloque libre
 	else
 		log_info(logger_mongo, "No hay bloques disponibles en este momento"); //TODO ¿Qué hago?
 }
 
-/*int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
+int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
 	int cantidad_alcanzada = 0;
 
 	for(int j = 0; j < cant_bloques; j++) {
-		for (int i = 0; tipo != *(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != ''; i++) { // Cambiar Macro por revision al Superbloque
+		for (int i = 0; tipo != *(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != ' '; i++) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == '') { 
+			if (*(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == ' ') {
 				*(archivos.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
 				cantidad_alcanzada++;
 			}
@@ -165,16 +178,16 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	}
 	
 	return cantidad_alcanzada - cantidad_deseada;
-}*/
+}
 
-/*int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
+int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
-		for (int i = TAMANIO_BLOQUE; tipo != *(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != ''; i--) { // Cambiar Macro por revision al Superbloque
+		for (int i = TAMANIO_BLOQUE; tipo != *(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != ' '; i--) { // Cambiar Macro por revision al Superbloque
 			
 			if (*(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) == tipo) { 
-				*(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = '';
+				*(archivos.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = ' ';
 				cantidad_alcanzada++;
 			}
 
@@ -185,9 +198,9 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	}
 	
 	return cantidad_alcanzada - cantidad_deseada;
-}*/
+}
 
-/*void actualizar_MD5(FILE* archivo) {
+void actualizar_MD5(FILE* archivo) {
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
 	uint32_t tamanio_archivo;
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
@@ -204,7 +217,8 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	char tipo;
 	fread(&tipo, sizeof(char), 1, archivo);
 
-	freopen(archivo, "w+");
+	char* path_archivo = conseguir_path(archivo);
+	archivo = fopen(path_archivo , "w+"); //Se actualiza struct?
 
 	char* size = "SIZE=";
 	char* block_count = "BLOCK_COUNT=";
@@ -230,20 +244,21 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	free(caracter);
 	free(md5);
 	free(md5_dato);
-}*/
+}
 
 void alterar(int codigo_archivo, int cantidad) {  
 	if (cantidad >= 0){
-		agregar(conseguir_archivo(codigo_archivo), cantidad);
+		agregar(codigo_archivo, cantidad);
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 	else{
-		quitar(conseguir_archivo(codigo_archivo), conseguir_path(codigo_archivo), cantidad, conseguir_char(codigo_archivo));
+		quitar(codigo_archivo, cantidad);
 		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 }
 
-void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs previos
+void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
+	FILE* archivo = conseguir_archivo(codigo_archivo);
 	pthread_mutex_lock(&mutex_blocks); // Declarar mutex
 
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
@@ -269,7 +284,7 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
 		agregar(archivo, offset * -1); // Recursividad con la cantidad que falto
 	}
 	else if (offset < 100) { // No paso bloques. ¿No sería CANTIDAD_BLOQUES?
-		msync(archivos.archivos.mapa_blocks_blocks, offset + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.mapa_blocks, offset + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
@@ -277,7 +292,7 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
 		offset = offset % 100;
 		
 					        //Acá iría cant_bloques_local?
-		msync(archivos.archivos.mapa_blocks_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.mapa_blocks, cant_bloques * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
@@ -286,7 +301,8 @@ void agregar(FILE* archivo, int cantidad) { // Puede que haya que hacer mallocs 
     pthread_mutex_unlock(&mutex_blocks);
 }
 
-void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explotar en manejo de fopens, revisar
+void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de fopens, revisar
+	FILE* archivo = conseguir_archivo(codigo_archivo);
 	pthread_mutex_lock(&mutex_blocks);
 
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
@@ -302,6 +318,7 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
+	char tipo;
 	fread(&tipo, sizeof(char), 1, archivo);
 
 	int offset = quitar_ultimo_bloque_libre(lista_bloques, cant_bloques, cantidad * -1, tipo);
@@ -309,14 +326,14 @@ void quitar(FILE* archivo, char* path, int cantidad, char tipo) { // Puede explo
 	if (offset < 0) { // Se quiso quitar mas de lo existente, no hace nada (queda para comprension)
 	}
 	else if (offset < 100) { // No paso bloques
-		msync(archivos.archivos.mapa_blocks_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_ASYNC); //Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
-		msync(archivos.archivos.mapa_blocks_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(archivos.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_ASYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
@@ -436,18 +453,18 @@ char* crear_md5() { // String de 32
 }
 
 char char_random() {
-	int seleccion = rand(i) % 2;
+
+	srand(time(NULL));
+	int seleccion = rand() % 2;
 
 	switch (seleccion) {
 		case 0:
-			return (char) (rand(i) % 9 + 48); // Devuelve un numero por ASCII
+			return (char) (rand() % 9 + 48); // Devuelve un numero por ASCII
 			break;
 		case 1:
-			return (char) (rand(i) % 26 + 65); // Devuelve un alfa por ASCII
+			return (char) (rand() % 26 + 65); // Devuelve un alfa por ASCII
 			break;
 	}
-
-	i++;
 
 	return '\0';
 }
@@ -553,7 +570,7 @@ char* md5_archivo(FILE* archivo) {
 	return md5;
 }
 
-void escribir_archivo(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques, char caracter_llenado, char* md_5) {
+void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques, char caracter_llenado, char* md_5) {
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
 	uint32_t tamanio_archivo;
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
@@ -595,4 +612,20 @@ void escribir_archivo(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques
 	free(blocks);
 	free(caracter);
 	free(md5);
+}
+
+int es_recurso(FILE* archivo) { //TODO
+	return 1;
+}
+
+void asignar_bloque_recurso(FILE* archivo, int bit_libre) {
+	 //TODO
+}
+
+void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
+	 //TODO
+}
+
+void escribir_archivo_tripulante(uint32_t tamanio, uint32_t lista_bloques){
+	 //TODO
 }

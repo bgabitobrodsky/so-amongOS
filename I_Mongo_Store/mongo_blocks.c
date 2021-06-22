@@ -39,9 +39,13 @@ void iniciar_blocks(int filedescriptor_blocks) {
 void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos con whitespace, para funciones de agregado y quitado
 
     for (int i; i < (TAMANIO_BLOQUE); i++) {
-        *(archivos.mapa_blocks +  TAMANIO_BLOQUE * numero_bloque + i) = '';
+        *(archivos.mapa_blocks +  TAMANIO_BLOQUE * numero_bloque + i) = ' ';
     }
 
     msync(archivos.mapa_blocks, (numero_bloque + 1) * TAMANIO_BLOQUE, MS_ASYNC);
+
+}
+
+void inicializar_mapa() {
 
 }
