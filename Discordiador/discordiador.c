@@ -47,7 +47,7 @@ pthread_mutex_t sem_cola_ready;
 char estado_tripulante[5] = {'N', 'R', 'E', 'B', 'F'};
 int planificacion_activa = 0;
 int sistema_activo = 1;
-int testeo = TEST_ENVIO_Y_RECEPCION;
+int testeo = DISCORDIADOR;
 
 enum {
     GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
@@ -59,7 +59,7 @@ void actualizar_tripulante(t_tripulante* un_tripulante, int socket){
 }
 
 int main() {
-	if(testeo)
+	if(testeo != DISCORDIADOR)
 		correr_tests(testeo);
 	else {
 
