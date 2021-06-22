@@ -1,7 +1,6 @@
 /*
 
  Funcionalidad de paquetes, cortesia de Nico
- TODO de SEBA, falta testear serializacion, envio y recepcion de tareas.
 
 */
 
@@ -168,12 +167,9 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     // Switch estructuras y cosas del fylesystem
     switch (paquete->codigo_operacion) { 
-    	case RECIBIR_PCB:
-    		intermediario->codigo_operacion = RECIBIR_PCB;
-    		break;
-
+    	case ACTUALIZAR:
         case RECIBIR_TCB:
-        	intermediario->codigo_operacion = RECIBIR_TCB;
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
         	intermediario->tcb = malloc(sizeof(uint32_t)*5 + sizeof(char));
             intermediario->tcb = deserializar_tcb(paquete->buffer);
             break;
@@ -193,10 +189,13 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
         case T_SIGKILL:
         case PEDIR_TAREA:
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
+            memcpy(&(intermediario->tid), paquete->buffer->estructura, sizeof(uint32_t));
+            break;
+
         case LISTAR_POR_PID:
         	intermediario->codigo_operacion = paquete->codigo_operacion;
-        	intermediario->tid_condenado = malloc(sizeof(uint32_t));
-            intermediario->tid_condenado = deserializar_tid(paquete->buffer);
+            memcpy(&(intermediario->pid), paquete->buffer->estructura, sizeof(uint32_t));
             break;
 
         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
@@ -215,7 +214,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
 // Pasa un struct buffer a un tcb
 // Se explica deserializacion en esta funcion
-t_TCB* deserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se esta pasando paquete->buffer->estructura, ver si es error
+t_TCB* deserializar_tcb(t_buffer* buffer) {
 
 	t_TCB* tcb = malloc(sizeof(uint32_t)*5 + sizeof(char)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
@@ -299,25 +298,53 @@ t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
     return texto_archivo;
 }
 
-t_buffer* serializar_tid(t_sigkill t_kill) {
+t_buffer* serializar_entero(uint32_t numero) {
+    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    buffer->tamanio_estructura = sizeof(int);
 
-    t_buffer* buffer = malloc(sizeof(t_buffer));
-    buffer->tamanio_estructura = sizeof(uint32_t);
+    void* estructura = malloc((buffer->tamanio_estructura));
 
-    void* estructura = malloc(buffer->tamanio_estructura);
-    memcpy(estructura, &t_kill.tid, sizeof(uint32_t));
+    memcpy(estructura, &numero, sizeof(int));
 
     buffer->estructura = estructura;
 
     return buffer;
 }
 
-t_sigkill* deserializar_tid(t_buffer* buffer) {
+t_buffer* serializar_tripulante(t_tripulante tripulante) {
 
-	t_sigkill* trip_kill = malloc(sizeof(t_sigkill));
+    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*3 + sizeof(char));
+    buffer->tamanio_estructura = sizeof(uint32_t)*3 + sizeof(char);
+    void* estructura = malloc(buffer->tamanio_estructura);
+    int desplazamiento = 0;
+
+    memcpy(estructura + desplazamiento, &tripulante.TID, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.estado_tripulante, sizeof(char));
+    desplazamiento += sizeof(char);
+    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_tripulante* deserializar_tripulante(t_buffer* buffer) {
+
+	t_tripulante* un_tripulante = malloc(sizeof(uint32_t)*3 + sizeof(char));
     void* estructura = buffer->estructura;
 
-    memcpy(&(trip_kill->tid), estructura, sizeof(uint32_t));
+    memcpy(&(un_tripulante->TID), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(un_tripulante->estado_tripulante), estructura, sizeof(char));
+    estructura += sizeof(char);
+    memcpy(&(un_tripulante->coord_x), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(un_tripulante->coord_y), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
 
-    return trip_kill;
+    return un_tripulante;
 }

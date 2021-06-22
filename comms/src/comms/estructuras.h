@@ -7,12 +7,14 @@
 #include <errno.h>
 #include <string.h>
 #include <stdint.h>
+#include <commons/collections/list.h>
+
 
 /* ENUMS */
-//                      						ESTRUCTURAS                          											COSAS FILESYSTEM            		ACCIONES BITACORA                                                     CODIGOS UNICOS: MONGO           			DISCORDIADOR                    GENERALES								ESTADOS_TRIPULANTE
-enum codigo_operacion { RECIBIR_PCB, RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, 		OXIGENO, COMIDA, BASURA,    MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     	SABOTAJE, PRIMERA_CONEXION,     		MENSAJE, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO};
+//                      						DISCORDIADOR                          										COSAS FILESYSTEM            		ACCIONES BITACORA                                                     		CODIGOS UNICOS: MONGO           		GENERALES
+enum codigo_operacion { RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, ACTUALIZAR, 		OXIGENO, COMIDA, BASURA,    	MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     	SABOTAJE, PRIMERA_CONEXION,     		RECEPCION, DESCONEXION, EXITO, FALLO};
 
-enum estados { NEW, READY, EXEC, BLOCKED};
+enum estados { NEW, READY, EXEC, BLOCK, EXIT};
 
 /* ESTRUCTURAS */
 
@@ -66,6 +68,8 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     t_tarea* tarea;
     t_archivo_tareas* archivo_tareas;
     t_sigkill* tid_condenado;
+    int tid;
+    int pid;
     int codigo_operacion;
     int cantidad; // Revisar funcs paquetes
 
@@ -98,6 +102,7 @@ typedef struct {
 typedef struct {
 
     uint32_t PID;
+    t_list* tareas_patota;
 
 } t_patota;
 

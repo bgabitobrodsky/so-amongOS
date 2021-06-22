@@ -8,6 +8,7 @@
 #ifndef DISCORDIADOR_H_
 #define DISCORDIADOR_H_
 
+<<<<<<< HEAD
 #include "utils.h"
 #include "../comms/src/comms/serializar_y_envio.h"
 
@@ -16,6 +17,9 @@ enum {DISCORDIADOR, TEST_SERIALIZACION, TEST_DISCORDIADOR};
 int correr_tests(int);
 void funcion_hilo();
 void iniciar_hilo();
+=======
+#include "test_discordiador.h"
+>>>>>>> origin/main
 
 // Funciones PRINCIPALES
 void iniciar_patota(char* leido);
@@ -26,16 +30,15 @@ void pausar_planificacion();
 void obtener_bitacora(char* leido);
 
 // HILOS
-t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
-t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
-void enlistar_algun_tripulante();
-
-// PROCESOS
-t_patota* crear_patota(uint32_t un_pid);
-t_PCB* crear_pcb(char* path);
-int nuevo_pid();
+void tripulante(t_tripulante* un_tripulante);
+void iniciar_tripulante(t_tripulante* un_tripulante);
+void enlistarse(t_tripulante* un_tripulante);
+void realizar_tarea(t_tripulante* un_tripulante);
+void llegar_a_destino(t_tripulante* un_tripulante);
+void no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante);
+int identificar_tarea(char* nombre_recibido);
+void crear_hilo_tripulante(t_tripulante* un_tripulante);
 t_list* lista_tripulantes_patota(uint32_t pid);
-t_tripulante* crear_tripulante(int tid, int x, int y, char estado);
 
 // FUNCIONES AUXILIARES
 void leer_consola();
