@@ -235,3 +235,77 @@ void liberar_puntero_doble(char** palabras){
 	}
 	free(palabras);
 }
+
+
+t_patota* crear_patota(uint32_t un_pid){
+
+    t_patota* patota = malloc(sizeof(t_patota));
+    patota ->PID = un_pid;
+    return patota;
+
+}
+
+t_tripulante* crear_tripulante(int tid, int x, int y, char estado){
+
+    t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+    tripulante->TID = tid;
+    tripulante->coord_x = x;
+    tripulante->coord_y = y;
+    tripulante->estado_tripulante = estado;
+
+    return tripulante;
+
+}
+
+
+t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion){
+
+    t_tripulante* un_tripulante = malloc(sizeof(t_tripulante));
+    un_tripulante->TID = tid;
+    un_tripulante->estado_tripulante = estado_tripulante[NEW];
+    un_tripulante->coord_x = posicion[0] - 48; // equivalencia ascii - numero
+    un_tripulante->coord_y = posicion[2] - 48; // equivalencia ascii - numero
+
+    return un_tripulante;
+}
+
+
+t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
+
+    // No asigna siguiente instruccion
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb -> TID = tid;
+    tcb -> estado_tripulante = estado_tripulante[NEW];
+    tcb -> coord_x = posicion[0] - 48; // equivalencia ascii - numero
+    tcb -> coord_y = posicion[2] - 48; // equivalencia ascii - numero
+    tcb -> siguiente_instruccion = 0;
+    tcb -> puntero_a_pcb = (uint32_t) pcb;
+
+    return tcb;
+}
+
+t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
+
+    // No asigna siguiente instruccion
+    t_TCB tcb;
+    tcb.TID = tid;
+    tcb.estado_tripulante = estado_tripulante[NEW];
+    tcb.coord_x = posicion[0] - 48; // equivalencia ascii - numero;
+    tcb.coord_y = posicion[2] - 48; // equivalencia ascii - numero;
+    tcb.siguiente_instruccion = 0;
+    tcb.puntero_a_pcb = (uint32_t) pcb;
+
+    return tcb;
+}
+
+int nuevo_pid(){
+
+    int id_patota = 1;
+    while(1){
+        if(!esta_en_lista(lista_pids, id_patota)){
+            list_add(lista_pids, (void*) id_patota);
+            return id_patota;
+        }
+        id_patota++;
+    }
+}

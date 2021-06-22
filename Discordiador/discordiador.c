@@ -210,7 +210,6 @@ void listar_tripulantes() {
 
 t_list* lista_tripulantes_patota(uint32_t pid){
 
-    // Necesito listar todos los tripulantes que estan en RAM, y los que estan en NEW en discordiador
     t_list* lista_tripulantes_patota = list_create();
 
     enviar_pid_a_ram(pid, socket_a_mi_ram_hq);
@@ -227,16 +226,6 @@ t_list* lista_tripulantes_patota(uint32_t pid){
         log_info(logger, "Error al pedir los tripulantes para listar.\n");
         log_info(logger, "Codigo de error: FALLO\n");
     }
-
-    bool condicion(void* elemento1){
-        return ((((t_tripulante*) elemento1)->TID / 10000) == pid);
-    }
-
-    // t_list* lista_new_aux = list_create();
-    // lista_new_aux =  list_filter(lista_tripulantes_new, condicion);
-
-    // TODO: Hablar con gabito
-    // list_add_all(lista_tripulantes_patota, lista_new_aux);
 
     bool ordenar_por_tid(void* un_elemento, void* otro_elemento){
          return ((((t_tripulante*) un_elemento)->TID) < (((t_tripulante*) otro_elemento)->TID));
@@ -270,7 +259,7 @@ void tripulante(t_tripulante* un_tripulante){
     while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
         while(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
             // TODO: actualizar socket
-            // actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
+            actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
             sleep(1);
             realizar_tarea(un_tripulante);
             pedir_tarea_a_mi_ram_hq(un_tripulante->TID, socket_a_mi_ram_hq);
@@ -280,7 +269,7 @@ void tripulante(t_tripulante* un_tripulante){
             }
             else if(tarea->codigo_operacion == FALLO){
                 un_tripulante->estado_tripulante = estado_tripulante[EXIT];
-                // actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
+                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
             }
             // pedir_otra_tarea();
         }
@@ -323,7 +312,7 @@ void enlistarse(t_tripulante* un_tripulante){
 
     un_tripulante->estado_tripulante = estado_tripulante[READY];
     // TODO: socket
-    actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
+ actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
     log_debug(logger, "\nEstado cambiado a READY\n");
 
     monitor_lista_dos_parametros(sem_lista_new, (void*)eliminar_tripulante_de_lista, lista_tripulantes_new, (void*) un_tripulante->TID);
@@ -419,7 +408,7 @@ void llegar_a_destino(t_tripulante* un_tripulante){
                 sleep(RETARDO_CICLO_CPU);
                 un_tripulante->coord_x++; // el eje positivo es hacia la derecha?
                 // TODO: socket
-                // actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
+                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
                 log_trace(logger, "Me muevo hacia la derecha.\n");
                 distancia_x--;
             }
@@ -427,7 +416,7 @@ void llegar_a_destino(t_tripulante* un_tripulante){
                 sleep(RETARDO_CICLO_CPU);
                 un_tripulante->coord_x--;
                 // TODO: socket
-                // actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
+                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
                 log_trace(logger, "Me muevo hacia la izquierda.\n");
                 distancia_x--;
             }
@@ -438,7 +427,7 @@ void llegar_a_destino(t_tripulante* un_tripulante){
                 sleep(RETARDO_CICLO_CPU);
                 un_tripulante->coord_y++; // el eje positivo es hacia arriba?
                 // TODO: socket
-                // actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
+                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
                 log_trace(logger, "Me muevo hacia arriba.\n");
                 distancia_y--;
             }
@@ -446,7 +435,7 @@ void llegar_a_destino(t_tripulante* un_tripulante){
                 sleep(RETARDO_CICLO_CPU);
                 un_tripulante->coord_y--;
                 // TODO: socket
-                // actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
+                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
                 log_trace(logger, "Me muevo hacia abajo.\n");
                 distancia_y--;
             }
@@ -462,58 +451,6 @@ void no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante){
         sleep(RETARDO_CICLO_CPU);
         un_tripulante->tarea.duracion--;
     }
-}
-
-int nuevo_pid(){
-
-    int id_patota = 1;
-    while(1){
-        if(!esta_en_lista(lista_pids, id_patota)){
-            list_add(lista_pids, (void*) id_patota);
-            return id_patota;
-        }
-        id_patota++;
-    }
-}
-
-t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion){
-
-    t_tripulante* un_tripulante = malloc(sizeof(t_tripulante));
-    un_tripulante->TID = tid;
-    un_tripulante->estado_tripulante = estado_tripulante[NEW];
-    un_tripulante->coord_x = posicion[0] - 48; // equivalencia ascii - numero
-    un_tripulante->coord_y = posicion[2] - 48; // equivalencia ascii - numero
-
-    return un_tripulante;
-}
-
-
-t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
-
-    // No asigna siguiente instruccion
-    t_TCB* tcb = malloc(sizeof(t_TCB));
-    tcb -> TID = tid;
-    tcb -> estado_tripulante = estado_tripulante[NEW];
-    tcb -> coord_x = posicion[0] - 48; // equivalencia ascii - numero
-    tcb -> coord_y = posicion[2] - 48; // equivalencia ascii - numero
-    tcb -> siguiente_instruccion = 0;
-    tcb -> puntero_a_pcb = (uint32_t) pcb;
-
-    return tcb;
-}
-
-t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
-
-    // No asigna siguiente instruccion
-    t_TCB tcb;
-    tcb.TID = tid;
-    tcb.estado_tripulante = estado_tripulante[NEW];
-    tcb.coord_x = posicion[0] - 48; // equivalencia ascii - numero;
-    tcb.coord_y = posicion[2] - 48; // equivalencia ascii - numero;
-    tcb.siguiente_instruccion = 0;
-    tcb.puntero_a_pcb = (uint32_t) pcb;
-
-    return tcb;
 }
 
 void leer_consola() {
@@ -576,134 +513,6 @@ void leer_consola() {
 
 }
 
-t_patota* crear_patota(uint32_t un_pid){
-
-    t_patota* patota = malloc(sizeof(t_patota));
-    patota ->PID = un_pid;
-    return patota;
-
-}
-
-t_tripulante* crear_tripulante(int tid, int x, int y, char estado){
-
-    t_tripulante* tripulante = malloc(sizeof(t_tripulante));
-    tripulante->TID = tid;
-    tripulante->coord_x = x;
-    tripulante->coord_y = y;
-    tripulante->estado_tripulante = estado;
-
-    return tripulante;
-
-}
-
-void test_serializar_tcb(){
-
-    t_TCB tcb;
-
-    tcb.TID = 10001;
-    tcb.estado_tripulante = estado_tripulante[NEW];
-    tcb.coord_x = 1;
-    tcb.coord_y = 1;
-    tcb.siguiente_instruccion = 0;
-    tcb.puntero_a_pcb = 0;
-
-    log_info(logger, "TCB antes de serializar:\n");
-    log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb.TID, (char) tcb.estado_tripulante,(int) tcb.coord_x, (int) tcb.coord_y);
-
-    t_buffer* b = serializar_tcb(tcb);
-    t_TCB* tcb_deserializado = deserializar_tcb(b);
-
-    log_info(logger, "TCB despues de serializar:\n");
-    log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)tcb_deserializado->TID, (char) tcb_deserializado->estado_tripulante,(int) tcb_deserializado->coord_x, (int) tcb_deserializado->coord_y);
-
-}
-
-void test_iniciar_patota(){
-
-    iniciar_patota("INICIAR_PATOTA 1 Random.ims 1|1");
-    // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
-    // iniciar_patota("INICIAR_PATOTA 5 Oxigeno.ims 1|1 2|2 3|3");
-
-}
-
-void test_listar_tripulantes(){
-
-    test_iniciar_patota();
-    sleep(1);
-    listar_tripulantes();
-
-}
-
-void test_nuevo_pid(){
-    int i = 0;
-    list_add(lista_pids, (void*) 1);
-    list_add(lista_pids, (void*) 3);
-
-    while (i<10){
-        printf("%d", nuevo_pid());
-        i++;
-    }
-
-    // Resultado:
-    // Los PIDS en la lista son 1 y 3, así que me debe ingresar y printear los primeros 10 pids que no sean esos.
-}
-
-void test_enlistar_algun_tripulante(){
-    t_TCB* tcb = crear_puntero_tcb(0, 5, "8a9");
-    printf("Tripulante. pos: %i %i, tid: %i estado %c \n", (int) tcb->coord_x, (int) tcb->coord_y, (int) tcb->TID, tcb->estado_tripulante);
-
-    monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, tcb);
-    enlistar_algun_tripulante();
-
-    t_TCB* prueba = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-    printf("Tripulante. pos: %i %i, tid: %i estado %c \n", (int) prueba->coord_x, (int) prueba->coord_y, (int) prueba->TID, prueba->estado_tripulante);
-
-}
-
-void test_serializar_tarea(){
-
-    t_tarea* t = crear_tarea("GENERAR_OXIGENO 12;2;3;5");
-
-    printf("Largo nombre: %i\n", t->largo_nombre);
-    printf("Nombre: %s\n", t->nombre);
-    printf("Parametros: %i\n", t->parametro);
-    printf("Cordenada en X: %i\n", t->coord_x);
-    printf("Cordenada en Y: %i\n", t->coord_y);
-    printf("Duracion: %i\n", t->duracion);
-
-    t_buffer* b = serializar_tarea(*t);
-    t_tarea* t2 = deserializar_tarea(b);
-
-    printf("Largo nombre: %i\n", t2->largo_nombre);
-    printf("Nombre: %s\n", t2->nombre);
-    printf("Parametros: %i\n", t2->parametro);
-    printf("Cordenada en X: %i\n", t2->coord_x);
-    printf("Cordenada en Y: %i\n", t2->coord_y);
-    printf("Duracion: %i\n", t2->duracion);
-
-}
-
-void test_serializar_tripulante(){
-
-    t_tripulante un_tripulante;
-
-    un_tripulante.TID = 10001;
-    un_tripulante.estado_tripulante = estado_tripulante[NEW];
-    un_tripulante.coord_x = 1;
-    un_tripulante.coord_y = 1;
-
-    log_info(logger, "Tripulante antes de serializar:\n");
-    log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)un_tripulante.TID, (char) un_tripulante.estado_tripulante,(int) un_tripulante.coord_x, (int) un_tripulante.coord_y);
-
-    t_buffer* b = serializar_tripulante(un_tripulante);
-    t_tripulante* un_tripulante_deserializado = deserializar_tripulante(b);
-
-    log_info(logger, "Tripulante despues de serializar:\n");
-    log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)un_tripulante_deserializado->TID, (char) un_tripulante_deserializado->estado_tripulante,(int) un_tripulante_deserializado->coord_x, (int) un_tripulante_deserializado->coord_y);
-
-}
-
-
 void pausar_planificacion() {
 
     printf("Pausar Planificacion\n");
@@ -749,39 +558,4 @@ void expulsar_tripulante(char* leido) {
 
     liberar_puntero_doble(palabras);
 
-}
-
-void test_iniciar_planificacion(){
-    test_iniciar_patota();
-    sleep(1); // tiempo para que inicie el hilo.
-    iniciar_planificacion();
-}
-
-
-// borrar?
-void enlistar_algun_tripulante(){
-
-    if (!list_is_empty(lista_tripulantes_new)){
-        t_tripulante* tripulante_a_ready = monitor_lista_dos_parametros(sem_lista_new, (void*) list_remove, lista_tripulantes_new, (void*) 0);
-        monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, tripulante_a_ready);
-        pedir_tarea_a_mi_ram_hq(tripulante_a_ready->TID, socket_a_mi_ram_hq);
-
-        t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-
-        if(respuesta->codigo_operacion == TAREA){
-            // TODO RELLENAR LUEGO DE MUDARNOS DE T_TCB A TRIPULANTES
-            // tripulante_a_ready->tarea = respuesta->tarea;
-        }
-        else if (respuesta->codigo_operacion == FALLO){
-            log_info(logger, "No se recibio ninguna tarea.\n Codigo de error: FALLO\n");
-        }
-        else{
-            log_info(logger, "Error desconocido, no se recibio ninguna tarea.\n");
-        }
-
-        tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
-    }
-    else {
-        log_info(logger, "No hay ningun tripulante listo para ser enlistado.\n");
-    }
 }

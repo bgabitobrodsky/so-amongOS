@@ -51,6 +51,9 @@ typedef enum{
 extern t_config* config;
 extern t_log* logger;
 
+extern int socket_a_mi_ram_hq;
+extern char estado_tripulante[5];
+
 extern t_list* lista_pids;
 extern t_list* lista_patotas;
 extern t_list* lista_tripulantes_new;
@@ -65,6 +68,19 @@ extern pthread_mutex_t sem_lista_new;
 extern pthread_mutex_t sem_cola_ready;
 extern pthread_mutex_t sem_lista_block;
 
+// Funciones PRINCIPALES
+void iniciar_patota(char* leido);
+void listar_tripulantes();
+void expulsar_tripulante(char* leido);
+void iniciar_planificacion();
+void pausar_planificacion();
+void obtener_bitacora(char* leido);
+
+// PROCESOS
+t_patota* crear_patota(uint32_t un_pid);
+int nuevo_pid();
+
+// AUXILIARES
 int reconocer_comando(char* str);
 void help_comandos();
 void iniciar_listas();
@@ -79,5 +95,10 @@ int esta_tripulante_en_lista(t_list* lista, int elemento);
 void* eliminar_tcb_de_lista(t_list* lista, int elemento);
 void* eliminar_tripulante_de_lista(t_list* lista, int elemento);
 void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket);
+t_tripulante* crear_tripulante(int tid, int x, int y, char estado);
+t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
+t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
+t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion);
+
 
 #endif /* DISCORDIADOR_UTILS_H_ */

@@ -25,8 +25,6 @@ t_config* config;
 t_list* lista_tcb;
 t_list* lista_pcb;	
 
-char estado_tripulante[4] = {'N', 'R', 'E', 'B'};
-
 void gestionar_tareas(t_archivo_tareas* archivo){
 	//char** string_tareas = string_split(archivo_tareas->texto, "\n");
 	//int cantidad_tareas = contar_palabras(string_tareas);
@@ -277,7 +275,7 @@ t_PCB* crear_pcb(char* path){
 t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
 	t_TCB tcb;
 	tcb.TID = tid;
-	tcb.estado_tripulante = estado_tripulante[NEW];
+	tcb.estado_tripulante = 'N';
 	tcb.coord_x = posicion[0];
 	tcb.coord_y = posicion[2];
 	tcb.siguiente_instruccion = 0;
