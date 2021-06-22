@@ -35,3 +35,14 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     memcpy(archivos.mapa_blocks, mapa, sizeof(mapa)); 
 }
+
+void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos con whitespace, para funciones de agregado y quitado
+    unsigned char* mapa = archvios.mapa_blocks;
+
+    for (int i; i < (TAMANIO_BLOQUE); i++) {
+        *(mapa +  TAMANIO_BLOQUE * numero_bloque + i) = '';
+    }
+
+    msync(archivos.mapa_blocks, (numero_bloque + 1) * TAMANIO_BLOQUE, MS_ASYNC);
+
+}

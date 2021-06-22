@@ -44,6 +44,7 @@ void inicializar_archivos(char* path_files) { // TODO: Puede romper
 
 	iniciar_superbloque(archivos.superbloque);
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
+	inicializar_mapa();
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -85,6 +86,7 @@ void inicializar_archivos_preexistentes(char* path_files) { // TODO: Puede rompe
 
 	// TODO: Verificar si esta mappeado
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
+	inicializar_mapa();
 
 	free(path_oxigeno);
 	free(path_comida);
@@ -121,7 +123,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	}
 
 	//Si había un bloque libre
-	if(bit_libre > 0) {
+	if (bit_libre > 0) {
 		//Marco el bit como ocupado
 		bitarray_set_bit(bitmap, bit_libre);
 
@@ -146,13 +148,13 @@ void asignar_nuevo_bloque(FILE* archivo) {
 }
 
 /*int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
-	void* mapa = archivos.mapa_blocks;
+	unsigned char* mapa = archivos.mapa_blocks;
 	int cantidad_alcanzada = 0;
 
 	for(int j = 0; j < cant_bloques; j++) {
-		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != NULL; i++) { // Cambiar Macro por revision al Superbloque
+		for (int i = 0; tipo != *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != ''; i++) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == NULL) { 
+			if (*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) == '') { 
 				*(mapa + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
 				cantidad_alcanzada++;
 			}
@@ -167,14 +169,14 @@ void asignar_nuevo_bloque(FILE* archivo) {
 }*/
 
 /*int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
-	void* mapa = archivos.mapa_blocks;
+	unsigned char* mapa = archivos.mapa_blocks;
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
-		for (int i = TAMANIO_BLOQUE; tipo != *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != NULL; i--) { // Cambiar Macro por revision al Superbloque
+		for (int i = TAMANIO_BLOQUE; tipo != *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != ''; i--) { // Cambiar Macro por revision al Superbloque
 			
 			if (*(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) == tipo) { 
-				*(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = NULL;
+				*(mapa + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = '';
 				cantidad_alcanzada++;
 			}
 
