@@ -1,6 +1,11 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+21/06/2021
++ Grandes avances en discordiador.
++ Se reciben tareas desde RAM.
++ Los tripulantes son capaces de realizar sus tareas.
+
 20/06/2021
 + Iniciado planteamiento de tripulantes.
 + Planteado movimiento en el tablero.

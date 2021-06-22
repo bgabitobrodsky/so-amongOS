@@ -25,6 +25,7 @@ segmento* best_fit(int tam);
 segmento* first_fit(int tam);
 segmento* crear_segmento(int base,int tam,bool libre);
 void liberar_segmento(int base);
+void unificar_segmentos_libres();
 
 void print_segmentos_info();
 void print_tablas_info();

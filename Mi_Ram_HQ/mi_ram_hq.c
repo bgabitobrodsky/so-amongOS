@@ -100,22 +100,6 @@ void gestionar_tcb(t_TCB* tcb){
 
 }
 
-void gestionar_pedido_tarea(int tid, int socket){
-	// si necesitas el pid, es este
-	int pid = tid / 10000;
-	t_tarea* tarea = buscar_siguiente_tarea(tid);
-
-	// para enviarme una tarea:
-	if(tarea != NULL){
-		//t_buffer* buffer_tarea = serializar_tarea(tarea);
-		//empaquetar_y_enviar(buffer_tarea, TAREA, socket);
-	}else{
-		// esto puede ser por algun fallo o porque ya no queden tareas
-		enviar_codigo(FALLO, socket);
-	}
-}
-
-
 int main(int argc, char** argv) {
 	
 	// Reinicio el log
@@ -144,7 +128,6 @@ int main(int argc, char** argv) {
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
 	close(socket_oyente);
-
 
 	log_destroy(logger);
 	config_destroy(config);
@@ -214,11 +197,19 @@ void atender_clientes(void* param) {
 				break;
 
 			case PEDIR_TAREA:
-				log_info(logger, "Pedido de tarea recibido\n");
-				log_info(logger, "Tripulante: %i\n", mensaje_recibido->tid);
-				// TODO: GABITO Y JULIA
-				// gestionar_pedido_tarea(mensaje_recibido->tid, parametros->socket);
-				enviar_codigo(FALLO, parametros->socket);
+				log_info(logger, "Pedido de tarea recibido, tid: %i\n", mensaje_recibido->tid);
+
+				t_tarea* una_tarea = buscar_siguiente_tarea(mensaje_recibido->tid);
+
+				if(una_tarea != NULL){
+					t_buffer* buffer_tarea = serializar_tarea(*una_tarea);
+					empaquetar_y_enviar(buffer_tarea, TAREA, parametros->socket);
+				}else{
+					// esto puede ser por algun fallo o porque ya no queden tareas
+					enviar_codigo(FALLO, parametros->socket);
+				}
+				free(una_tarea);
+
 				break;
 
 			case RECIBIR_TCB:
@@ -229,12 +220,15 @@ void atender_clientes(void* param) {
 
 			case T_SIGKILL:
 				log_info(logger, "Expulsar Tripulante.\n");
-				// TODO: GABITO Y JULIA
-				// verifica si existe
-				// si existe mandame un enviar_codigo(EXITO, parametros->socket);
-				// si no existe, mandame un enviar_codigo(FALLO, parametros->socket);
-				log_info(logger, "%i -KILLED", mensaje_recibido->tid);
-				enviar_codigo(EXITO, parametros->socket);
+
+				if(eliminar_tcb(mensaje_recibido->tid)){
+					enviar_codigo(EXITO, parametros->socket);
+					log_info(logger, "%i -KILLED", mensaje_recibido->tid);
+				}
+				else{
+					enviar_codigo(FALLO, parametros->socket);
+				}
+
 				break;
 
 			case LISTAR_POR_PID:
@@ -449,6 +443,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		
 		char* puntero_a_tareas = (char*) tcb->siguiente_instruccion;
 		char* str_tarea = strtok(puntero_a_tareas,"\n");
+
 		log_info(logger, "Tarea: %s", str_tarea);
 
 		//se crea la struct de tarea para devolver, despues hay que mandarle free

@@ -3,19 +3,40 @@
 t_tarea* crear_tarea(char* string_tarea){
 
 	char** palabras = string_split(string_tarea, " ");
-	char** tarea_s = string_split(palabras[1], ";");
 
-	t_tarea* tarea = malloc(sizeof(t_tarea));
-	tarea->nombre = malloc(strlen(palabras[0]) + 1);
-	strcpy(tarea->nombre, palabras[0]);
-	tarea->largo_nombre = strlen(palabras[0]);
-	tarea->parametro = atoi(tarea_s[0]);
-	tarea->coord_x = atoi(tarea_s[1]);
-	tarea->coord_y = atoi(tarea_s[2]);
-	tarea->duracion = atoi(tarea_s[3]);
-	liberar_puntero_doble(palabras);
-	liberar_puntero_doble(tarea_s);
-	return tarea;
+	if(contar_palabras(palabras) == 1){
+
+		// es tarea generica
+		char** tarea_s = string_split(palabras[0], ";");
+		t_tarea* tarea = malloc(sizeof(t_tarea));
+		tarea->nombre = malloc(strlen(tarea_s[0]) + 1);
+		strcpy(tarea->nombre, tarea_s[0]);
+		tarea->largo_nombre = strlen(tarea_s[0]);
+		tarea->coord_x = atoi(tarea_s[1]);
+		tarea->coord_y = atoi(tarea_s[2]);
+		tarea->duracion = atoi(tarea_s[3]);
+		liberar_puntero_doble(palabras);
+		liberar_puntero_doble(tarea_s);
+		return tarea;
+
+	}
+	else{
+
+		char** tarea_s = string_split(palabras[1], ";");
+
+		t_tarea* tarea = malloc(sizeof(t_tarea));
+		tarea->nombre = malloc(strlen(palabras[0]) + 1);
+		strcpy(tarea->nombre, palabras[0]);
+		tarea->largo_nombre = strlen(palabras[0]);
+		tarea->parametro = atoi(tarea_s[0]);
+		tarea->coord_x = atoi(tarea_s[1]);
+		tarea->coord_y = atoi(tarea_s[2]);
+		tarea->duracion = atoi(tarea_s[3]);
+		liberar_puntero_doble(palabras);
+		liberar_puntero_doble(tarea_s);
+		return tarea;
+
+	}
 
 }
 
@@ -57,7 +78,8 @@ char* leer_archivo_entero(char* path){
 		fseek(archivo, 0, SEEK_SET);
 		contenido = malloc(tamanio_archivo + 1);
 		fread(contenido, 1, tamanio_archivo, archivo);
-		contenido[tamanio_archivo] = '\0';
+		contenido[tamanio_archivo] = '\n'; // Para tener coherencia con RAM
+		contenido[tamanio_archivo+1] = '\0';
 	}
 
 	fclose(archivo);
