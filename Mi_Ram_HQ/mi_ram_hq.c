@@ -383,6 +383,10 @@ t_TCB* buscar_tcb_por_tid(int tid){
 			return tcb->TID == tid;
 		}
 		segmento* segmento_tcb = list_find(tabla->segmentos_tcb, buscador);
+		if(segmento_tcb == NULL){
+			log_warning(logger,"TCB con TID: %d no encontrado", tid);
+			return NULL;
+		}
 		t_TCB* tcb_recuperado = memoria_principal + segmento_tcb->base;
 
 		if(tcb_recuperado == NULL){

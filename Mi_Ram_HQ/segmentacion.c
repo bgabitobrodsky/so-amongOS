@@ -340,16 +340,31 @@ void test_actualizar_tcb(){
     free(tcb);
 
     t_TCB* tcb2 = malloc(sizeof(t_TCB));
-    tcb->TID = 10001;
-    tcb->coord_x = 10;
-    tcb->coord_y = 10;
-    tcb->estado_tripulante = 'E';
+    tcb2->TID = 10001;
+    tcb2->coord_x = 10;
+    tcb2->coord_y = 10;
+    tcb2->estado_tripulante = 'E';
+
+    t_TCB* tcb4 = malloc(sizeof(t_TCB));
+    tcb4->TID = 10002;
+    tcb4->coord_x = 10;
+    tcb4->coord_y = 10;
+    tcb4->estado_tripulante = 'E';
 
     int result = actualizar_tcb(tcb2);
     if(result){
         log_debug(logger,"Actualizado con exito");
-        tcb = buscar_tcb_por_tid(10001);
-        log_info(logger,"Nuevas coords: %d, %d. Estado: %c",tcb->coord_x,tcb->coord_y,tcb->estado_tripulante);
+        t_TCB* tcb3 = buscar_tcb_por_tid(10001);
+        log_info(logger,"Nuevas coords: %d, %d. Estado: %c",tcb3->coord_x,tcb3->coord_y,tcb3->estado_tripulante);
+    }else{
+        log_error(logger,"Falló");
+    }
+
+    int result2 = actualizar_tcb(tcb4);
+    if(result2){
+        log_debug(logger,"Actualizado con exito");
+        t_TCB* tcb5 = buscar_tcb_por_tid(10001);
+        log_info(logger,"Nuevas coords: %d, %d. Estado: %c",tcb5->coord_x,tcb5->coord_y,tcb5->estado_tripulante);
     }else{
         log_error(logger,"Falló");
     }
