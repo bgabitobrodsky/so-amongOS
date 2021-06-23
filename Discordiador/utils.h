@@ -52,7 +52,7 @@ extern t_config* config;
 extern t_log* logger;
 
 extern int socket_a_mi_ram_hq;
-extern char estado_tripulante[5];
+extern char estado_tripulante[6];
 
 extern t_list* lista_pids;
 extern t_list* lista_patotas;

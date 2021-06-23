@@ -67,9 +67,9 @@ void test_serializar_tcb(){
 
 void test_iniciar_patota(){
 
-    // iniciar_patota("INICIAR_PATOTA 1 Random.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 Random.ims 1|1");
     // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
-    iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 2|2 3|3");
+    // iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 2|2 3|3");
 
 }
 
