@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_matar_tabla_segmentos();
+	// test_matar_tabla_segmentos();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
