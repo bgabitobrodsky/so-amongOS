@@ -91,8 +91,8 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    // iniciar_patota("INICIAR_PATOTA 1 Random.ims 3|3");
-    iniciar_patota("INICIAR_PATOTA 2 Random.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 Random.ims 3|3");
+    // iniciar_patota("INICIAR_PATOTA 2 Random.ims 1|1");
 
     // test_iniciar_planificacion();
 
@@ -198,14 +198,6 @@ void iniciar_planificacion() {
     log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
     log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
 
-    if(!list_is_empty(lista_tripulantes_exec)){
-		for(int i = 0; i < list_size(lista_tripulantes_exec); i++){
-			t_tripulante* aux = list_get(lista_tripulantes_exec, i);
-			log_debug(logger, "\nTID: %i x%i y%i estado%c tarea%i, \n", aux->coord_x, aux->coord_y, aux->estado_tripulante, aux->tarea.duracion);
-		}
-    }
-
-
     pthread_t t_planificador;
     pthread_create(&t_planificador, NULL, (void*) planificador, NULL);
     pthread_detach(t_planificador);
@@ -213,12 +205,10 @@ void iniciar_planificacion() {
 }
 
 void planificador(){
+
+	log_info(logger, "Planificando");
     while(planificacion_activa){
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
-            log_debug(logger, "Planificando");
-            // t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-            // aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
-            // monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
 
             if(comparar_strings(ALGORITMO, "FIFO")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
@@ -226,6 +216,7 @@ void planificador(){
                 monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
 				// TODO: actualizar socket
 				actualizar_tripulante(aux_tripulante , socket_a_mi_ram_hq);
+				// log_info(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
 
             else if(comparar_strings(ALGORITMO, "RR")){
@@ -235,8 +226,8 @@ void planificador(){
 				monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
 				// TODO: actualizar socket
 				actualizar_tripulante(aux_tripulante , socket_a_mi_ram_hq);
+	            // log_info(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
-            log_debug(logger, "Un tripulante pasa a EXEC");
         }
     }
 }
@@ -251,7 +242,7 @@ void tripulante(t_tripulante* un_tripulante){
     iniciar_tripulante(un_tripulante);
 
     if(comparar_strings(ALGORITMO, "FIFO")){
-		log_debug(logger, "ALGORITMO FIFO\n");
+    	log_info(logger, "ALGORITMO FIFO\n");
 		while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
 			if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
 				if(planificacion_activa == 0){
@@ -263,7 +254,7 @@ void tripulante(t_tripulante* un_tripulante){
 			}
 		}
 	} else if (comparar_strings(ALGORITMO, "RR")){
-		log_debug(logger, "ALGORITMO RR\n");
+		log_info(logger, "ALGORITMO RR\n");
 		while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
 			if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
 				if(un_tripulante->quantum_restante > 0){
@@ -271,17 +262,16 @@ void tripulante(t_tripulante* un_tripulante){
 						// este espacio vacio es EXACTAMENTE lo que tiene que estar
 					}
 					else{
-						log_trace(logger, "Trabajo muy duro, como un esclavo");
 						realizar_tarea(un_tripulante);
 						un_tripulante->quantum_restante--;
-						log_warning(logger, "QUANTUM RESTANTE: %i", un_tripulante->quantum_restante);
+						log_trace(logger, "%i Trabajo muy duro, como un esclavo: quantum restante %i", un_tripulante->TID, un_tripulante->quantum_restante);
 					}
 
 				} else {
 					un_tripulante->estado_tripulante = estado_tripulante[READY];
 					monitor_lista_dos_parametros(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
 					monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
-					log_trace(logger, "%i salgo de exec y voy a ready!", un_tripulante->TID);
+					log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
 					// TODO: actualizar socket
 					actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
 				}
@@ -313,7 +303,6 @@ void morir(t_tripulante* un_tripulante, int socket){
     eliminar_tripulante_de_lista(lista_tripulantes, un_tripulante->TID);
     // monitor_lista_dos_parametros(sem_lista_tripulantes, (void*) eliminar_tripulante_de_lista, lista_tripulantes, un_tripulante->TID);
     free(un_tripulante);
-    // pthread_exit(0);
 
 }
 
@@ -360,7 +349,7 @@ void enlistarse(t_tripulante* un_tripulante){
 void realizar_tarea(t_tripulante* un_tripulante){
 
     int codigo_tarea = identificar_tarea(un_tripulante->tarea.nombre);
-    log_debug(logger, "Tarea iniciada: %s", un_tripulante->tarea.nombre);
+    log_info(logger, "%i mi tarea: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
 
     // si el estado es distinto a bloqueado por ES
     switch(codigo_tarea){
@@ -403,78 +392,8 @@ int llegue(t_tripulante* un_tripulante){
     return un_tripulante->coord_x == un_tripulante->tarea.coord_x && un_tripulante->coord_y == un_tripulante->tarea.coord_y;
 }
 
-void llegar_a_destino(t_tripulante* un_tripulante){
-
-    uint32_t origen_x = un_tripulante->coord_x;
-    uint32_t origen_y = un_tripulante->coord_y;
-    uint32_t destino_x = un_tripulante->tarea.coord_x;
-    uint32_t destino_y = un_tripulante->tarea.coord_y;
-
-    uint32_t distancia_x = abs(destino_x - origen_x);
-    uint32_t distancia_y = abs(destino_y - origen_y);
-
-    if(planificacion_activa == 1 && un_tripulante->estado_tripulante != 'V'){
-
-        log_debug(logger, "Empezando a caminar");
-        log_debug(logger, "Distancia x: %i", distancia_x);
-        log_debug(logger, "Distancia y: %i", distancia_y);
-        // Se mueve primero en la x y luego en la y
-
-        while(distancia_x != 0){
-
-            if(destino_x > origen_x){
-                sleep(RETARDO_CICLO_CPU);
-                un_tripulante->coord_x++; // el eje positivo es hacia la derecha?
-                // TODO: socket
-                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
-                log_trace(logger, "Me muevo hacia la derecha.\n");
-                distancia_x--;
-            }
-            else if (destino_x < origen_x){
-                sleep(RETARDO_CICLO_CPU);
-                un_tripulante->coord_x--;
-                // TODO: socket
-                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
-                log_trace(logger, "Me muevo hacia la izquierda.\n");
-                distancia_x--;
-            }
-        }
-
-        while(distancia_y != 0){
-            if(destino_y > origen_y){
-                sleep(RETARDO_CICLO_CPU);
-                un_tripulante->coord_y++; // el eje positivo es hacia arriba?
-                // TODO: socket
-                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
-                log_trace(logger, "Me muevo hacia arriba.\n");
-                distancia_y--;
-            }
-            else if (destino_x < origen_x){
-                sleep(RETARDO_CICLO_CPU);
-                un_tripulante->coord_y--;
-                // TODO: socket
-                actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
-                log_trace(logger, "Me muevo hacia abajo.\n");
-                distancia_y--;
-            }
-        }
-    }
-
-}
-
-void no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante){
-    // El tripulante realiza sus tareas.
-    while(un_tripulante->tarea.duracion > 0){
-        sleep(RETARDO_CICLO_CPU);
-        un_tripulante->tarea.duracion--;
-    }
-    // TODO: actualizar socket
-    // conseguir_siguiente_tarea(un_tripulante, socket_a_mi_ram_hq);
-}
-
-
 void atomic_llegar_a_destino(t_tripulante* un_tripulante){
-    log_trace(logger, "llegar a destino");
+    log_trace(logger, "%i ando en %i|%i.", un_tripulante->TID, un_tripulante->coord_x, un_tripulante->coord_y);
 
     uint32_t origen_x = un_tripulante->coord_x;
     uint32_t origen_y = un_tripulante->coord_y;
@@ -486,9 +405,7 @@ void atomic_llegar_a_destino(t_tripulante* un_tripulante){
 
     if(planificacion_activa == 1 && un_tripulante->estado_tripulante != 'V'){
 
-        log_debug(logger, "Empezando a caminar");
-        log_debug(logger, "Distancia x: %i", distancia_x);
-        log_debug(logger, "Distancia y: %i", distancia_y);
+        log_debug(logger, "%i Camino! Distancia: %i!%i", un_tripulante->TID, distancia_x, distancia_y);
 
         sleep(RETARDO_CICLO_CPU);
 
@@ -517,9 +434,10 @@ void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante){
 		un_tripulante->tarea.duracion--;
 
 		if (un_tripulante->tarea.duracion == 0){
-			log_debug(logger, "Tarea finalizada: %s\n", un_tripulante->tarea.nombre);
+			log_info(logger, "Tarea finalizada: %s\n", un_tripulante->tarea.nombre);
 			// TODO: actualizar socket
 			conseguir_siguiente_tarea(un_tripulante, socket_a_mi_ram_hq);
+			log_trace(logger, "%i nueva tarea!: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
 		}else{
 			log_debug(logger, "trabajando! tarea restante %i", un_tripulante->tarea.duracion);
 		}
