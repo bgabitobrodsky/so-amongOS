@@ -413,7 +413,6 @@ void llegar_a_destino(t_tripulante* un_tripulante){
     uint32_t distancia_x = abs(destino_x - origen_x);
     uint32_t distancia_y = abs(destino_y - origen_y);
 
-    // TODO: esto es, si no esta detenido todo
     if(planificacion_activa == 1 && un_tripulante->estado_tripulante != 'V'){
 
         log_debug(logger, "Empezando a caminar");
@@ -513,7 +512,6 @@ void atomic_llegar_a_destino(t_tripulante* un_tripulante){
 
 void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante){
 
-
 	if (un_tripulante->tarea.duracion > 0){
 		sleep(RETARDO_CICLO_CPU);
 		un_tripulante->tarea.duracion--;
@@ -531,7 +529,6 @@ void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante){
 		log_error(logger, "ERROR, duracion de tarea negativa.%i", un_tripulante->TID);
 		log_error(logger, "o tripulante no pidio tarea.");
 	}
-
 }
 
 void leer_consola() {
@@ -607,7 +604,6 @@ void obtener_bitacora(char* leido) {
 
 }
 
-// TODO: como finalizo el hilo?
 void expulsar_tripulante(char* leido) {
 
     printf("Expulsar Tripulante\n");
@@ -622,9 +618,9 @@ void expulsar_tripulante(char* leido) {
     if(respuesta->codigo_operacion == EXITO){
         if(esta_tripulante_en_lista(lista_tripulantes, tid_tripulante_a_expulsar)){
             t_tripulante* t_aux = eliminar_tripulante_de_lista(lista_tripulantes, tid_tripulante_a_expulsar);
+            t_aux->estado_tripulante = estado_tripulante[EXIT];
             log_info(logger, "Tripulante expulsado, TID: %d\n", tid_tripulante_a_expulsar);
             log_info(logger, "Lugar del deceso: %i|%i\n", t_aux->coord_x, t_aux->coord_y);
-            free(t_aux);
         }
         else{
             log_info(logger, "Dicho tripulante no existe en Discordiador.\n");
