@@ -46,8 +46,8 @@ typedef struct indice_tabla {
 t_list* indices;
 
 void iniciar_memoria();
-void gestionar_tareas (t_archivo_tareas*);
-void gestionar_tcb(t_TCB*);
+int gestionar_tareas (t_archivo_tareas*);
+int gestionar_tcb(t_TCB*);
 
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
 pagina* crear_pagina(int base, bool libre);
