@@ -24,21 +24,53 @@ void liberar_segmento(int base){
 }
 
 void compactacion(){
-    log_info(logger, "Se comienza la compactacion");
+    log_debug(logger, "Se comienza la compactacion");
     int size = list_size(segmentos);
     for(int i=0; i<size;i++){
         segmento* segmento_libre = list_get(segmentos, i);
         if(segmento_libre->libre){
-            for(int z = i+1; z < size; z++){
+            log_info(logger,"Segmento libre encontrado, base: %d",segmento_libre->base);
+            for(int z = i + 1; z < size; z++){
                 segmento* segmento_ocupado = list_get(segmentos, z);
                 if(!segmento_ocupado->libre){
+                    log_info(logger,"Segmento ocupado encontrado, base: %d",segmento_ocupado->base);
+                    int desplazamiento = segmento_libre->tam;
+                    // Tengo que acomodar los fuckings punteros a memoria de las estructuras
+                    if(segmento_ocupado->tipo == S_PCB){
+                        // en caso de ser un seg. de pcb tengo que actualizar el puntero a pcb de sus tcb
+                        t_PCB* pcb = (t_PCB*) (memoria_principal + segmento_ocupado->base);
+                        t_list* tcbs = buscar_tcbs_por_pid(pcb->PID);
+
+                        void updater_tcb_pcb(void* un_tcb){
+                            t_TCB* tcb = (t_TCB*) un_tcb;
+                            tcb->puntero_a_pcb -= desplazamiento;
+                        }
+                        list_iterate(tcbs,updater_tcb_pcb);
+                    }else if(segmento_ocupado->tipo == S_TAREAS){
+                        // en caso de ser un seg. de tareas, tengo que actualizar el: pcb y los tcbs, pucha :(
+                        bool buscador_tabla_por_tareas(void* un_indice){
+                            indice_tabla* indice = (indice_tabla*) un_indice;
+                            tabla_segmentos* tabla = (tabla_segmentos*) indice->tabla;
+                            return tabla->segmento_tareas->base == segmento_ocupado->base;
+                        }
+                        indice_tabla* indice = list_find(indices,buscador_tabla_por_tareas);
+                        tabla_segmentos* tabla = (tabla_segmentos*) indice->tabla;
+                        t_PCB* pcb = (t_PCB*) (memoria_principal + (tabla->segmento_pcb->base));
+                        pcb->direccion_tareas -= desplazamiento;
+                        
+                        t_list* tcbs = buscar_tcbs_por_pid(indice->pid);
+                        void updater_tcb_tareas(void* un_tcb){
+                            t_TCB* tcb = (t_TCB*) un_tcb;
+                            tcb->siguiente_instruccion -= desplazamiento;
+                        }
+                        list_iterate(tcbs,updater_tcb_tareas);
+                    }
+                    //por suerte si se mueve un segmento de un tcb no tengo que hacer nada yeiii :D
 
                     // Movemos primero la memoria real
-                    /*memcpy(TAMANIO_MEMORIA + segmento_libre->base,
-                           segmento_ocupado->mensaje->puntero_a_memoria,
-                           segmento_ocupado->mensaje->tam);
-                    segmento_ocupado->mensaje->puntero_a_memoria = TAMANIO_MEMORIA + segmento_libre->base;
-					*/
+                    memcpy(memoria_principal + segmento_libre->base,
+                           memoria_principal + segmento_ocupado->base,
+                           segmento_ocupado->tam);
 
                     // Despues acomodamos las estrucuras
                     segmento_ocupado->base = segmento_libre->base;
@@ -167,15 +199,67 @@ segmento* asignar_segmento(int tam){
 			return nuevo_segmento;
 		}
 	}else{
-		//TODO
+        if(intento_asignar_segmento == 1){
+            intento_asignar_segmento = 0;
+            log_error(logger,"No hay mas memoria bro");
+            return NULL;
+        }
+        log_warning(logger,"No se encontró segmento");
+        intento_asignar_segmento = 1;
+        compactacion();
+        return asignar_segmento(tam);
 	}
 }
 
-tabla_segmentos* crear_tabla_segmentos(uint32_t pid){
+tabla_segmentos* crear_tabla_segmentos(int pid){
 	tabla_segmentos* nueva_tabla = malloc(sizeof(tabla_segmentos));
+    nueva_tabla->segmento_pcb = NULL;
+    nueva_tabla->segmento_tareas = NULL;
 	nueva_tabla->segmentos_tcb = list_create();
 	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
 	return nueva_tabla;
+}
+
+void matar_tabla_segmentos(int pid){
+    log_debug(logger, "Se procede a efectuar la nismación de la tabla PID: %d", pid);
+    tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+    if(tabla == NULL){
+        log_warning(logger, "La tabla nunca extistió en este estado cuantico");
+        return;
+    }
+    if(tabla->segmento_pcb != NULL){
+        log_info(logger, "Se mata al segmento del pcb");
+        tabla->segmento_pcb->libre = true;
+    }else{
+        log_info(logger, "No tenia pcb");
+    }
+    if(tabla->segmento_tareas != NULL){
+        log_info(logger, "Se mata al segmento de tareas");
+        tabla->segmento_tareas->libre = true;
+    }else{
+        log_info(logger, "No tenia tareas");
+    }
+    int size = list_size(tabla->segmentos_tcb);
+    if(size > 0){
+        log_info(logger, "Se mata a los segmentos de tcb");
+        void dickstroyer(void* un_segmento){
+            segmento* seg = (segmento*) un_segmento; // segmento segmento segmento segmento segmento segmento
+            seg->libre = true;
+        }
+        list_destroy_and_destroy_elements(tabla->segmentos_tcb,dickstroyer);
+    }else{
+        log_info(logger, "No tenia tcbs");
+    }
+
+    bool index_finder(void* un_indice){
+        indice_tabla* indice = (indice_tabla*) un_indice;
+		return indice->pid == pid;
+    }
+    void index_destroyer(void* un_indice){
+        indice_tabla* indice = (indice_tabla*) un_indice;
+        free(indice);
+    }
+    list_remove_and_destroy_by_condition(indices,index_finder,index_destroyer);
 }
 
 
@@ -370,6 +454,23 @@ void test_actualizar_tcb(){
     }
 }
 
+void test_matar_tabla_segmentos(){
+    t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
+	arc->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5\0";
+	arc->largo_texto = 50;
+	arc->pid = 1;
+	gestionar_tareas(arc);
+    free(arc);
+    
+    t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
+	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5\0";
+	archivo->largo_texto = 50000;
+	archivo->pid = 2;
+	gestionar_tareas(archivo);
+    free(archivo);
+
+}
+
 void print_segmentos_info() {
     int size = list_size(segmentos);
     printf("\n<------ SEGMENTOS -----------\n");
@@ -387,12 +488,16 @@ void print_tablas_segmentos_info(){
         indice_tabla* index = list_get(indices, i);
 		tabla_segmentos* tabla = (tabla_segmentos*) index->tabla;
 		printf("Tabla pid: %d\n", index->pid);
-		printf("\t Segmento PCB:\n");
-		printf("\t\t base: %d\n",tabla->segmento_pcb->base);
-		printf("\t\t tam: %d\n",tabla->segmento_pcb->tam);
-		printf("\t Segmento Tarea:\n");
-		printf("\t\t base: %d\n",tabla->segmento_tareas->base);
-		printf("\t\t tam: %d\n",tabla->segmento_tareas->tam);
+        if(tabla->segmento_pcb != NULL){
+            printf("\t Segmento PCB:\n");
+            printf("\t\t base: %d\n",tabla->segmento_pcb->base);
+            printf("\t\t tam: %d\n",tabla->segmento_pcb->tam);
+        }
+        if(tabla->segmento_tareas != NULL){
+            printf("\t Segmento Tarea:\n");
+            printf("\t\t base: %d\n",tabla->segmento_tareas->base);
+            printf("\t\t tam: %d\n",tabla->segmento_tareas->tam);
+        }
         int size = list_size(tabla->segmentos_tcb);
         for(int i = 0; i < size; i++){
             segmento* seg_tcb = list_get(tabla->segmentos_tcb,i);

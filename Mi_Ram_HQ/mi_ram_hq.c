@@ -25,7 +25,7 @@ t_config* config;
 t_list* lista_tcb;
 t_list* lista_pcb;	
 
-void gestionar_tareas(t_archivo_tareas* archivo){
+int gestionar_tareas(t_archivo_tareas* archivo){
 	//char** string_tareas = string_split(archivo_tareas->texto, "\n");
 	//int cantidad_tareas = contar_palabras(string_tareas);
 	int pid_patota = archivo->pid;
@@ -40,6 +40,11 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		//Creamos segmento para tareas y lo guardamos en la tabla de la patota
 		log_debug(logger, "Comienza la creación del segmento de tareas con PID: %d", pid_patota);
 		segmento* segmento_tareas = asignar_segmento(tamanio_tareas);
+		if(segmento_tareas == NULL){
+			matar_tabla_segmentos(pid_patota);
+			return 0;
+		}
+		segmento_tareas->tipo = S_TAREAS;
 		void* puntero_a_tareas = memoria_principal + segmento_tareas->base;
 		memcpy(puntero_a_tareas, archivo->texto, tamanio_tareas);
 		tabla->segmento_tareas = segmento_tareas;
@@ -55,10 +60,16 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		//Creamos el segmento para el PCB y lo guardamos en la tabla de la patota
 		log_debug(logger, "Comienza la creación del segmento para el PCB con PID: %d", pid_patota);
 		segmento* segmento_pcb = asignar_segmento(sizeof(t_PCB));
+		if(segmento_pcb == NULL){
+			matar_tabla_segmentos(pid_patota);
+			return 0;
+		}
+		segmento_pcb->tipo = S_PCB;
 		memcpy(memoria_principal + segmento_pcb->base, pcb, sizeof(t_PCB));
 		tabla->segmento_pcb = segmento_pcb;
 		log_debug(logger, "Se terminó la creación del segmento para el PCB con PID: %d, con base: %d", pid_patota,segmento_pcb->base);
 		free(pcb);
+		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 
 	}else{
@@ -67,7 +78,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 	}
 }
 
-void gestionar_tcb(t_TCB* tcb){
+int gestionar_tcb(t_TCB* tcb){
 	int pid = tcb->TID / 10000;
 	size_t tamanio_tcb = sizeof(t_TCB);
 	log_debug(logger, "Comienza la creación del TCB, TID: %d", tcb->TID);
@@ -79,6 +90,11 @@ void gestionar_tcb(t_TCB* tcb){
 		
 		//Creamos segmento para el tcb y lo guardamos en la tabla de la patota
 		segmento* segmento_tcb = asignar_segmento(tamanio_tcb);
+		if(segmento_tcb == NULL){
+			matar_tabla_segmentos(pid);
+			return 0;
+		}
+		segmento_tcb->tipo = S_TCB;
 			// direccion donde está guardado el pcb
 		void* puntero_a_pcb = memoria_principal + tabla->segmento_pcb->base; 
 		tcb->puntero_a_pcb = (uint32_t) puntero_a_pcb;
@@ -89,6 +105,7 @@ void gestionar_tcb(t_TCB* tcb){
 		memcpy(memoria_principal + segmento_tcb->base, tcb, sizeof(t_TCB));
 
 		list_add(tabla->segmentos_tcb, segmento_tcb);
+		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 
 	}else{
@@ -113,7 +130,7 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	// test_actualizar_tcb();
+	test_matar_tabla_segmentos();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
@@ -179,7 +196,7 @@ void atender_clientes(void* param) {
 
 	while(flag) {
 		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);
-
+		int result;
 		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera
 
 		switch(mensaje_recibido->codigo_operacion) {
@@ -187,7 +204,8 @@ void atender_clientes(void* param) {
 			case ARCHIVO_TAREAS:
 				log_info(logger, "Recibido contenido del archivo\n");
 				printf("\tpid:%i. \n\tlongitud; %i. \n%s\n", mensaje_recibido->archivo_tareas->pid, mensaje_recibido->archivo_tareas->largo_texto, mensaje_recibido->archivo_tareas->texto);
-				gestionar_tareas(mensaje_recibido->archivo_tareas);
+				result = gestionar_tareas(mensaje_recibido->archivo_tareas);
+				// result = 1 -> todo bien, 	result = 0 -> faltó memoria bro (se mató todo lo creado para la patota)
 				sleep(1);
 				break;
 
@@ -210,7 +228,8 @@ void atender_clientes(void* param) {
 			case RECIBIR_TCB:
 				// log_info(logger, "Recibo una tcb\n");
 				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
-				gestionar_tcb(mensaje_recibido->tcb);
+				result = gestionar_tcb(mensaje_recibido->tcb);
+				// result = 1 -> todo bien, 	result = 0 -> faltó memoria bro (se mató todo lo creado para la patota)
 				break;
 
 			case ACTUALIZAR:
@@ -262,25 +281,6 @@ void atender_clientes(void* param) {
 		// free(mensaje_recibido);
 	}
 
-}
-
-
-t_PCB* crear_pcb(char* path){
-	t_PCB* pcb = malloc(sizeof(t_PCB));
-	pcb -> PID = 1;
-	pcb -> direccion_tareas = (uint32_t) path;
-	return pcb;
-}
-
-t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
-	t_TCB tcb;
-	tcb.TID = tid;
-	tcb.estado_tripulante = 'N';
-	tcb.coord_x = posicion[0];
-	tcb.coord_y = posicion[2];
-	tcb.siguiente_instruccion = 0;
-	tcb.puntero_a_pcb = 0;
-	return tcb;
 }
 
 indice_tabla* crear_indice(int pid, void* tabla){
