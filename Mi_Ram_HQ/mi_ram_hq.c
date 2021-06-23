@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_tabla_segmentos();
+	test_eliminar_tcb();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
@@ -492,6 +492,11 @@ int eliminar_tcb(int tid){ // devuelve 1 si todo ok, 0 si falló algo
 
 		list_remove_by_condition(tabla->segmentos_tcb, buscador);
 		log_debug(logger,"TID: %d ahora descansa con Odín", tid);
+
+		if(list_size(tabla->segmentos_tcb) < 1){
+			// Si era el ultimo tripulante: MUERTE A LA TABLA ENTERA
+			matar_tabla_segmentos(pid);
+		}
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 
@@ -506,6 +511,10 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 	t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
 	if(tcb == NULL){
 		return 0;
+	}
+	if(nuevo_tcb->estado_tripulante == 'F'){
+		eliminar_tcb(nuevo_tcb->TID);
+		return 1;
 	}
 	tcb->coord_x = nuevo_tcb->coord_x;
 	tcb->coord_y = nuevo_tcb->coord_y;

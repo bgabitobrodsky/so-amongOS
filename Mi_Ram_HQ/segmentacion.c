@@ -372,7 +372,7 @@ void test_buscar_siguiente_tarea(){
     }
 }
 
-void test_eliminar_tcb(int tid){
+void test_eliminar_tcb(){
     t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
 	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5\0";
 	archivo->largo_texto = 50;
@@ -400,6 +400,7 @@ void test_eliminar_tcb(int tid){
 
     eliminar_tcb(10001);
     eliminar_tcb(10001);
+    eliminar_tcb(10002);
     print_tablas_segmentos_info();
 }
 
