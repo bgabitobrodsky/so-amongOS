@@ -95,6 +95,7 @@ typedef struct {
     uint32_t coord_x;
     uint32_t coord_y;
     t_tarea tarea;
+    uint32_t quantum_restante;
     void (*funcion);
 
 } t_tripulante;

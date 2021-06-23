@@ -1,6 +1,10 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+23/06/2021
++ Planificacion mediante FIFO y ROUND ROBIN.
++ (ahora es discordiador quien actualiza a RAM el estado de quienes pasan a EXEC).
+
 21/06/2021
 + Los tripulantes informan a ram sus movimientos y cambios de estado.
 + Grandes avances en discordiador.
