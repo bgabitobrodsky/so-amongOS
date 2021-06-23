@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	test_matar_tabla_segmentos();
+	test_tabla_segmentos();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
@@ -293,14 +293,6 @@ void atender_clientes(void* param) {
 
 }
 
-indice_tabla* crear_indice(int pid, void* tabla){
-	log_info(logger,"Se crea indice para la tabla de la patota %d",pid);
-	indice_tabla* nuevo_indice = malloc(sizeof(indice_tabla));
-	nuevo_indice->pid = pid;
-	nuevo_indice->tabla = tabla;
-	return nuevo_indice;
-}
-
 // void liberar_pagina(int base){
 //     for(int i = 0; i<list_size(paginas);i++){
 //         pagina* x = list_get(paginas, i);
@@ -325,13 +317,13 @@ pagina* crear_pagina(int base, bool libre){
 tabla_paginas* crear_tabla_paginas(uint32_t pid){
 	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
 	nueva_tabla->paginas = list_create();
-	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
+	//list_add(indices,crear_indice(pid, (void*) nueva_tabla));
 	return nueva_tabla;
 }
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
-	indices = list_create();
+	tablas = dictionary_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 		log_debug(logger,"Se inicia memoria con esquema se SEGMENTACION");
 		segmentos = list_create();
@@ -355,21 +347,17 @@ void iniciar_memoria(){
 	}
 }
 
-void* buscar_tabla(int pid){
-	bool criterio(void* un_indice){
-		indice_tabla* indice = (indice_tabla*) un_indice;
-		return indice->pid == pid;
-	}
-	
+void* buscar_tabla(int pid){	
 	log_debug(logger,"Se comienza la busqueda de tabla de pid: %d",pid);
-
-	indice_tabla* indice = (indice_tabla*) list_find(indices, criterio);
-	if(indice != NULL){
-		log_debug(logger,"Tabla encontrada, pid: %d",indice->pid);
-		return indice->tabla;
+	char* spid[4];
+	sprintf(spid, "%d", pid);
+	void* tabla = dictionary_get(tablas,spid);
+	if(tabla == NULL){
+		log_warning(logger,"Tabla no encontrada");
+		return NULL;
 	}
-	log_warning(logger,"Tabla no encontrada");
-	return NULL;
+	log_debug(logger,"Tabla encontrada, pid: %d",pid);
+	return tabla;
 }
 
 t_TCB* buscar_tcb_por_tid(int tid){

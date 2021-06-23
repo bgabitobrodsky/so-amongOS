@@ -43,7 +43,8 @@ typedef struct indice_tabla {
     uint32_t pid;
     void* tabla;
 } indice_tabla;
-t_list* indices;
+
+t_dictionary* tablas;
 
 void iniciar_memoria();
 int gestionar_tareas (t_archivo_tareas*);
@@ -52,7 +53,7 @@ int gestionar_tcb(t_TCB*);
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
 pagina* crear_pagina(int base, bool libre);
 
-indice_tabla* crear_indice(int pid, void* tabla);
+void* crear_indice(int pid, void* tabla);
 void* buscar_tabla(int pid);
 t_TCB* buscar_tcb(int tid);
 t_tarea* buscar_siguiente_tarea(int tid);

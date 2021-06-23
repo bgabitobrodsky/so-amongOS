@@ -204,7 +204,6 @@ segmento* asignar_segmento(int tam){
             log_error(logger,"No hay mas memoria bro");
             return NULL;
         }
-        log_warning(logger,"No se encontró segmento");
         intento_asignar_segmento = 1;
         compactacion();
         return asignar_segmento(tam);
@@ -212,54 +211,53 @@ segmento* asignar_segmento(int tam){
 }
 
 tabla_segmentos* crear_tabla_segmentos(int pid){
+    log_debug(logger,"Se crea tabla de pid: %d",pid);
 	tabla_segmentos* nueva_tabla = malloc(sizeof(tabla_segmentos));
     nueva_tabla->segmento_pcb = NULL;
     nueva_tabla->segmento_tareas = NULL;
 	nueva_tabla->segmentos_tcb = list_create();
-	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
+    char* spid[3];
+	sprintf(spid, "%d", pid);
+    dictionary_put(tablas,spid,nueva_tabla);
+    log_debug(logger,"Tabla de pid: %d creada",pid);
 	return nueva_tabla;
 }
 
 void matar_tabla_segmentos(int pid){
     log_debug(logger, "Se procede a efectuar la nismación de la tabla PID: %d", pid);
-    tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
-    if(tabla == NULL){
-        log_warning(logger, "La tabla nunca extistió en este estado cuantico");
-        return;
-    }
-    if(tabla->segmento_pcb != NULL){
-        log_info(logger, "Se mata al segmento del pcb");
-        tabla->segmento_pcb->libre = true;
-    }else{
-        log_info(logger, "No tenia pcb");
-    }
-    if(tabla->segmento_tareas != NULL){
-        log_info(logger, "Se mata al segmento de tareas");
-        tabla->segmento_tareas->libre = true;
-    }else{
-        log_info(logger, "No tenia tareas");
-    }
-    int size = list_size(tabla->segmentos_tcb);
-    if(size > 0){
-        log_info(logger, "Se mata a los segmentos de tcb");
-        void dickstroyer(void* un_segmento){
-            segmento* seg = (segmento*) un_segmento; // segmento segmento segmento segmento segmento segmento
-            seg->libre = true;
-        }
-        list_destroy_and_destroy_elements(tabla->segmentos_tcb,dickstroyer);
-    }else{
-        log_info(logger, "No tenia tcbs");
-    }
+    
 
-    bool index_finder(void* un_indice){
-        indice_tabla* indice = (indice_tabla*) un_indice;
-		return indice->pid == pid;
+    void table_destroyer(void* una_tabla){
+        tabla_segmentos* tabla = (tabla_segmentos*) una_tabla;
+
+        if(tabla->segmento_pcb != NULL){
+            log_info(logger, "Se mata al segmento del pcb");
+            tabla->segmento_pcb->libre = true;
+        }else{
+            log_info(logger, "No tenia pcb");
+        }
+        if(tabla->segmento_tareas != NULL){
+            log_info(logger, "Se mata al segmento de tareas");
+            tabla->segmento_tareas->libre = true;
+        }else{
+            log_info(logger, "No tenia tareas");
+        }
+        int size = list_size(tabla->segmentos_tcb);
+        if(size > 0){
+            log_info(logger, "Se mata a los segmentos de tcb");
+
+            void tcb_destroyer(void* un_segmento){
+                segmento* seg = (segmento*) un_segmento;
+                seg->libre = true;
+            }
+            list_destroy_and_destroy_elements(tabla->segmentos_tcb,tcb_destroyer);
+        }else{
+            log_info(logger, "No tenia tcbs");
+        }
     }
-    void index_destroyer(void* un_indice){
-        indice_tabla* indice = (indice_tabla*) un_indice;
-        free(indice);
-    }
-    list_remove_and_destroy_by_condition(indices,index_finder,index_destroyer);
+    char* spid[4];
+    sprintf(spid, "%d", pid);
+    dictionary_remove_and_destroy(tablas,spid,table_destroyer);
 }
 
 
@@ -284,7 +282,6 @@ void test_tabla_segmentos(){
 	tabla1->segmento_tareas = asignar_segmento(45);
 	log_info(logger,"Segmento para tareas creado 1, base: %d", tabla1->segmento_tareas->base);
 
-	list_add(indices,crear_indice(1, (void*) tabla1));
 
 	log_info(logger,"Se crea la tabla de segmentos pid: 2");
 	tabla_segmentos* tabla2 = crear_tabla_segmentos(2);
@@ -295,8 +292,7 @@ void test_tabla_segmentos(){
 	tabla2->segmento_tareas = asignar_segmento(21);
 	log_info(logger,"Segmento para tareas creado 2, base: %d", tabla2->segmento_tareas->base);
 
-	list_add(indices,crear_indice(2, (void*) tabla2));
-	
+
 	tabla_segmentos* t_seg = buscar_tabla(2);
 	log_info(logger,"Base del segmento de tareas de la tabla 2: %d",t_seg->segmento_tareas->base);
 
@@ -482,12 +478,10 @@ void print_segmentos_info() {
 }
 
 void print_tablas_segmentos_info(){
-	int size = list_size(indices);
+	
 	printf("\n<----- TABLAS DE SEGMENTOS ---------------------\n");
-	for(int i = 0; i < size; i++) {
-        indice_tabla* index = list_get(indices, i);
-		tabla_segmentos* tabla = (tabla_segmentos*) index->tabla;
-		printf("Tabla pid: %d\n", index->pid);
+    void print_tabla(char* pid, tabla_segmentos* tabla){
+		printf("Tabla pid: %s\n", pid);
         if(tabla->segmento_pcb != NULL){
             printf("\t Segmento PCB:\n");
             printf("\t\t base: %d\n",tabla->segmento_pcb->base);
@@ -506,5 +500,8 @@ void print_tablas_segmentos_info(){
             printf("\t\t tam: %d\n",seg_tcb->tam);
         }
     }
+
+    dictionary_iterator(tablas,print_tabla);
+
 	printf("------------------>\n");
 }
