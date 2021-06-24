@@ -1,6 +1,9 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+24/06/2021
++ Corregidos los puertos en la config.
+
 23/06/2021
 + Planificacion mediante FIFO y ROUND ROBIN.
 + (ahora es discordiador quien actualiza a RAM el estado de quienes pasan a EXEC).
