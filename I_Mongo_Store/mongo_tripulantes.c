@@ -19,8 +19,9 @@ void manejo_tripulante(int socket_tripulante) {
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
-			// Si es otro codigo, debera ser un cambio (tal vez agregar comprobacion para evitar errores de los que codean el Discordiador)
-			else {
+
+			// Si es otro codigo
+			else if(mensaje->codigo_operacion > TAREA && mensaje->codigo_operacion < MOVIMIENTO){
 				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 			}
 		}
@@ -40,11 +41,8 @@ void manejo_tripulante(int socket_tripulante) {
 }
 
 void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: Verificar estructura, funcion boceto.
-	// Se obtiene el path donde se crean las bitacoras
-	char* path_bitacoras = fpath_bitacoras();
-	
 	// Se obtiene el path particular del tripulante, identificado con su TID
-	char* path_tripulante = fpath_tripulante(path_bitacoras, tcb);
+	char* path_tripulante = fpath_tripulante(tcb);
 	
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
@@ -61,7 +59,7 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 
 	list_add(bitacoras, nueva_bitacora);
 
-	// TODO: Darle al menos un bloque a bitacora
+	asignar_nuevo_bloque(file_tripulante);
 }
 
 void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir comportamiento
@@ -96,16 +94,7 @@ int obtener_indice_bitacora(t_TCB* tcb) { // TODO: Implementar
 	return 0;
 }
 
-char* fpath_bitacoras() {
-	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
-	char* path_bitacoras = malloc((strlen(path_directorio)+1) + strlen("/Files/Bitacoras"));
-	char* path_directorio_aux = malloc(strlen(path_directorio) + 1);
-	strcpy(path_directorio_aux, path_directorio);
-	path_bitacoras = strcat(path_directorio_aux, "/Files/Bitacoras");
-	return path_bitacoras;
-}
-
-char* fpath_tripulante(char* path_bitacoras, t_TCB* tcb) {
+char* fpath_tripulante(t_TCB* tcb) {
 	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);
 	char* path_bitacoras_aux = malloc(strlen(path_bitacoras) + 1);
 	strcpy(path_bitacoras_aux, path_bitacoras);

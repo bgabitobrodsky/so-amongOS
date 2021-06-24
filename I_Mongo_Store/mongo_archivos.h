@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
+#include "mongo_blocks.h"
 
 #define TAMANIO_BLOQUE 64
 #define CANTIDAD_BLOQUES 64 
@@ -56,16 +57,16 @@ typedef struct {
 } t_bitacora;
 
 typedef struct {
+    FILE* superbloque;
+    FILE* blocks;
+    unsigned char* mapa_blocks;
+} t_directorio;
 
+typedef struct {
     FILE* oxigeno;
     FILE* comida;
     FILE* basura;
-    FILE* superbloque;
-    FILE* blocks;
-    char* path_blocks;
-    unsigned char* mapa_blocks;
-
-} t_archivos;
+} t_recurso;
 
 /* SEMAFOROS PROPIOS */
 
@@ -74,8 +75,8 @@ pthread_mutex_t mutex_comida;
 pthread_mutex_t mutex_basura;
 pthread_mutex_t mutex_blocks;
 
-void inicializar_archivos(char* path_files);
-void inicializar_archivos_preexistentes(char* path_files);
+void inicializar_archivos();
+void inicializar_archivos_preexistentes();
 void asignar_nuevo_bloque(FILE* archivo);
 void asignar_bloque(FILE* archivo, int bit_libre); //TODO
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
@@ -87,31 +88,43 @@ void quitar(int codigo_archivo, int cantidad);
 char* conseguir_tipo(char tipo);
 char conseguir_char(int codigo_archivo);
 FILE* conseguir_archivo_char(char tipo);
-FILE* conseguir_archivo(int codigo);
-char* conseguir_path(int codigo_archivo);
-char* conseguir_nombre(FILE* archivo);
+FILE* conseguir_archivo_recurso(int codigo);
+char* conseguir_path_recurso_codigo(int codigo_archivo);
+char* conseguir_path_recurso_archivo(FILE* archivo);
 char* crear_md5();
 char char_random();
 int max(int a, int b);
 int es_recurso(FILE* archivo);
 void asignar_bloque_recurso(FILE* archivo, int bit_libre);
 void asignar_bloque_tripulante(FILE* archivo, int bit_libre);
-void escribir_archivo_tripulante(uint32_t tamanio, uint32_t lista_bloques);
 
 // devuelven la metadata del archivo
 uint32_t tamanio_archivo(FILE* archivo);
-uint32_t cantidad_bloques_archvio(FILE* archivo);
-uint32_t* lista_bloques_archvio(FILE* archivo);
+uint32_t cantidad_bloques_recurso(FILE* archivo);
+uint32_t* lista_bloques_recurso(FILE* archivo);
 char caracter_llenado_archivo(FILE* archivo);
 char* md5_archivo(FILE* archivo);
-void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques, char caracter_llenado, char* md_5);
+uint32_t cantidad_bloques_tripulante(FILE* archivo);
+uint32_t* lista_bloques_tripulante(FILE* archivo);
+void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques);
+void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* lista_bloques);
 
 
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
-extern t_archivos archivos;
+extern t_directorio directorio;
+extern t_recurso recurso;
 extern t_list* bitacoras;
 extern int* posiciciones_bitacora;
+
+extern char* path_directorio;
+extern char* path_files;
+extern char* path_bitacoras;
+extern char* path_oxigeno;
+extern char* path_comida;
+extern char* path_basura;
+extern char* path_superbloque;
+extern char* path_blocks;
 
 #endif

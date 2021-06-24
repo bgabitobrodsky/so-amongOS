@@ -35,7 +35,7 @@ int main(int argc, char** argv){
 	pthread_mutex_init(&mutex_basura, NULL);
 	// mutex_blocks
 
-	pthread_t hilo_escucha; // TODO: Pasarlo directamente a main, hilo al pedo --> Pero ya está en main...
+	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba
@@ -52,6 +52,14 @@ int main(int argc, char** argv){
 	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.\n");
 	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
+	free(path_directorio);
+	free(path_superbloque);
+	free(path_blocks);
+	free(path_files);
+	free(path_basura);
+	free(path_comida);
+	free(path_oxigeno);
+	free(path_bitacoras);
 }
 
 
@@ -96,13 +104,15 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
        		parametros->socket = socket_especifico;
        		pthread_t un_hilo_discordiador;
        		pthread_create(&un_hilo_discordiador, NULL, (void*) sabotaje, (void *) parametros);
+       		pthread_detach(un_hilo_discordiador);
        		//Falta cerrar sockets, hacerlo despues de juntar hilos
        	}
        	else { // Flujo para tripulantes
        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
        		parametros->socket = socket_especifico;
        		pthread_t un_hilo_tripulante;
-       		pthread_create(&un_hilo_tripulante, NULL, (void*) sabotaje, (void *) parametros);
+       		pthread_create(&un_hilo_tripulante, NULL, (void*) manejo_tripulante, (void *) parametros);
+       		pthread_detach(un_hilo_tripulante);
        		//Falta cerrar sockets, hacerlo despues de juntar hilos
            	}
        	}
@@ -143,22 +153,22 @@ void iniciar_file_system() {
 	struct stat dir = {0};
 
 	// Se obtiene el path donde estara el arbol de directorios, de config
-	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
+	path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 
 	// Se settea el path a files, carpeta dentro del punto de montaje
-	char* path_files = malloc(strlen(path_directorio) + strlen("/Files") + 1);
+	path_files = malloc(strlen(path_directorio) + strlen("/Files") + 1);
 	strncpy(path_files, path_directorio, strlen(path_directorio) + 1);
 	path_files = strcat(path_files, "/Files");
 
 	// Se settea el path a bitacoras, carpeta dentro de files
-	char* path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
+	path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
 	strncpy(path_bitacoras , path_files, strlen(path_files) + 1);
 	path_bitacoras = strcat(path_bitacoras, "/Bitacoras");
 
 	// Se verifica si ya tengo carpetas hechas, o sea, un filesystem
 	if ((stat(path_directorio, &dir) != -1)) {
 		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");
-		inicializar_archivos_preexistentes(path_files); 
+		inicializar_archivos_preexistentes();
 	}
 	else {
 		// Como no hay carpetas, se crean
@@ -168,19 +178,14 @@ void iniciar_file_system() {
 		log_info(logger_mongo, "Se creo un FileSystem.\n");
 
 		// Se asignan los archivos como antes
-		inicializar_archivos(path_files);
-
-		free(path_files);
-		free(path_bitacoras);
+		inicializar_archivos();
 	}
-
-	// free(path_directorio);
 }
 
 void cerrar_archivos() {
-	fclose(archivos.oxigeno);
-	fclose(archivos.comida);
-	fclose(archivos.basura);
+	fclose(recurso.oxigeno);
+	fclose(recurso.comida);
+	fclose(recurso.basura);
 }
 
 void cerrar_mutexs() {
