@@ -124,13 +124,13 @@ int main(int argc, char** argv) {
 
 	// Inicializar
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
-	config = config_create("mi_ram_hq.config");
+	config = config_create("limit-memory.config");
 
 	lista_tcb = list_create();
 	lista_pcb = list_create();
 
 	iniciar_memoria();
-	// test_matar_tabla_segmentos();
+	test_compactacion();
 
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
@@ -427,33 +427,41 @@ t_tarea* buscar_siguiente_tarea(int tid){
 	t_tarea* tarea;
 	log_debug(logger, "Buscando tarea para tripulante, TID: %d", tid);
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		
 		tabla_segmentos* tabla = buscar_tabla(pid);
 		if(tabla == NULL){
 			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
+
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
-		if(tcb->siguiente_instruccion == (uint32_t) NULL){
+		if(tcb == NULL){
+			// tcb no encontrado, no debería pasar pero por las dudas viste
+			return NULL;
+		}
+		char* puntero_a_tareas = (char*) tcb->siguiente_instruccion;
+		
+		if(puntero_a_tareas == NULL){
 			// Ya no quedan tareas
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
 			return NULL;
 		}
-		
-		segmento* segmento_tareas = tabla->segmento_tareas;
-		
-		char* puntero_a_tareas = (char*) tcb->siguiente_instruccion;
-		char* str_tarea = strtok(puntero_a_tareas,"\n");
+		char** palabras = string_split(puntero_a_tareas, "\n");
 
+		char* str_tarea = palabras[0];
 		log_info(logger, "Tarea: %s", str_tarea);
 
 		//se crea la struct de tarea para devolver, despues hay que mandarle free
 		tarea = crear_tarea(str_tarea);
 		//me fijo si hay un \0 despues de la tarea, si no hay significa que esta era la ultima :'(
-		if(str_tarea[strlen(str_tarea)+1] == '\0'){
+		log_error(logger,"Largo: %d", strlen(str_tarea));
+		
+		if(palabras[1] == NULL){
 			// no hay proxima tarea
-			tcb->siguiente_instruccion = (uint32_t) NULL;
+			tcb->siguiente_instruccion = NULL;
 		}else{
 			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}
+		liberar_puntero_doble(palabras);
 		log_debug(logger,"Se encontro la tarea para el tripulante %d",tid);
 		return tarea;
 			

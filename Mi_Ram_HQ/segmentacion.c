@@ -29,11 +29,9 @@ void compactacion(){
     for(int i=0; i<size;i++){
         segmento* segmento_libre = list_get(segmentos, i);
         if(segmento_libre->libre){
-            log_info(logger,"Segmento libre encontrado, base: %d",segmento_libre->base);
             for(int z = i + 1; z < size; z++){
                 segmento* segmento_ocupado = list_get(segmentos, z);
                 if(!segmento_ocupado->libre){
-                    log_info(logger,"Segmento ocupado encontrado, base: %d",segmento_ocupado->base);
                     int desplazamiento = segmento_libre->tam;
                     // Tengo que acomodar los fuckings punteros a memoria de las estructuras
                     if(segmento_ocupado->tipo == S_PCB){
@@ -47,18 +45,23 @@ void compactacion(){
                         }
                         list_iterate(tcbs,updater_tcb_pcb);
                     }else if(segmento_ocupado->tipo == S_TAREAS){
+
                         // en caso de ser un seg. de tareas, tengo que actualizar el: pcb y los tcbs, pucha :(
-                        bool buscador_tabla_por_tareas(void* un_indice){
-                            indice_tabla* indice = (indice_tabla*) un_indice;
-                            tabla_segmentos* tabla = (tabla_segmentos*) indice->tabla;
-                            return tabla->segmento_tareas->base == segmento_ocupado->base;
+                        tabla_segmentos* tabla;
+                        int pid;
+                        void buscador_tabla_por_tareas(char* spid, void* una_tabla){
+                            tabla_segmentos* t = (tabla_segmentos*) una_tabla;
+                            if(t->segmento_tareas->base == segmento_ocupado->base){
+                                tabla = t;
+                                pid = atoi(spid);
+                            }
                         }
-                        indice_tabla* indice = list_find(indices,buscador_tabla_por_tareas);
-                        tabla_segmentos* tabla = (tabla_segmentos*) indice->tabla;
+                        
+                        dictionary_iterator(tablas, buscador_tabla_por_tareas);
+
                         t_PCB* pcb = (t_PCB*) (memoria_principal + (tabla->segmento_pcb->base));
                         pcb->direccion_tareas -= desplazamiento;
-                        
-                        t_list* tcbs = buscar_tcbs_por_pid(indice->pid);
+                        t_list* tcbs = buscar_tcbs_por_pid(pid);
                         void updater_tcb_tareas(void* un_tcb){
                             t_TCB* tcb = (t_TCB*) un_tcb;
                             tcb->siguiente_instruccion -= desplazamiento;
@@ -466,6 +469,94 @@ void test_matar_tabla_segmentos(){
 	gestionar_tareas(archivo);
     free(archivo);
 
+}
+
+void test_compactacion(){
+    t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
+	arc->texto = "GENERAR_OXIGENO 10;1;1;1";
+	arc->largo_texto = 25;
+	arc->pid = 1;
+	gestionar_tareas(arc);
+    free(arc);
+
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 1;
+    tcb->coord_y = 2;
+    tcb->estado_tripulante = 'N';
+    gestionar_tcb(tcb);
+    free(tcb);
+    
+    t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
+	archivo->texto = "AFILAR_LANZAS;1;1;1\nMATAR_PERSAS;5;5;20";
+	archivo->largo_texto = 40;
+	archivo->pid = 2;
+	gestionar_tareas(archivo);
+    free(archivo);
+
+    t_TCB* tcb2 = malloc(sizeof(t_TCB));
+    tcb2->TID = 20001;
+    tcb2->coord_x = 1;
+    tcb2->coord_y = 1;
+    tcb2->estado_tripulante = 'N';
+    gestionar_tcb(tcb2);
+    free(tcb2);
+
+    t_TCB* tcb3 = malloc(sizeof(t_TCB));
+    tcb3->TID = 20002;
+    tcb3->coord_x = 1;
+    tcb3->coord_y = 1;
+    tcb3->estado_tripulante = 'N';
+    gestionar_tcb(tcb3);
+    free(tcb3);
+
+    t_TCB* tcb4 = malloc(sizeof(t_TCB));
+    tcb4->TID = 20003;
+    tcb4->coord_x = 1;
+    tcb4->coord_y = 1;
+    tcb4->estado_tripulante = 'N';
+    gestionar_tcb(tcb4);
+    free(tcb4);
+
+    t_tarea* tarea = buscar_siguiente_tarea(10001);
+    log_warning(logger,"Siguiente tarea: %s \t %d, %d \t %d",tarea->nombre,tarea->coord_x,tarea->coord_y,tarea->duracion);
+    free(tarea);
+    t_tarea* tarea3 = buscar_siguiente_tarea(20002);
+    if(tarea3 != NULL){
+        log_warning(logger,"Siguiente tarea: %s \t %d, %d \t %d",tarea3->nombre,tarea3->coord_x,tarea3->coord_y,tarea3->duracion);
+    }
+    free(tarea3);
+
+    t_tarea* tarea2 = buscar_siguiente_tarea(20002);
+    log_warning(logger,"Siguiente tarea: %s \t %d, %d \t %d",tarea2->nombre,tarea2->coord_x,tarea2->coord_y,tarea2->duracion);
+    free(tarea2);
+
+    
+
+    print_tablas_segmentos_info();
+    print_segmentos_info();
+    eliminar_tcb(20001);
+    print_segmentos_info();
+    t_archivo_tareas* arc2 = malloc(sizeof(t_archivo_tareas));
+	arc2->texto = "GENERAR_OXIGENO 10;1;1;1";
+	arc2->largo_texto = 25;
+	arc2->pid = 3;
+	gestionar_tareas(arc2);
+    free(arc2);
+
+    t_TCB* tcb9 = malloc(sizeof(t_TCB));
+    tcb9->TID = 30001;
+    tcb9->coord_x = 1;
+    tcb9->coord_y = 2;
+    tcb9->estado_tripulante = 'N';
+    gestionar_tcb(tcb9);
+    free(tcb9);
+
+    t_tarea* tarea4 = buscar_siguiente_tarea(20002);
+    if(tarea4 != NULL){
+        log_warning(logger,"Siguiente tarea: %s \t %d, %d \t %d",tarea4->nombre,tarea4->coord_x,tarea4->coord_y,tarea4->duracion);
+    }
+    free(tarea4);
 }
 
 void print_segmentos_info() {
