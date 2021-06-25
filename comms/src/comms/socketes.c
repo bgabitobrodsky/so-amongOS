@@ -61,13 +61,13 @@ int crear_socket_oyente(char *ip_del_servidor_a_conectar, char* puerto_del_servi
 	if ((estado = getaddrinfo(ip_del_servidor_a_conectar, puerto_del_servidor, &datos_para_server, &informacion_server)) != 0)
 		printf("Error al conseguir informacion del servidor\n");
 
-	int activado = 1;
-	setsockopt(socket_escucha, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
 	for (p = informacion_server; p != NULL; p = p->ai_next){
 		
         if ((socket_escucha = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
             continue;
+
+    	int activado = 1;
+    	setsockopt(socket_escucha, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
         if (bind(socket_escucha, p->ai_addr, p->ai_addrlen) == -1){
         	printf("Fallo en el bind.\n");

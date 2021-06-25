@@ -1,7 +1,6 @@
 /*
 
  Funcionalidad de paquetes, cortesia de Nico
- TODO de SEBA, falta testear serializacion, envio y recepcion de tareas.
 
 */
 
@@ -13,7 +12,7 @@ t_buffer* serializar_tcb(t_TCB tcb) {
 
     t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*5 + sizeof(char));
     buffer->tamanio_estructura = sizeof(uint32_t)*5 + sizeof(char);  // Se le da el tamanio del struct del parametro
-
+    // estructura NO se debe liberar!!
     void* estructura = malloc(buffer->tamanio_estructura); // Se utiliza intermediario
     int desplazamiento = 0; // Desplazamiento para calcular que tanto tengo que correr para que no se sobrepisen cosas del array estructura
 
@@ -31,24 +30,22 @@ t_buffer* serializar_tcb(t_TCB tcb) {
 
     buffer->estructura = estructura; // Se iguala el buffer al intermediario
 
-    free(estructura);
     return buffer;
-
 }
 
 // Serializa un struct tarea a un buffer
 t_buffer* serializar_tarea(t_tarea tarea) {
 
-    t_buffer* buffer = malloc((sizeof(t_buffer)));
-    buffer->tamanio_estructura = 5 * sizeof(uint32_t) + sizeof(tarea.nombre) + 1;
+    t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = (5 * sizeof(uint32_t)) + tarea.largo_nombre + 1;
 
     void* estructura = malloc((buffer->tamanio_estructura));
     int desplazamiento = 0;
     
     memcpy(estructura + desplazamiento, &tarea.largo_nombre, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tarea.nombre, sizeof(tarea.nombre) + 1);
-    desplazamiento += sizeof(tarea.nombre) + 1;
+    memcpy(estructura + desplazamiento, tarea.nombre, (tarea.largo_nombre + 1));
+    desplazamiento += (tarea.largo_nombre + 1);
     memcpy(estructura + desplazamiento, &tarea.parametro, sizeof(uint32_t));
     desplazamiento += sizeof(uint32_t);
     memcpy(estructura + desplazamiento, &tarea.coord_x, sizeof(uint32_t));
@@ -59,7 +56,7 @@ t_buffer* serializar_tarea(t_tarea tarea) {
 
     buffer->estructura = estructura;
 
-    free(tarea.nombre); // TODO: Habria que ver si el nombre de la tarea hace falta en src
+    //free(tarea.nombre); // TODO testeo: hacer este free en main
 
     return buffer;
 }
@@ -108,8 +105,6 @@ void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_rece
 
     void* mensaje = malloc(tamanio_mensaje);
     int desplazamiento = 0;
-
-    // TODO seba: por que esto no te tiro error antes? solo tiene un argumento paquete = realloc(sizeof(int) + sizeof(uint32_t) + sizeof(buffer->tamanio_estructura));
 
     memcpy(mensaje + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
     desplazamiento += sizeof(int);
@@ -166,8 +161,8 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     // If que maneja llegada de codigos de operacion unicamente (TODO CODIGO UNICO DEBE ESTAR DESPUES DE SABOTAJE)
     if (paquete->codigo_operacion >= SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash
-        eliminar_paquete(paquete); 
-        printf("paquete eliminado.");
+        intermediario->codigo_operacion = paquete->codigo_operacion;
+    	eliminar_paquete(paquete);
         return intermediario;
     }
 
@@ -177,21 +172,35 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     // Switch estructuras y cosas del fylesystem
     switch (paquete->codigo_operacion) { 
-    	case RECIBIR_PCB:
-    		intermediario->codigo_operacion = RECIBIR_PCB;
-    		break;
-
+    	case ACTUALIZAR:
         case RECIBIR_TCB:
-        	intermediario->codigo_operacion = RECIBIR_TCB;
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
         	intermediario->tcb = malloc(sizeof(uint32_t)*5 + sizeof(char));
-            intermediario->tcb = desserializar_tcb(paquete->buffer);
+            intermediario->tcb = deserializar_tcb(paquete->buffer);
             break;
 
         case TAREA:
             intermediario->codigo_operacion = TAREA;
-            t_tarea* tarea = desserializar_tarea(paquete->buffer->estructura); 
-            intermediario->tarea = tarea;
-            free(tarea);
+
+            // asignar un malloc? tienes idea de lo loco que se oye eso?
+            intermediario->tarea = deserializar_tarea(paquete->buffer);
+            break;
+
+        case ARCHIVO_TAREAS:
+        	intermediario->codigo_operacion = ARCHIVO_TAREAS;
+        	intermediario->archivo_tareas = malloc(paquete->buffer->tamanio_estructura);
+            intermediario->archivo_tareas = deserializar_archivo_tareas(paquete->buffer);
+            break;
+
+        case T_SIGKILL:
+        case PEDIR_TAREA:
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
+            memcpy(&(intermediario->tid), paquete->buffer->estructura, sizeof(uint32_t));
+            break;
+
+        case LISTAR_POR_PID:
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
+            memcpy(&(intermediario->pid), paquete->buffer->estructura, sizeof(uint32_t));
             break;
 
         // Funcionan igual, mismo case en definitiva, queda asi para legibilidad, desserializa in situ porque es ezpz
@@ -210,7 +219,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
 // Pasa un struct buffer a un tcb
 // Se explica deserializacion en esta funcion
-t_TCB* desserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se esta pasando paquete->buffer->estructura, ver si es error
+t_TCB* deserializar_tcb(t_buffer* buffer) {
 
 	t_TCB* tcb = malloc(sizeof(uint32_t)*5 + sizeof(char)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
@@ -231,15 +240,16 @@ t_TCB* desserializar_tcb(t_buffer* buffer) { // TODO: En implementaciones se est
 }
 
 // Pasa un struct buffer a una tarea
-t_tarea* desserializar_tarea(t_buffer* buffer) {
+t_tarea* deserializar_tarea(t_buffer* buffer) {
 
     t_tarea* tarea = malloc(sizeof(t_tarea));
     void* estructura = buffer->estructura;
 
     memcpy(&(tarea->largo_nombre), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
-    tarea->nombre = malloc(tarea->largo_nombre);
-    memcpy(tarea->nombre, estructura, tarea->largo_nombre);
+    tarea->nombre = malloc(tarea->largo_nombre +1);
+    memcpy(tarea->nombre, estructura, (tarea->largo_nombre +1));
+    estructura += tarea->largo_nombre + 1;
     memcpy(&(tarea->parametro), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
     memcpy(&(tarea->coord_x), estructura, sizeof(uint32_t));
@@ -247,7 +257,6 @@ t_tarea* desserializar_tarea(t_buffer* buffer) {
     memcpy(&(tarea->coord_y), estructura, sizeof(uint32_t));
     estructura += sizeof(uint32_t);
     memcpy(&(tarea->duracion), estructura, sizeof(uint32_t));
-    estructura += sizeof(uint32_t);
 
     return tarea;
 }
@@ -256,4 +265,91 @@ void eliminar_paquete(t_paquete* paquete) {
 	//free(paquete->buffer->estructura); // TODO: Ver si se puede descomentar
 	free(paquete->buffer);
 	free(paquete);
+}
+
+t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
+
+    t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;
+
+    void* estructura = malloc(buffer->tamanio_estructura);
+    int desplazamiento = 0;
+
+    memcpy(estructura + desplazamiento, &texto_archivo.largo_texto, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, texto_archivo.texto, (texto_archivo.largo_texto + 1));
+    desplazamiento += (texto_archivo.largo_texto + 1);
+    memcpy(estructura + desplazamiento, &texto_archivo.pid, sizeof(uint32_t));
+
+    buffer->estructura = estructura;
+
+    free(texto_archivo.texto);
+
+    return buffer;
+}
+
+t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
+
+	t_archivo_tareas* texto_archivo = malloc(sizeof(t_archivo_tareas));
+    void* estructura = buffer->estructura;
+
+    memcpy(&(texto_archivo->largo_texto), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    texto_archivo->texto = malloc(texto_archivo->largo_texto + 1);
+    memcpy(texto_archivo->texto, estructura, (texto_archivo->largo_texto + 1));
+    estructura += (texto_archivo->largo_texto + 1);
+    memcpy(&(texto_archivo->pid), estructura, sizeof(uint32_t));
+
+    return texto_archivo;
+}
+
+t_buffer* serializar_entero(uint32_t numero) {
+    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    buffer->tamanio_estructura = sizeof(int);
+
+    void* estructura = malloc((buffer->tamanio_estructura));
+
+    memcpy(estructura, &numero, sizeof(int));
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_buffer* serializar_tripulante(t_tripulante tripulante) {
+
+    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*3 + sizeof(char));
+    buffer->tamanio_estructura = sizeof(uint32_t)*3 + sizeof(char);
+    void* estructura = malloc(buffer->tamanio_estructura);
+    int desplazamiento = 0;
+
+    memcpy(estructura + desplazamiento, &tripulante.TID, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.estado_tripulante, sizeof(char));
+    desplazamiento += sizeof(char);
+    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_tripulante* deserializar_tripulante(t_buffer* buffer) {
+
+	t_tripulante* un_tripulante = malloc(sizeof(uint32_t)*3 + sizeof(char));
+    void* estructura = buffer->estructura;
+
+    memcpy(&(un_tripulante->TID), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(un_tripulante->estado_tripulante), estructura, sizeof(char));
+    estructura += sizeof(char);
+    memcpy(&(un_tripulante->coord_x), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(un_tripulante->coord_y), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+
+    return un_tripulante;
 }

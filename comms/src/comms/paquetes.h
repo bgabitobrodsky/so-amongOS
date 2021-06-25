@@ -29,11 +29,15 @@ t_buffer* serializar_vacio();
 void empaquetar_y_enviar(t_buffer* buffer, int codigo_operacion, int socket_receptor);
 void enviar_codigo(int codigo_operacion, int socket_receptor);
 t_estructura* recepcion_y_deserializacion(int socket_receptor);
-t_TCB* desserializar_tcb(t_buffer* buffer);
-t_tarea* desserializar_tarea(t_buffer* buffer);
+t_TCB* deserializar_tcb(t_buffer* buffer);
+t_tarea* deserializar_tarea(t_buffer* buffer);
 void eliminar_paquete(t_paquete* paquete);
-t_buffer* serializar_posicion(int x, int y);
 t_buffer* serializar_cantidad(int cantidad);
+t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer);
+t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo);
+t_buffer* serializar_entero(uint32_t numero);
+t_tripulante* deserializar_tripulante(t_buffer* buffer);
+t_buffer* serializar_tripulante(t_tripulante tripulante);
 
 
 #endif
