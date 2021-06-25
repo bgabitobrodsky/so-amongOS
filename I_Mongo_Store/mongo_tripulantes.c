@@ -47,6 +47,9 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: 
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
 	
+	//Se inicializan los datos del tripulante
+	escribir_archivo_tripulante(file_tripulante, 0, NULL);
+
 	// Se lo guarda en la bitacora
 	acomodar_bitacora(file_tripulante, tcb);
 }
@@ -63,8 +66,7 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 }
 
 void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir comportamiento
-	int indice = obtener_indice_bitacora(tcb);
-	t_bitacora* bitacora = list_get(bitacoras, indice);
+	t_bitacora* bitacora = obtener_bitacora(tcb);
 	
 	switch (codigo_operacion) {
 		case MOVIMIENTO:
@@ -81,17 +83,32 @@ void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir com
 }
 
 void borrar_bitacora(t_TCB* tcb) {
-	int indice = obtener_indice_bitacora(tcb);
-
-	t_bitacora* bitacora = list_remove(bitacoras, indice);
+	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
 
 	fclose(bitacora->bitacora_asociada);
 	free(bitacora->tripulante);
 	free(bitacora);
 }
 
-int obtener_indice_bitacora(t_TCB* tcb) { // TODO: Implementar
-	return 0;
+t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
+
+	bool contains(void* tcb1) {
+		return (tcb == ((t_bitacora*) tcb1)->tripulante);
+	}
+
+	t_bitacora* bitacora = list_remove_by_condition(bitacoras, contains);
+	return bitacora;
+}
+
+t_bitacora* obtener_bitacora(t_TCB* tcb) {
+
+	bool contains(void* tcb1) {
+		return (tcb == ((t_bitacora*) tcb1)->tripulante);
+	}
+
+	t_bitacora* bitacora = list_remove_by_condition(bitacoras, contains);
+	list_add(bitacoras, bitacora);
+	return bitacora;
 }
 
 char* fpath_tripulante(t_TCB* tcb) {

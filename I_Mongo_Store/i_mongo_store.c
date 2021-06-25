@@ -37,14 +37,13 @@ int main(int argc, char** argv){
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
-	//pthread_detach(hilo_escucha);
-	pthread_join(hilo_escucha, NULL); // Cambiar por lo que dijo Seba
+	pthread_detach(hilo_escucha);
 
 	/*while(sistema_activo){
 		usleep(1);
 	}*/ //TODO ver cuando debería terminarse el mongo
 
-	// Se cierra todo lo que se usa
+	// Se cierra to.do lo que se usa
 	cerrar_archivos();
 	cerrar_mutexs();
 	close(socket_oyente);
@@ -98,7 +97,7 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 
 		// Se verifica que la primera conexion a Mongo sea del modulo Discordiador, debe ser asi por defecto
         if (es_discordiador == 1) {
-       		es_discordiador = 0; // Se cambia flujo para que todo lo subsiguiente sean tripulantes
+       		es_discordiador = 0; // Se cambia flujo para que to.do lo subsiguiente sean tripulantes
 
        		hilo_discordiador* parametros = malloc(sizeof(hilo_tripulante));
        		parametros->socket = socket_especifico;

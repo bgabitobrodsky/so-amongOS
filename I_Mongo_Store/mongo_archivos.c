@@ -29,14 +29,16 @@ void inicializar_archivos() { // TODO: Puede romper
     int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
 
 	// Trunco los archivos o los creo en modo escritura y lectura
-	// Se guarda todo en un struct para uso en distintas funciones
+	// Se guarda to.do en un struct para uso en distintas funciones
     recurso.oxigeno     = fopen(path_oxigeno, "w+");
 	recurso.comida      = fopen(path_comida, "w+");
 	recurso.basura      = fopen(path_basura, "w+");
 	directorio.superbloque = fopen(path_superbloque, "w+");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "w+");
 
-	// TODO: Escribir metadata inicial para los archivos, darles un bloque
+	escribir_archivo_recurso(recurso.oxigeno, 0, 0, NULL);
+	escribir_archivo_recurso(recurso.comida, 0, 0, NULL);
+	escribir_archivo_recurso(recurso.basura, 0, 0, NULL);
 
 	iniciar_superbloque(directorio.superbloque);
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
@@ -67,7 +69,7 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
     int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
-	// Se guarda todo en un struct para uso en distintas funciones
+	// Se guarda to.do en un struct para uso en distintas funciones
 	recurso.oxigeno     = fopen(path_oxigeno, "r+");
 	recurso.comida      = fopen(path_comida, "r+");
 	recurso.basura      = fopen(path_basura, "r+");
@@ -116,7 +118,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 
 		if(es_recurso(archivo)){
 			//Asigno el bloque a un archivo
-			asignar_bloque_recurso(archivo, bit_libre); //TODO --> Falta que al bloque se le asigne el archivo correspondiente
+			asignar_bloque_recurso(archivo, bit_libre);
 
 			//Actualizo la metadata del archivo
 			uint32_t tamanio = tamanio_archivo(archivo);
@@ -135,7 +137,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 			uint32_t cantidad_bloques = sizeof(lista_bloques)/sizeof(uint32_t);
 			lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente
 
-			escribir_archivo_tripulante(archivo, tamanio, lista_bloques); //TODO
+			escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 		}
 	}
 	//Si no había un bloque libre
@@ -192,11 +194,12 @@ void actualizar_MD5(FILE* archivo) {
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
@@ -207,7 +210,8 @@ void actualizar_MD5(FILE* archivo) {
 
 	char* size = "SIZE=";
 	char* block_count = "BLOCK_COUNT=";
-	char* blocks = "BLOCKS=";
+	char* blocks = "BLOCKS=[";
+	char* corchete_cierre = "]";
 	char* caracter = "CARACTER_LLENADO=";
 	char* md5 = "MD5_ARCHIVO=";
 	char* md5_dato = crear_md5();
@@ -218,6 +222,7 @@ void actualizar_MD5(FILE* archivo) {
 	fwrite(&cant_bloques, sizeof(uint32_t), 1, archivo);
 	fwrite(&blocks, strlen(blocks), 1, archivo);
 	fwrite(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
+	fwrite(&corchete_cierre, strlen(corchete_cierre), 1, archivo);
 	fwrite(&caracter, strlen(caracter), 1, archivo);
 	fwrite(&tipo, sizeof(char), 1, archivo);
 	fwrite(&md5, strlen(md5), 1, archivo);
@@ -226,6 +231,7 @@ void actualizar_MD5(FILE* archivo) {
 	free(size);
 	free(block_count);
 	free(blocks);
+	free(corchete_cierre);
 	free(caracter);
 	free(md5);
 	free(md5_dato);
@@ -254,11 +260,12 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
@@ -299,11 +306,12 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
@@ -485,11 +493,12 @@ uint32_t* lista_bloques_recurso(FILE* archivo) {
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	return lista_bloques;
 }
@@ -503,11 +512,12 @@ char caracter_llenado_archivo(FILE* archivo) {
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	char caracter_llenado;
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
@@ -525,11 +535,12 @@ char* md5_archivo(FILE* archivo) {
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
@@ -537,24 +548,25 @@ char* md5_archivo(FILE* archivo) {
 
 	fseek(archivo, strlen("MD5_ARCHIVO="), SEEK_CUR);
 	char* md5;
-	//fread(&md5, sizeof(char), N, archivo) //TODO
+	fread(&md5, sizeof(char), 32, archivo);
 
 	return md5;
 }
 
-uint32_t cantidad_bloques_tripulante(FILE* archivo) { //TODO
+uint32_t cantidad_bloques_tripulante(FILE* archivo) {
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
 	uint32_t tamanio_archivo;
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t cant_bloques;
-	//TODO cant_bloques = ???
+	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	return cant_bloques;
 }
@@ -564,15 +576,15 @@ uint32_t* lista_bloques_tripulante(FILE* archivo) {
 	uint32_t tamanio_archivo;
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t cant_bloques;
-	//TODO cant_bloques = ???
-	//TODO cómo leer si no se cuanto leer.
+	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	return lista_bloques;
 }
@@ -586,26 +598,27 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS="), SEEK_CUR);
+	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
 	for (int i = 0; i < cant_bloques; i++) {
 		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
 	}
+	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	char tipo;
 	fread(&tipo, sizeof(char), 1, archivo);
 
 	fseek(archivo, strlen("MD5_ARCHIVO="), SEEK_CUR);
-	char* md5;
-	//fread(&md5, sizeof(char), N, archivo) //TODO
+	char* md5 = crear_md5();
 
 	char* path_archivo = conseguir_path_recurso_archivo(archivo);
 	freopen(path_archivo, "w+", archivo);
 
 	char* size = "SIZE=";
 	char* block_count = "BLOCK_COUNT=";
-	char* blocks = "BLOCKS=";
+	char* blocks = "BLOCKS=[";
+	char* corchete_cierre = "]";
 	char* caracter = "CARACTER_LLENADO=";
 	char* md_5 = "MD5_ARCHIVO=";
 
@@ -616,6 +629,7 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 	fwrite(&cantidad_bloques, sizeof(uint32_t), 1, archivo);
 	fwrite(&blocks, strlen(blocks), 1, archivo);
 	fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
+	fwrite(&corchete_cierre, strlen(corchete_cierre), 1, archivo);
 	fwrite(&caracter, strlen(caracter), 1, archivo);
 	fwrite(&tipo, sizeof(char), 1, archivo);
 	fwrite(&md_5, strlen(md_5), 1, archivo);
@@ -624,25 +638,29 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 	free(size);
 	free(block_count);
 	free(blocks);
+	free(corchete_cierre);
 	free(caracter);
 	free(md_5);
 }
 
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list_bloques) {
 	char* size = "SIZE=";
-	char* blocks = "BLOCKS=";
+	char* blocks = "BLOCKS=[";
+	char* corchete_cierre = "]";
 
 	fwrite(&size, strlen(size), 1, archivo);
 	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
 	fwrite(&blocks, strlen(blocks), 1, archivo);
 	uint32_t cant_bloques = sizeof(list_bloques); //Puede ser que sea sizeof(list_bloques)/2; por un tema del sizeof()
+	fwrite(&corchete_cierre, strlen(corchete_cierre), 1, archivo);
 	fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	free(size);
 	free(blocks);
+	free(corchete_cierre);
 }
 
-int es_recurso(FILE* archivo) {
+int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.do en minúscula
 	char* nombre = conseguir_path_recurso_archivo(archivo);
 	int boolean = strcmp(nombre, "El archivo no era un recurso") ? 0 : 1;
 	return boolean;
@@ -650,7 +668,6 @@ int es_recurso(FILE* archivo) {
 
 void asignar_bloque_recurso(FILE* archivo, int bit_libre) {
 	uint32_t tamanio = tamanio_archivo(archivo);
-	//TODO tamanio = ???; --> Probablemente haya que pasarselo por parametro
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(archivo);
 	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
 	lista_bloques[cantidad_bloques] = bit_libre;

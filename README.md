@@ -1,5 +1,15 @@
 # No matar a rey de fuego
 
+### Registro de cambios MONGO
+24/06/2021
+README: A partir de ahora lo implemento, prometo ir anotando los cambios para no olvidarme, como me pudo haber pasado hoy.
+Hilos: join por detach
+Inicializar archvos: Se inicializan los datos en 0 (tamaño, cant_bloques, etc)
+Actualizaciones MD5: No las hacía, ahora si
+obtener_bitacora: completa
+quitar_bitacora_lista: completa
+
+
 ### Registro de cambios
 14/06/2021
 + DIseñados monitores para colas y listas.
