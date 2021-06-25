@@ -14,35 +14,6 @@ void test_iniciar_planificacion(){
     iniciar_planificacion();
 }
 
-
-// borrar?
-void enlistar_algun_tripulante(){
-
-    if (!list_is_empty(lista_tripulantes_new)){
-        t_tripulante* tripulante_a_ready = monitor_lista_dos_parametros(sem_lista_new, (void*) list_remove, lista_tripulantes_new, (void*) 0);
-        monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, tripulante_a_ready);
-        pedir_tarea_a_mi_ram_hq(tripulante_a_ready->TID, socket_a_mi_ram_hq);
-
-        t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
-
-        if(respuesta->codigo_operacion == TAREA){
-            tripulante_a_ready->tarea = *respuesta->tarea;
-        }
-        else if (respuesta->codigo_operacion == FALLO){
-            log_info(logger, "No se recibio ninguna tarea.\n Codigo de error: FALLO\n");
-        }
-        else{
-            log_info(logger, "Error desconocido, no se recibio ninguna tarea.\n");
-        }
-
-        tripulante_a_ready->estado_tripulante = estado_tripulante[READY];
-    }
-    else {
-        log_info(logger, "No hay ningun tripulante listo para ser enlistado.\n");
-    }
-}
-
-
 void test_serializar_tcb(){
 
     t_TCB tcb;
@@ -93,18 +64,6 @@ void test_nuevo_pid(){
 
     // Resultado:
     // Los PIDS en la lista son 1 y 3, así que me debe ingresar y printear los primeros 10 pids que no sean esos.
-}
-
-void test_enlistar_algun_tripulante(){
-    t_TCB* tcb = crear_puntero_tcb(0, 5, "8a9");
-    printf("Tripulante. pos: %i %i, tid: %i estado %c \n", (int) tcb->coord_x, (int) tcb->coord_y, (int) tcb->TID, tcb->estado_tripulante);
-
-    monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, tcb);
-    enlistar_algun_tripulante();
-
-    t_TCB* prueba = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-    printf("Tripulante. pos: %i %i, tid: %i estado %c \n", (int) prueba->coord_x, (int) prueba->coord_y, (int) prueba->TID, prueba->estado_tripulante);
-
 }
 
 void test_serializar_tarea(){

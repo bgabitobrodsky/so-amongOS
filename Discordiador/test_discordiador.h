@@ -11,12 +11,10 @@
 #include "utils.h"
 
 // TESTS
-void enlistar_algun_tripulante();
 void test_serializar_tcb();
 void test_iniciar_patota();
 void test_listar_tripulantes();
 void test_nuevo_pid();
-void test_enlistar_algun_tripulante();
 void test_serializar_tarea();
 void test_serializar_tripulante();
 void test_iniciar_planificacion();

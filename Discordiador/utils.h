@@ -51,7 +51,6 @@ typedef enum{
 extern t_config* config;
 extern t_log* logger;
 
-extern int socket_a_mi_ram_hq;
 extern char estado_tripulante[6];
 
 extern t_list* lista_pids;
