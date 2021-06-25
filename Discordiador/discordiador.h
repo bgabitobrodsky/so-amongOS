@@ -18,7 +18,7 @@ void funcion_hilo();
 void iniciar_hilo();
 
 // Funciones PRINCIPALES
-void iniciar_patota(char* leido);
+int iniciar_patota(char* leido);
 void listar_tripulantes();
 void expulsar_tripulante(char* leido);
 void iniciar_planificacion();

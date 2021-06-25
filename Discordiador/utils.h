@@ -71,7 +71,7 @@ extern pthread_mutex_t sem_lista_block;
 extern pthread_mutex_t sem_lista_exit;
 
 // Funciones PRINCIPALES
-void iniciar_patota(char* leido);
+int iniciar_patota(char* leido);
 void listar_tripulantes();
 void expulsar_tripulante(char* leido);
 void iniciar_planificacion();

@@ -78,7 +78,6 @@ char* leer_archivo_entero(char* path){
 		fseek(archivo, 0, SEEK_SET);
 		contenido = malloc(tamanio_archivo + 1);
 		fread(contenido, 1, tamanio_archivo, archivo);
-		//contenido[tamanio_archivo] = '\n'; // Para tener coherencia con RAM
 		contenido[tamanio_archivo] = '\0';
 	}
 

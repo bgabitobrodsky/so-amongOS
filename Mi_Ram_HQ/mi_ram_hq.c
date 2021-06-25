@@ -66,12 +66,11 @@ void proceso_handler(void* args) {
 	args_escuchar* p = malloc(sizeof(args_escuchar));
 	p = args;
 	int socket_escucha = p->socket_oyente;
-	//int socket_escucha = (int) args; //Tema de testeos, no borrar
 
 	int addrlen, socket_especifico;
 	struct sockaddr_in address;
 
-    	addrlen = sizeof(address);
+    addrlen = sizeof(address);
 
 	// struct sockaddr_storage direccion_a_escuchar;
 	// socklen_t tamanio_direccion;
@@ -114,9 +113,12 @@ void atender_clientes(void* param) {
 			case ARCHIVO_TAREAS:
 				log_info(logger, "Recibido contenido del archivo\n");
 				printf("\tpid:%i. \n\tlongitud; %i. \n%s\n", mensaje_recibido->archivo_tareas->pid, mensaje_recibido->archivo_tareas->largo_texto, mensaje_recibido->archivo_tareas->texto);
-				result = gestionar_tareas(mensaje_recibido->archivo_tareas);
-				// result = 1 -> todo bien, 	result = 0 -> faltó memoria bro (se mató todo lo creado para la patota)
-				sleep(1);
+
+				if(gestionar_tareas(mensaje_recibido->archivo_tareas)){
+					enviar_codigo(EXITO, parametros->socket);
+				} else{
+					enviar_codigo(FALLO, parametros->socket);
+				}
 				break;
 
 			case PEDIR_TAREA:
@@ -136,28 +138,20 @@ void atender_clientes(void* param) {
 				break;
 
 			case RECIBIR_TCB:
-				// log_info(logger, "Recibo una tcb\n");
-				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
-				result = gestionar_tcb(mensaje_recibido->tcb);
-				if(result == 0){
-					// te he fallado
+				// log_info(logger, "Recibido tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
+				if(gestionar_tcb(mensaje_recibido->tcb)){
+					enviar_codigo(EXITO, parametros->socket);
+				} else{
+					enviar_codigo(FALLO, parametros->socket);
 				}
-				// result = 1 -> todo bien, 	result = 0 -> faltó memoria bro (se mató todo lo creado para la patota)
 				break;
 
 			case ACTUALIZAR:
-				// log_info(logger, "Recibo pedido de actualizar\n");
 				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y);
-				if(mensaje_recibido->tcb->estado_tripulante == 'F'){
-					if(eliminar_tcb(mensaje_recibido->tcb->TID)){
-						log_info(logger, "Mensaje de %i, termine mi trabajo \n", mensaje_recibido->tcb->TID);
-					}
-					else{
-						log_error(logger, "%i no pudo finalizar.\n", mensaje_recibido->tcb->TID);
-					}
-				}
-				else{
-					actualizar_tcb(mensaje_recibido->tcb);
+				if(actualizar_tcb(mensaje_recibido->tcb)){
+					log_info(logger, "Actualizado el TCB %i.", mensaje_recibido->tcb->TID);
+				} else{
+					log_error(logger, "No se pudo actualizar el TCB %i.", mensaje_recibido->tid);
 				}
 				break;
 
@@ -169,6 +163,7 @@ void atender_clientes(void* param) {
 					log_info(logger, "%i -KILLED", mensaje_recibido->tid);
 				}
 				else{
+					log_warning(logger, "No se pudo eliminar a %i");
 					enviar_codigo(FALLO, parametros->socket);
 				}
 
@@ -177,13 +172,13 @@ void atender_clientes(void* param) {
 			case LISTAR_POR_PID:
 				log_info(logger, "Recibido pedido de tripulantes.\n");
 
-				t_list* tcbs_de_esta_patota = list_create();
-				tcbs_de_esta_patota = buscar_tcbs_por_pid(mensaje_recibido->pid);
-
-				for(int i = 0; i < list_size(tcbs_de_esta_patota); i++){
-					t_TCB* aux = list_get(tcbs_de_esta_patota, i);
-					t_buffer* buffer = serializar_tcb(*aux);
-					empaquetar_y_enviar(buffer, RECIBIR_TCB, parametros->socket);
+				t_list* tcbs_de_esta_patota = buscar_tcbs_por_pid(mensaje_recibido->pid);
+				if(tcbs_de_esta_patota != NULL){
+					for(int i = 0; i < list_size(tcbs_de_esta_patota); i++){
+						t_TCB* aux = list_get(tcbs_de_esta_patota, i);
+						t_buffer* buffer = serializar_tcb(*aux);
+						empaquetar_y_enviar(buffer, RECIBIR_TCB, parametros->socket);
+					}
 				}
 
 				enviar_codigo(EXITO, parametros->socket);
@@ -482,7 +477,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 	}
 }
 
-int eliminar_tcb(int tid){ // devuelve 1 si todo ok, 0 si falló algo
+int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 	log_debug(logger,"Comenzó el sacrificio del TCB TID: %d", tid);
 	int pid = tid / 10000;
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){

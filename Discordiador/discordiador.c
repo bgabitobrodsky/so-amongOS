@@ -52,10 +52,17 @@ int sistema_activo = 1;
 int testeo = DISCORDIADOR;
 
 void test_config_discordiador();
+
+// TODO: ELIMINAR PCBS AL MORIR ULTIMO TRIPULANTE Y EXPULSAR TRIPULANTE
+
 enum {
     GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
 };
 
+void* eliminar_patota_de_lista(t_list* lista, int elemento);
+int soy_el_ultimo_de_mi_especie(int tid);
+void test_soy_el_ultimo_de_mi_especie();
+void test_eliminar_patota_de_lista();
 
 int min (int a, int b) {
 	if (a <= b) {
@@ -69,8 +76,11 @@ int min (int a, int b) {
 }
 
 void actualizar_tripulante(t_tripulante* un_tripulante, int socket){
-    t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
-    empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
+	if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+		t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
+		empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
+	}
+
 }
 
 int main() {
@@ -91,7 +101,11 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    iniciar_patota("INICIAR_PATOTA 1 Random.ims 3|3");
+    //iniciar_patota("INICIAR_PATOTA 2 Random.ims 1|1 3|4");
+    //expulsar_tripulante("EXPULSAR_TRIPULANTE 10001");
+
+    // iniciar_patota("INICIAR_PATOTA 1 oxigeno.txt 5|5");
+    // iniciar_patota("INICIAR_PATOTA 3 Random.ims 3|3");
     // iniciar_patota("INICIAR_PATOTA 2 Random.ims 1|1");
 
     // test_iniciar_planificacion();
@@ -136,7 +150,7 @@ int correr_tests(int enumerado) {
     return 1;
 }
 
-void iniciar_patota(char* leido) {
+int iniciar_patota(char* leido) {
 
     char** palabras = string_split(leido, " ");
     int cantidadTripulantes = atoi(palabras[1]);
@@ -155,13 +169,35 @@ void iniciar_patota(char* leido) {
     if (archivo_tareas != NULL){
         enviar_archivo_tareas(archivo_tareas, patota->PID, socket_a_mi_ram_hq);
     }
-    log_debug(logger, "Enviado archivo a ram.");
+    t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+
+	if(respuesta->codigo_operacion == EXITO){
+		log_info(logger, "Cargado el archivo en memmoria ");
+		//free(respuesta);
+	} else{
+		log_warning(logger, "No hay memoria para el archivo");
+		//free(respuesta);
+		return 0;
+	}
+
     t_tripulante* t_aux;
 
     while (palabras[i+3] != NULL){
         printf("POSICION %d: %s \n", i+1, palabras[i+3]);
         t_aux = crear_puntero_tripulante(((patota->PID)*10000) + i+1, palabras[i+3]);
         enviar_tripulante_a_ram(*t_aux, socket_a_mi_ram_hq);
+
+        respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+
+    	if(respuesta->codigo_operacion == EXITO){
+    		log_info(logger, "Cargado el TCB en memmoria ");
+    		//free(respuesta);
+    	} else{
+    		log_warning(logger, "No hay memoria para el TCB");
+    		//free(respuesta);
+    		return 0;
+    	}
+
         log_debug(logger, "enviado tripulante %i a ram", t_aux->TID);
         list_add(lista_tripulantes, t_aux);
         monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
@@ -176,6 +212,18 @@ void iniciar_patota(char* leido) {
         printf("POSICION %d: 0|0\n", j);
         t_aux = crear_puntero_tripulante(((patota->PID)*10000) + j, "0|0");
         enviar_tripulante_a_ram(*t_aux, socket_a_mi_ram_hq);
+
+        respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+
+    	if(respuesta->codigo_operacion == EXITO){
+    		log_info(logger, "Cargado el TCB en memmoria ");
+    		//free(respuesta);
+    	} else{
+    		log_warning(logger, "No hay memoria para el TCB");
+    		//free(respuesta);
+    		return 0;
+    	}
+
         log_debug(logger, "enviado tripulante %i a ram", t_aux->TID);
 
         list_add(lista_tripulantes, t_aux);
@@ -188,6 +236,8 @@ void iniciar_patota(char* leido) {
     log_debug(logger, "enviados tripulantes a ram");
     // free(patota); // no liberar
     liberar_puntero_doble(palabras);
+
+    return 1;
 }
 
 
@@ -205,7 +255,7 @@ void iniciar_planificacion() {
 }
 
 void planificador(){
-
+	// TODO si un tripulante se bloquea, lo tengo que sacar de la lista de EXEC
 	log_info(logger, "Planificando");
     while(planificacion_activa){
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
@@ -264,12 +314,13 @@ void tripulante(t_tripulante* un_tripulante){
 					else{
 						realizar_tarea(un_tripulante);
 						un_tripulante->quantum_restante--;
-						log_trace(logger, "%i Trabajo muy duro, como un esclavo: quantum restante %i", un_tripulante->TID, un_tripulante->quantum_restante);
+						log_debug(logger, "%i Trabaaajo muy duuro, como un esclaaaaavo: quantum restante %i", un_tripulante->TID, un_tripulante->quantum_restante);
 					}
 
 				} else {
 					un_tripulante->estado_tripulante = estado_tripulante[READY];
-					monitor_lista_dos_parametros(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
+					monitor_lista_dos_parametros(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*
+							) un_tripulante->TID);
 					monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
 					log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
 					// TODO: actualizar socket
@@ -301,9 +352,19 @@ void conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket){
 void morir(t_tripulante* un_tripulante, int socket){
     // YA ESTA ACTUALIZADO EN RAM, ASI QUE NO HACE FALTA ACTUALIZAR AHI
     eliminar_tripulante_de_lista(lista_tripulantes, un_tripulante->TID);
+    // TODO ELIMINAR TRIPULANTES DE TODAS LAS LISTAS NEW READY EXEC Y BLOCK, Y BLOCK EMER
+    // en caso de EXPULSAR
+    eliminar_tripulante_de_lista(lista_tripulantes_exec, un_tripulante->TID);
     // monitor_lista_dos_parametros(sem_lista_tripulantes, (void*) eliminar_tripulante_de_lista, lista_tripulantes, un_tripulante->TID);
-    free(un_tripulante);
 
+    if(soy_el_ultimo_de_mi_especie(un_tripulante->TID)){
+    	eliminar_patota_de_lista(lista_patotas, un_tripulante->TID/10000);
+    	log_trace(logger, "Muere el ultimo de la patota %i", un_tripulante->TID/10000);
+    }
+
+
+    // free(un_tripulante); // error de doble free en algun lado
+    pthread_exit(NULL);
 }
 
 void iniciar_tripulante(t_tripulante* un_tripulante){
@@ -311,7 +372,11 @@ void iniciar_tripulante(t_tripulante* un_tripulante){
 
     if (un_tripulante->estado_tripulante == estado_tripulante[NEW]){
         while(planificacion_activa == 0){
-            usleep(1);
+            // por si lo matan antes de iniciar la planificacion
+            if(un_tripulante->estado_tripulante == estado_tripulante[EXIT]){
+            	// TODO socket
+            	morir(un_tripulante, socket_a_mi_ram_hq);
+            }
         }
         enlistarse(un_tripulante);
     }
@@ -393,7 +458,7 @@ int llegue(t_tripulante* un_tripulante){
 }
 
 void atomic_llegar_a_destino(t_tripulante* un_tripulante){
-    log_trace(logger, "%i ando en %i|%i.", un_tripulante->TID, un_tripulante->coord_x, un_tripulante->coord_y);
+    log_trace(logger, "%i Me encuentro en %i|%i.", un_tripulante->TID, un_tripulante->coord_x, un_tripulante->coord_y);
 
     uint32_t origen_x = un_tripulante->coord_x;
     uint32_t origen_y = un_tripulante->coord_y;
@@ -405,25 +470,24 @@ void atomic_llegar_a_destino(t_tripulante* un_tripulante){
 
     if(planificacion_activa == 1 && un_tripulante->estado_tripulante != 'V'){
 
-        log_debug(logger, "%i Camino! Distancia: %i!%i", un_tripulante->TID, distancia_x, distancia_y);
-
         sleep(RETARDO_CICLO_CPU);
 
         if(distancia_x != 0){
 
             destino_x > origen_x ? un_tripulante->coord_x++ : un_tripulante->coord_x--;
-            // TODO: socket
+            // TODO: socket, revisar si puedo pasarlo mas abajo
             actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
             distancia_x--;
 
         } else if (distancia_y != 0){
 
             destino_y > origen_y ? un_tripulante->coord_y++ : un_tripulante->coord_y--;
-            // TODO: socket
+            // TODO: socket, revisar si puedo pasarlo mas abajo
             actualizar_tripulante(un_tripulante, socket_a_mi_ram_hq);
             distancia_y--;
 
         }
+        log_trace(logger, "%i Distancia restante: %i!%i", un_tripulante->TID, distancia_x, distancia_y);
     }
 }
 
@@ -501,7 +565,7 @@ void leer_consola() {
             }
         }
 
-        free(leido);
+        //free(leido);
 
     } while (comando != EXIT);
 
@@ -535,10 +599,17 @@ void expulsar_tripulante(char* leido) {
 
     if(respuesta->codigo_operacion == EXITO){
         if(esta_tripulante_en_lista(lista_tripulantes, tid_tripulante_a_expulsar)){
-            t_tripulante* t_aux = eliminar_tripulante_de_lista(lista_tripulantes, tid_tripulante_a_expulsar);
-            t_aux->estado_tripulante = estado_tripulante[EXIT];
+
+        	bool obtener_tripulante(void* elemento){
+        		return (((t_tripulante*) elemento)->TID == tid_tripulante_a_expulsar);
+        	}
+
+        	t_tripulante* t_aux = list_find(lista_tripulantes, obtener_tripulante);
+
             log_info(logger, "Tripulante expulsado, TID: %d\n", tid_tripulante_a_expulsar);
             log_info(logger, "Lugar del deceso: %i|%i\n", t_aux->coord_x, t_aux->coord_y);
+
+            t_aux->estado_tripulante = estado_tripulante[EXIT];
         }
         else{
             log_info(logger, "Dicho tripulante no existe en Discordiador.\n");
@@ -595,6 +666,7 @@ void listar_tripulantes() {
 
     t_patota* aux_p;
     t_tripulante* aux_t;
+    // TODO:LIBERAR
     t_list* lista_tripulantes_de_una_patota;
 
     int i,j;
@@ -651,5 +723,72 @@ void test_config_discordiador(){
     log_warning(logger, "%i", QUANTUM);
     log_warning(logger, "%i", RETARDO_CICLO_CPU);
     log_warning(logger, "%i", DURACION_SABOTAJE);
+
+}
+
+// TODO capaz mejorar
+int soy_el_ultimo_de_mi_especie(int tid){
+    bool t_misma_patota(void* elemento1){
+    	return (tid - (((t_tripulante*) elemento1)->TID)) < 10000;
+    }
+
+    int respuesta = list_count_satisfying(lista_tripulantes, t_misma_patota);
+    // 0 porque elimino el tripulante de la lista antes de verificar esto
+    // si lo eliminara despues de verificar, seria 1
+    return respuesta == 0;
+}
+
+
+
+void* eliminar_patota_de_lista(t_list* lista, int elemento){
+
+    bool contains(void* elemento1){
+        return (elemento == ((t_patota*) elemento1)->PID);
+    }
+
+    t_patota* aux = list_remove_by_condition(lista, contains);
+    return aux;
+}
+
+void test_soy_el_ultimo_de_mi_especie(){
+
+    t_tripulante* trip_1 = malloc(sizeof(t_tripulante));
+    trip_1->TID = 10001;
+    t_tripulante* trip_2 = malloc(sizeof(t_tripulante));
+    trip_2->TID = 10002;
+	t_tripulante* trip_3 = malloc(sizeof(t_tripulante));
+	trip_3->TID = 20001;
+    t_tripulante* trip_4 = malloc(sizeof(t_tripulante));
+    trip_4->TID = 20002;
+    t_tripulante* trip_5 = malloc(sizeof(t_tripulante));
+    trip_5->TID = 30001;
+
+    list_add(lista_tripulantes, trip_1);
+    list_add(lista_tripulantes, trip_2);
+    list_add(lista_tripulantes, trip_3);
+    list_add(lista_tripulantes, trip_4);
+    list_add(lista_tripulantes, trip_5);
+
+	printf("trip 1: %i", soy_el_ultimo_de_mi_especie(10001));
+	printf("trip 2: %i", soy_el_ultimo_de_mi_especie(10002));
+	printf("trip 3: %i", soy_el_ultimo_de_mi_especie(20001));
+	printf("trip 4: %i", soy_el_ultimo_de_mi_especie(20002));
+	printf("trip 5: %i", soy_el_ultimo_de_mi_especie(30001));
+	eliminar_tripulante_de_lista(lista_tripulantes, 20002);
+	printf("trip 3: %i", soy_el_ultimo_de_mi_especie(20001));
+
+}
+
+void test_eliminar_patota_de_lista(){
+
+	t_patota* patota = malloc(sizeof(t_patota));
+    patota->PID = 1;
+    list_add(lista_patotas, patota);
+
+    printf("una patota en la lista %i", list_size(lista_patotas));
+    printf("la elimino");
+    t_patota* otra_patota = eliminar_patota_de_lista(lista_patotas, 1);
+    printf("cero patotas en la lista %i", list_size(lista_patotas));
+    printf("pid de la eliminada: %i", otra_patota->PID);
 
 }
