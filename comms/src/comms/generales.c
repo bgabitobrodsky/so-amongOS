@@ -132,7 +132,7 @@ void* monitor_cola_pop_or_peek(pthread_mutex_t semaforo, void*(*operacion)(t_que
 
 }
 
-void* monitor_lista_dos_parametros(pthread_mutex_t semaforo, void*(*operacion)(t_list*, void*), t_list* lista, void* elemento) {
+void* monitor_lista(pthread_mutex_t semaforo, void*(*operacion)(t_list*, void*), t_list* lista, void* elemento) {
 	// TIENE RETORNO
 
 	void* aux;

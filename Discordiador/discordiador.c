@@ -7,6 +7,8 @@
  Description : El discordiador
  ============================================================================
  */
+// TODO: en cada cambio de estado eliminar de las otras listas
+// TODO: Destruir listas
 
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -34,16 +36,17 @@ t_list* lista_patotas;
 t_list* lista_tripulantes;
 t_list* lista_tripulantes_new;
 t_list* lista_tripulantes_exec;
-t_list* lista_tripulantes_block;
-t_list* lista_tripulantes_exit;
 
 t_queue* cola_tripulantes_ready;
+t_queue* cola_tripulantes_block;
+t_queue* cola_tripulantes_block_emergencia;
 
+pthread_mutex_t sem_lista_tripulantes;
 pthread_mutex_t sem_lista_new;
-pthread_mutex_t sem_lista_exec;
-pthread_mutex_t sem_lista_block;
-pthread_mutex_t sem_lista_exit;
 pthread_mutex_t sem_cola_ready;
+pthread_mutex_t sem_lista_exec;
+pthread_mutex_t sem_cola_block;
+pthread_mutex_t sem_cola_block_emergencia;
 
 // Variables de discordiador
 char estado_tripulante[6] = {'N', 'R', 'E', 'B', 'F', 'V'};
@@ -61,25 +64,6 @@ void* eliminar_patota_de_lista(t_list* lista, int elemento);
 int soy_el_ultimo_de_mi_especie(int tid);
 void test_soy_el_ultimo_de_mi_especie();
 void test_eliminar_patota_de_lista();
-
-int min (int a, int b) {
-    if (a <= b) {
-        log_debug(logger, "el menor es la tarea");
-        return a;
-    }
-    else {
-        log_debug(logger, "el menor es el quantum");
-        return b;
-    }
-}
-
-void actualizar_tripulante(t_tripulante* un_tripulante, int socket){
-    if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
-        t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
-        empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
-    }
-
-}
 
 int main() {
     if(testeo != DISCORDIADOR)
@@ -198,7 +182,7 @@ int iniciar_patota(char* leido) {
 
         log_debug(logger, "enviado tripulante %i a ram", t_aux->TID);
         list_add(lista_tripulantes, t_aux);
-        monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
+        monitor_lista(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
 
         log_trace(logger, "Tripulante creado:\n tid: %i, estado: %c, pos: %i %i\n", (int)t_aux->TID, (char) t_aux->estado_tripulante, (int) t_aux->coord_x, (int) t_aux->coord_y);
         crear_hilo_tripulante(t_aux);
@@ -225,7 +209,7 @@ int iniciar_patota(char* leido) {
         log_debug(logger, "enviado tripulante %i a ram", t_aux->TID);
 
         list_add(lista_tripulantes, t_aux);
-        monitor_lista_dos_parametros(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
+        monitor_lista(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
 
         log_trace(logger, "Tripulante creado:\n tid: %i, estado: %c, pos: %i %i\n", (int)t_aux->TID, (char) t_aux->estado_tripulante, (int) t_aux->coord_x, (int) t_aux->coord_y);
         crear_hilo_tripulante(t_aux);
@@ -242,8 +226,11 @@ int iniciar_patota(char* leido) {
 void iniciar_planificacion() {
 
     planificacion_activa = 1;
+    log_debug(logger, "\nTripulantes en NEW: %i\n", list_size(lista_tripulantes_new));
     log_debug(logger, "\nTripulantes en READY: %i\n", queue_size(cola_tripulantes_ready));
     log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
+    log_debug(logger, "\nTripulantes en BLOQ I/O: %i\n", queue_size(cola_tripulantes_block));
+    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block));
     log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
 
     pthread_t t_planificador;
@@ -253,7 +240,7 @@ void iniciar_planificacion() {
 }
 
 void planificador(){
-    // TODO si un tripulante se bloquea, lo tengo que sacar de la lista de EXEC
+
     log_info(logger, "Planificando");
     while(planificacion_activa){
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
@@ -261,18 +248,16 @@ void planificador(){
             if(comparar_strings(ALGORITMO, "FIFO")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
                 aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
-                monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
-                actualizar_tripulante(aux_tripulante , socket_a_mi_ram_hq);
-                // log_info(logger, "Muevo %i a EXEC", aux_tripulante->TID);
+                monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
+                // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
 
             else if(comparar_strings(ALGORITMO, "RR")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
                 aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 aux_tripulante->quantum_restante = QUANTUM;
-                monitor_lista_dos_parametros(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
-                actualizar_tripulante(aux_tripulante , socket_a_mi_ram_hq);
-                // log_info(logger, "Muevo %i a EXEC", aux_tripulante->TID);
+                monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
+                // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
         }
     }
@@ -286,12 +271,16 @@ void tripulante(t_tripulante* un_tripulante){
 
     usleep(500);
     log_trace(logger, "Iniciando tripulante: %i", un_tripulante->TID);
+    char estado_guardado = estado_tripulante[NEW];
     iniciar_tripulante(un_tripulante, st_ram);
+    estado_guardado = estado_tripulante[READY];
 
     if(comparar_strings(ALGORITMO, "FIFO")){
         log_info(logger, "ALGORITMO FIFO\n");
         while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+            verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
             if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
+
                 if(planificacion_activa == 0){
                     // este espacio vacio es EXACTAMENTE lo que tiene que estar
                 }
@@ -299,10 +288,12 @@ void tripulante(t_tripulante* un_tripulante){
                     realizar_tarea(un_tripulante, st_ram);
                 }
             }
+            verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
         }
     } else if (comparar_strings(ALGORITMO, "RR")){
         log_info(logger, "ALGORITMO RR\n");
         while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+            verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
             if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
                 if(un_tripulante->quantum_restante > 0){
                     if(planificacion_activa == 0){
@@ -316,17 +307,19 @@ void tripulante(t_tripulante* un_tripulante){
 
                 } else {
                     un_tripulante->estado_tripulante = estado_tripulante[READY];
-                    monitor_lista_dos_parametros(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
+                    monitor_lista(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
                     monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
                     log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
                     actualizar_tripulante(un_tripulante, st_ram);
                 }
             }
+        verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
         }
     }
 
     close(st_ram);
     // close(st_mongo);
+
     morir(un_tripulante);
 
 }
@@ -339,19 +332,19 @@ void conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket){
     }
     else if(tarea->codigo_operacion == FALLO){
         un_tripulante->estado_tripulante = estado_tripulante[EXIT];
-        monitor_lista_dos_parametros(sem_lista_exec, (void*) eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
-        monitor_lista_dos_parametros(sem_lista_exit, (void*) list_add, lista_tripulantes_exit, un_tripulante);
+        monitor_lista(sem_lista_exec, (void*) eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
         actualizar_tripulante(un_tripulante, socket);
     }
 }
 
 void morir(t_tripulante* un_tripulante){
     // YA ESTA ACTUALIZADO EN RAM, ASI QUE NO HACE FALTA ACTUALIZAR AHI
-    eliminar_tripulante_de_lista(lista_tripulantes, un_tripulante->TID);
-    // TODO ELIMINAR TRIPULANTES DE TODAS LAS LISTAS NEW READY EXEC Y BLOCK, Y BLOCK EMER
-    // en caso de EXPULSAR
-    eliminar_tripulante_de_lista(lista_tripulantes_exec, un_tripulante->TID);
-    // monitor_lista_dos_parametros(sem_lista_tripulantes, (void*) eliminar_tripulante_de_lista, lista_tripulantes, un_tripulante->TID);
+
+    quitar_tripulante_de_listas(un_tripulante);
+
+    if(esta_tripulante_en_lista(lista_tripulantes, un_tripulante->TID)){
+        monitor_lista(sem_lista_tripulantes, (void*) eliminar_tripulante_de_lista, lista_tripulantes, (void*) un_tripulante->TID);
+    }
 
     if(soy_el_ultimo_de_mi_especie(un_tripulante->TID)){
         eliminar_patota_de_lista(lista_patotas, un_tripulante->TID/10000);
@@ -359,7 +352,7 @@ void morir(t_tripulante* un_tripulante){
     }
 
 
-    // free(un_tripulante); // error de doble free en algun lado
+    free(un_tripulante); // error de doble free en algun lado
     pthread_exit(NULL);
 }
 
@@ -400,7 +393,7 @@ void enlistarse(t_tripulante* un_tripulante, int socket){
     actualizar_tripulante(un_tripulante, socket);
     log_debug(logger, "\nEstado cambiado a READY\n");
 
-    monitor_lista_dos_parametros(sem_lista_new, (void*)eliminar_tripulante_de_lista, lista_tripulantes_new, (void*) un_tripulante->TID);
+    monitor_lista(sem_lista_new, (void*)eliminar_tripulante_de_lista, lista_tripulantes_new, (void*) un_tripulante->TID);
     monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
 
 }
@@ -408,7 +401,7 @@ void enlistarse(t_tripulante* un_tripulante, int socket){
 void realizar_tarea(t_tripulante* un_tripulante, int socket){
 
     int codigo_tarea = identificar_tarea(un_tripulante->tarea.nombre);
-    log_info(logger, "%i mi tarea: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
+    log_trace(logger, "%i mi tarea: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
 
     // si el estado es distinto a bloqueado por ES
     switch(codigo_tarea){
@@ -719,7 +712,7 @@ void test_config_discordiador(){
 
 int soy_el_ultimo_de_mi_especie(int tid){
     bool t_misma_patota(void* elemento1){
-        return (tid - (((t_tripulante*) elemento1)->TID)) < 10000;
+        return tid/10000 == (((t_tripulante*) elemento1)->TID)/10000;
     }
 
     int respuesta = list_count_satisfying(lista_tripulantes, t_misma_patota);
@@ -727,7 +720,6 @@ int soy_el_ultimo_de_mi_especie(int tid){
     // si lo eliminara despues de verificar, seria 1
     return respuesta == 0;
 }
-
 
 
 void* eliminar_patota_de_lista(t_list* lista, int elemento){
@@ -781,4 +773,43 @@ void test_eliminar_patota_de_lista(){
     printf("cero patotas en la lista %i", list_size(lista_patotas));
     printf("pid de la eliminada: %i", otra_patota->PID);
 
+}
+
+void quitar_tripulante_de_listas(t_tripulante* un_tripulante){
+
+    if(esta_tripulante_en_lista(lista_tripulantes_new, un_tripulante->TID)){
+        monitor_lista(sem_lista_new, (void*) eliminar_tripulante_de_lista, lista_tripulantes_new, (void*) un_tripulante->TID);
+    }
+
+    if(esta_tripulante_en_lista(cola_tripulantes_ready->elements, un_tripulante->TID)){
+        monitor_lista(sem_cola_ready, (void*) eliminar_tripulante_de_lista, cola_tripulantes_ready->elements, (void*) un_tripulante->TID);
+    }
+
+    if(esta_tripulante_en_lista(lista_tripulantes_exec, un_tripulante->TID)){
+        monitor_lista(sem_lista_exec, (void*) eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
+    }
+
+    if(esta_tripulante_en_lista(cola_tripulantes_block->elements, un_tripulante->TID)){
+        monitor_lista(sem_cola_block, (void*) eliminar_tripulante_de_lista, cola_tripulantes_block->elements, (void*) un_tripulante->TID);
+    }
+
+    if(esta_tripulante_en_lista(cola_tripulantes_block_emergencia->elements, un_tripulante->TID)){
+        monitor_lista(sem_cola_block_emergencia, (void*) eliminar_tripulante_de_lista, cola_tripulantes_block_emergencia->elements, (void*) un_tripulante->TID);
+    }
+
+}
+
+void verificar_cambio_estado(char* estado_guardado, t_tripulante* un_tripulante, int socket){
+    if(*estado_guardado != un_tripulante->estado_tripulante){
+        log_warning(logger, "%i estoy en %c y cambio a %c", un_tripulante->TID, *estado_guardado, un_tripulante->estado_tripulante);
+        actualizar_tripulante(un_tripulante, socket);
+        *estado_guardado = un_tripulante->estado_tripulante;
+    }
+}
+
+void actualizar_tripulante(t_tripulante* un_tripulante, int socket){
+    if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+        t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
+        empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
+    }
 }

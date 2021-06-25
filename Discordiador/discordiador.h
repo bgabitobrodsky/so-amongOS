@@ -38,7 +38,9 @@ void conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket);
 int llegue(t_tripulante* un_tripulante);
 void atomic_llegar_a_destino(t_tripulante* un_tripulante, int socket);
 void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante, int socket);
-
+void quitar_tripulante_de_listas(t_tripulante* un_tripulante);
+void verificar_cambio_estado(char* estado_guardado, t_tripulante* un_tripulante, int socket);
+void actualizar_tripulante(t_tripulante* un_tripulante, int socket);
 
 // FUNCIONES AUXILIARES
 void leer_consola();

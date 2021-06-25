@@ -202,8 +202,6 @@ void iniciar_listas() {
 	lista_tripulantes_exec = list_create();
 	lista_pids = list_create();
 	lista_patotas = list_create();
-	lista_tripulantes_block = list_create();
-	lista_tripulantes_exit = list_create();
 	lista_tripulantes = list_create();
 
 }
@@ -211,16 +209,18 @@ void iniciar_listas() {
 void iniciar_colas() {
 
 	cola_tripulantes_ready = queue_create();
-
+	cola_tripulantes_block = queue_create();
+	cola_tripulantes_block_emergencia = queue_create();
 }
 
 void iniciar_semaforos(){
 
+	pthread_mutex_init(&sem_lista_tripulantes, NULL);
 	pthread_mutex_init(&sem_lista_exec, NULL);
 	pthread_mutex_init(&sem_lista_new, NULL);
 	pthread_mutex_init(&sem_cola_ready, NULL);
-	pthread_mutex_init(&sem_lista_block, NULL);
-	pthread_mutex_init(&sem_lista_exit, NULL);
+	pthread_mutex_init(&sem_cola_block, NULL);
+	pthread_mutex_init(&sem_cola_block_emergencia, NULL);
 
 }
 

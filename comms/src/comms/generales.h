@@ -27,6 +27,6 @@ int sonIguales(int elemento1, int elemento2);
 void monitor_cola_push(pthread_mutex_t semaforo, t_queue* cola, void* elemento_a_insertar);
 void* monitor_cola_pop(pthread_mutex_t semaforo, t_queue* cola);
 void* monitor_cola_pop_or_peek(pthread_mutex_t semaforo, void*(*operacion)(t_queue*), t_queue* cola);
-void* monitor_lista_dos_parametros(pthread_mutex_t semaforo, void*(*operacion)(t_list*, void*), t_list* lista, void* elemento);
+void* monitor_lista(pthread_mutex_t semaforo, void*(*operacion)(t_list*, void*), t_list* lista, void* elemento);
 
 #endif

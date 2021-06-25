@@ -1,7 +1,12 @@
 # No matar a rey de fuego
 
 ### Registro de cambios
+25/06/2021
++ Ahora los tripulantes actualizan su estado a RAM solo si lo cambiaron.
++ Ahora cada tripulante tiene su propio socket.
+
 24/06/2021
++ Implementado DUMP de memoria.
 + Corregidos los puertos en la config.
 
 23/06/2021

@@ -55,19 +55,20 @@ extern char estado_tripulante[6];
 
 extern t_list* lista_pids;
 extern t_list* lista_patotas;
+extern t_list* lista_tripulantes;
 extern t_list* lista_tripulantes_new;
 extern t_list* lista_tripulantes_exec;
-extern t_list* lista_tripulantes_block;
-extern t_list* lista_tripulantes_exit;
-extern t_list* lista_tripulantes;
 
 extern t_queue* cola_tripulantes_ready;
+extern t_queue* cola_tripulantes_block;
+extern t_queue* cola_tripulantes_block_emergencia;
 
-extern pthread_mutex_t sem_lista_exec;
+extern pthread_mutex_t sem_lista_tripulantes;
 extern pthread_mutex_t sem_lista_new;
 extern pthread_mutex_t sem_cola_ready;
-extern pthread_mutex_t sem_lista_block;
-extern pthread_mutex_t sem_lista_exit;
+extern pthread_mutex_t sem_lista_exec;
+extern pthread_mutex_t sem_cola_block;
+extern pthread_mutex_t sem_cola_block_emergencia;
 
 // Funciones PRINCIPALES
 int iniciar_patota(char* leido);
