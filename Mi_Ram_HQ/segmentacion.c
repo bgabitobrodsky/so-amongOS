@@ -648,16 +648,23 @@ void dump_segmentacion(){
 
     char* path = string_from_format("./dump/Dump_%d.dump", (int) time(NULL));
     FILE* file = fopen(path,"w");
+    free(path);
 
     void impresor_dump(void* un_segmento){
         segmento_dump_wrapper* seg = (segmento_dump_wrapper*) un_segmento;
-        //log_debug(logger,"Proceso: %d\t Segmento: %d\t Inicio: 0x%.4x\t Tam: %db", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
         char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: 0x%.4x\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
         txt_write_in_file(file, dump_row);
         free(dump_row);
     }
 
     txt_write_in_file(file, string_from_format("Dump: %s\n", temporal_get_string_time("%d/%m/%y %H:%M:%S")));
-    //log_debug(logger,"Dump: %s", temporal_get_string_time("%d/%m/%y %H:%M:%S"));
     list_iterate(dump_segmentos, impresor_dump);
+    txt_close_file(file);
+
+    void destructor(void* un_segmento){
+        segmento_dump_wrapper* seg = (segmento_dump_wrapper*) un_segmento;
+        free(seg->segmento);
+        free(seg);
+    }
+    list_destroy_and_destroy_elements(dump_segmentos,destructor);
 }
