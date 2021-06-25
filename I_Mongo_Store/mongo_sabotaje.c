@@ -112,6 +112,7 @@ int verificar_blocks(t_TCB* tripulante) {
     // TODO: No se entiende enunciado
 }
 
+// TODO: Hacer todo lo de abajo
 void recorrer_recursos(int* lista_bloques_ocupados) {
     // Recorre las listas de las metadatas de los recursos y va anotando en la lista que bloques estan ocupados
 }
@@ -121,8 +122,16 @@ void recorrer_bitacoras(int* lista_bloques_ocupados) {
 }
 
 void sortear(int* lista_bloques_ocupados) {
-    // Ordena la lista para mas facil comparacion con bitmap
-}
+    int i, j;
+    for (i = 0; i < n-1; i++) {
+        for (j = 0; j < n-i-1; j++) {
+            if (lista_bloques_ocupados[j] > lista_bloques_ocupados[j+1]) {
+                int temp = lista_bloques_ocupados[j];
+                lista_bloques_ocupados[j] = lista_bloques_ocupados[j+1];
+                lista_bloques_ocupados[j+1] = temp;
+            }
+        }
+    }
 
 int bloques_ocupados_difieren(int* lista_bloques_ocupados) {
     // Compara lista contra el bitmap, apenas difieren devuelve 1 (como true), sino 0
