@@ -64,6 +64,11 @@ t_buffer* serializar_tarea(t_tarea tarea) {
     return buffer;
 }
 
+t_buffer* serializar_posicion(int x, int y) { //TODO
+	t_buffer* buffer = malloc((sizeof(t_buffer)));
+	return buffer;
+}
+
 // Nombre medio raro, serializa una cantidad de las cosas del filesystem (int, puede ser negativo)
 t_buffer* serializar_cantidad(int cantidad) {
     t_buffer* buffer = malloc((sizeof(t_buffer)));

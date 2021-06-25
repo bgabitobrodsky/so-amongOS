@@ -1,7 +1,7 @@
 #ifndef I_MONGO_TRIPULANTES_H_
 #define I_MONGO_TRIPULANTES_H_
 
-#include "mongo_blocks.h"
+#include "mongo_archivos.h"
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;

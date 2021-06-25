@@ -122,12 +122,14 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 void sabotaje(int socket_discordiador) {
 	sigset_t set;
 	sigemptyset(&set);
+	sigaddset(&set, SIGUSR1);
+	int sig;
 	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {
 
 		// Se espera que set reciva la signal correspondiente
-		if (sigwait(&set) == SIGUSR1) { // Revisar funcionamiento
+		if (sigwait(&set, &sig) == SIGUSR1) { // Revisar funcionamiento
 			log_info(logger_mongo, "Se detecto un sabotaje.\n");
 			// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
 			enviar_codigo(SABOTAJE, socket_discordiador);
@@ -148,7 +150,7 @@ void sabotaje(int socket_discordiador) {
 				log_info(logger_mongo, "Se reparo el sabotaje.\n");
 				log_info(logger_mongo, "Se habia saboteado %s.\n", rompio(rotura));
 				// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
-				enviar_codigo(REPARADO, socket_discordiador);
+				enviar_codigo(LISTO, socket_discordiador);
 
 				free(mensaje); 
 			}

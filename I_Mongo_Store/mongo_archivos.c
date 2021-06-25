@@ -19,11 +19,11 @@ void inicializar_archivos() { // TODO: Puede romper
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
 	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	char* path_superbloque = malloc((strlen(path_directorio)+1) + strlen("/SuperBloque.ims"));
+	path_superbloque = malloc((strlen(path_directorio)+1) + strlen("/SuperBloque.ims"));
 	sprintf(path_superbloque, "%s/SuperBloque.ims", path_directorio);
 
 	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	char* path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
+	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
     int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
@@ -179,18 +179,6 @@ int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, i
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
-void actualizar_MD5(FILE* archivo) {
-	uint32_t tam_archivo = tamanio_archivo(archivo);
-	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
-	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
-	char tipo = caracter_llenado_archivo(archivo);
-
-	char* path_archivo = conseguir_path_recurso_archivo(archivo);
-	archivo = fopen(path_archivo , "w+"); //Se actualiza struct?
-
-	escribir_archivo_recurso(archivo, tam_archivo, cant_bloques, lista_bloques);
-}
-
 void alterar(int codigo_archivo, int cantidad) {  
 	if (cantidad >= 0){
 		agregar(codigo_archivo, cantidad);
@@ -203,6 +191,7 @@ void alterar(int codigo_archivo, int cantidad) {
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
+	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
 	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
@@ -226,12 +215,13 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
-	actualizar_MD5(archivo);
+	escribir_archivo_recurso(archivo, tam_archivo + cantidad, cant_bloques, lista_bloques);
 
     pthread_mutex_unlock(&mutex_blocks);
 }
 
 void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de fopens, revisar
+	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
 	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
@@ -253,7 +243,7 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
-	actualizar_MD5(archivo);
+	escribir_archivo_recurso(archivo, tam_archivo - cantidad, cant_bloques, lista_bloques);
 
     pthread_mutex_unlock(&mutex_blocks);
 }
@@ -297,6 +287,22 @@ char* conseguir_path_recurso(int codigo_archivo) {
 	}
 	log_error(logger_mongo, "Archivo de recurso no encontrado");
 	return "No encontrado";
+}
+
+FILE* conseguir_archivo_recurso(int codigo) {
+	switch(codigo) {
+	case BASURA:
+		return recurso.basura;
+		break;
+	case COMIDA:
+		return recurso.comida;
+		break;
+	case OXIGENO:
+		return recurso.oxigeno;
+		break;
+	}
+	log_error(logger_mongo, "Archivo de recurso no encontrado");
+	return NULL;
 }
 
 FILE* conseguir_archivo_char(char tipo) {
@@ -403,7 +409,7 @@ uint32_t cantidad_bloques_recurso(FILE* archivo) {
 }
 
 uint32_t* lista_bloques_recurso(FILE* archivo) {
-	cantidad_bloques_recurso(archivo);
+	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
 
 	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);

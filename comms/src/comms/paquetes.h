@@ -32,6 +32,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor);
 t_TCB* desserializar_tcb(t_buffer* buffer);
 t_tarea* desserializar_tarea(t_buffer* buffer);
 void eliminar_paquete(t_paquete* paquete);
+t_buffer* serializar_posicion(int x, int y);
 t_buffer* serializar_cantidad(int cantidad);
 
 
