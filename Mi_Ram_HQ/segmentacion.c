@@ -663,7 +663,6 @@ void dump_segmentacion(){
 
     void destructor(void* un_segmento){
         segmento_dump_wrapper* seg = (segmento_dump_wrapper*) un_segmento;
-        free(seg->segmento);
         free(seg);
     }
     list_destroy_and_destroy_elements(dump_segmentos,destructor);
