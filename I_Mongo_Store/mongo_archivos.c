@@ -81,12 +81,6 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 	inicializar_mapa();
 }
 
-// Verificar bitmap de superbloque
-// Elegir el primer libre
-// Ocuparlo en bitmap
-// Se lo asigna a archivo
-// Llenar metadata con nuevos datos (distinguir entre tripu y recursos)
-
 void asignar_nuevo_bloque(FILE* archivo) {
 
 	fseek(directorio.superbloque, strlen("BLOCK_SIZE="), SEEK_SET);
@@ -186,55 +180,15 @@ int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, i
 }
 
 void actualizar_MD5(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR); 
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
-
-	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
-	char tipo;
-	fread(&tipo, sizeof(char), 1, archivo);
+	uint32_t tam_archivo = tamanio_archivo(archivo);
+	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
+	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
+	char tipo = caracter_llenado_archivo(archivo);
 
 	char* path_archivo = conseguir_path_recurso_archivo(archivo);
 	archivo = fopen(path_archivo , "w+"); //Se actualiza struct?
 
-	char* size = "SIZE=";
-	char* block_count = "BLOCK_COUNT=";
-	char* blocks = "BLOCKS=[";
-	char* corchete_cierre = "]";
-	char* caracter = "CARACTER_LLENADO=";
-	char* md5 = "MD5_ARCHIVO=";
-	char* md5_dato = crear_md5();
-
-	fwrite(&size, strlen(size), 1, archivo);
-	fwrite(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
-	fwrite(&block_count, strlen(block_count), 1, archivo);
-	fwrite(&cant_bloques, sizeof(uint32_t), 1, archivo);
-	fwrite(&blocks, strlen(blocks), 1, archivo);
-	fwrite(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
-	fwrite(&corchete_cierre, strlen(corchete_cierre), 1, archivo);
-	fwrite(&caracter, strlen(caracter), 1, archivo);
-	fwrite(&tipo, sizeof(char), 1, archivo);
-	fwrite(&md5, strlen(md5), 1, archivo);
-	fwrite(&md5_dato, strlen(md5_dato), 1, archivo);
-
-	free(size);
-	free(block_count);
-	free(blocks);
-	free(corchete_cierre);
-	free(caracter);
-	free(md5);
-	free(md5_dato);
+	escribir_archivo_recurso(archivo, tam_archivo, cant_bloques, lista_bloques);
 }
 
 void alterar(int codigo_archivo, int cantidad) {  
@@ -249,27 +203,10 @@ void alterar(int codigo_archivo, int cantidad) {
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
-	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
-	pthread_mutex_lock(&mutex_blocks); // Declarar mutex
-
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR); 
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
-
-	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
-	char tipo;
-	fread(&tipo, sizeof(char), 1, archivo);
+	uint32_t tam_archivo = tamanio_archivo(archivo);
+	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
+	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
+	char tipo = caracter_llenado_archivo(archivo);
 
 	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
 
@@ -295,27 +232,10 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 }
 
 void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de fopens, revisar
-	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
-	pthread_mutex_lock(&mutex_blocks);
-
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR); 
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
-
-	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
-	char tipo;
-	fread(&tipo, sizeof(char), 1, archivo);
+	uint32_t tam_archivo = tamanio_archivo(archivo);
+	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
+	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
+	char tipo = caracter_llenado_archivo(archivo);
 
 	int offset = quitar_ultimo_bloque_libre(lista_bloques, cant_bloques, cantidad * -1, tipo);
 
@@ -466,16 +386,14 @@ char char_random() {
 
 uint32_t tamanio_archivo(FILE* archivo) {
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
+	uint32_t tam_archivo;
+	fread(&tam_archivo, sizeof(uint32_t), 1, archivo);
 
-	return tamanio_archivo;
+	return tam_archivo;
 }
 
 uint32_t cantidad_bloques_recurso(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
+	tamanio_archivo(archivo);
 
 	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR);
 	uint32_t cant_bloques;
@@ -485,13 +403,7 @@ uint32_t cantidad_bloques_recurso(FILE* archivo) {
 }
 
 uint32_t* lista_bloques_recurso(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR);
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
+	cantidad_bloques_recurso(archivo);
 
 	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
@@ -504,20 +416,7 @@ uint32_t* lista_bloques_recurso(FILE* archivo) {
 }
 
 char caracter_llenado_archivo(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR);
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
+	lista_bloques_recurso(archivo);
 
 	char caracter_llenado;
 	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
@@ -527,24 +426,7 @@ char caracter_llenado_archivo(FILE* archivo) {
 }
 
 char* md5_archivo(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR);
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
-
-	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
-	char tipo;
-	fread(&tipo, sizeof(char), 1, archivo);
+	caracter_llenado_archivo(archivo);
 
 	fseek(archivo, strlen("MD5_ARCHIVO="), SEEK_CUR);
 	char* md5;
@@ -573,8 +455,8 @@ uint32_t cantidad_bloques_tripulante(FILE* archivo) {
 
 uint32_t* lista_bloques_tripulante(FILE* archivo) {
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
+	uint32_t tam_archivo;
+	fread(&tam_archivo, sizeof(uint32_t), 1, archivo);
 
 	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t cant_bloques;
@@ -591,8 +473,8 @@ uint32_t* lista_bloques_tripulante(FILE* archivo) {
 
 void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques) {
 	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
+	uint32_t tam_archivo;
+	fread(&tam_archivo, sizeof(uint32_t), 1, archivo);
 
 	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR);
 	uint32_t cant_bloques;

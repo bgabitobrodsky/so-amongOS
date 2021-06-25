@@ -25,8 +25,8 @@
 #include <time.h>
 #include "mongo_blocks.h"
 
-#define TAMANIO_BLOQUE 64
-#define CANTIDAD_BLOQUES 64 
+#define TAMANIO_BLOQUE (obtener_tamanio_bloque();) // Ver que no explote
+#define CANTIDAD_BLOQUES (obtener_cantidad_bloques();) // Ver que no explote
 #define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 
 /* ESTRUCTURAS PROPIAS */
