@@ -8,7 +8,7 @@
 #ifndef I_MONGO_STORE_H_
 #define I_MONGO_STORE_H_
 
-#include "mongo_tripulantes.h"
+#include "mongo_sabotaje.h"
 
 typedef struct {
 	int socket;

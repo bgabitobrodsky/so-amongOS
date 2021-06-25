@@ -2,7 +2,6 @@
 #define I_MONGO_BLOCKS_H_
 
 #include "mongo_archivos.h"
- #include <sys/mman.h>
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;

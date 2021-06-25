@@ -13,11 +13,12 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
     fwrite("BITE_SIZE=", strlen("BITE_SIZE="), 1, archivo);
     fwrite(&block_size, sizeof(uint32_t), 1, archivo);
 
-    fwrite("BLOCKS=[", strlen("BLOCKS="), 1, archivo);
-	fwrite("]", strlen("]"), 1, archivo);
+    fwrite("BLOCKS=", strlen("BLOCKS="), 1, archivo);
     fwrite(&size, sizeof(uint32_t), 1, archivo);
 
     fwrite(bitmap, sizeof(bitmap), 1, archivo);
+
+    fflush(archivo);
 }
 
 void iniciar_blocks(int filedescriptor_blocks) {
@@ -59,4 +60,19 @@ int obtener_cantidad_bloques() {
     fread(&size, sizeof(uint32_t), 1, directorio.superbloque);
 
     return size;
+}
+
+void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap) {
+    fclose(directorio.superbloque);
+    directorio.superbloque = fopen(path_superbloque, "w+");
+
+    fwrite("BITE_SIZE=", strlen("BITE_SIZE="), 1, archivo);
+    fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
+
+    fwrite("BLOCKS=", strlen("BLOCKS="), 1, archivo);
+    fwrite(&cantidad, sizeof(uint32_t), 1, archivo);
+
+    fwrite(bitmap, sizeof(bitmap), 1, archivo);
+
+    fflush(archivo);
 }

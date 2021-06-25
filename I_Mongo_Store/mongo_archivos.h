@@ -23,7 +23,6 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
-#include "mongo_blocks.h"
 
 #define TAMANIO_BLOQUE (obtener_tamanio_bloque();) // Ver que no explote
 #define CANTIDAD_BLOQUES (obtener_cantidad_bloques();) // Ver que no explote

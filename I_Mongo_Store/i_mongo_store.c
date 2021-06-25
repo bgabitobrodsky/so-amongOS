@@ -127,23 +127,36 @@ void sabotaje(int socket_discordiador) {
 	while(1) {
 
 		// Se espera que set reciva la signal correspondiente
-		/* if (sigwait(&set) == SIGUSR1) { // Revisar funcionamiento
+		if (sigwait(&set) == SIGUSR1) { // Revisar funcionamiento
 			log_info(logger_mongo, "Se detecto un sabotaje.\n");
 			// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
 			enviar_codigo(SABOTAJE, socket_discordiador);
-			wait(verificacion);
-			// TODO: Enviar posiciones de sabotaje en orden
-			// Se espera a que Discordiador envie un designado para reparar
-			t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
-			// Se activaria el protocolo fcsk
-			reparar(mensaje);
-			log_info(logger_mongo, "Se reparo el sabotaje.\n");
-			// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
-			signal(reparado);
-			free(mensaje); 
+
+			t_estructura* listo = recepcion_y_deserializacion(socket_discordiador);
+
+			if (listo->codigo_operacion == LISTO) { // TODO: Agregar a enum
+
+				// Se envian posiciones de sabotaje en orden
+				enviar_posiciones_sabotaje(socket_discordiador);
+
+				// Se espera a que Discordiador envie un designado para reparar
+				t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
+
+				// Se activaria el protocolo fcsk
+				int rotura = reparar(mensaje->tcb);
+
+				log_info(logger_mongo, "Se reparo el sabotaje.\n");
+				log_info(logger_mongo, "Se habia saboteado %s.\n", rompio(rotura));
+				// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
+				enviar_codigo(REPARADO, socket_discordiador);
+
+				free(mensaje); 
+			}
+
 			// Vacia la instruccion (creo) de set
 			sigemptyset(&set);
-		} */
+
+		} 
 	}
 }
 

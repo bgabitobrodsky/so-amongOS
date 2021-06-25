@@ -517,6 +517,8 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 	fwrite(&md_5, strlen(md_5), 1, archivo);
 	fwrite(&md5, strlen(md5), 1, archivo);
 
+	fflush(archivo);
+
 	free(size);
 	free(block_count);
 	free(blocks);
@@ -536,6 +538,8 @@ void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list
 	uint32_t cant_bloques = sizeof(list_bloques); //Puede ser que sea sizeof(list_bloques)/2; por un tema del sizeof()
 	fwrite(&corchete_cierre, strlen(corchete_cierre), 1, archivo);
 	fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
+
+	fflush(archivo);
 
 	free(size);
 	free(blocks);
