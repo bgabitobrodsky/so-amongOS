@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-	test_compactacion();
+	
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
