@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
-    args_escuchar args_miram;
+    	args_escuchar args_miram;
 	args_miram.socket_oyente = socket_oyente;
 
 	pthread_t hilo_escucha;
@@ -68,10 +68,10 @@ void proceso_handler(void* args) {
 	int socket_escucha = p->socket_oyente;
 	//int socket_escucha = (int) args; //Tema de testeos, no borrar
 
-    int addrlen, socket_especifico;
-    struct sockaddr_in address;
+	int addrlen, socket_especifico;
+	struct sockaddr_in address;
 
-    addrlen = sizeof(address);
+    	addrlen = sizeof(address);
 
 	// struct sockaddr_storage direccion_a_escuchar;
 	// socklen_t tamanio_direccion;
