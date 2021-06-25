@@ -49,10 +49,14 @@ int verificar_cant_bloques(t_TCB* tripulante) {
         obtener_cantidad_bloques(); // Para desplazamiento only
 
         t_bitarray* bitmap = malloc(sizeof(t_bitarray));
-	    bitmap = bitarray_create_with_mode(bitmap->bitarray, cant_bloques, LSB_FIRST); //Puede romper
-	    fread(bitmap->bitarray, 1/CHAR_BIT, cant_bloques, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
+        char* puntero_a_bitmap = calloc(cant_bloques / 8, 1);
+
+        bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques, LSB_FIRST);
+
+	    fread(bitmap->bitarray, 1, cant_bloques/8, directorio.superbloque);
         reescribir_superbloque(tamanio, cantidad_real, bitmap);
 
+        free(puntero_a_bitmap);
         return 1;
     }
     else
@@ -61,13 +65,13 @@ int verificar_cant_bloques(t_TCB* tripulante) {
 
 int verificar_bitmap(t_TCB* tripulante) {
 	//Creo la lista
-	t_list* lista_bloques_ocupados = list_create();
-	//Leno la lista de 0
-//	llenar_lista(lista_bloques_ocupados);
+	int* lista_bloques_ocupados = malloc(sizeof(int) * obtener_cantidad_bloques());
 
 	//Agrego los bloques usados en la lista, con en el indice = n° bloque
     recorrer_recursos(lista_bloques_ocupados);
     recorrer_bitacoras(lista_bloques_ocupados);
+
+    sortear(lista_bloques_ocupados);
 
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
         t_bitarray* bitmap = actualizar_bitmap();
@@ -149,6 +153,10 @@ void recorrer_recursos(int* lista_bloques_ocupados) {
 		lista_bloques_ocupados[i] = lista_bloques_oxigeno[j];
 		i++;
 	}
+
+	free(lista_bloques_basura);
+	free(lista_bloques_comida);
+	free(lista_bloques_oxigeno);
 }
 
 void recorrer_bitacoras(int* lista_bloques_ocupados) {

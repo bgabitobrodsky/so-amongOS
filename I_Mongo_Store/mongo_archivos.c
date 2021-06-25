@@ -91,9 +91,12 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, directorio.superbloque);
 
-	t_bitarray* bitmap = malloc(sizeof(t_bitarray));
+	int cantidad_bloques = obtener_cantidad_bloques();
+	char* puntero_a_bitmap = calloc(cantidad_bloques / 8, 1);
+	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques, LSB_FIRST);
+
 	bitmap = bitarray_create_with_mode(bitmap->bitarray, cant_bloques, LSB_FIRST); //Puede romper
-	fread(bitmap->bitarray, 1/CHAR_BIT, cant_bloques, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
+	fread(puntero_a_bitmap, 1, cant_bloques/8, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
 	int bit_libre = -1;
 
 	//Recorro todas las pociciones del bitarray
@@ -137,6 +140,8 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	//Si no había un bloque libre
 	else
 		log_info(logger_mongo, "No hay bloques disponibles en este momento");
+
+	free(puntero_a_bitmap);
 }
 
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)

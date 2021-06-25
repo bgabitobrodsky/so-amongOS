@@ -14,6 +14,7 @@ void recorrer_recursos(int* lista_bloques_ocupados);
 void recorrer_bitacoras(int* lista_bloques_ocupados);
 void sortear(int* lista_bloques_ocupados);
 int bloques_ocupados_difieren(int* lista_bloques_ocupados);
+int contiene(int* lista, int valor);
 int reasignar_tamanios_archivo();
 int revisar_block_count_recursos();
 char* rompio(int codigo);

@@ -80,10 +80,13 @@ int obtener_cantidad_bloques() {
 
 t_bitarray* obtener_bitmap() {
 	int cant_bloques = obtener_cantidad_bloques();
+	char* puntero_a_bitmap = calloc(cant_bloques / 8, 1);
 
 	fseek(directorio.superbloque, strlen("BITMAP="), SEEK_CUR);
-	t_bitarray* bitmap = bitarray_create_with_mode(bitmap->bitarray, cant_bloques, LSB_FIRST);
-	fread(bitmap->bitarray, sizeof(char)/CHAR_BIT, cant_bloques, directorio.superbloque);
+	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques, LSB_FIRST);
+	fread(puntero_a_bitmap, 1, cant_bloques/8, directorio.superbloque);
+
+	free(puntero_a_bitmap);
 
 	return bitmap;
 }
