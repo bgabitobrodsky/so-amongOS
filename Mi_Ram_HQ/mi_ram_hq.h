@@ -45,6 +45,8 @@ typedef struct indice_tabla {
 } indice_tabla;
 
 t_dictionary* tablas;
+t_log* logger;
+t_config* config;
 
 void iniciar_memoria();
 int gestionar_tareas (t_archivo_tareas*);
@@ -57,6 +59,9 @@ void* crear_indice(int pid, void* tabla);
 void* buscar_tabla(int pid);
 t_TCB* buscar_tcb(int tid);
 t_tarea* buscar_siguiente_tarea(int tid);
+t_list* buscar_tcbs_por_pid(int);
+t_TCB* buscar_tcb_por_tid(int);
+int actualizar_tcb(t_TCB*);
 int eliminar_tcb(int tid); // devuelve 1 si todo ok, 0 si falló algo
 
 #endif /* MI_RAM_HQ_H_ */

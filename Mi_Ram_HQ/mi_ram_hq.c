@@ -15,105 +15,19 @@
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define LIMIT_CONNECTIONS 10
 
-t_list* buscar_tcbs_por_pid(int pid);
-t_TCB* buscar_tcb_por_tid(int tid);
-int actualizar_tcb(t_TCB* nuevo_tcb);
+void dump(int n){
+	if(n == SIGUSR2){
+		log_debug(logger,"Se inicia el dump de memoria");
+		if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+			dump_segmentacion();
+		}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 
-t_log* logger;
-t_config* config;
-
-t_list* lista_tcb;
-t_list* lista_pcb;	
-
-int gestionar_tareas(t_archivo_tareas* archivo){
-	//char** string_tareas = string_split(archivo_tareas->texto, "\n");
-	//int cantidad_tareas = contar_palabras(string_tareas);
-	int pid_patota = archivo->pid;
-	int tamanio_tareas = archivo->largo_texto * sizeof(char);
-
-	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid_patota);
-		if(tabla == NULL){ 
-			tabla = crear_tabla_segmentos(pid_patota);
+		}else{
+			log_error(logger, "Esquema de memoria desconocido");
+			exit(EXIT_FAILURE);
 		}
-		
-		//Creamos segmento para tareas y lo guardamos en la tabla de la patota
-		log_debug(logger, "Comienza la creación del segmento de tareas con PID: %d", pid_patota);
-		segmento* segmento_tareas = asignar_segmento(tamanio_tareas);
-		if(segmento_tareas == NULL){
-			matar_tabla_segmentos(pid_patota);
-			return 0;
-		}
-		segmento_tareas->tipo = S_TAREAS;
-		void* puntero_a_tareas = memoria_principal + segmento_tareas->base;
-		memcpy(puntero_a_tareas, archivo->texto, tamanio_tareas);
-		tabla->segmento_tareas = segmento_tareas;
-		log_debug(logger,"Se termino la creación del segmento de tareas con PID: %d, con base: %d", pid_patota, segmento_tareas->base);
-
-		//Creamos el PCB
-		log_debug(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
-		t_PCB* pcb = malloc(sizeof(t_PCB));
-		pcb->PID = pid_patota;
-		pcb->direccion_tareas = (uint32_t) puntero_a_tareas;
-		log_debug(logger,"Se termino la creación de PCB con PID: %d", pid_patota);
-
-		//Creamos el segmento para el PCB y lo guardamos en la tabla de la patota
-		log_debug(logger, "Comienza la creación del segmento para el PCB con PID: %d", pid_patota);
-		segmento* segmento_pcb = asignar_segmento(sizeof(t_PCB));
-		if(segmento_pcb == NULL){
-			matar_tabla_segmentos(pid_patota);
-			return 0;
-		}
-		segmento_pcb->tipo = S_PCB;
-		memcpy(memoria_principal + segmento_pcb->base, pcb, sizeof(t_PCB));
-		tabla->segmento_pcb = segmento_pcb;
-		log_debug(logger, "Se terminó la creación del segmento para el PCB con PID: %d, con base: %d", pid_patota,segmento_pcb->base);
-		free(pcb);
-		return 1;
-	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-
-	}else{
-		log_error(logger, "Esquema de memoria desconocido");
-		exit(EXIT_FAILURE);
+		log_debug(logger,"Se terminó el dump de memoria");
 	}
-}
-
-int gestionar_tcb(t_TCB* tcb){
-	int pid = tcb->TID / 10000;
-	size_t tamanio_tcb = sizeof(t_TCB);
-	log_debug(logger, "Comienza la creación del TCB, TID: %d", tcb->TID);
-	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
-		if(tabla == NULL){ 
-			tabla = crear_tabla_segmentos(pid);
-		}
-		
-		//Creamos segmento para el tcb y lo guardamos en la tabla de la patota
-		segmento* segmento_tcb = asignar_segmento(tamanio_tcb);
-		if(segmento_tcb == NULL){
-			matar_tabla_segmentos(pid);
-			return 0;
-		}
-		segmento_tcb->tipo = S_TCB;
-			// direccion donde está guardado el pcb
-		void* puntero_a_pcb = memoria_principal + tabla->segmento_pcb->base; 
-		tcb->puntero_a_pcb = (uint32_t) puntero_a_pcb;
-			// direccion donde está guardada la string de tareas, como estoy creando el tcb, la siguiente tarea va a ser la primera
-		void* puntero_a_tareas = memoria_principal + tabla->segmento_tareas->base; 
-		tcb->siguiente_instruccion = (uint32_t) puntero_a_tareas;
-
-		memcpy(memoria_principal + segmento_tcb->base, tcb, sizeof(t_TCB));
-
-		list_add(tabla->segmentos_tcb, segmento_tcb);
-		return 1;
-	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-
-	}else{
-		log_error(logger, "Esquema de memoria desconocido");
-		exit(EXIT_FAILURE);
-	}
-	log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
-
 }
 
 int main(int argc, char** argv) {
@@ -121,17 +35,13 @@ int main(int argc, char** argv) {
 	// Reinicio el log
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
-
 	// Inicializar
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
-	config = config_create("limit-memory.config");
-
-	lista_tcb = list_create();
-	lista_pcb = list_create();
+	config = config_create("mi_ram_hq.config");
+	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
 	test_compactacion();
-
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
@@ -229,6 +139,9 @@ void atender_clientes(void* param) {
 				// log_info(logger, "Recibo una tcb\n");
 				// log_info(logger, "Tripulante %i, estado: %c, pos: %i %i, puntero_pcb: %i, sig_ins %i\n", (int) mensaje_recibido->tcb->TID, (char) mensaje_recibido->tcb->estado_tripulante, (int) mensaje_recibido->tcb->coord_x, (int) mensaje_recibido->tcb->coord_y, (int) mensaje_recibido->tcb->puntero_a_pcb, (int) mensaje_recibido->tcb->siguiente_instruccion);
 				result = gestionar_tcb(mensaje_recibido->tcb);
+				if(result == 0){
+					// te he fallado
+				}
 				// result = 1 -> todo bien, 	result = 0 -> faltó memoria bro (se mató todo lo creado para la patota)
 				break;
 
@@ -349,7 +262,7 @@ void iniciar_memoria(){
 
 void* buscar_tabla(int pid){	
 	log_debug(logger,"Se comienza la busqueda de tabla de pid: %d",pid);
-	char* spid[4];
+	char spid[4];
 	sprintf(spid, "%d", pid);
 	void* tabla = dictionary_get(tablas,spid);
 	if(tabla == NULL){
@@ -360,8 +273,100 @@ void* buscar_tabla(int pid){
 	return tabla;
 }
 
+int gestionar_tareas(t_archivo_tareas* archivo){
+	//char** string_tareas = string_split(archivo_tareas->texto, "\n");
+	//int cantidad_tareas = contar_palabras(string_tareas);
+	int pid_patota = archivo->pid;
+	int tamanio_tareas = archivo->largo_texto * sizeof(char);
+
+	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid_patota);
+		if(tabla == NULL){ 
+			tabla = crear_tabla_segmentos(pid_patota);
+		}
+		
+		//Creamos segmento para tareas y lo guardamos en la tabla de la patota
+		log_debug(logger, "Comienza la creación del segmento de tareas con PID: %d", pid_patota);
+		segmento* segmento_tareas = asignar_segmento(tamanio_tareas);
+		if(segmento_tareas == NULL){
+			matar_tabla_segmentos(pid_patota);
+			return 0;
+		}
+		segmento_tareas->tipo = S_TAREAS;
+		void* puntero_a_tareas = memoria_principal + segmento_tareas->base;
+		memcpy(puntero_a_tareas, archivo->texto, tamanio_tareas);
+		tabla->segmento_tareas = segmento_tareas;
+		log_debug(logger,"Se termino la creación del segmento de tareas con PID: %d, con base: %d", pid_patota, segmento_tareas->base);
+
+		//Creamos el PCB
+		log_debug(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
+		t_PCB* pcb = malloc(sizeof(t_PCB));
+		pcb->PID = pid_patota;
+		pcb->direccion_tareas = (uint32_t) puntero_a_tareas;
+		log_debug(logger,"Se termino la creación de PCB con PID: %d", pid_patota);
+
+		//Creamos el segmento para el PCB y lo guardamos en la tabla de la patota
+		log_debug(logger, "Comienza la creación del segmento para el PCB con PID: %d", pid_patota);
+		segmento* segmento_pcb = asignar_segmento(sizeof(t_PCB));
+		if(segmento_pcb == NULL){
+			matar_tabla_segmentos(pid_patota);
+			return 0;
+		}
+		segmento_pcb->tipo = S_PCB;
+		memcpy(memoria_principal + segmento_pcb->base, pcb, sizeof(t_PCB));
+		tabla->segmento_pcb = segmento_pcb;
+		log_debug(logger, "Se terminó la creación del segmento para el PCB con PID: %d, con base: %d", pid_patota,segmento_pcb->base);
+		free(pcb);
+		return 1;
+	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		return 0;
+	}else{
+		log_error(logger, "Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
+	}
+}
+
+int gestionar_tcb(t_TCB* tcb){
+	int pid = tcb->TID / 10000;
+	size_t tamanio_tcb = sizeof(t_TCB);
+	log_debug(logger, "Comienza la creación del TCB, TID: %d", tcb->TID);
+	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+		if(tabla == NULL){ 
+			tabla = crear_tabla_segmentos(pid);
+		}
+		
+		//Creamos segmento para el tcb y lo guardamos en la tabla de la patota
+		segmento* segmento_tcb = asignar_segmento(tamanio_tcb);
+		if(segmento_tcb == NULL){
+			matar_tabla_segmentos(pid);
+			return 0;
+		}
+		segmento_tcb->tipo = S_TCB;
+			// direccion donde está guardado el pcb
+		void* puntero_a_pcb = memoria_principal + tabla->segmento_pcb->base; 
+		tcb->puntero_a_pcb = (uint32_t) puntero_a_pcb;
+			// direccion donde está guardada la string de tareas, como estoy creando el tcb, la siguiente tarea va a ser la primera
+		void* puntero_a_tareas = memoria_principal + tabla->segmento_tareas->base; 
+		tcb->siguiente_instruccion = (uint32_t) puntero_a_tareas;
+
+		memcpy(memoria_principal + segmento_tcb->base, tcb, sizeof(t_TCB));
+
+		list_add(tabla->segmentos_tcb, segmento_tcb);
+
+	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		return 0;
+	}else{
+		log_error(logger, "Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
+	}
+	log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
+	return 1;
+}
+
 t_TCB* buscar_tcb_por_tid(int tid){
 	int pid = tid / 10000;
+	t_TCB* tcb_recuperado;
 	log_debug(logger,"Comienza la busqueda de TCB por TID: %d", tid);
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 		
@@ -380,7 +385,7 @@ t_TCB* buscar_tcb_por_tid(int tid){
 			log_warning(logger,"TCB con TID: %d no encontrado", tid);
 			return NULL;
 		}
-		t_TCB* tcb_recuperado = memoria_principal + segmento_tcb->base;
+		tcb_recuperado = memoria_principal + segmento_tcb->base;
 
 		if(tcb_recuperado == NULL){
 			log_warning(logger,"TCB con TID: %d no encontrado", tid);
@@ -388,7 +393,6 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		}
 
 		log_debug(logger,"TCB con TID: %d encontrado", tid);
-		return tcb_recuperado;
 		
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
 		
@@ -396,6 +400,7 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
+	return tcb_recuperado;
 }
 
 t_list* buscar_tcbs_por_pid(int pid){
@@ -415,7 +420,7 @@ t_list* buscar_tcbs_por_pid(int pid){
 		return list_map(tabla->segmentos_tcb, transformer);
 
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
-
+		return NULL;
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -424,7 +429,7 @@ t_list* buscar_tcbs_por_pid(int pid){
 
 t_tarea* buscar_siguiente_tarea(int tid){
 	int pid = tid / 10000;
-	t_tarea* tarea;
+	t_tarea* tarea = NULL;
 	log_debug(logger, "Buscando tarea para tripulante, TID: %d", tid);
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		
@@ -457,7 +462,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		
 		if(palabras[1] == NULL){
 			// no hay proxima tarea
-			tcb->siguiente_instruccion = NULL;
+			tcb->siguiente_instruccion = (uint32_t) NULL;
 		}else{
 			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}
@@ -466,7 +471,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		return tarea;
 			
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-
+		return NULL;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -507,7 +512,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si todo ok, 0 si falló algo
 		}
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-
+		return 0;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);

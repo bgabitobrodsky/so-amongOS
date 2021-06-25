@@ -219,7 +219,7 @@ tabla_segmentos* crear_tabla_segmentos(int pid){
     nueva_tabla->segmento_pcb = NULL;
     nueva_tabla->segmento_tareas = NULL;
 	nueva_tabla->segmentos_tcb = list_create();
-    char* spid[3];
+    char spid[4];
 	sprintf(spid, "%d", pid);
     dictionary_put(tablas,spid,nueva_tabla);
     log_debug(logger,"Tabla de pid: %d creada",pid);
@@ -258,7 +258,7 @@ void matar_tabla_segmentos(int pid){
             log_info(logger, "No tenia tcbs");
         }
     }
-    char* spid[4];
+    char spid[4];
     sprintf(spid, "%d", pid);
     dictionary_remove_and_destroy(tablas,spid,table_destroyer);
 }
@@ -273,6 +273,10 @@ void test_segmentos(){
 	compactacion();
 	segmento* seg4 = asignar_segmento(sizeof(char));
 	print_segmentos_info();
+    free(seg);
+    free(seg2);
+    free(seg3);
+    free(seg4);
 }
 
 void test_tabla_segmentos(){
@@ -572,7 +576,8 @@ void print_segmentos_info() {
 void print_tablas_segmentos_info(){
 	
 	printf("\n<----- TABLAS DE SEGMENTOS ---------------------\n");
-    void print_tabla(char* pid, tabla_segmentos* tabla){
+    void print_tabla(char* pid, void* una_tabla){
+        tabla_segmentos* tabla = (tabla_segmentos*) una_tabla;
 		printf("Tabla pid: %s\n", pid);
         if(tabla->segmento_pcb != NULL){
             printf("\t Segmento PCB:\n");
@@ -596,4 +601,63 @@ void print_tablas_segmentos_info(){
     dictionary_iterator(tablas,print_tabla);
 
 	printf("------------------>\n");
+}
+
+
+void dump_segmentacion(){
+    t_list* dump_segmentos = list_create();
+
+    void cargar_tabla_al_dump(char* spid, void* una_tabla){
+        int pid = atoi(spid);
+        tabla_segmentos* tabla = (tabla_segmentos*) una_tabla;
+
+        if(tabla->segmento_pcb != NULL){
+            segmento_dump_wrapper* seg = malloc(sizeof(segmento_dump_wrapper));
+            seg->segmento = tabla->segmento_pcb;
+            seg->pid = pid;
+            seg->num = 1;
+            list_add(dump_segmentos,seg);
+        }
+        if(tabla->segmento_tareas != NULL){
+            segmento_dump_wrapper* seg = malloc(sizeof(segmento_dump_wrapper));
+            seg->segmento = tabla->segmento_tareas;
+            seg->pid = pid;
+            seg->num = 2;
+            list_add(dump_segmentos,seg);
+        }
+        int size = list_size(tabla->segmentos_tcb);
+        for(int i = 0; i < size; i++){
+            segmento_dump_wrapper* seg = malloc(sizeof(segmento_dump_wrapper));
+            segmento* seg_tcb = list_get(tabla->segmentos_tcb,i);
+            seg->segmento = seg_tcb;
+            seg->pid = pid;
+            seg->num = i + 3;
+            list_add(dump_segmentos,seg);
+        }
+
+    }
+
+    dictionary_iterator(tablas,cargar_tabla_al_dump);
+
+    bool ordenador(void* un_segmento, void* otro_segmento){
+        segmento_dump_wrapper* seg1 = (segmento_dump_wrapper*) un_segmento;
+        segmento_dump_wrapper* seg2 = (segmento_dump_wrapper*) otro_segmento;   
+        return seg1->segmento->base < seg2->segmento->base;
+    }
+    list_sort(dump_segmentos,ordenador);
+
+    char* path = string_from_format("./dump/Dump_%d.dump", (int) time(NULL));
+    FILE* file = fopen(path,"w");
+
+    void impresor_dump(void* un_segmento){
+        segmento_dump_wrapper* seg = (segmento_dump_wrapper*) un_segmento;
+        //log_debug(logger,"Proceso: %d\t Segmento: %d\t Inicio: 0x%.4x\t Tam: %db", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
+        char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: 0x%.4x\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
+        txt_write_in_file(file, dump_row);
+        free(dump_row);
+    }
+
+    txt_write_in_file(file, string_from_format("Dump: %s\n", temporal_get_string_time("%d/%m/%y %H:%M:%S")));
+    //log_debug(logger,"Dump: %s", temporal_get_string_time("%d/%m/%y %H:%M:%S"));
+    list_iterate(dump_segmentos, impresor_dump);
 }

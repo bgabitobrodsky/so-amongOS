@@ -3,8 +3,6 @@
 
 #include "mi_ram_hq.h"
 
-extern t_list* indices;
-
 typedef enum tipo_segmento{
     S_PCB,
     S_TAREAS,
@@ -25,6 +23,12 @@ typedef struct tabla_segmentos {
     t_list* segmentos_tcb;
 } tabla_segmentos;
 
+typedef struct segmento_dump_wrapper{
+    segmento* segmento;
+    int pid;
+    int num;
+} segmento_dump_wrapper;
+
 int intento_asignar_segmento;
 
 tabla_segmentos* crear_tabla_segmentos(int pid);
@@ -35,13 +39,17 @@ segmento* first_fit(int tam);
 segmento* crear_segmento(int base,int tam,bool libre);
 void liberar_segmento(int base);
 void unificar_segmentos_libres();
+void matar_tabla_segmentos(int pid);
+
+void dump_segmentacion();
 
 void print_segmentos_info();
-void print_tablas_info();
+void print_tablas_segmentos_info();
 void test_segmentos();
 void test_tabla_segmentos();
 void test_gestionar_tarea(int pid);
 void test_gestionar_tcb();
+void test_compactacion();
 
 
 #endif /* SEGMENTACION_H_ */

@@ -19,6 +19,9 @@
 #include <commons/collections/list.h>
 #include "segmentacion.h"
 #include "paginacion.h"
+#include <commons/temporal.h>
+#include <time.h>
+#include <commons/txt.h>
 
 extern t_log* logger;
 extern t_config* config;
