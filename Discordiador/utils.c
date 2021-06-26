@@ -18,7 +18,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"INICIAR_PATOTA")) {
 		if (contador >= 3) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return INICIAR_PATOTA;
 		}
 		else {
@@ -28,7 +28,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"LISTAR_TRIPULANTES")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return LISTAR_TRIPULANTES;
 		}
 		else {
@@ -38,7 +38,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"EXPULSAR_TRIPULANTE")) {
 		if (contador == 2) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return EXPULSAR_TRIPULANTE;
 		}
 		else {
@@ -48,7 +48,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"INICIAR_PLANIFICACION")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return INICIAR_PLANIFICACION;
 		}
 		else {
@@ -58,7 +58,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"PAUSAR_PLANIFICACION")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return PAUSAR_PLANIFICACION;
 		}
 		else {
@@ -67,8 +67,8 @@ int reconocer_comando(char* str) {
 	}
 
 	if (comparar_strings(palabras[0],"OBTENER_BITACORA")) {
-		if (contador == 1) {
-			free(palabras);
+		if (contador == 2) {
+			liberar_puntero_doble(palabras);
 			return OBTENER_BITACORA;
 		}
 		else {
@@ -78,7 +78,7 @@ int reconocer_comando(char* str) {
 
 	if (comparar_strings(palabras[0],"HELP")) {
 		if (contador == 1) {
-			free(palabras);
+			liberar_puntero_doble(palabras);
 			return HELP;
 		}
 		else {
@@ -86,27 +86,26 @@ int reconocer_comando(char* str) {
 		}
 	}
 
-	if (comparar_strings(palabras[0],"EXIT")) {
+	if (comparar_strings(palabras[0],"APAGAR_SISTEMA")) {
 		if (contador == 1) {
-			free(palabras);
-			return EXIT;
+			liberar_puntero_doble(palabras);
+			return APAGAR_SISTEMA;
 		}
 		else {
 			printf("Error de parametros: EXIT\n");
 		}
 	}
 
-	free(palabras);
+	liberar_puntero_doble(palabras);
+
 	printf("Comando desconocido, escribe HELP para obtener la lista de comandos\n");
+
 	return NO_CONOCIDO;
-}
 
-
-int comparar_strings(char* str, char* str2) {
-	return !strncmp(str, str2, strlen(str2));
 }
 
 void help_comandos() {
+
 	printf("Lista de comandos:\n");
 	printf("- INICIAR_PATOTA <cantidad_de_tripulantes> <path>(<pos1> ... <posn>)\n");
 	printf("- INICIAR_PLANIFICACION\n");
@@ -114,51 +113,201 @@ void help_comandos() {
 	printf("- LISTAR_TRIPULANTES\n");
 	printf("- EXPULSAR_TRIPULANTE <codigo_de_tripulante>\n");
 	printf("- OBTENER_BITACORA <codigo_de_tripulante>\n");
+	printf("- APAGAR_SISTEMA\n");
+
+}
+
+void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket) {
+
+	t_archivo_tareas cont_arc;
+	cont_arc.texto = archivo_tareas;
+	cont_arc.largo_texto = strlen(archivo_tareas) + 1;
+	cont_arc.pid = pid;
+	t_buffer* contenido_archivo = serializar_archivo_tareas(cont_arc);
+	empaquetar_y_enviar(contenido_archivo, ARCHIVO_TAREAS, socket);
+
+}
+
+void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket){
+
+	t_buffer* buffer_tripulante = serializar_entero(tid);
+	empaquetar_y_enviar(buffer_tripulante, PEDIR_TAREA, socket);
+
+}
+
+void enviar_pid_a_ram(uint32_t pid, int socket){
+
+	t_buffer* pid_buffer = serializar_entero(pid);
+	empaquetar_y_enviar(pid_buffer, LISTAR_POR_PID, socket);
+
+}
+
+void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket){
+    t_buffer* buffer_tcb = serializar_tripulante(un_tripulante);
+    empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
+}
+
+void enviar_tcb_a_ram(t_TCB un_tcb, int socket){
+
+    t_buffer* buffer_tcb = serializar_tcb(un_tcb);
+    empaquetar_y_enviar(buffer_tcb , RECIBIR_TCB, socket);
+
+}
+
+int esta_tcb_en_lista(t_list* lista, int elemento){
+
+    bool contains(void* elemento1){
+        return (elemento == ((t_TCB*) elemento1)->TID);
+    }
+    bool a = list_any_satisfy(lista, contains);
+    return a;
+
+}
+
+int esta_tripulante_en_lista(t_list* lista, int elemento){
+
+    bool contains(void* elemento1){
+        return (elemento == ((t_tripulante*) elemento1)->TID);
+    }
+    bool a = list_any_satisfy(lista, contains);
+    return a;
+
+}
+
+void* eliminar_tcb_de_lista(t_list* lista, int elemento){
+
+    bool contains(void* elemento1){
+        return (elemento == ((t_TCB*) elemento1)->TID);
+    }
+
+    t_TCB* aux = list_remove_by_condition(lista, contains);
+    return aux;
+
+}
+
+void* eliminar_tripulante_de_lista(t_list* lista, int elemento){
+
+    bool contains(void* elemento1){
+        return (elemento == ((t_tripulante*) elemento1)->TID);
+    }
+
+    t_tripulante* aux = list_remove_by_condition(lista, contains);
+    return aux;
+
+}
+
+void iniciar_listas() {
+
+	lista_tripulantes_new = list_create();
+	lista_tripulantes_exec = list_create();
+	lista_pids = list_create();
+	lista_patotas = list_create();
+	lista_tripulantes = list_create();
+
+}
+
+void iniciar_colas() {
+
+	cola_tripulantes_ready = queue_create();
+	cola_tripulantes_block = queue_create();
+	cola_tripulantes_block_emergencia = queue_create();
+}
+
+void iniciar_semaforos(){
+
+	pthread_mutex_init(&sem_lista_tripulantes, NULL);
+	pthread_mutex_init(&sem_lista_exec, NULL);
+	pthread_mutex_init(&sem_lista_new, NULL);
+	pthread_mutex_init(&sem_cola_ready, NULL);
+	pthread_mutex_init(&sem_cola_block, NULL);
+	pthread_mutex_init(&sem_cola_block_emergencia, NULL);
+
 }
 
 
-// Funcion para crear un socket modalidad cliente
-int conectar_a_mi_ram_hq() { 
-	struct addrinfo datos_para_server, *informacion_server;
-	int estado;
-	int socket_cliente;
+void liberar_puntero_doble(char** palabras){
+	int contador = 0;
 
-	char* ip = config_get_string_value(config, "IP_MI_RAM_HQ");
-	char* puerto = config_get_string_value(config, "PUERTO_MI_RAM_HQ");
-
-	memset(&datos_para_server, 0, sizeof(datos_para_server));
-	datos_para_server.ai_family = AF_UNSPEC;
-	datos_para_server.ai_socktype = SOCK_STREAM;
-	datos_para_server.ai_flags = AI_PASSIVE;
-
-	// Obtengo la informacion del server y la alojo en informacion_server, utilizando los datos predefinidos arriba para settear
-	if ((estado = getaddrinfo(ip, puerto, &datos_para_server, &informacion_server)) != 0) {
-		log_warning(logger, "Error al conseguir informacion de MI RAM HQ\n");
+	while (palabras[contador] != NULL) {
+		contador++;
 	}
 
-	if ((socket_cliente = socket(informacion_server -> ai_family, informacion_server -> ai_socktype, informacion_server -> ai_protocol)) == -1) {
-		log_warning(logger, "Error al crear socket cliente a MI RAM HQ\n");
+	for(int i = 0; i<contador; i++){
+		free(palabras[i]);
 	}
-
-	if (connect(socket_cliente, informacion_server -> ai_addr, informacion_server -> ai_addrlen) == -1) { 
-		log_warning(logger, "Error al conectar a MI RAM HQ\n");
-	}
-
-	freeaddrinfo(informacion_server);
-
-	return socket_cliente;
+	free(palabras);
 }
 
-void* serializar_paquete(t_paquete* paquete, int bytes) { 
-	void* magic = malloc(bytes);
-	int desplazamiento = 0;
 
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->tamanio_estructura), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
-	desplazamiento+= paquete->buffer->tamanio_estructura;
+t_patota* crear_patota(uint32_t un_pid){
 
-	return magic;
+    t_patota* patota = malloc(sizeof(t_patota));
+    patota ->PID = un_pid;
+    return patota;
+
+}
+
+t_tripulante* crear_tripulante(int tid, int x, int y, char estado){
+
+    t_tripulante* tripulante = malloc(sizeof(t_tripulante));
+    tripulante->TID = tid;
+    tripulante->coord_x = x;
+    tripulante->coord_y = y;
+    tripulante->estado_tripulante = estado;
+
+    return tripulante;
+
+}
+
+
+t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion){
+
+    t_tripulante* un_tripulante = malloc(sizeof(t_tripulante));
+    un_tripulante->TID = tid;
+    un_tripulante->estado_tripulante = estado_tripulante[NEW];
+    un_tripulante->coord_x = posicion[0] - 48; // equivalencia ascii - numero
+    un_tripulante->coord_y = posicion[2] - 48; // equivalencia ascii - numero
+
+    return un_tripulante;
+}
+
+
+t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion){
+
+    // No asigna siguiente instruccion
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb -> TID = tid;
+    tcb -> estado_tripulante = estado_tripulante[NEW];
+    tcb -> coord_x = posicion[0] - 48; // equivalencia ascii - numero
+    tcb -> coord_y = posicion[2] - 48; // equivalencia ascii - numero
+    tcb -> siguiente_instruccion = 0;
+    tcb -> puntero_a_pcb = (uint32_t) pcb;
+
+    return tcb;
+}
+
+t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion){
+
+    // No asigna siguiente instruccion
+    t_TCB tcb;
+    tcb.TID = tid;
+    tcb.estado_tripulante = estado_tripulante[NEW];
+    tcb.coord_x = posicion[0] - 48; // equivalencia ascii - numero;
+    tcb.coord_y = posicion[2] - 48; // equivalencia ascii - numero;
+    tcb.siguiente_instruccion = 0;
+    tcb.puntero_a_pcb = (uint32_t) pcb;
+
+    return tcb;
+}
+
+int nuevo_pid(){
+
+    int id_patota = 1;
+    while(1){
+        if(!esta_en_lista(lista_pids, id_patota)){
+            list_add(lista_pids, (void*) id_patota);
+            return id_patota;
+        }
+        id_patota++;
+    }
 }

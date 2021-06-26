@@ -1,10 +1,3 @@
-/*
- * utils.h
- *
- *  Created on: 8 may. 2021
- *      Author: utnso
- */
-
 #ifndef MI_RAM_HQ_UTILS_H_
 #define MI_RAM_HQ_UTILS_H_
 
@@ -17,20 +10,22 @@
 #include<commons/config.h>
 #include<commons/collections/list.h>
 #include<string.h>
-
-typedef enum{
-	MENSAJE,
-	PEDIR_TAREA
-}op_code;
+#include<comms/estructuras.h>
+#include<comms/paquetes.h>
+#include<comms/socketes.h>
+#include <pthread.h>
+#include <commons/string.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
+#include "segmentacion.h"
+#include "paginacion.h"
+#include <commons/temporal.h>
+#include <time.h>
+#include <commons/txt.h>
 
 extern t_log* logger;
 extern t_config* config;
-extern t_config* config_discordiador;
 
-int iniciar_servidor(void);
-int esperar_discordiador(int socket_servidor);
-int leer_operacion(int socket_cliente);
-void* recibir_buffer(int* size, int socket_cliente);
-void recibir_mensaje(int socket_cliente);
+int tamanio_tarea(t_tarea* tarea);
 
 #endif /* MI_RAM_HQ_UTILS_H_ */

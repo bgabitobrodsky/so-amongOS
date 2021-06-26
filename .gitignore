@@ -1,10 +1,14 @@
-*/.settings/
+/.settings
+*.xml
 *.project
 *.cproject
 *.log
 *.o
 *.d
+*.out
 *.so
-/Discordiador/Discordiador
+*.dump
+/Discordiador/discordiador
 /Mi_Ram_HQ/mi_ram_hq
 /I_Mongo_Store/i_mongo_store
+.settings/language.settings.xml

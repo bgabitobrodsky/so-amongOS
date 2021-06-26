@@ -10,3 +10,6 @@ install:
 
 uninstall:
 	-cd src && $(MAKE) uninstall
+
+debug:
+	-cd src && $(MAKE) debug
