@@ -42,13 +42,13 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 	
+
+
 	// tabla_paginas* tabla = crear_tabla_paginas(1);
 
-
-	// log_info(logger,'antes de  creo el marco');
 	// marco* marco = list_get(marcos,0);
 
-	// log_info(logger,'se creo el marco');
+	// log_info(logger,"Se creo el marco");
 
 	// pagina* pagina = crear_pagina(marco, 3);
 
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 	// // agregar_paginas_segun_tamano(tabla, 100);
 
 	// imprimir_paginas(1);
-	// //iniciar_mapa(); TODO dibujar mapa inicial vacio
+	// // //iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
@@ -216,33 +216,8 @@ void atender_clientes(void* param) {
 
 }
 
-// void liberar_pagina(int base){
-//     for(int i = 0; i<list_size(paginas);i++){
-//         pagina* x = list_get(paginas, i);
-//         if(x->base == base) {
-//             x->libre = true;
-//             log_info(logger, "Se elimina la página con base %d", x->base);
-//         }
-//     }
-//     ordenar_segmentos();
-// }
 
 
-pagina* crear_pagina(int base, bool libre){
-    pagina* nueva_pagina = malloc(sizeof(pagina));
-    nueva_pagina->base = base;
-    nueva_pagina->libre = libre;
-
-    return nueva_pagina;
-}
-
-
-tabla_paginas* crear_tabla_paginas(uint32_t pid){
-	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
-	nueva_tabla->paginas = list_create();
-	//list_add(indices,crear_indice(pid, (void*) nueva_tabla));
-	return nueva_tabla;
-}
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
