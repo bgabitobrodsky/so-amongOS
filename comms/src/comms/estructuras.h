@@ -93,6 +93,7 @@ typedef struct {
     uint32_t coord_y;
     t_tarea tarea;
     uint32_t quantum_restante;
+    int soy_el_elegido;
 
 } t_tripulante;
 

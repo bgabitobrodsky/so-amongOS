@@ -50,18 +50,29 @@ pthread_mutex_t sem_cola_block_emergencia;
 
 // Variables de discordiador
 char estado_tripulante[6] = {'N', 'R', 'E', 'B', 'F', 'V'};
+int estamos_en_peligro = 0; // variable de sabotaje
 int planificacion_activa = 0;
 int sistema_activo = 1;
 int testeo = DISCORDIADOR;
 
 void test_config_discordiador();
-void peligro(int socket);
+void peligro(char* pos_sabotaje, int socket);
 void* eliminar_patota_de_lista(t_list* lista, int elemento);
 int soy_el_ultimo_de_mi_especie(int tid);
 void test_soy_el_ultimo_de_mi_especie();
 void test_eliminar_patota_de_lista();
 int verificacion_tcb(int socket);
 void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket);
+void resolver_sabotaje(t_tripulante* un_tripulante, int socket);
+t_tripulante* tripulante_mas_cercano_a(char* posicion);
+
+int entrada_salida_ocupada (){
+	return(queue_size(cola_tripulantes_block) == 1);
+}
+
+int cpu_ocupada(){
+	return(list_size(lista_tripulantes_exec) == GRADO_MULTITAREA);
+}
 
 int main() {
     if(testeo != DISCORDIADOR)
@@ -273,6 +284,9 @@ void tripulante(t_tripulante* un_tripulante){
         while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
             verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
             if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
+            	if(estamos_en_peligro){
+					resolver_sabotaje(un_tripulante, st_ram);
+				}
 
                 if(planificacion_activa == 0){
                     // este espacio vacio es EXACTAMENTE lo que tiene que estar
@@ -288,6 +302,10 @@ void tripulante(t_tripulante* un_tripulante){
         while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
             verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
             if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
+            	if(estamos_en_peligro){
+					resolver_sabotaje(un_tripulante, st_ram);
+            	}
+
                 if(un_tripulante->quantum_restante > 0){
                     if(planificacion_activa == 0){
                         // este espacio vacio es EXACTAMENTE lo que tiene que estar
@@ -883,7 +901,7 @@ void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket){
 }
 
 
-void peligro(int socket){
+void peligro(char* posicion_sabotaje, int socket){ // tambien deberia pasarle la pos del sabotaje
 	// PRIMERO los de EXEC, los de mayor TID primero
 	// despues lo de READY, los de mayor TID primero
 
@@ -920,6 +938,7 @@ void peligro(int socket){
 	list_sort(lista_auxiliar, ordenar_por_tid);
 
 	j = list_size(lista_auxiliar);
+
 	for(i = 0; i < j; i++){
 		t_aux = list_remove(lista_auxiliar, 0);
 		cambiar_estado(t_aux, estado_tripulante[PANIK], socket);
@@ -936,18 +955,78 @@ void peligro(int socket){
 
 	list_destroy(lista_auxiliar);
 
-}
+	estamos_en_peligro = 1;
+	// TODO
+	t_aux = tripulante_mas_cercano_a(posicion_sabotaje);
+	t_tarea contexto = t_aux->tarea;
+	t_tarea resolver_sabotaje;
+	resolver_sabotaje.coord_x = posicion_sabotaje[0];
+	resolver_sabotaje.coord_y = posicion_sabotaje[1];
+	resolver_sabotaje.duracion = DURACION_SABOTAJE;
+	t_aux->tarea = resolver_sabotaje;
 
-t_tripulante* tripulante_mas_cercano(char* posicion){
-	int x = posicion[0];
-	int y = posicion[2];
-	t_tripulante* un_tripulante;
+	cambiar_estado(t_aux, estado_tripulante[EXEC], socket);
 
-	int mas_cercano (){
-		return 0;
+	while(estamos_en_peligro){
+		// gritar_en_panico(); // todos se esperan a que termine el sabotaje
+	}
+	// si no estamos en peligro, es que el tripulante lo logro
+
+	t_aux->tarea = contexto;
+
+	// al terminar el sabotaje paso todos a ready (issue #2163)
+	j = queue_size(cola_tripulantes_block_emergencia);
+	for(i = 0; i < j; i++){
+		t_aux = monitor_cola_pop(sem_cola_block_emergencia, cola_tripulantes_block_emergencia);
+		monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, t_aux);
 	}
 
-	cola_tripulantes_block_emergencia;
+	// iniciar planificacion? tal vez
+	// iniciar_planificacion();
+
+}
+
+t_tripulante* tripulante_mas_cercano_a(char* posicion){
+	int x_sabotaje = posicion[0];
+	int y_sabotaje = posicion[2];
+	t_tripulante* un_tripulante;
+
+	void* mas_cercano (void* un_trip, void* otro_trip){
+		int distancia_x_t1 = abs(x_sabotaje - ((t_tripulante*) un_trip)->coord_x);
+		int distancia_y_t1 = abs(y_sabotaje - ((t_tripulante*) un_trip)->coord_y);
+		int distancia_x_t2 = abs(x_sabotaje - ((t_tripulante*) otro_trip)->coord_x);
+		int distancia_y_t2 = abs(y_sabotaje - ((t_tripulante*) otro_trip)->coord_y);
+
+		int distancia_t1 = distancia_x_t1 + distancia_y_t1;
+		int distancia_t2 = distancia_x_t2 + distancia_y_t2;
+
+		if(distancia_t1 < distancia_t2 ){
+			return un_trip;
+		}
+		else{
+			return otro_trip;
+		}
+
+	}
+
+	un_tripulante = list_get_minimum(cola_tripulantes_block_emergencia->elements, mas_cercano);
 
 	return un_tripulante;
+}
+
+void resolver_sabotaje(t_tripulante* un_tripulante, int socket){
+
+	while(!llegue(un_tripulante)){
+		atomic_llegar_a_destino(un_tripulante, socket);
+		log_warning(logger, "AAAAAAAAAAAAA");
+	}
+
+	while(un_tripulante->tarea.duracion > 0){
+		sleep(1);
+		un_tripulante->tarea.duracion--;
+		log_warning(logger, "DESABOATEEEE");
+	}
+
+	estamos_en_peligro = 0;
+	log_warning(logger, "Sabotaje resuelto, viviremos un dia mas.");
 }
