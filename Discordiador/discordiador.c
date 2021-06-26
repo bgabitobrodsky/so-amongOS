@@ -64,50 +64,59 @@ void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket){
 }
 
 void peligro(int socket){
-	// PRIMERO los de EXEC, ordenados por TID
-	// despues lo de READY, ordenados por TID
+	// PRIMERO los de EXEC, los de mayor TID primero
+	// despues lo de READY, los de mayor TID primero
 
 	pausar_planificacion();
-
+	int i, j;
 	t_tripulante* t_aux;
-
 	t_list* lista_auxiliar = list_create();
 
     bool ordenar_por_tid(void* un_elemento, void* otro_elemento){
          return ((((t_tripulante*) un_elemento)->TID) > (((t_tripulante*) otro_elemento)->TID));
     }
 
-	for(int i = 0; i < list_size(lista_tripulantes_exec); i++){
+    j = list_size(lista_tripulantes_exec);
+	for(i = 0; i < j ; i++){
 		t_aux = monitor_lista(sem_lista_exec, (void*) list_remove, lista_tripulantes_exec, 0);
         log_trace(logger, "Tripulante removido:\n tid: %i, estado: %c, pos: %i %i\n", (int)t_aux->TID, (char) t_aux->estado_tripulante, (int) t_aux->coord_x, (int) t_aux->coord_y);
-
-		log_error(logger, "primer for %i, %i", i, t_aux != NULL);
 		list_add(lista_auxiliar, t_aux);
 	}
 	list_sort(lista_auxiliar, ordenar_por_tid);
 
-	for(int i = 0; i < list_size(lista_auxiliar); i++){
+	j = list_size(lista_auxiliar);
+	for(i = 0; i < j; i++){
 		t_aux = list_remove(lista_auxiliar, 0);
 		cambiar_estado(t_aux, estado_tripulante[PANIK], socket);
 		monitor_cola_push(sem_cola_block_emergencia, cola_tripulantes_block_emergencia, t_aux);
-		log_error(logger, "segundo for %i", i);
 	}
 
-	for(int i = 0; i < queue_size(cola_tripulantes_ready); i++){
+    j = queue_size(cola_tripulantes_ready);
+	for(i = 0; i < j; i++){
 		t_aux = monitor_cola_pop(sem_lista_exec, cola_tripulantes_ready);
-		log_error(logger, "tercer for %i, %i", i, t_aux != NULL);
+		log_trace(logger, "Tripulante removido:\n tid: %i, estado: %c, pos: %i %i\n", (int)t_aux->TID, (char) t_aux->estado_tripulante, (int) t_aux->coord_x, (int) t_aux->coord_y);
 		list_add(lista_auxiliar, t_aux);
 	}
 	list_sort(lista_auxiliar, ordenar_por_tid);
 
-	for(int i = 0; i < list_size(lista_auxiliar); i++){
+	j = list_size(lista_auxiliar);
+	for(i = 0; i < j; i++){
 		t_aux = list_remove(lista_auxiliar, 0);
 		cambiar_estado(t_aux, estado_tripulante[PANIK], socket);
 		monitor_cola_push(sem_cola_block_emergencia, cola_tripulantes_block_emergencia, t_aux);
-		log_error(logger, "cuarto for %i", i);
 	}
+
+	// si necesitamos printear
+	// j = queue_size(cola_tripulantes_block_emergencia);
+
+	//for(i = 0; i < j; i++){
+		//t_aux = queue_pop(cola_tripulantes_block_emergencia);
+		//log_trace(logger, "Tripulante removido:\n tid: %i, estado: %c, pos: %i %i\n", (int)t_aux->TID, (char) t_aux->estado_tripulante, (int) t_aux->coord_x, (int) t_aux->coord_y);
+	//}
+
 
 	list_destroy(lista_auxiliar);
+
 }
 
 void* eliminar_patota_de_lista(t_list* lista, int elemento);
@@ -134,10 +143,10 @@ int main() {
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
 
-/*
+    printf("%i", sizeof(t_tripulante));
     iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
     iniciar_planificacion();
-    sleep(5);
+    sleep(3);
 
     peligro(socket_a_mi_ram_hq);
 
@@ -154,19 +163,7 @@ int main() {
     // iniciar_patota("INICIAR_PATOTA 2 Random.ims 1|1");
 
     // test_iniciar_planificacion();
-*/
-    t_tripulante* t1 = malloc(sizeof(t_tripulante));
-    t_tripulante* t2 = malloc(sizeof(t_tripulante));
-    t_tripulante* t3 = malloc(sizeof(t_tripulante));
-    t_tripulante* t4 = malloc(sizeof(t_tripulante));
-    queue_push(cola_tripulantes_ready, t1);
-    queue_push(cola_tripulantes_ready, t2);
-    queue_push(cola_tripulantes_ready, t3);
-    queue_push(cola_tripulantes_ready, t4);
 
-    list_remove(cola_tripulantes_ready->elements, 0);
-
-    log_error(logger, "%i", queue_size(cola_tripulantes_ready));
 
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
@@ -323,14 +320,16 @@ void planificador(){
 
             if(comparar_strings(ALGORITMO, "FIFO")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-                aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
+                cambiar_estado(aux_tripulante, estado_tripulante[EXEC], socket_a_mi_ram_hq);
+                // aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
 
             else if(comparar_strings(ALGORITMO, "RR")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-                aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
+                cambiar_estado(aux_tripulante, estado_tripulante[EXEC], socket_a_mi_ram_hq);
+                // aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 aux_tripulante->quantum_restante = QUANTUM;
                 monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
@@ -382,8 +381,9 @@ void tripulante(t_tripulante* un_tripulante){
                     }
 
                 } else {
-                    un_tripulante->estado_tripulante = estado_tripulante[READY];
-                    monitor_lista(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
+                	cambiar_estado(un_tripulante, estado_tripulante[READY], st_ram);
+                    // un_tripulante->estado_tripulante = estado_tripulante[READY];
+                    // monitor_lista(sem_lista_exec, (void*)eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
                     monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
                     log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
                     actualizar_tripulante(un_tripulante, st_ram);
@@ -407,8 +407,9 @@ void conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket){
     }
     else if(tarea->codigo_operacion == FALLO){
         un_tripulante->estado_tripulante = estado_tripulante[EXIT];
-        monitor_lista(sem_lista_exec, (void*) eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
-        actualizar_tripulante(un_tripulante, socket);
+    	cambiar_estado(un_tripulante, estado_tripulante[EXIT], socket_a_mi_ram_hq);
+        // monitor_lista(sem_lista_exec, (void*) eliminar_tripulante_de_lista, lista_tripulantes_exec, (void*) un_tripulante->TID);
+        // actualizar_tripulante(un_tripulante, socket);
     }
 }
 
@@ -463,9 +464,9 @@ void enlistarse(t_tripulante* un_tripulante, int socket){
     else{
         log_error(logger, "\nNo se recibio ninguna tarea.\n Error desconocido\n");
     }
-
-    un_tripulante->estado_tripulante = estado_tripulante[READY];
-    actualizar_tripulante(un_tripulante, socket);
+	cambiar_estado(un_tripulante, estado_tripulante[READY], socket);
+    // un_tripulante->estado_tripulante = estado_tripulante[READY];
+    // actualizar_tripulante(un_tripulante, socket);
     log_debug(logger, "\nEstado cambiado a READY\n");
 
     monitor_lista(sem_lista_new, (void*)eliminar_tripulante_de_lista, lista_tripulantes_new, (void*) un_tripulante->TID);
@@ -715,8 +716,8 @@ void expulsar_tripulante(char* leido) {
 
             log_info(logger, "Tripulante expulsado, TID: %d\n", tid_tripulante_a_expulsar);
             log_info(logger, "Lugar del deceso: %i|%i\n", t_aux->coord_x, t_aux->coord_y);
-
-            t_aux->estado_tripulante = estado_tripulante[EXIT];
+        	cambiar_estado(t_aux, estado_tripulante[EXIT], socket_a_mi_ram_hq);
+            // t_aux->estado_tripulante = estado_tripulante[EXIT];
         }
         else{
             log_info(logger, "Dicho tripulante no existe en Discordiador.\n");
