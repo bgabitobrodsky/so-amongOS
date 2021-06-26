@@ -7,8 +7,9 @@
  Description : El discordiador
  ============================================================================
  */
-// TODO: en cada cambio de estado eliminar de las otras listas
+
 // TODO: Destruir listas
+// TODO: Testear tareas de E/S
 
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -56,15 +57,42 @@ int sistema_activo = 1;
 int testeo = DISCORDIADOR;
 
 void test_config_discordiador();
-void peligro(char* pos_sabotaje, int socket);
+void peligro(char* pos_sabotaje, int socket_ram);
 void* eliminar_patota_de_lista(t_list* lista, int elemento);
 int soy_el_ultimo_de_mi_especie(int tid);
 void test_soy_el_ultimo_de_mi_especie();
 void test_eliminar_patota_de_lista();
 int verificacion_tcb(int socket);
-void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket);
-void resolver_sabotaje(t_tripulante* un_tripulante, int socket);
+void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket_ram);
+void resolver_sabotaje(t_tripulante* un_tripulante, int socket_ram, int socket_mongo);
 t_tripulante* tripulante_mas_cercano_a(char* posicion);
+void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mongo);
+void guardian_sabotaje(int socket_ram, int socket_mongo);
+
+void notificar_fin_de_tarea(t_tripulante* un_tripulante, int socket_mongo){
+	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
+	empaquetar_y_enviar(trip_buffer, FIN_TAREA, socket_mongo);
+}
+
+void notificar_inicio_de_tarea(t_tripulante* un_tripulante, int socket_mongo){
+	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
+	empaquetar_y_enviar(trip_buffer, INICIO_TAREA, socket_mongo);
+}
+
+void notificar_movimiento(t_tripulante* un_tripulante, int socket_mongo){
+	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
+	empaquetar_y_enviar(trip_buffer, MOVIMIENTO, socket_mongo);
+}
+
+void notificar_inicio_sabotaje(t_tripulante* un_tripulante, int socket_mongo){
+	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
+	empaquetar_y_enviar(trip_buffer, CORRE_SABOTAJE, socket_mongo);
+}
+
+void notificar_fin_sabotaje(t_tripulante* un_tripulante, int socket_mongo){
+	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
+	empaquetar_y_enviar(trip_buffer, RESUELVE_SABOTAJE, socket_mongo);
+}
 
 int entrada_salida_ocupada (){
 	return(queue_size(cola_tripulantes_block) == 1);
@@ -95,6 +123,7 @@ int main() {
 
     iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
     iniciar_planificacion();
+
     /*
     sleep(3);
     peligro(socket_a_mi_ram_hq);
@@ -120,7 +149,8 @@ int main() {
     }
 
     while(sistema_activo){
-        usleep(1);
+    	// guardian_sabotaje(socket_a_mi_ram_hq, socket_a_mongo_store);
+    	usleep(1);
     }
 
     close(socket_a_mi_ram_hq);
@@ -271,8 +301,7 @@ void planificador(){
 void tripulante(t_tripulante* un_tripulante){
 
     int st_ram = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
-    // comentar el mongo si no se usa, rompe el close
-    // int st_mongo = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
+    int st_mongo = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     usleep(500);
     log_trace(logger, "Iniciando tripulante: %i", un_tripulante->TID);
@@ -286,15 +315,17 @@ void tripulante(t_tripulante* un_tripulante){
             verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
             if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
             	if(estamos_en_peligro){
-					resolver_sabotaje(un_tripulante, st_ram);
+					resolver_sabotaje(un_tripulante, st_ram, st_mongo);
 				}
 
                 if(planificacion_activa == 0){
                     // este espacio vacio es EXACTAMENTE lo que tiene que estar
                 }
                 else{
-                    realizar_tarea(un_tripulante, st_ram);
+                    realizar_tarea(un_tripulante, st_ram, st_mongo);
                 }
+            } else if (un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
+            	esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
             }
             verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
         }
@@ -304,7 +335,7 @@ void tripulante(t_tripulante* un_tripulante){
             verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
             if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
             	if(estamos_en_peligro){
-					resolver_sabotaje(un_tripulante, st_ram);
+					resolver_sabotaje(un_tripulante, st_ram, st_mongo);
             	}
 
                 if(un_tripulante->quantum_restante > 0){
@@ -312,7 +343,7 @@ void tripulante(t_tripulante* un_tripulante){
                         // este espacio vacio es EXACTAMENTE lo que tiene que estar
                     }
                     else{
-                        realizar_tarea(un_tripulante, st_ram);
+                        realizar_tarea(un_tripulante, st_ram, st_mongo);
                         un_tripulante->quantum_restante--;
                         log_debug(logger, "%i Trabaaajo muy duuro, como un esclaaaaavo: quantum restante %i", un_tripulante->TID, un_tripulante->quantum_restante);
                     }
@@ -325,7 +356,11 @@ void tripulante(t_tripulante* un_tripulante){
                     log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
                     actualizar_tripulante(un_tripulante, st_ram);
                 }
+            } else if (un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
+            	esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
             }
+
+
         verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
         }
     }
@@ -411,7 +446,7 @@ void enlistarse(t_tripulante* un_tripulante, int socket){
 
 }
 
-void realizar_tarea(t_tripulante* un_tripulante, int socket){
+void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mongo){
 
     int codigo_tarea = identificar_tarea(un_tripulante->tarea.nombre);
     log_trace(logger, "%i mi tarea: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
@@ -421,81 +456,109 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket){
 
         case GENERAR_OXIGENO:
             if(!llegue(un_tripulante)){
-                atomic_llegar_a_destino(un_tripulante, socket);
+                atomic_llegar_a_destino(un_tripulante, socket_ram);
+                notificar_movimiento(un_tripulante, socket_mongo);
+                if(llegue(un_tripulante)){
+                	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
+                }
             }else{
-            	sleep(1);
+            	sleep(RETARDO_CICLO_CPU);
             	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, OXIGENO,socket);
-                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
-                // MANTENERSE EN BLOCK
+            	empaquetar_y_enviar(b_oxigeno, OXIGENO, socket_mongo);
+            	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
+            	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
             break;
 
         case CONSUMIR_OXIGENO:
         	if(!llegue(un_tripulante)){
-				atomic_llegar_a_destino(un_tripulante, socket);
+                atomic_llegar_a_destino(un_tripulante, socket_ram);
+                notificar_movimiento(un_tripulante, socket_mongo);
+                if(llegue(un_tripulante)){
+                	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
+                }
 			}else{
-				sleep(1);
+				sleep(RETARDO_CICLO_CPU);
 				t_buffer* b_oxigeno = serializar_cantidad(-un_tripulante->tarea.parametro);
-				empaquetar_y_enviar(b_oxigeno, OXIGENO, socket);
-				// CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
-				// MANTENERSE EN BLOCK
-			}
+				empaquetar_y_enviar(b_oxigeno, OXIGENO, socket_mongo);
+            	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
+            	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
+            }
             break;
 
         case GENERAR_COMIDA:
             if(!llegue(un_tripulante)){
-                atomic_llegar_a_destino(un_tripulante, socket);
+                atomic_llegar_a_destino(un_tripulante, socket_ram);
+                notificar_movimiento(un_tripulante, socket_mongo);
+                if(llegue(un_tripulante)){
+                	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
+                }
             }else{
-            	sleep(1);
+            	sleep(RETARDO_CICLO_CPU);
             	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket);
-                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
-                // MANTENERSE EN BLOCK
+            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket_mongo);
+            	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
+            	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
             break;
 
         case CONSUMIR_COMIDA:
             if(!llegue(un_tripulante)){
-                atomic_llegar_a_destino(un_tripulante, socket);
+                atomic_llegar_a_destino(un_tripulante, socket_ram);
+                notificar_movimiento(un_tripulante, socket_mongo);
+                if(llegue(un_tripulante)){
+                	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
+                }
             }else{
-            	sleep(1);
+            	sleep(RETARDO_CICLO_CPU);
             	t_buffer* b_oxigeno = serializar_cantidad(-un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket);
-                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
-                // MANTENERSE EN BLOCK
+            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket_mongo);
+            	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
+            	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
             break;
 
         case GENERAR_BASURA:
             if(!llegue(un_tripulante)){
-                atomic_llegar_a_destino(un_tripulante, socket);
+                atomic_llegar_a_destino(un_tripulante, socket_ram);
+                notificar_movimiento(un_tripulante, socket_mongo);
+                if(llegue(un_tripulante)){
+                	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
+                }
             }else{
-            	sleep(1);
+            	sleep(RETARDO_CICLO_CPU);
             	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, BASURA ,socket);
-                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
-                // MANTENERSE EN BLOCK
+            	empaquetar_y_enviar(b_oxigeno, BASURA ,socket_mongo);
+            	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
+            	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
             break;
 
         case DESCARTAR_BASURA:
             if(!llegue(un_tripulante)){
-                atomic_llegar_a_destino(un_tripulante, socket);
+                atomic_llegar_a_destino(un_tripulante, socket_ram);
+                notificar_movimiento(un_tripulante, socket_mongo);
+                if(llegue(un_tripulante)){
+                	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
+                }
             }else{
-            	sleep(1);
+            	sleep(RETARDO_CICLO_CPU);
             	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, BASURA ,socket);
-                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
-                // MANTENERSE EN BLOCK
+            	empaquetar_y_enviar(b_oxigeno, BASURA ,socket_mongo);
+            	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
+            	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
             break;
 
         default:
             if(!llegue(un_tripulante)){
-                atomic_llegar_a_destino(un_tripulante, socket);
+                atomic_llegar_a_destino(un_tripulante, socket_ram);
+                notificar_movimiento(un_tripulante, socket_mongo);
+                if(llegue(un_tripulante)){
+                	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
+                }
             }else{
-                atomic_no_me_despierten_estoy_trabajando(un_tripulante, socket);
+                atomic_no_me_despierten_estoy_trabajando(un_tripulante, socket_ram, socket_mongo);
             }
             break;
     }
@@ -537,7 +600,8 @@ void atomic_llegar_a_destino(t_tripulante* un_tripulante, int socket){
     }
 }
 
-void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante, int socket){
+
+void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante, int socket_ram, int socket_mongo){
 
     if (un_tripulante->tarea.duracion > 0){
         sleep(RETARDO_CICLO_CPU);
@@ -545,7 +609,8 @@ void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante, int s
 
         if (un_tripulante->tarea.duracion == 0){
             log_info(logger, "Tarea finalizada: %s\n", un_tripulante->tarea.nombre);
-            conseguir_siguiente_tarea(un_tripulante, socket);
+            notificar_fin_de_tarea(un_tripulante, socket_mongo);
+            conseguir_siguiente_tarea(un_tripulante, socket_ram);
             log_trace(logger, "%i nueva tarea!: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
         }else{
             log_debug(logger, "trabajando! tarea restante %i", un_tripulante->tarea.duracion);
@@ -723,6 +788,8 @@ void listar_tripulantes() {
         for(j = 0; j < list_size(lista_tripulantes_de_una_patota); j++){
             aux_t = list_get(lista_tripulantes_de_una_patota, j);
             printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
+            // TODO: dejarlo como logger
+            // log_info(logger, "    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
         }
     }
     // TODO: revisar esto de abajo, tira segmentation fault en ciertos casos:
@@ -908,7 +975,7 @@ void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket){
 }
 
 
-void peligro(char* posicion_sabotaje, int socket){ // tambien deberia pasarle la pos del sabotaje
+void peligro(char* posicion_sabotaje, int socket_ram){ // tambien deberia pasarle la pos del sabotaje
 	// PRIMERO los de EXEC, los de mayor TID primero
 	// despues lo de READY, los de mayor TID primero
 
@@ -932,7 +999,7 @@ void peligro(char* posicion_sabotaje, int socket){ // tambien deberia pasarle la
 	j = list_size(lista_auxiliar);
 	for(i = 0; i < j; i++){
 		t_aux = list_remove(lista_auxiliar, 0);
-		cambiar_estado(t_aux, estado_tripulante[PANIK], socket);
+		cambiar_estado(t_aux, estado_tripulante[PANIK], socket_ram);
 		monitor_cola_push(sem_cola_block_emergencia, cola_tripulantes_block_emergencia, t_aux);
 	}
 
@@ -948,7 +1015,7 @@ void peligro(char* posicion_sabotaje, int socket){ // tambien deberia pasarle la
 
 	for(i = 0; i < j; i++){
 		t_aux = list_remove(lista_auxiliar, 0);
-		cambiar_estado(t_aux, estado_tripulante[PANIK], socket);
+		cambiar_estado(t_aux, estado_tripulante[PANIK], socket_ram);
 		monitor_cola_push(sem_cola_block_emergencia, cola_tripulantes_block_emergencia, t_aux);
 	}
 
@@ -972,7 +1039,7 @@ void peligro(char* posicion_sabotaje, int socket){ // tambien deberia pasarle la
 	resolver_sabotaje.duracion = DURACION_SABOTAJE;
 	t_aux->tarea = resolver_sabotaje;
 
-	cambiar_estado(t_aux, estado_tripulante[EXEC], socket);
+	cambiar_estado(t_aux, estado_tripulante[EXEC], socket_ram);
 
 	while(estamos_en_peligro){
 		// gritar_en_panico(); // todos se esperan a que termine el sabotaje
@@ -1021,19 +1088,39 @@ t_tripulante* tripulante_mas_cercano_a(char* posicion){
 	return un_tripulante;
 }
 
-void resolver_sabotaje(t_tripulante* un_tripulante, int socket){
+void resolver_sabotaje(t_tripulante* un_tripulante, int socket_ram, int socket_mongo){
+	notificar_inicio_sabotaje(un_tripulante, socket_mongo);
 
 	while(!llegue(un_tripulante)){
-		atomic_llegar_a_destino(un_tripulante, socket);
+		atomic_llegar_a_destino(un_tripulante, socket_ram);
+		notificar_movimiento(un_tripulante, socket_mongo);
 		log_warning(logger, "AAAAAAAAAAAAA");
 	}
 
 	while(un_tripulante->tarea.duracion > 0){
-		sleep(1);
+		sleep(RETARDO_CICLO_CPU);
 		un_tripulante->tarea.duracion--;
 		log_warning(logger, "DESABOTEATEEEEE");
 	}
 
 	estamos_en_peligro = 0;
 	log_warning(logger, "Sabotaje resuelto, viviremos un dia mas.");
+	notificar_fin_sabotaje(un_tripulante, socket_mongo);
+}
+
+void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mongo){
+	atomic_no_me_despierten_estoy_trabajando(un_tripulante, st_ram, st_mongo);
+}
+
+void guardian_sabotaje(int st_ram, int st_mongo){
+
+	while(1){
+		t_estructura* mensaje_peligro = recepcion_y_deserializacion(st_mongo);
+		if (mensaje_peligro->codigo_operacion == SABOTAJE){
+			// peligro(POS, st_ram);
+		}
+		else{
+			log_info(logger, "No hay sabotajes a la vista");
+		}
+	}
 }
