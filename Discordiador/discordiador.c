@@ -303,7 +303,6 @@ void iniciar_planificacion() {
 }
 
 void planificador(){
-
     log_info(logger, "Planificando");
     while(planificacion_activa){
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
@@ -382,7 +381,6 @@ void tripulante(t_tripulante* un_tripulante){
 
     close(st_ram);
     // close(st_mongo);
-
     morir(un_tripulante);
 
 }
