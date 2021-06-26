@@ -21,18 +21,9 @@ typedef struct pagina {
 } pagina;
 
 
-
-
-
-
 typedef struct tabla_paginas {
     t_list* paginas;
 } tabla_paginas;
-
-
-
-
-
 
 
 tabla_paginas* crear_tabla_paginas(uint32_t pid);

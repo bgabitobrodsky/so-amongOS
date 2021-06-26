@@ -42,12 +42,11 @@ void agregar_pagina( tabla_paginas* tabla, int tamano){
 
 
 pagina* crear_pagina(marco* marco, int ocupa){
-    log_info(logger,"Se crea página para el marco de base %d", marco->base);
 	pagina* pagina = malloc(sizeof(pagina));
     marco->libre = false;
 	pagina->puntero_marco = marco;
 	pagina->tamano_ocupado = ocupa;
-
+	log_info(logger,"Se crea página para el marco de base %d, que ocupa %d", marco->base, ocupa);
 	return pagina;
 }
 
@@ -82,7 +81,10 @@ tabla_paginas* crear_tabla_paginas(uint32_t pid){
 	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
     log_info(logger,"se creo tabla de paginas de pid %d", pid);
 	nueva_tabla->paginas = list_create();
-	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
+	char spid[4];
+	sprintf(spid, "%d", pid);
+    dictionary_put(tablas,spid,nueva_tabla);
+    log_debug(logger,"Tabla de pid: %d creada",pid);
     
 	return nueva_tabla;
 }
