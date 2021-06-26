@@ -18,11 +18,20 @@ int completar_pagina(pagina* pagina, int tamano, tabla_paginas* tabla){
 }
 
 
-void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamano){
+void agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tamano){
 	int cant_marcos_completos = cantidad_marcos_completos(tamano);
 
 	for(int i = 0; i < cant_marcos_completos; i++){
 		agregar_pagina(tabla, TAMANIO_PAGINA);			
+	}
+
+	int sub_tam = MIN(tam,TAMANIO_PAGINA);
+	agregar_pagina(tabla, data, );
+	
+	memcpy(destino + desplazamiento, data + desplazamiento, MIN(tam,TAMANIO_PAGINA));
+	if(tam > TAMANIO_PAGINA){
+		desplazamiento = MIN(tam,TAMANIO_PAGINA);
+		tam -= TAMANIO_PAGINA;
 	}
 
 	int tam_marco_incompleto = ocupa_marco_incompleto(tamano);
@@ -30,14 +39,26 @@ void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamano){
 	if(tam_marco_incompleto > 0){
 		agregar_pagina(tabla, tam_marco_incompleto);			
 	}
+
+
+
 }
 
-void agregar_pagina( tabla_paginas* tabla, int tamano){
-    
+void agregar_pagina(tabla_paginas* tabla, int tamano){
+
 	marco* marco = asignar_marco();
 	// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas); TODO
 	pagina* pagina = crear_pagina(marco, tamano);
 	list_add(tabla->paginas,pagina);
+}
+
+
+pagina* pagina_incompleta(tabla_paginas* tabla){
+	int size = list_size(tabla->paginas);
+	pagina* ultima_pagina = list_get(tabla->paginas, size - 1);
+	if(ultima_pagina->tamano_ocupado <= TAMANIO_PAGINA)
+		return ultima_pagina;
+	return NULL;
 }
 
 
@@ -119,7 +140,18 @@ marco* asignar_marco(){
 }
 
 
+void guardar_en_tabla(tabla_paginas* tabla, void* data, int tam){
+	int desplazamiento = 0;
+	
+	memcpy(destino + desplazamiento, data + desplazamiento, MIN(tam,TAMANIO_PAGINA));
+	if(tam > TAMANIO_PAGINA){
+		desplazamiento = MIN(tam,TAMANIO_PAGINA);
+		tam -= TAMANIO_PAGINA;
+	}
 
+
+
+}
 
 
 // TEST
