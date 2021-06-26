@@ -9,7 +9,7 @@
  */
 // TODO: en cada cambio de estado eliminar de las otras listas
 // TODO: Destruir listas
-// TODO: SI LO SACO DE LA LISTA DE LA COLA LO SACO DE LA COLA?
+// SI LO SACO DE LA LISTA DE LA COLA LO SACO DE LA COLA
 
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -134,7 +134,7 @@ int main() {
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
 
-
+/*
     iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
     iniciar_planificacion();
     sleep(5);
@@ -154,6 +154,20 @@ int main() {
     // iniciar_patota("INICIAR_PATOTA 2 Random.ims 1|1");
 
     // test_iniciar_planificacion();
+*/
+    t_tripulante* t1 = malloc(sizeof(t_tripulante));
+    t_tripulante* t2 = malloc(sizeof(t_tripulante));
+    t_tripulante* t3 = malloc(sizeof(t_tripulante));
+    t_tripulante* t4 = malloc(sizeof(t_tripulante));
+    queue_push(cola_tripulantes_ready, t1);
+    queue_push(cola_tripulantes_ready, t2);
+    queue_push(cola_tripulantes_ready, t3);
+    queue_push(cola_tripulantes_ready, t4);
+
+    list_remove(cola_tripulantes_ready->elements, 0);
+
+    log_error(logger, "%i", queue_size(cola_tripulantes_ready));
+
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -471,24 +485,72 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket){
             if(!llegue(un_tripulante)){
                 atomic_llegar_a_destino(un_tripulante, socket);
             }else{
+            	sleep(1);
+            	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_oxigeno, OXIGENO,socket);
                 // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
                 // MANTENERSE EN BLOCK
             }
             break;
 
         case CONSUMIR_OXIGENO:
+        	if(!llegue(un_tripulante)){
+				atomic_llegar_a_destino(un_tripulante, socket);
+			}else{
+				sleep(1);
+				t_buffer* b_oxigeno = serializar_cantidad(-un_tripulante->tarea.parametro);
+				empaquetar_y_enviar(b_oxigeno, OXIGENO, socket);
+				// CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
+				// MANTENERSE EN BLOCK
+			}
             break;
 
         case GENERAR_COMIDA:
+            if(!llegue(un_tripulante)){
+                atomic_llegar_a_destino(un_tripulante, socket);
+            }else{
+            	sleep(1);
+            	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket);
+                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
+                // MANTENERSE EN BLOCK
+            }
             break;
 
         case CONSUMIR_COMIDA:
+            if(!llegue(un_tripulante)){
+                atomic_llegar_a_destino(un_tripulante, socket);
+            }else{
+            	sleep(1);
+            	t_buffer* b_oxigeno = serializar_cantidad(-un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket);
+                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
+                // MANTENERSE EN BLOCK
+            }
             break;
 
         case GENERAR_BASURA:
+            if(!llegue(un_tripulante)){
+                atomic_llegar_a_destino(un_tripulante, socket);
+            }else{
+            	sleep(1);
+            	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_oxigeno, BASURA ,socket);
+                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
+                // MANTENERSE EN BLOCK
+            }
             break;
 
         case DESCARTAR_BASURA:
+            if(!llegue(un_tripulante)){
+                atomic_llegar_a_destino(un_tripulante, socket);
+            }else{
+            	sleep(1);
+            	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_oxigeno, BASURA ,socket);
+                // CONSUMIR UN CICLO PIDIENDO AYUDA A RAM Y PASAR A BLOCK
+                // MANTENERSE EN BLOCK
+            }
             break;
 
         default:
