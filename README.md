@@ -9,6 +9,9 @@ Actualizaciones MD5: No las hacía, ahora si
 obtener_bitacora: completa
 
 ### Registro de cambios
+26/06/2021
++ Modelado el protocolo para la llegada de un sabotaje.
+
 25/06/2021
 + Ahora los tripulantes actualizan su estado a RAM solo si lo cambiaron.
 + Ahora cada tripulante tiene su propio socket.

@@ -92,9 +92,10 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-/*
+
     iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
     iniciar_planificacion();
+    /*
     sleep(3);
     peligro(socket_a_mi_ram_hq);
 
@@ -724,12 +725,18 @@ void listar_tripulantes() {
             printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
         }
     }
-
+    // TODO: revisar esto de abajo, tira segmentation fault en ciertos casos:
+    // iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
+    // iniciar_planificacion();
+    // esṕerar a que termine
+    // listar tripulantes
+    // segmentation fault
+    /*
     void liberar(void* elemento){
     	free(elemento);
     }
 
-    list_destroy_and_destroy_elements(lista_tripulantes_de_una_patota, liberar);
+    list_destroy_and_destroy_elements(lista_tripulantes_de_una_patota, liberar);*/
 }
 
 t_list* lista_tripulantes_patota(uint32_t pid){
@@ -956,7 +963,7 @@ void peligro(char* posicion_sabotaje, int socket){ // tambien deberia pasarle la
 	list_destroy(lista_auxiliar);
 
 	estamos_en_peligro = 1;
-	// TODO
+	// TODO testear desde aca hacia abajo
 	t_aux = tripulante_mas_cercano_a(posicion_sabotaje);
 	t_tarea contexto = t_aux->tarea;
 	t_tarea resolver_sabotaje;
@@ -1024,7 +1031,7 @@ void resolver_sabotaje(t_tripulante* un_tripulante, int socket){
 	while(un_tripulante->tarea.duracion > 0){
 		sleep(1);
 		un_tripulante->tarea.duracion--;
-		log_warning(logger, "DESABOATEEEE");
+		log_warning(logger, "DESABOTEATEEEEE");
 	}
 
 	estamos_en_peligro = 0;
