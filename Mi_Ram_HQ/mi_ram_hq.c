@@ -333,7 +333,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		else{
 			agregar_paginas_segun_tamano(tabla, sizeof(t_PCB));
 		}
-		return 0;
+		return 1;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
