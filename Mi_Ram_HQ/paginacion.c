@@ -27,12 +27,13 @@ void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamano){
 
 	int tam_marco_incompleto = ocupa_marco_incompleto(tamano);
 
-	if(marco_incompleto != 0){
+	if(tam_marco_incompleto > 0){
 		agregar_pagina(tabla, tam_marco_incompleto);			
 	}
 }
 
 void agregar_pagina( tabla_paginas* tabla, int tamano){
+    
 	marco* marco = asignar_marco();
 	// void* puntero_a_tareas = memcpy(memoria_principal + marco_tareas->base, archivo_tareas->texto, tamanio_tareas); TODO
 	pagina* pagina = crear_pagina(marco, tamano);
@@ -41,21 +42,24 @@ void agregar_pagina( tabla_paginas* tabla, int tamano){
 
 
 pagina* crear_pagina(marco* marco, int ocupa){
+    log_info(logger,"Se crea página para el marco de base %d", marco->base);
 	pagina* pagina = malloc(sizeof(pagina));
-	pagina->puntero_marco = marco_tareas;
-	pagina->tamano_ocupado = tam;
+    marco->libre = false;
+	pagina->puntero_marco = marco;
+	pagina->tamano_ocupado = ocupa;
 
 	return pagina;
 }
 
 
 int cantidad_marcos_completos(int tam){
-	int marcos = tam/TAMANIO_PAGINA  
+    log_info(logger,"Calculando cantidad de marcos para el tamaño %d", tam);
+	int marcos = tam / TAMANIO_PAGINA;  
 	return marcos;
 }
 
 int ocupa_marco_incompleto(int tam){
-	int parte_ocupada = tam % TAMANIO_PAGINA 
+	int parte_ocupada = tam % TAMANIO_PAGINA; 
 	return parte_ocupada;
 }
 
@@ -67,14 +71,25 @@ void liberar_marco(int num_marco){
 }
 
 marco* crear_marco(int base, bool libre){
-    marco* nueva_marco = malloc(sizeof(marco));
-    nueva_marco->base = base;
-    nueva_marco->libre = libre;
+    marco* nuevo_marco = malloc(sizeof(marco));
+    nuevo_marco->base = base;
+    nuevo_marco->libre = libre;
 
-    return nueva_marco;
+    return nuevo_marco;
 }
 
+tabla_paginas* crear_tabla_paginas(uint32_t pid){
+	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
+    log_info(logger,"se creo tabla de paginas de pid %d", pid);
+	nueva_tabla->paginas = list_create();
+	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
+    
+	return nueva_tabla;
+}
+
+
 marco* buscar_marco_libre(){
+    log_info(logger,"Buscando un marco libre");
     int size = list_size(marcos);
 	for(int i=0; i<size; i++){
         marco* x = list_get(marcos, i);
@@ -88,6 +103,7 @@ marco* buscar_marco_libre(){
 }
 
 marco* asignar_marco(){
+
 	marco* marco_libre = buscar_marco_libre();
 	if(marco_libre != NULL){
 		//Si el marco es del tamano justo, no tengo que reordenar

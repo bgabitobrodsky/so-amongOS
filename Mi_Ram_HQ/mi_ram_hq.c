@@ -68,7 +68,7 @@ void gestionar_tareas(t_archivo_tareas* archivo){
 		//completarla, restarle el tamano  que falte y repetir lo anterior
 
 
-		size list_size(tabla->paginas);
+		int size = list_size(tabla->paginas);
 		pagina* ultima_pagina = list_get(tabla->paginas, size - 1);
 
 		if(ultima_pagina->tamano_ocupado <= TAMANIO_PAGINA){
@@ -168,7 +168,16 @@ int main(int argc, char** argv) {
 
 	tabla_paginas* tabla = crear_tabla_paginas(1);
 
-	agregar_paginas_segun_tamano(tabla, 300);
+
+	log_info(logger,'antes de  creo el marco');
+	marco* marco = list_get(marcos,0);
+
+	log_info(logger,'se creo el marco');
+
+	pagina* pagina = crear_pagina(marco, 3);
+
+	list_add(tabla->paginas, pagina);
+	// agregar_paginas_segun_tamano(tabla, 100);
 
 	imprimir_paginas(1);
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
@@ -338,12 +347,7 @@ indice_tabla* crear_indice(int pid, void* tabla){
 
 
 
-tabla_paginas* crear_tabla_paginas(uint32_t pid){
-	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
-	nueva_tabla->paginas = list_create();
-	list_add(indices,crear_indice(pid, (void*) nueva_tabla));
-	return nueva_tabla;
-}
+
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
