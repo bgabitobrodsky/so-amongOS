@@ -308,27 +308,26 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid_patota);
 		if(tabla == NULL){ 
 			tabla = crear_tabla_paginas(pid_patota);
+		}else{
+			log_error(logger,"La tabla ya existía pid: %d",pid_patota);
+			return 0;
 		}
 
 
 		agregar_paginas_segun_tamano(tabla, tamanio_tareas);
-
+		
 		//consultar si la ultima pagina le sobra lugar
 		//completarla, restarle el tamano  que falte y repetir lo anterior
 
 
-		int size = list_size(tabla->paginas);
-		pagina* ultima_pagina = list_get(tabla->paginas, size - 1);
-
-		if(ultima_pagina->tamano_ocupado <= TAMANIO_PAGINA){
+		pagina* ultima_pagina = pagina_incompleta(tabla_paginas* tabla);
+		if(ultima_pagina != NULL){
 			// Devuelve lo que le sobro
 			int falta_guardar_del_pcb = completar_pagina(ultima_pagina, sizeof(t_PCB), tabla);
 			
 			if(falta_guardar_del_pcb > 0){
 				agregar_paginas_segun_tamano(tabla, falta_guardar_del_pcb);	
 			}
-			
-
 		}
 		else{
 			agregar_paginas_segun_tamano(tabla, sizeof(t_PCB));
@@ -369,6 +368,7 @@ int gestionar_tcb(t_TCB* tcb){
 		list_add(tabla->segmentos_tcb, segmento_tcb);
 
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		//TODO Guardar tcb en tabla de paginas
 		return 0;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
