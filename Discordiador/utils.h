@@ -34,6 +34,12 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 
+enum tareas {
+    GENERAR_OXIGENO, CONSUMIR_OXIGENO, GENERAR_COMIDA, CONSUMIR_COMIDA, GENERAR_BASURA, DESCARTAR_BASURA, OTRA_TAREA
+};
+
+enum estados { NEW, READY, EXEC, BLOCK, EXIT, PANIK};
+
 typedef enum{
 
 	NO_CONOCIDO,
