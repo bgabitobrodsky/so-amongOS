@@ -27,23 +27,41 @@ t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 
 void* memoria_principal;
 
+typedef struct pagina {
+    int base;
+    bool libre;
+    //uint64_t ultimo_uso; // para LRU
+} pagina;
+t_list* paginas;
+
+
+typedef struct tabla_paginas {
+    t_list* paginas;
+} tabla_paginas;
 
 typedef struct indice_tabla {
     uint32_t pid;
     void* tabla;
 } indice_tabla;
 
-
-t_list* indices;
+t_dictionary* tablas;
+t_log* logger;
+t_config* config;
 
 void iniciar_memoria();
-void gestionar_tareas (t_archivo_tareas*);
-void gestionar_tcb(t_TCB*);
+int gestionar_tareas (t_archivo_tareas*);
+int gestionar_tcb(t_TCB*);
 
+tabla_paginas* crear_tabla_paginas(uint32_t pid);
+pagina* crear_pagina(int base, bool libre);
 
-indice_tabla* crear_indice(int pid, void* tabla);
+void* crear_indice(int pid, void* tabla);
 void* buscar_tabla(int pid);
 t_TCB* buscar_tcb(int tid);
-
+t_tarea* buscar_siguiente_tarea(int tid);
+t_list* buscar_tcbs_por_pid(int);
+t_TCB* buscar_tcb_por_tid(int);
+int actualizar_tcb(t_TCB*);
+int eliminar_tcb(int tid); // devuelve 1 si todo ok, 0 si falló algo
 
 #endif /* MI_RAM_HQ_H_ */

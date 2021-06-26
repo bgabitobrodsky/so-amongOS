@@ -1,15 +1,15 @@
 #include "mongo_tripulantes.h"
 
-void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enunciado la implementacion
+void manejo_tripulante(int socket_tripulante) {
 	while(1) {
 		// Se espera a ver que manda el tripulante
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
 
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
-		if (mensaje->codigo_operacion == PRIMERA_CONEXION) {
-			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante); // TODO: Ver como se mandan tripulantes
+		if (mensaje->codigo_operacion == RECIBIR_TCB) {
+			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_info(logger_mongo, "Se creo la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
-			//free(mensaje->tcb);
+			free(mensaje->tcb);
 		}
 		// Si no lo es, puede ser o agregar/quitar recursos o cambiar informacion en la bitacora
 		else {
@@ -19,8 +19,9 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
-			// Si es otro codigo, debera ser un cambio (tal vez agregar comprobacion para evitar errores de los que codean el Discordiador)
-			else {
+
+			// Si es otro codigo
+			else if(mensaje->codigo_operacion > TAREA && mensaje->codigo_operacion < MOVIMIENTO){
 				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 			}
 		}
@@ -39,19 +40,16 @@ void manejo_tripulante(int socket_tripulante) { // TODO: Ver si le agrada al enu
 	}
 }
 
-void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: Verificar estructura, funcion boceto
-	// Se obtiene el path donde se crean las bitacoras
-	char* path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
-	char* path_bitacoras = malloc((strlen(path_directorio)+1) + strlen("/Files/Bitacoras"));
-	sprintf(path_bitacoras, "/Files/Bitacoras");
-	
+void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: Verificar estructura, funcion boceto.
 	// Se obtiene el path particular del tripulante, identificado con su TID
-	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);
-	sprintf(path_tripulante, "%s/Tripulante%s.ims", path_bitacoras, string_itoa(tcb->TID)); // TODO: Revisar funcionamiento de esta linea y ver identificador
-
+	char* path_tripulante = fpath_tripulante(tcb);
+	
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
 	
+	//Se inicializan los datos del tripulante
+	escribir_archivo_tripulante(file_tripulante, 0, NULL);
+
 	// Se lo guarda en la bitacora
 	acomodar_bitacora(file_tripulante, tcb);
 }
@@ -63,11 +61,12 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	nueva_bitacora->tripulante = tcb;
 
 	list_add(bitacoras, nueva_bitacora);
+
+	asignar_nuevo_bloque(file_tripulante);
 }
 
 void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir comportamiento
-	int indice = obtener_indice_bitacora(tcb);
-	t_bitacora* bitacora = list_get(bitacoras, indice);
+	t_bitacora* bitacora = obtener_bitacora(tcb);
 	
 	switch (codigo_operacion) {
 		case MOVIMIENTO:
@@ -84,15 +83,40 @@ void modificar_bitacora(int codigo_operacion, t_TCB* tcb) { // TODO: Definir com
 }
 
 void borrar_bitacora(t_TCB* tcb) {
-	int indice = obtener_indice_bitacora(tcb);
-
-	t_bitacora* bitacora = list_remove(bitacoras, indice);
+	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
 
 	fclose(bitacora->bitacora_asociada);
 	free(bitacora->tripulante);
 	free(bitacora);
 }
 
-int obtener_indice_bitacora(t_TCB* tcb) { // TODO: Implementar
-	return 0;
+t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
+
+	bool contains(void* tcb1) {
+		return (tcb == ((t_bitacora*) tcb1)->tripulante);
+	}
+
+	t_bitacora* bitacora = list_remove_by_condition(bitacoras, contains);
+	return bitacora;
+}
+
+t_bitacora* obtener_bitacora(t_TCB* tcb) {
+
+	bool contains(void* tcb1) {
+		return (tcb == ((t_bitacora*) tcb1)->tripulante);
+	}
+
+	t_bitacora* bitacora = list_remove_by_condition(bitacoras, contains);
+	list_add(bitacoras, bitacora);
+	return bitacora;
+}
+
+char* fpath_tripulante(t_TCB* tcb) {
+	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);
+	char* path_bitacoras_aux = malloc(strlen(path_bitacoras) + 1);
+	strcpy(path_bitacoras_aux, path_bitacoras);
+	path_tripulante = strcat(path_bitacoras_aux, "/Tripulante");
+	path_tripulante = strcat(path_tripulante, string_itoa(tcb->TID));
+	path_tripulante = strcat(path_tripulante, ".ims");
+	return path_tripulante;
 }

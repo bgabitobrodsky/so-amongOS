@@ -1,6 +1,32 @@
 # No matar a rey de fuego
 
+### Registro de cambios MONGO
+24/06/2021
+README: A partir de ahora lo implemento, prometo ir anotando los cambios para no olvidarme, como me pudo haber pasado hoy.
+Hilos: join por detach
+Inicializar archvos: Se inicializan los datos en 0 (tamaño, cant_bloques, etc)
+Actualizaciones MD5: No las hacía, ahora si
+obtener_bitacora: completa
+
 ### Registro de cambios
+25/06/2021
++ Ahora los tripulantes actualizan su estado a RAM solo si lo cambiaron.
++ Ahora cada tripulante tiene su propio socket.
+
+24/06/2021
++ Implementado DUMP de memoria.
++ Corregidos los puertos en la config.
+
+23/06/2021
++ Planificacion mediante FIFO y ROUND ROBIN.
++ (ahora es discordiador quien actualiza a RAM el estado de quienes pasan a EXEC).
+
+21/06/2021
++ Los tripulantes informan a ram sus movimientos y cambios de estado.
++ Grandes avances en discordiador.
++ Se reciben tareas desde RAM.
++ Los tripulantes son capaces de realizar sus tareas.
+
 20/06/2021
 + Iniciado planteamiento de tripulantes.
 + Planteado movimiento en el tablero.
