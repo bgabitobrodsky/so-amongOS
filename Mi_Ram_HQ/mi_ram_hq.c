@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-
+	//test_gestionar_tareas_paginacion();
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 
@@ -83,7 +83,7 @@ void proceso_handler(void* args) {
 	while (1) {
 		if ((socket_especifico = accept(socket_escucha, (struct sockaddr*) &address, (socklen_t *) &addrlen)) > 0) {
 			// Maté la verificación
-			log_info(logger, "Se conecta un nuevo proceso");
+			log_info(logger, "Se conecta un nuevo cliente");
 
 			hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
 
