@@ -1,15 +1,46 @@
 #include "paginacion.h"
 #define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
+void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam){
+	void* data = malloc(tam);
+	pagina* pagina; 
+	int faltante = tam;
+	int numero_pagina = dl / TAMANIO_PAGINA;
+	int offset = dl % TAMANIO_PAGINA;
+	log_info(logger, "Se empieza a buscar en la pagina %d con offset %d, tam %d", numero_pagina, offset, tam);
+	if(offset > 0){
+		pagina = list_get(tabla->paginas, numero_pagina);
+		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
+		numero_pagina++;
+	}
+	while(faltante > 0){
+		pagina = list_get(tabla->paginas, numero_pagina);
+		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
+		numero_pagina++;
+	}
+
+	return data;
+}
+
+int rescatar_de_marco(marco* marco, void* data, int offset, int tam){
+	//esta funcion retorna lo que de rescató de memoria
+	int tam_rescate = MIN(tam, TAMANIO_PAGINA - offset);
+	log_info(logger, "Se rescatan %d bytes del marco con base %d, con offset %d, tam %d", tam_rescate, marco->base,offset,tam);
+	memcpy(data, memoria_principal + marco->base + offset, tam_rescate);
+
+	return tam_rescate;
+}
 
 int completar_pagina(pagina* pagina, void* data, int tam){
 	//esta función devuelve lo que logró guardar
 	int ocupado = pagina->tamano_ocupado;
-	int disponible = TAMANIO_PAGINA - espacio_ocupado;
+	int disponible = TAMANIO_PAGINA - ocupado;
 	marco* marco = pagina->puntero_marco;
 
 	// me alcanza con esa pagina?
-	if(disponible + tam <= TAMANIO_PAGINA){
+	if(disponible - tam >= 0){
 		pagina->tamano_ocupado += tam;
 		memcpy(memoria_principal + marco->base + ocupado, data, tam);
 		return tam; // pude guardar todo
@@ -20,61 +51,31 @@ int completar_pagina(pagina* pagina, void* data, int tam){
 	return disponible; // pude guardar solo el tamaño disponible 
 }
 
-void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam){
-	pagina* pagina; 
-	int faltante = tam;
-	void* data = malloc(tam);
-	int numero_primer_pagina = dl / TAMANIO_PAGINA;
-	int offset = dl % TAMANIO_PAGINA;
-
-	if(offset > 0){
-		pagina = list_get(tabla->paginas, numero_primer_pagina);
-		marco = pagina->puntero_marco;
-		faltante -= rescatar_de_marco(marco,data,offset,tam);
-	}
-	while(faltante > 0){
-		pagina = list_get(tabla->paginas, ++numero_primer_pagina);
-		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
-	}
-
-	return data;
-}
-
-int rescatar_de_marco(marco* marco, void* data, int offset, int tam){
-	//esta funcion retorna lo que de rescató de memoria
-	int espacio_necesario = offset + tam;
-	int tam_rescate = MIN(tam, TAMANIO_PAGINA-offset);
-
-	memcpy(data, memoria_principal + marco->base + offset, tam_rescate);
-
-	return tam_rescate;
-}
-
-
-
 int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam){
 	// esta función devuelve la dirección lógica de lo que se guardó
-	int direccion_logica;
+	int dl;
 	int progreso = 0;
+	// para calcular la dl
 	int numero_pagina;
 	int offset;
 
-	pagina* ultima_pagina = pagina_incompleta(tabla_paginas* tabla);
+	pagina* ultima_pagina = pagina_incompleta(tabla);
 	if(ultima_pagina != NULL){ // si hay una pagina incompleta
-		numero_pagina = list_size(tabla->paginas) - 1;
 		offset = ultima_pagina->tamano_ocupado;
+		numero_pagina = list_size(tabla->paginas) - 1;
 		progreso += completar_pagina(ultima_pagina, data, tam);
+		log_info(logger, "Se completó la última página, progreso: %d / %d bytes", progreso, tam);
 	}else{
 		numero_pagina = list_size(tabla->paginas);
 		offset = 0;
 	}
-	direccion_logica = numero_pagina * TAMANIO_PAGINA + offset;
+	dl = numero_pagina * TAMANIO_PAGINA + offset;
 
 	while(progreso < tam){
-		progreso += agregar_pagina(tabla, data, tam - progreso);
+		progreso += agregar_pagina(tabla, data + progreso, tam - progreso);
+		log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}
-
-	return direccion_logica;	
+	return dl;	
 }
 
 
@@ -100,7 +101,7 @@ pagina* pagina_incompleta(tabla_paginas* tabla){
 	int size = list_size(tabla->paginas);
 	if(size > 0){
 		pagina* ultima_pagina = list_get(tabla->paginas, size - 1);
-		if(ultima_pagina->tamano_ocupado <= TAMANIO_PAGINA)
+		if(ultima_pagina->tamano_ocupado < TAMANIO_PAGINA)
 			return ultima_pagina;
 	}
 	return NULL;
@@ -150,7 +151,6 @@ tabla_paginas* crear_tabla_paginas(uint32_t pid){
 	sprintf(spid, "%d", pid);
     dictionary_put(tablas,spid,nueva_tabla);
     log_debug(logger,"Tabla de pid: %d creada",pid);
-    
 	return nueva_tabla;
 }
 
@@ -184,32 +184,38 @@ marco* asignar_marco(){
 }
 
 
-void guardar_en_tabla(tabla_paginas* tabla, void* data, int tam){
-	int desplazamiento = 0;
-	
-	memcpy(destino + desplazamiento, data + desplazamiento, MIN(tam,TAMANIO_PAGINA));
-	if(tam > TAMANIO_PAGINA){
-		desplazamiento = MIN(tam,TAMANIO_PAGINA);
-		tam -= TAMANIO_PAGINA;
-	}
-
-
-
-}
-
-
 // TEST
 
 void imprimir_paginas(int pid){
-    tabla_paginas* t_pag = buscar_tabla(pid);
-    t_list* paginas = t_pag->paginas;
+    tabla_paginas* tabla = buscar_tabla(pid);
+	int size = list_size(tabla->paginas);
 
     printf("\n<------ PAGINAS de tabla %d -----------\n", pid);
-
-    for(int i=0; i<list_size(paginas); i++) {
-        pagina* s = list_get(paginas, i);
-        printf("pagina %d base: %d, tamaño ocupado: %d \n", i + 1 , s->puntero_marco->base, s->tamano_ocupado);
+    for(int i = 0; i < size; i++) {
+        pagina* s = list_get(tabla->paginas, i);
+        printf("pagina %d base: %d, tamaño ocupado: %d \n", i, s->puntero_marco->base, s->tamano_ocupado);
     }
     printf("------------------->\n");
+
+}
+
+void test_gestionar_tareas_paginacion(){
+	t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
+	arc->texto = "GENERAR_OXIGENO 10;1;1;1";
+	arc->largo_texto = 25;
+	arc->pid = 1;
+	gestionar_tareas(arc);
+    free(arc);
+
+	imprimir_paginas(1);
+	tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(1);
+	
+	t_PCB* pcb = (t_PCB*) rescatar_de_paginas(tabla, tabla->dl_pcb, sizeof(t_PCB));
+	log_info(logger,"El pid era: %d", pcb->PID);
+	free(pcb);
+
+	char* tareas = (char*) rescatar_de_paginas(tabla, 0, tabla->dl_pcb);
+	log_info(logger,"Tareas: %s", tareas);
+	free(tareas);
 
 }

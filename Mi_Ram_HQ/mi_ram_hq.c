@@ -15,6 +15,7 @@
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define LIMIT_CONNECTIONS 10
 
+
 void dump(int n){
 	if(n == SIGUSR2){
 		log_debug(logger,"Se inicia el dump de memoria");
@@ -41,8 +42,8 @@ int main(int argc, char** argv) {
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-	
 
+	test_gestionar_tareas_paginacion();	
 
 	// tabla_paginas* tabla = crear_tabla_paginas(1);
 
@@ -248,6 +249,7 @@ void iniciar_memoria(){
 
 void* buscar_tabla(int pid){	
 	log_debug(logger,"Se comienza la busqueda de tabla de pid: %d",pid);
+	log_error(logger, "Paso el diccionario");
 	char spid[4];
 	sprintf(spid, "%d", pid);
 	void* tabla = dictionary_get(tablas,spid);
@@ -312,14 +314,22 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 			log_error(logger,"La tabla ya existía pid: %d",pid_patota);
 			return 0;
 		}
-		int dl_tareas = agregar_paginas_segun_tamano(tabla, archivo->texto, tamanio_tareas);
 
+		log_info(logger, "Comienza la creación de las tareas con PID: %d", pid_patota);
+		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas);
+		tabla->dl_tareas = dl_tareas;
+		log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
+
+		log_info(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
 		t_PCB* pcb = malloc(sizeof(t_PCB));
 		pcb->PID = pid_patota;
 		pcb->direccion_tareas = dl_tareas;
-		int dl_pcb = agregar_paginas_segun_tamano(tabla, pcb, sizeof(t_PCB));
-		tabla->dl_tareas = dl_tareas;
+		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB));
 		tabla->dl_pcb = dl_pcb;
+		log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
+		
+		free(pcb);
+
 		return 1;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
@@ -356,14 +366,14 @@ int gestionar_tcb(t_TCB* tcb){
 		list_add(tabla->segmentos_tcb, segmento_tcb);
 
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid_patota);
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){ 
-			log_error(logger,"La tabla no existe pid: %d",pid_patota);
+			log_error(logger,"La tabla no existe pid: %d",pid);
 			return 0;
 		}
 
 
-		agregar_paginas_segun_tamano(tabla, tamanio_tareas);
+		//agregar_paginas_segun_tamano(tabla, tamanio_tareas);
 		
 		//TODO con lo de gabito
 
@@ -375,7 +385,7 @@ int gestionar_tcb(t_TCB* tcb){
 	return 1;
 }
 
-t_PCB* buscar_tareas_por_pid_paginacion(int pid){
+/*t_PCB* buscar_tareas_por_pid_paginacion(int pid){
 	tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){ 
 			log_error(logger,"La tabla no existe pid: %d",pid);
@@ -414,7 +424,7 @@ t_list* marcos_que_ocupa( tabla_paginas* tabla,int tam, int dl){
 	}
 }
 
-	
+	*/
 
 
 
