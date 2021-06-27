@@ -4,9 +4,6 @@
 #include "mi_ram_hq.h"
 
 
-extern t_list* indices;
-
-
 typedef struct marco {
     int base;
     bool libre;
@@ -22,10 +19,15 @@ typedef struct pagina {
 
 
 typedef struct tabla_paginas {
+    int dl_pcb;
+    int dl_tareas;
+    t_list dl_tcbs;
     t_list* paginas;
 } tabla_paginas;
 
 
+void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam);
+int rescatar_de_marco(marco* marco, void* data, int offset, int tam);
 tabla_paginas* crear_tabla_paginas(uint32_t pid);
 int completar_pagina(pagina* pagina, int tamano, tabla_paginas* tabla);
 void agregar_paginas_segun_tamano(tabla_paginas* tabla, int tamano);

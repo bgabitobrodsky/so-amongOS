@@ -20,6 +20,37 @@ int completar_pagina(pagina* pagina, void* data, int tam){
 	return disponible; // pude guardar solo el tamaño disponible 
 }
 
+void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam){
+	pagina* pagina; 
+	int faltante = tam;
+	void* data = malloc(tam);
+	int numero_primer_pagina = dl / TAMANIO_PAGINA;
+	int offset = dl % TAMANIO_PAGINA;
+
+	if(offset > 0){
+		pagina = list_get(tabla->paginas, numero_primer_pagina);
+		marco = pagina->puntero_marco;
+		faltante -= rescatar_de_marco(marco,data,offset,tam);
+	}
+	while(faltante > 0){
+		pagina = list_get(tabla->paginas, ++numero_primer_pagina);
+		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
+	}
+
+	return data;
+}
+
+int rescatar_de_marco(marco* marco, void* data, int offset, int tam){
+	//esta funcion retorna lo que de rescató de memoria
+	int espacio_necesario = offset + tam;
+	int tam_rescate = MIN(tam, TAMANIO_PAGINA-offset);
+
+	memcpy(data, memoria_principal + marco->base + offset, tam_rescate);
+
+	return tam_rescate;
+}
+
+
 
 int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam){
 	// esta función devuelve la dirección lógica de lo que se guardó

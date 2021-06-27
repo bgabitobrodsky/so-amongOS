@@ -356,8 +356,17 @@ int gestionar_tcb(t_TCB* tcb){
 		list_add(tabla->segmentos_tcb, segmento_tcb);
 
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		//TODO Guardar tcb en tabla de paginas
-		return 0;
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid_patota);
+		if(tabla == NULL){ 
+			log_error(logger,"La tabla no existe pid: %d",pid_patota);
+			return 0;
+		}
+
+
+		agregar_paginas_segun_tamano(tabla, tamanio_tareas);
+		
+		//TODO con lo de gabito
+
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -365,6 +374,50 @@ int gestionar_tcb(t_TCB* tcb){
 	log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
 	return 1;
 }
+
+t_PCB* buscar_tareas_por_pid_paginacion(int pid){
+	tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
+		if(tabla == NULL){ 
+			log_error(logger,"La tabla no existe pid: %d",pid);
+			return 0;
+		}
+
+	int tam_tareas = tabla->dl_pcb;
+	// las tareas al principio de la primer pagina 
+
+	t_list* marcos_que_ocupa = marcos_que_ocupa(tabla,tam_tareas,tabla->dl_tareas);	
+	
+}
+
+t_list* marcos_que_ocupa( tabla_paginas* tabla,int tam, int dl){
+	t_list* marco_usados = list_create();
+
+	int marcos_a_recorrer = marcos_completos + marco_incompleto;
+	numero_primer_pagina =  dl / TAMANIO_PAGINA ;
+    offset = dl % TAMANIO_PAGINA;
+
+	int pagina_offset =0 ;
+	if(offset>0){
+		pagina_offset =1;
+	}
+
+	cant_pag_completas = ((tam - offset) / TAMANIO_PAGINA) + pagina_offset;
+
+	numero_última_pagina =  (dl + tam) / TAMANIO_PAGINA ;
+
+	cantidad_de_pagina = numero_última_pagina - numero_primer_pagina;
+
+	for(int i=0; i < cantidad_de_pagina ; i++){
+		pagina* pagina = list_get(tabla->paginas, num_pagnumero_primer_paginaina);
+
+		list_add(marco_usados,pagina->puntero_marco);
+	}
+}
+
+	
+
+
+
 
 t_TCB* buscar_tcb_por_tid(int tid){
 	int pid = tid / 10000;
