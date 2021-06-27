@@ -15,6 +15,7 @@
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define LIMIT_CONNECTIONS 10
 
+
 void dump(int n){
 	if(n == SIGUSR2){
 		log_debug(logger,"Se inicia el dump de memoria");
@@ -41,8 +42,9 @@ int main(int argc, char** argv) {
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-	
+
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
+
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     	args_escuchar args_miram;
@@ -81,7 +83,7 @@ void proceso_handler(void* args) {
 	while (1) {
 		if ((socket_especifico = accept(socket_escucha, (struct sockaddr*) &address, (socklen_t *) &addrlen)) > 0) {
 			// Maté la verificación
-			log_info(logger, "Se conecta un nuevo cliente");
+			log_info(logger, "Se conecta un nuevo proceso");
 
 			hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
 
@@ -201,33 +203,8 @@ void atender_clientes(void* param) {
 
 }
 
-// void liberar_pagina(int base){
-//     for(int i = 0; i<list_size(paginas);i++){
-//         pagina* x = list_get(paginas, i);
-//         if(x->base == base) {
-//             x->libre = true;
-//             log_info(logger, "Se elimina la página con base %d", x->base);
-//         }
-//     }
-//     ordenar_segmentos();
-// }
 
 
-pagina* crear_pagina(int base, bool libre){
-    pagina* nueva_pagina = malloc(sizeof(pagina));
-    nueva_pagina->base = base;
-    nueva_pagina->libre = libre;
-
-    return nueva_pagina;
-}
-
-
-tabla_paginas* crear_tabla_paginas(uint32_t pid){
-	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
-	nueva_tabla->paginas = list_create();
-	//list_add(indices,crear_indice(pid, (void*) nueva_tabla));
-	return nueva_tabla;
-}
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
@@ -238,15 +215,16 @@ void iniciar_memoria(){
 		segmento* segmento_principal = crear_segmento(0,TAMANIO_MEMORIA,true);
 		list_add(segmentos,segmento_principal);
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
-		log_debug(logger,"Se inicia memoria con esquema de PAGINACION");
-		paginas = list_create();
-
-		int cantidad_paginas = TAMANIO_MEMORIA/TAMANIO_PAGINA;
 		
-		for(int i=0; i < cantidad_paginas ; i++) {
-			pagina* pagina = crear_pagina(TAMANIO_PAGINA * i, true);
+		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
+		marcos = list_create();
 
-			list_add(paginas,pagina);
+		int cantidad_marcos = TAMANIO_MEMORIA/TAMANIO_PAGINA;
+		
+		for(int i=0; i < cantidad_marcos ; i++) {
+			marco* marco = crear_marco(TAMANIO_PAGINA * i, true);
+
+			list_add(marcos,marco);
 		}
 
 	}else{
@@ -314,7 +292,30 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		free(pcb);
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		return 0;
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid_patota);
+		if(tabla == NULL){ 
+			tabla = crear_tabla_paginas(pid_patota);
+		}else{
+			log_error(logger,"La tabla ya existía pid: %d",pid_patota);
+			return 0;
+		}
+
+		log_info(logger, "Comienza la creación de las tareas con PID: %d", pid_patota);
+		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas);
+		tabla->dl_tareas = dl_tareas;
+		log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
+
+		log_info(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
+		t_PCB* pcb = malloc(sizeof(t_PCB));
+		pcb->PID = pid_patota;
+		pcb->direccion_tareas = dl_tareas;
+		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB));
+		tabla->dl_pcb = dl_pcb;
+		log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
+		
+		free(pcb);
+
+		return 1;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -350,7 +351,19 @@ int gestionar_tcb(t_TCB* tcb){
 		list_add(tabla->segmentos_tcb, segmento_tcb);
 
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		return 0;
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
+		if(tabla == NULL){ 
+			log_error(logger,"La tabla no existe pid: %d",pid);
+			return 0;
+		}
+
+		log_info(logger, "Comienza la creación de las tareas con TID: %d", tcb->TID);
+		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB));
+		char stid[6];
+		sprintf(stid,"%d", tcb->TID);
+		dictionary_put(tabla->dl_tcbs, stid, (void*) dl_tcb);
+		log_info(logger, "Se terminó de guardar el TCB de tid: %d, dirección lógica: %d", tcb->TID, dl_tcb);
+
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -358,6 +371,7 @@ int gestionar_tcb(t_TCB* tcb){
 	log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
 	return 1;
 }
+
 
 t_TCB* buscar_tcb_por_tid(int tid){
 	int pid = tid / 10000;
@@ -390,7 +404,13 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		log_debug(logger,"TCB con TID: %d encontrado", tid);
 		
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
-		
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
+		if(tabla == NULL){
+			return NULL;
+		}
+		char stid[6];
+		sprintf(stid, "%d", 10001);
+		t_TCB* tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB));
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -481,7 +501,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 	log_debug(logger,"Comenzó el sacrificio del TCB TID: %d", tid);
 	int pid = tid / 10000;
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-		tabla_segmentos* tabla = buscar_tabla(pid);
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
 		if(tabla == NULL){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
@@ -507,6 +527,20 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		}
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
+		if(tabla == NULL){
+			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
+		}
+		int result = matar_paginas_tcb(tabla, tid);
+		if(result){
+			log_info(logger, "Se mató al TCB tid: %d", tid);
+			if(dictionary_size(tabla->dl_tcbs) == 0){
+				matar_tabla_paginas(pid);
+			}
+		}else{
+			// error
+			return 0;
+		}
 		return 0;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
