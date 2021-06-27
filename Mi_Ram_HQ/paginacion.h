@@ -21,7 +21,7 @@ typedef struct pagina {
 typedef struct tabla_paginas {
     int dl_pcb;
     int dl_tareas;
-    t_list dl_tcbs;
+    t_dictionary* dl_tcbs;
     t_list* paginas;
 } tabla_paginas;
 
@@ -41,7 +41,7 @@ void liberar_marco(int num_marco);
 marco* buscar_marco_libre();
 marco* asignar_marco();
 pagina* pagina_incompleta(tabla_paginas* tabla);
-
+int matar_paginas_tcb(tabla_paginas* tabla, int tid);
 
 
 #endif /* PAGINACION_H_ */

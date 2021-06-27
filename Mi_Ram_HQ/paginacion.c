@@ -147,6 +147,7 @@ tabla_paginas* crear_tabla_paginas(uint32_t pid){
 	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
     log_info(logger,"se creo tabla de paginas de pid %d", pid);
 	nueva_tabla->paginas = list_create();
+	nueva_tabla->dl_tcbs = dictionary_create();
 	char spid[4];
 	sprintf(spid, "%d", pid);
     dictionary_put(tablas,spid,nueva_tabla);
@@ -183,6 +184,117 @@ marco* asignar_marco(){
 	}
 }
 
+int liberar_pagina(pagina* pagina, int offset, int faltante){
+	// retorna lo que logró liberar
+	if(offset + faltante <= TAMANIO_PAGINA){
+		log_info(logger, "Se resta el tamaño: %d", faltante);
+		pagina->tamano_ocupado -= faltante;
+		log_info(logger, "La pagina quedó con: %d bytes", pagina->tamano_ocupado);
+		return faltante; // pude liberar todo el tamaño
+	}
+	if(pagina->tamano_ocupado + offset <= TAMANIO_PAGINA){
+		pagina->tamano_ocupado = 0;
+		return TAMANIO_PAGINA - offset;
+	}
+	pagina->tamano_ocupado = offset;
+	return TAMANIO_PAGINA - offset; // pude liberar hasta el fin de la página 
+}
+
+void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
+	int faltante = tam;
+	int numero_pagina = dl / TAMANIO_PAGINA;
+	int offset = dl % TAMANIO_PAGINA;
+	pagina* pag;
+	t_list* paginas_a_remover = list_create();
+	
+	if(offset > 0){
+		log_info(logger, "Se empieza a liberar en la pagina %d con offset %d", numero_pagina, offset);
+		pag = list_get(tabla->paginas, numero_pagina);
+		faltante -= liberar_pagina(pag, offset, faltante);
+		if(pag->tamano_ocupado <= 0){
+			list_add(paginas_a_remover, (void*) numero_pagina);
+		}
+		numero_pagina++;
+	}
+	while(faltante > 0){
+		log_info(logger, "Se empieza a liberar en la pagina %d con offset %d", numero_pagina, 0);
+		pag = list_get(tabla->paginas, numero_pagina);
+		faltante -= liberar_pagina(pag, 0, faltante);
+		if(pag->tamano_ocupado <= 0){
+			list_add(paginas_a_remover, (void*) numero_pagina);
+		}
+		numero_pagina++;
+	}
+		/*if(pagina->tamano_ocupado <= 0){
+			pagina->puntero_marco->libre = true;
+			list_remove(tabla->paginas, numero_pagina);
+			free(pagina);
+		}*/
+
+
+	bool page_orderer(void* un_int, void* otro_int){
+		int num = (int) un_int;
+		int num2 = (int) otro_int;
+		return num > num2;
+	}
+	list_sort(paginas_a_remover, page_orderer);
+
+	void page_remover(void* un_int){
+		int num = (int) un_int;
+		log_info(logger, "borrando pag: %d", num);
+		pagina* pag2 = list_get(tabla->paginas, num);
+		pag2->puntero_marco->libre = true;
+		list_remove(tabla->paginas, num);
+		free(pag2);
+	}
+
+	list_iterate(paginas_a_remover, page_remover);
+	
+}
+
+int matar_paginas_tcb(tabla_paginas* tabla, int tid){
+	log_info(logger, "Se empieza a matar las paginas del TCB tid: %d", tid);
+	char stid[6];
+	sprintf(stid, "%d", tid);
+	int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
+	if(dl_tcb == NULL){
+		return 0;
+	}
+	liberar_paginas(tabla, dl_tcb, sizeof(t_TCB));
+	dictionary_remove(tabla->dl_tcbs, stid);
+	log_info(logger, "Se termino de matar las paginas del TCB tid: %d", tid);
+	return 1;
+}
+
+void matar_tabla_paginas(int pid){
+	log_debug(logger, "Se procede a efectuar la nismación de la tabla PID: %d", pid);
+    
+    void table_destroyer(void* una_tabla){
+        tabla_paginas* tabla = (tabla_paginas*) una_tabla;
+
+		void page_destroyer(void* una_pagina){
+			pagina* pag = (pagina*) una_pagina;
+			pag->puntero_marco->libre = true;
+			free(pag);
+		}
+
+		list_destroy_and_destroy_elements(tabla->paginas, page_destroyer);
+
+		void dl_tcb_destroyer(void* un_int){
+			int* num = (int*) un_int;
+			free(num);
+		}
+		dictionary_destroy_and_destroy_elements(tabla->dl_tcbs, dl_tcb_destroyer);
+
+		free(tabla);
+    }
+
+    char spid[4];
+    sprintf(spid, "%d", pid);
+    dictionary_remove_and_destroy(tablas,spid,table_destroyer);
+
+	log_debug(logger, "Se completó la nismación de la tabla PID: %d", pid);
+}
 
 // TEST
 
@@ -199,6 +311,17 @@ void imprimir_paginas(int pid){
 
 }
 
+void imprimir_marcos(){
+	int size = list_size(marcos);
+
+    printf("\n<------ MARCOS -----------\n");
+    for(int i = 0; i < size; i++) {
+        marco* marco = list_get(marcos, i);
+        printf("marco %d\tbase: %d\tlibre: %s \n", i, marco->base, marco->libre ? "true" : "false");
+    }
+    printf("------------------->\n");
+}
+
 void test_gestionar_tareas_paginacion(){
 	t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
 	arc->texto = "GENERAR_OXIGENO 10;1;1;1";
@@ -207,15 +330,33 @@ void test_gestionar_tareas_paginacion(){
 	gestionar_tareas(arc);
     free(arc);
 
-	imprimir_paginas(1);
 	tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(1);
 	
-	t_PCB* pcb = (t_PCB*) rescatar_de_paginas(tabla, tabla->dl_pcb, sizeof(t_PCB));
-	log_info(logger,"El pid era: %d", pcb->PID);
-	free(pcb);
-
 	char* tareas = (char*) rescatar_de_paginas(tabla, 0, tabla->dl_pcb);
 	log_info(logger,"Tareas: %s", tareas);
 	free(tareas);
 
+	t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 1;
+    tcb->coord_y = 2;
+    tcb->estado_tripulante = 'N';
+    gestionar_tcb(tcb);
+    free(tcb);
+
+	t_TCB* tcb3 = malloc(sizeof(t_TCB));
+    tcb3->TID = 10002;
+    tcb3->coord_x = 10;
+    tcb3->coord_y = 100;
+    tcb3->estado_tripulante = 'N';
+    //gestionar_tcb(tcb3);
+    free(tcb3);
+
+	imprimir_paginas(1);
+	imprimir_marcos();
+
+	eliminar_tcb(10001);
+	//eliminar_tcb(10002);
+
+	imprimir_marcos();
 }
