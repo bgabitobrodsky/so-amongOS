@@ -34,7 +34,7 @@ int identificar_tarea(char* nombre_recibido);
 void crear_hilo_tripulante(t_tripulante* un_tripulante);
 t_list* lista_tripulantes_patota(uint32_t pid);
 void morir(t_tripulante* un_tripulante);
-void conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket);
+int conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mongo);
 int llegue(t_tripulante* un_tripulante);
 void atomic_llegar_a_destino(t_tripulante* un_tripulante, int socket);
 void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante, int socket_ram, int socket_mongo);

@@ -172,6 +172,11 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     // Switch estructuras y cosas del fylesystem
     switch (paquete->codigo_operacion) { 
+    	case FIN_TAREA:
+    	case INICIO_TAREA:
+    	case CORRE_SABOTAJE:
+    	case RESUELVE_SABOTAJE:
+    	case MOVIMIENTO:
     	case ACTUALIZAR:
         case RECIBIR_TCB:
         	intermediario->codigo_operacion = paquete->codigo_operacion;
@@ -210,6 +215,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
             intermediario->codigo_operacion = paquete->codigo_operacion;
             memcpy(&(intermediario->cantidad), paquete->buffer->estructura, sizeof(int));
             break;
+
     }
 
     eliminar_paquete(paquete);
