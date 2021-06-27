@@ -312,27 +312,15 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 			log_error(logger,"La tabla ya existía pid: %d",pid_patota);
 			return 0;
 		}
+		int dl_tareas = agregar_paginas_segun_tamano(tabla, archivo->texto, tamanio_tareas);
 
-
-		agregar_paginas_segun_tamano(tabla, tamanio_tareas);
-		
-		//consultar si la ultima pagina le sobra lugar
-		//completarla, restarle el tamano  que falte y repetir lo anterior
-
-
-		pagina* ultima_pagina = pagina_incompleta(tabla_paginas* tabla);
-		if(ultima_pagina != NULL){
-			// Devuelve lo que le sobro
-			int falta_guardar_del_pcb = completar_pagina(ultima_pagina, sizeof(t_PCB), tabla);
-			
-			if(falta_guardar_del_pcb > 0){
-				agregar_paginas_segun_tamano(tabla, falta_guardar_del_pcb);	
-			}
-		}
-		else{
-			agregar_paginas_segun_tamano(tabla, sizeof(t_PCB));
-		}
-		return 0;
+		t_PCB* pcb = malloc(sizeof(t_PCB));
+		pcb->PID = pid_patota;
+		pcb->direccion_tareas = dl_tareas;
+		int dl_pcb = agregar_paginas_segun_tamano(tabla, pcb, sizeof(t_PCB));
+		tabla->dl_tareas = dl_tareas;
+		tabla->dl_pcb = dl_pcb;
+		return 1;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
