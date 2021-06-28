@@ -124,8 +124,8 @@ void sabotaje(int parametro) {
 	int flag = 1;
 	int socket_discordiador;
 
-	if(flag)
-		socket_discordiador = parametro;
+	if (flag)
+		socket_discordiador = parametro; // WTF is this? 
 	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {

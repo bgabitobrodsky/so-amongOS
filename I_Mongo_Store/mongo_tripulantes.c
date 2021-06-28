@@ -64,7 +64,7 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 
 	list_add(bitacoras, nueva_bitacora);
 
-	asignar_nuevo_bloque(file_tripulante);
+	asignar_nuevo_bloque(nueva_bitacora->bitacora_asociada);
 
 	// TODO: Asignar cosas en Struct bitacora
 }
@@ -117,14 +117,33 @@ void escribir_bitacora(t_bitacora* bitacora, int largo_strings, int cant_strings
 	int size_lista_bloques = sizeof(bitacora->bloques)/sizeof(int); // Revisar
 	int ultimo_bloque = bitacora->bloques[size_lista_bloques];
 
-	escribir_bloque_bitacora(ultimo_bloque, mensaje);
+	escribir_bloque_bitacora(ultimo_bloque, mensaje, bitacora);
 
 	va_end(lista_argumentos);
 	free(mensaje);
 }
 
-void escribir_bloque_bitacora(int bloque, char* mensaje) {
-	// TODO: Implementar
+void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
+		int cantidad_alcanzada = 0;
+		
+		for (int i = 0; tipo != *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) { 
+			
+			if (*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == '\t') {
+				*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = mensaje[i];
+				cantidad_alcanzada++;
+			}
+		}
+		
+		if (cantidad_alcanzada != strlen(mensaje)) {
+			asignar_nuevo_bloque(bitacora->bitacora_asociada);
+			char* resto_mensaje = malloc(strlen(mensaje) - cantidad_alcanzada);
+
+			for (int j = cantidad_alcanzada, t = 0; j < strlen(mensaje); j++, t++) {
+				resto_mensaje[t] = mensaje[j];
+			}
+
+			escribir_bitacora(bitacora, strlen(resto_mensaje), resto_mensaje);
+		}
 }
 
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks
