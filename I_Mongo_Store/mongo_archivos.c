@@ -83,11 +83,9 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 
 void asignar_nuevo_bloque(FILE* archivo) {
 
-	fseek(directorio.superbloque, strlen("BLOCK_SIZE="), SEEK_SET);
 	uint32_t tamanio_bloque;
 	fread(&tamanio_bloque, sizeof(uint32_t), 1, directorio.superbloque);
 
-	fseek(directorio.superbloque, strlen("BLOCK_COUNT="), SEEK_CUR);
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, directorio.superbloque);
 
@@ -113,7 +111,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 		//Marco el bit como ocupado
 		bitarray_set_bit(bitmap, bit_libre);
 
-		if(es_recurso(archivo)){
+		if (es_recurso(archivo)){
 			//Asigno el bloque a un archivo
 			asignar_bloque_recurso(archivo, bit_libre);
 
@@ -132,7 +130,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 			uint32_t tamanio = tamanio_archivo(archivo);
 			uint32_t* lista_bloques = lista_bloques_tripulante(archivo);
 			uint32_t cantidad_bloques = sizeof(lista_bloques)/sizeof(uint32_t);
-			lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente
+			lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente // OJO QUE PUEDE EXPLOTAR POR MANIAS DE C
 
 			escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 		}
@@ -209,14 +207,14 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		agregar(tipo, offset * -1); // Recursividad con la cantidad que falto
 	}
 	else if (offset < 100) { // No paso bloques. ¿No sería TAMANIO_BLOQUES?
-		msync(directorio.mapa_blocks, offset + 1, MS_SYNC);
+		msync(directorio.mapa_blocks, offset + 1, MS_SYNC); //TODO eliminar msync
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
-		msync(directorio.mapa_blocks, cant_bloques_local * TAMANIO_BLOQUE + offset + 1, MS_SYNC); // Cambiar macro por lo de Superbloque. Falta el flag, puse MS_ASYNC, ni idea cual va. Link: https://man7.org/linux/man-pages/man2/msync.2.html
+		msync(directorio.mapa_blocks, cant_bloques_local * TAMANIO_BLOQUE + offset + 1, MS_SYNC); //TODO eliminar msync
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
@@ -237,14 +235,14 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 	if (offset < 0) { // Se quiso quitar mas de lo existente, no hace nada (queda para comprension)
 	}
 	else if (offset < 100) { // No paso bloques
-		msync(directorio.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_SYNC);
+		msync(directorio.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_SYNC); //TODO eliminar msync
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
-		msync(directorio.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_SYNC);
+		msync(directorio.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_SYNC); //TODO eliminar msync
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 
@@ -396,7 +394,8 @@ char char_random() {
 }
 
 uint32_t tamanio_archivo(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
+	fseek(archivo, 0, SEEK_SET);
+
 	uint32_t tam_archivo;
 	fread(&tam_archivo, sizeof(uint32_t), 1, archivo);
 
@@ -406,7 +405,6 @@ uint32_t tamanio_archivo(FILE* archivo) {
 uint32_t cantidad_bloques_recurso(FILE* archivo) {
 	tamanio_archivo(archivo);
 
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR);
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
 
@@ -416,12 +414,8 @@ uint32_t cantidad_bloques_recurso(FILE* archivo) {
 uint32_t* lista_bloques_recurso(FILE* archivo) {
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
 
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	return lista_bloques;
 }
@@ -430,7 +424,6 @@ char caracter_llenado_archivo(FILE* archivo) {
 	lista_bloques_recurso(archivo);
 
 	char caracter_llenado;
-	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
 	fread(&caracter_llenado, sizeof(char), 1, archivo);
 
 	return caracter_llenado;
@@ -439,7 +432,6 @@ char caracter_llenado_archivo(FILE* archivo) {
 char* md5_archivo(FILE* archivo) {
 	caracter_llenado_archivo(archivo);
 
-	fseek(archivo, strlen("MD5_ARCHIVO="), SEEK_CUR);
 	char* md5;
 	fread(&md5, sizeof(char), 32, archivo);
 
@@ -447,114 +439,54 @@ char* md5_archivo(FILE* archivo) {
 }
 
 uint32_t cantidad_bloques_tripulante(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
+	fseek(archivo, 0, SEEK_SET);
 	uint32_t tamanio_archivo;
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
 
 	return cant_bloques;
 }
 
 uint32_t* lista_bloques_tripulante(FILE* archivo) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tam_archivo;
-	fread(&tam_archivo, sizeof(uint32_t), 1, archivo);
+	fseek(archivo, 0, SEEK_SET);
 
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
+	uint32_t cant_bloques = cantidad_bloques_tripulante(archivo);
 
 	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
+	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
 
 	return lista_bloques;
 }
 
 void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques) {
-	fseek(archivo, strlen("SIZE="), SEEK_SET);
-	uint32_t tam_archivo;
-	fread(&tam_archivo, sizeof(uint32_t), 1, archivo);
 
-	fseek(archivo, strlen("BLOCK_COUNT="), SEEK_CUR);
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
-
-	fseek(archivo, strlen("BLOCKS=["), SEEK_CUR);
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	for (int i = 0; i < cant_bloques; i++) {
-		fread(&lista_bloques[i], sizeof(uint32_t), 1, archivo);
-	}
-	fseek(archivo, strlen("]"), SEEK_CUR);
-
-	fseek(archivo, strlen("CARACTER_LLENADO="), SEEK_CUR);
-	char tipo;
-	fread(&tipo, sizeof(char), 1, archivo);
-
-	fseek(archivo, strlen("MD5_ARCHIVO="), SEEK_CUR);
-	char* md5 = crear_md5();
-
-	char* path_archivo = conseguir_path_recurso_archivo(archivo);
-	freopen(path_archivo, "w+", archivo);
-
-	char* size = "SIZE=";
-	char* block_count = "BLOCK_COUNT=";
-	char* blocks = "BLOCKS=[";
-	char* corchete_cierre = "]";
-	char* caracter = "CARACTER_LLENADO=";
-	char* md_5 = "MD5_ARCHIVO=";
-
-	fwrite(&size, strlen(size), 1, archivo);
+	fseek(archivo, 0, SEEK_SET);
 	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
-
-	fwrite(&block_count, strlen(block_count), 1, archivo);
 	fwrite(&cantidad_bloques, sizeof(uint32_t), 1, archivo);
-	fwrite(&blocks, strlen(blocks), 1, archivo);
-	fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
-	fwrite(&corchete_cierre, strlen(corchete_cierre), 1, archivo);
+	fwrite(list_bloques, sizeof(uint32_t), cantidad_bloques, archivo);
+	char caracter = caracter_llenado_archivo(archivo);
 	fwrite(&caracter, strlen(caracter), 1, archivo);
-	fwrite(&tipo, sizeof(char), 1, archivo);
-	fwrite(&md_5, strlen(md_5), 1, archivo);
+	char* md5 = md5_archivo(archivo);
 	fwrite(&md5, strlen(md5), 1, archivo);
 
 	fflush(archivo);
 
-	free(size);
-	free(block_count);
-	free(blocks);
-	free(corchete_cierre);
 	free(caracter);
-	free(md_5);
+	free(md5);
 }
 
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list_bloques) {
-	char* size = "SIZE=";
-	char* blocks = "BLOCKS=[";
-	char* corchete_cierre = "]";
-
-	fwrite(&size, strlen(size), 1, archivo);
+	fseek(archivo, 0, SEEK_SET);
 	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
-	fwrite(&blocks, strlen(blocks), 1, archivo);
 	uint32_t cant_bloques = sizeof(list_bloques); //Puede ser que sea sizeof(list_bloques)/2; por un tema del sizeof()
-	fwrite(&corchete_cierre, strlen(corchete_cierre), 1, archivo);
 	fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
+}
 
-	fflush(archivo);
-
-	free(size);
-	free(blocks);
-	free(corchete_cierre);
+void escribir_tamanio(FILE* archivo, uint32_t tamanio) {
+	fseek(archivo, 0, SEEK_SET);
+	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
 }
 
 int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.do en minúscula
@@ -567,7 +499,7 @@ void asignar_bloque_recurso(FILE* archivo, int bit_libre) {
 	uint32_t tamanio = tamanio_archivo(archivo);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(archivo);
 	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
-	lista_bloques[cantidad_bloques] = bit_libre;
+	lista_bloques[cantidad_bloques] = bit_libre; 
 
 	escribir_archivo_recurso(archivo, tamanio, cantidad_bloques + 1, lista_bloques);
 }
@@ -576,7 +508,17 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
 	uint32_t tamanio = tamanio_archivo(archivo);
 	uint32_t* lista_bloques = lista_bloques_tripulante(archivo);
 	uint32_t cantidad_bloques = cantidad_bloques_tripulante(archivo);
-	lista_bloques[cantidad_bloques] = bit_libre;
+	lista_bloques[cantidad_bloques] = bit_libre; 
 
 	escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
+}
+
+int bloques_contar(uint32_t* lista_bloques, char caracter) { //TODO ver si está bien
+	int cantidad = 0, i;
+	int cantidad_bloques = sizeof(lista_bloques) / sizeof(uint32_t);
+	for(i=lista_bloques[i]; i < cantidad_bloques; i++){
+		if(directorio.mapa_blocks[i] == caracter)
+			cantidad++;
+	}
+	return cantidad;
 }

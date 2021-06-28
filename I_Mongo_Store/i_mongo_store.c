@@ -16,6 +16,7 @@ int main(int argc, char** argv){
 	// Se crean estructuras de registro y configuracion
 	logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
+	signal(SIGUSR1, sabotaje);
 
 	// Se crea la lista de bitacoras para los tripulantes, lista actua de registro para saber que tripulantes poseen bitacora en Mongo
 	bitacoras = list_create();
@@ -119,46 +120,43 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 	}
 }
 
-void sabotaje(int socket_discordiador) {
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set, SIGUSR1);
-	int sig;
+void sabotaje(int parametro) {
+	int flag = 1;
+	int socket_discordiador;
+
+	if(flag)
+		socket_discordiador = parametro;
 	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {
 
 		// Se espera que set reciva la signal correspondiente
-		if (sigwait(&set, &sig) == SIGUSR1) { // Revisar funcionamiento
+		if (parametro == SIGUSR1) {
 			log_info(logger_mongo, "Se detecto un sabotaje.\n");
 			// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
 			enviar_codigo(SABOTAJE, socket_discordiador);
 
 			t_estructura* listo = recepcion_y_deserializacion(socket_discordiador);
 
-			if (listo->codigo_operacion == LISTO) { // TODO: Agregar a enum
+			if (listo->codigo_operacion == LISTO) {
 
 				// Se envian posiciones de sabotaje en orden
-				enviar_posiciones_sabotaje(socket_discordiador);
+				enviar_posiciones_sabotaje(socket_discordiador); //TODO no enviar to.do junto
 
 				// Se espera a que Discordiador envie un designado para reparar
 				t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
 
 				// Se activaria el protocolo fcsk
-				int rotura = reparar(mensaje->tcb);
+				int rotura = reparar();
 
 				log_info(logger_mongo, "Se reparo el sabotaje.\n");
 				log_info(logger_mongo, "Se habia saboteado %s.\n", rompio(rotura));
 				// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
 				enviar_codigo(LISTO, socket_discordiador);
 
-				free(mensaje); 
+				free(mensaje);
 			}
-
-			// Vacia la instruccion (creo) de set
-			sigemptyset(&set);
-
-		} 
+		}
 	}
 }
 
@@ -193,6 +191,17 @@ void iniciar_file_system() {
 
 		// Se asignan los archivos como antes
 		inicializar_archivos();
+	}
+
+	pthread_t un_hilo;
+	pthread_create(&un_hilo, NULL, (void*) sincronizar_blocks, NULL);
+	pthread_detach(un_hilo);
+}
+
+void sincronizar_blocks() {
+	while(1) {
+		msync(directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
+		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 }
 

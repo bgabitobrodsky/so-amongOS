@@ -61,8 +61,19 @@ t_buffer* serializar_tarea(t_tarea tarea) {
     return buffer;
 }
 
-t_buffer* serializar_posicion(int x, int y) { //TODO
-	t_buffer* buffer = malloc((sizeof(t_buffer)));
+t_buffer* serializar_posicion(t_posicion posicion) { 
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = (2 * sizeof(uint32_t));
+
+    void* estructura = malloc((buffer->tamanio_estructura));
+    int desplazamiento = 0;
+    
+    memcpy(estructura + desplazamiento, &posicion.coord_x, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &posicion.coord_y, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+
+    buffer->estructura = estructura;
 	return buffer;
 }
 
@@ -76,6 +87,61 @@ t_buffer* serializar_cantidad(int cantidad) {
     memcpy(estructura, &cantidad, sizeof(int));
 
     buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_buffer* serializar_entero(uint32_t numero) {
+    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    buffer->tamanio_estructura = sizeof(int);
+
+    void* estructura = malloc((buffer->tamanio_estructura));
+
+    memcpy(estructura, &numero, sizeof(int));
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_buffer* serializar_tripulante(t_tripulante tripulante) {
+
+    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*3 + sizeof(char));
+    buffer->tamanio_estructura = sizeof(uint32_t)*3 + sizeof(char);
+    void* estructura = malloc(buffer->tamanio_estructura);
+    int desplazamiento = 0;
+
+    memcpy(estructura + desplazamiento, &tripulante.TID, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.estado_tripulante, sizeof(char));
+    desplazamiento += sizeof(char);
+    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+
+    buffer->estructura = estructura;
+
+    return buffer;
+}
+
+t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
+
+    t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;
+
+    void* estructura = malloc(buffer->tamanio_estructura);
+    int desplazamiento = 0;
+
+    memcpy(estructura + desplazamiento, &texto_archivo.largo_texto, sizeof(uint32_t));
+    desplazamiento += sizeof(uint32_t);
+    memcpy(estructura + desplazamiento, texto_archivo.texto, (texto_archivo.largo_texto + 1));
+    desplazamiento += (texto_archivo.largo_texto + 1);
+    memcpy(estructura + desplazamiento, &texto_archivo.pid, sizeof(uint32_t));
+
+    buffer->estructura = estructura;
+
+    free(texto_archivo.texto);
 
     return buffer;
 }
@@ -171,7 +237,12 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     recibir_mensaje(socket_receptor, paquete->buffer->estructura, paquete->buffer->tamanio_estructura);
 
     // Switch estructuras y cosas del fylesystem
-    switch (paquete->codigo_operacion) { 
+    switch (paquete->codigo_operacion) {
+    	case FIN_TAREA:
+    	case INICIO_TAREA:
+    	case CORRE_SABOTAJE:
+    	case RESUELVE_SABOTAJE:
+    	case MOVIMIENTO:
     	case ACTUALIZAR:
         case RECIBIR_TCB:
         	intermediario->codigo_operacion = paquete->codigo_operacion;
@@ -209,6 +280,11 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
         case BASURA:
             intermediario->codigo_operacion = paquete->codigo_operacion;
             memcpy(&(intermediario->cantidad), paquete->buffer->estructura, sizeof(int));
+            break;
+
+        case POSICION:
+            intermediario->codigo_operacion = paquete->codigo_operacion;
+            intermediario->posicion = deserializar_posicion(paquete->buffer);
             break;
     }
 
@@ -261,31 +337,16 @@ t_tarea* deserializar_tarea(t_buffer* buffer) {
     return tarea;
 }
 
-void eliminar_paquete(t_paquete* paquete) {
-	//free(paquete->buffer->estructura); // TODO: Ver si se puede descomentar
-	free(paquete->buffer);
-	free(paquete);
-}
+t_posicion* deserializar_posicion(t_buffer* buffer) {
+    t_posicion* posicion = malloc(sizeof(t_posicion));
+    void* estructura = buffer->estructura;
 
-t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
+    memcpy(&(posicion->coord_x), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
+    memcpy(&(posicion->coord_y), estructura, sizeof(uint32_t));
+    estructura += sizeof(uint32_t);
 
-    t_buffer* buffer = malloc(sizeof(t_buffer));
-    buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;
-
-    void* estructura = malloc(buffer->tamanio_estructura);
-    int desplazamiento = 0;
-
-    memcpy(estructura + desplazamiento, &texto_archivo.largo_texto, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, texto_archivo.texto, (texto_archivo.largo_texto + 1));
-    desplazamiento += (texto_archivo.largo_texto + 1);
-    memcpy(estructura + desplazamiento, &texto_archivo.pid, sizeof(uint32_t));
-
-    buffer->estructura = estructura;
-
-    free(texto_archivo.texto);
-
-    return buffer;
+    return posicion;
 }
 
 t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
@@ -303,40 +364,6 @@ t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
     return texto_archivo;
 }
 
-t_buffer* serializar_entero(uint32_t numero) {
-    t_buffer* buffer = malloc((sizeof(t_buffer)));
-    buffer->tamanio_estructura = sizeof(int);
-
-    void* estructura = malloc((buffer->tamanio_estructura));
-
-    memcpy(estructura, &numero, sizeof(int));
-
-    buffer->estructura = estructura;
-
-    return buffer;
-}
-
-t_buffer* serializar_tripulante(t_tripulante tripulante) {
-
-    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*3 + sizeof(char));
-    buffer->tamanio_estructura = sizeof(uint32_t)*3 + sizeof(char);
-    void* estructura = malloc(buffer->tamanio_estructura);
-    int desplazamiento = 0;
-
-    memcpy(estructura + desplazamiento, &tripulante.TID, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.estado_tripulante, sizeof(char));
-    desplazamiento += sizeof(char);
-    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-
-    buffer->estructura = estructura;
-
-    return buffer;
-}
-
 t_tripulante* deserializar_tripulante(t_buffer* buffer) {
 
 	t_tripulante* un_tripulante = malloc(sizeof(uint32_t)*3 + sizeof(char));
@@ -352,4 +379,10 @@ t_tripulante* deserializar_tripulante(t_buffer* buffer) {
     estructura += sizeof(uint32_t);
 
     return un_tripulante;
+}
+
+void eliminar_paquete(t_paquete* paquete) {
+	//free(paquete->buffer->estructura); // TODO: Ver si se puede descomentar
+	free(paquete->buffer);
+	free(paquete);
 }

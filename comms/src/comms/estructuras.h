@@ -11,7 +11,7 @@
 
 /* ENUMS */
 //                      DISCORDIADOR                          									                        COSAS FILESYSTEM            	ACCIONES BITACORA                                                     		CODIGOS UNICOS: MONGO           	                                     GENERALES
-enum codigo_operacion { RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, ACTUALIZAR,         OXIGENO, COMIDA, BASURA,        MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,         MENSAJE, PEDIR_TAREA, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO, LISTO, REPARADO, POSICION, FIN_LISTA };
+enum codigo_operacion { RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, ACTUALIZAR,         OXIGENO, COMIDA, BASURA,        MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,         MENSAJE, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO, LISTO, REPARADO, POSICION, FIN_LISTA };
 
 /* ESTRUCTURAS */
 
@@ -33,7 +33,7 @@ typedef struct {
 
 } t_TCB;
 
-typedef struct t_tarea{
+typedef struct {
 
     uint32_t largo_nombre;
     char* nombre;
@@ -44,7 +44,7 @@ typedef struct t_tarea{
 
 } t_tarea;
 
-typedef struct t_archivo_tareas{
+typedef struct {
 
 	uint32_t largo_texto;
     char* texto;
@@ -69,8 +69,16 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     int pid;
     int codigo_operacion;
     int cantidad; // Revisar funcs paquetes
+    t_posicion* posicion;
 
 } t_estructura;
+
+typedef struct {
+
+    uint32_t coord_x;
+    uint32_t coord_y;
+
+} t_posicion;
 
 typedef struct {
 
@@ -78,11 +86,13 @@ typedef struct {
 
 } args_escuchar;
 
-typedef struct hilo_tripulante{
+typedef struct {
+
 	int socket;
 	char* ip_cliente;
 	char* puerto_cliente;
 	void (*atender)(char*);
+    
 } hilo_tripulante;
 
 typedef struct {

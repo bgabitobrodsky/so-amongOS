@@ -26,12 +26,8 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
         bitarray_clean_bit(bitmap, i);
     }
 
-    fwrite("BITE_SIZE=", strlen("BITE_SIZE="), 1, archivo);
     fwrite(&block_size, sizeof(uint32_t), 1, archivo);
-
-    fwrite("BLOCKS=", strlen("BLOCKS="), 1, archivo);
     fwrite(&size, sizeof(uint32_t), 1, archivo);
-
     fwrite(bitmap, sizeof(bitmap), 1, archivo);
 
     fflush(archivo);
@@ -61,7 +57,6 @@ void inicializar_mapa() {
 }
 
 int obtener_tamanio_bloque() {
-    fseek(directorio.superbloque, strlen("BITE_SIZE="), SEEK_SET);
     uint32_t block_size;
     fread(&block_size, sizeof(uint32_t), 1, directorio.superbloque);
 
@@ -71,7 +66,6 @@ int obtener_tamanio_bloque() {
 int obtener_cantidad_bloques() {
     obtener_tamanio_bloque();
 
-    fseek(directorio.superbloque, strlen("BLOCKS=["), SEEK_CUR);
     uint32_t size;
     fread(&size, sizeof(uint32_t), 1, directorio.superbloque);
 
@@ -82,7 +76,6 @@ t_bitarray* obtener_bitmap() {
 	int cant_bloques = obtener_cantidad_bloques();
 	char* puntero_a_bitmap = calloc(cant_bloques / 8, 1);
 
-	fseek(directorio.superbloque, strlen("BITMAP="), SEEK_CUR);
 	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques, LSB_FIRST);
 	fread(puntero_a_bitmap, 1, cant_bloques/8, directorio.superbloque);
 
@@ -95,12 +88,8 @@ void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap) {
     fclose(directorio.superbloque);
     directorio.superbloque = fopen(path_superbloque, "w+");
 
-    fwrite("BITE_SIZE=", strlen("BITE_SIZE="), 1, directorio.superbloque);
     fwrite(&tamanio, sizeof(uint32_t), 1, directorio.superbloque);
-
-    fwrite("BLOCKS=", strlen("BLOCKS="), 1, directorio.superbloque);
     fwrite(&cantidad, sizeof(uint32_t), 1, directorio.superbloque);
-
     fwrite(bitmap, sizeof(bitmap), 1, directorio.superbloque);
 
     fflush(directorio.superbloque);
