@@ -15,7 +15,8 @@ void manejo_tripulante(int socket_tripulante) {
 		else {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
-				modificar_bitacora(mensaje);
+				// t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
+				modificar_bitacora(mensaje); // modificar_bitacora(mensaje, mensaje2);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
@@ -67,7 +68,7 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	// TODO: Asignar cosas en Struct bitacora
 }
 
-void modificar_bitacora(t_estructura* mensaje) { 
+void modificar_bitacora(t_estructura* mensaje) { // Necesitara recibir dos mensajes consecutivos, parametros serian (t_estructura* mensaje1, t_estructura* mensaje2)
 	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb);
 	char* pos_inicial = NULL;
 	char* pos_final = NULL;
