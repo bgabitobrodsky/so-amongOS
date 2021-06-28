@@ -193,7 +193,7 @@ void iniciar_file_system() {
 		inicializar_archivos();
 	}
 
-	pthread_t un_hilo;
+	pthread_t un_hilo; // Estaria bueno crearlo en main
 	pthread_create(&un_hilo, NULL, (void*) sincronizar_blocks, NULL);
 	pthread_detach(un_hilo);
 }
