@@ -75,8 +75,8 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
 
 typedef struct {
 
-    int coord_x;
-    int coord_y;
+    uint32_t coord_x;
+    uint32_t coord_y;
 
 } t_posicion;
 

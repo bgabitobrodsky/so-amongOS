@@ -82,7 +82,7 @@ int verificar_sizes() {
     return reasignar_tamanios_archivo();
 }
 
-int verificar_block_counts(t_TCB* tripulante) {
+int verificar_block_counts(t_TCB* tripulante) { // Ya que cambio enunciado, se podria hacer la func directamente aca adentro
     int revision = revisar_block_count_recursos();
 
     if (revision > 0)

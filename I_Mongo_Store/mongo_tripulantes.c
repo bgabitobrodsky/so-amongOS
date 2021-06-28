@@ -45,6 +45,7 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: 
 	// Se obtiene el path particular del tripulante, identificado con su TID
 	char* path_tripulante = fpath_tripulante(tcb);
 	
+	// TODO: Habria que verificar si archivo ya existe
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
 	
