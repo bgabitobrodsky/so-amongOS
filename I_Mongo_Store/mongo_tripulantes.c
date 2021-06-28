@@ -75,7 +75,7 @@ void modificar_bitacora(t_estructura* mensaje) {
 	
 	switch (codigo_operacion) {
 		case MOVIMIENTO:
-			pos_inicial = formatear_posicion(mensaje->posicion->coord_x, mensaje->posicion->coord_y);
+			pos_inicial = formatear_posicion(mensaje->posicion->coord_x, mensaje->posicion->coord_y); // Ver como manejar pos inicial
 			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 			escribir_bitacora(bitacora, strlen("Se mueve de a ") + sizeof(char) * 6, "Se mueve de %s a %s", pos_inicial, pos_final); // Implementar en t_estructura y crear posicion
 			free(pos_inicial);
