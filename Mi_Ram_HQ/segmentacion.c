@@ -534,8 +534,6 @@ void test_compactacion(){
     log_warning(logger,"Siguiente tarea: %s \t %d, %d \t %d",tarea2->nombre,tarea2->coord_x,tarea2->coord_y,tarea2->duracion);
     free(tarea2);
 
-    
-
     print_tablas_segmentos_info();
     print_segmentos_info();
     eliminar_tcb(20001);
@@ -560,6 +558,38 @@ void test_compactacion(){
         log_warning(logger,"Siguiente tarea: %s \t %d, %d \t %d",tarea4->nombre,tarea4->coord_x,tarea4->coord_y,tarea4->duracion);
     }
     free(tarea4);
+}
+
+void test_listar_tcbs(){
+    t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
+	arc->texto = "GENERAR_OXIGENO 10;1;1;1";
+	arc->largo_texto = 25;
+	arc->pid = 1;
+	gestionar_tareas(arc);
+    free(arc);
+
+    t_TCB* tcb = malloc(sizeof(t_TCB));
+    tcb->TID = 10001;
+    tcb->coord_x = 1;
+    tcb->coord_y = 1;
+    tcb->estado_tripulante = 'N';
+    gestionar_tcb(tcb);
+    free(tcb);
+
+    t_TCB* tcb4 = malloc(sizeof(t_TCB));
+    tcb4->TID = 10002;
+    tcb4->coord_x = 2;
+    tcb4->coord_y = 2;
+    tcb4->estado_tripulante = 'E';
+    gestionar_tcb(tcb4);
+    free(tcb4);
+
+    t_list* lista = buscar_tcbs_por_pid(1);
+    void tcb_printer(void* un_tcb){
+        t_TCB* tcb = (t_TCB*) un_tcb;
+        log_debug(logger, "coords: %d, %d\t estado: %c",tcb->coord_x,tcb->coord_y,tcb->estado_tripulante);
+    }
+    list_iterate(lista,tcb_printer);
 }
 
 void print_segmentos_info() {

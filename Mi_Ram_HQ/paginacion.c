@@ -1,7 +1,38 @@
 #include "paginacion.h"
+#define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam){
+	pagina* pagina;
+	int progreso = 0;
+	int numero_pagina = dl / TAMANIO_PAGINA;
+	int offset = dl % TAMANIO_PAGINA;
+	if(offset > 0){
+		pagina = list_get(tabla->paginas, numero_pagina);
+		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
+		numero_pagina++;
+		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
+	}
+	while(progreso < tam){
+		pagina = list_get(tabla->paginas, numero_pagina);
+		progreso += rescatar_de_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
+		numero_pagina++;
+		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
+	}
+}
+
+int escribir_en_marco(marco* marco, void* data, int offset, int tam){
+	// retorna lo que se logró escribir
+	if(tam <= TAMANIO_PAGINA){
+		memcpy(memoria_principal + marco->base + offset, data, tam);
+		return tam;
+	}else{
+		memcpy(memoria_principal + marco->base + offset, data, TAMANIO_PAGINA);
+		return TAMANIO_PAGINA;
+	}
+}
 
 void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam){
 	void* data = malloc(tam);
@@ -14,13 +45,13 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam){
 		pagina = list_get(tabla->paginas, numero_pagina);
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
 		numero_pagina++;
-		log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
+		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
 	}
 	while(faltante > 0){
 		pagina = list_get(tabla->paginas, numero_pagina);
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
 		numero_pagina++;
-		log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
+		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
 	}
 
 	return data;
@@ -66,7 +97,7 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam){
 		offset = ultima_pagina->tamano_ocupado;
 		numero_pagina = list_size(tabla->paginas) - 1;
 		progreso += completar_pagina(ultima_pagina, data, tam);
-		log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
+		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}else{
 		numero_pagina = list_size(tabla->paginas);
 		offset = 0;
@@ -75,11 +106,10 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam){
 
 	while(progreso < tam){
 		progreso += agregar_pagina(tabla, data + progreso, tam - progreso);
-		log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
+		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}
 	return dl;	
 }
-
 
 int agregar_pagina(tabla_paginas* tabla, void* data, int tam){
 	// retorna lo que se logró guardar
@@ -216,7 +246,7 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
 		if(pag->tamano_ocupado <= 0){
 			list_add(paginas_a_remover, (void*) numero_pagina);
 		}
-		log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
+		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
 		numero_pagina++;
 	}
 	while(faltante > 0){
@@ -226,7 +256,7 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
 		if(pag->tamano_ocupado <= 0){
 			list_add(paginas_a_remover, (void*) numero_pagina);
 		}
-		log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
+		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
 		numero_pagina++;
 	}
 
@@ -294,6 +324,15 @@ void matar_tabla_paginas(int pid){
 	//log_debug(logger, "Se completó la nismación de la tabla PID: %d", pid);
 }
 
+liberar_lista_tcbs_paginacion(t_list* lista){
+	if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		void free_tcb(void* un_tcb){
+			free(un_tcb);
+		}
+		list_destroy_and_destroy_elements(lista, free_tcb);
+		free(lista);
+	}
+}
 // TEST
 
 void imprimir_paginas(int pid){

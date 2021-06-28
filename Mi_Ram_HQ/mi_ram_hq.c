@@ -42,7 +42,8 @@ int main(int argc, char** argv) {
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-	//test_gestionar_tareas_paginacion();
+	test_listar_tcbs();
+	//test_gestionar_tarea();
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
 
@@ -182,6 +183,8 @@ void atender_clientes(void* param) {
 						empaquetar_y_enviar(buffer, RECIBIR_TCB, parametros->socket);
 					}
 				}
+				// PAGINACION: hay que liberar esta maldita lista (se chequea si es pag en la func.)
+				liberar_lista_tcbs_paginacion(tcbs_de_esta_patota);
 
 				enviar_codigo(EXITO, parametros->socket);
 
@@ -359,7 +362,9 @@ int gestionar_tcb(t_TCB* tcb){
 			return 0;
 		}
 
-		log_info(logger, "Comienza la creación de las tareas con TID: %d", tcb->TID);
+		log_info(logger, "Guardando TCB TID: %d", tcb->TID);
+		tcb->siguiente_instruccion = 0;
+		tcb->puntero_a_pcb = tabla->dl_pcb;
 		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB));
 		if(dl_tcb == NULL){
 			//TODO: no hay más memoria, matar tabla de paginas
@@ -415,7 +420,7 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		}
 		char stid[6];
 		sprintf(stid, "%d", 10001);
-		t_TCB* tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB));
+		tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB));
 		if(tcb_recuperado == NULL){
 			return NULL;
 		}
@@ -443,7 +448,21 @@ t_list* buscar_tcbs_por_pid(int pid){
 		return list_map(tabla->segmentos_tcb, transformer);
 
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
-		return NULL;
+		tabla_paginas* tabla = buscar_tabla(pid);
+		if(tabla == NULL){
+			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
+		}
+		t_list* lista_tcbs = list_create();
+
+		void tcb_finder(char* stid, void* una_dl){
+			int dl = (int) una_dl;
+			t_TCB* tcb = rescatar_de_paginas(tabla,dl,sizeof(t_TCB));
+			list_add(lista_tcbs, tcb);
+		}
+		
+		dictionary_iterator(tabla->dl_tcbs, tcb_finder);
+		
+		return lista_tcbs;
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -481,7 +500,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		//se crea la struct de tarea para devolver, despues hay que mandarle free
 		tarea = crear_tarea(str_tarea);
 		//me fijo si hay un \0 despues de la tarea, si no hay significa que esta era la ultima :'(
-		log_error(logger,"Largo: %d", strlen(str_tarea));
+		//log_error(logger,"Largo: %d", strlen(str_tarea));
 		
 		if(palabras[1] == NULL){
 			// no hay proxima tarea
@@ -494,7 +513,47 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		return tarea;
 			
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		return NULL;
+		tabla_paginas* tabla = buscar_tabla(pid);
+		if(tabla == NULL){
+			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
+		}
+		t_TCB* tcb = buscar_tcb_por_tid(tid);
+		if(tcb == NULL){
+			//no deberia pasar pero por las dudas viste
+			return NULL;
+		}
+		int dl_tarea_tcb = tcb->siguiente_instruccion;
+
+		if(dl_tarea_tcb == 999999){
+			// Ya no quedan tareas
+			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
+			return NULL;
+		}
+		char* str_tareas = rescatar_de_paginas(tabla, tabla->dl_tareas, tabla->dl_pcb);
+		char* tareas_restantes = string_substring_from(str_tareas, dl_tarea_tcb);
+		char** palabras = string_split(tareas_restantes, "\n");
+		char* str_tarea = palabras[0];
+		log_info(logger, "Tarea: %s", str_tarea);
+		tarea = crear_tarea(str_tarea);
+
+		if(palabras[1] == NULL){
+			// no hay proxima tarea
+			tcb->siguiente_instruccion = 999999; // como es que NULL = 0 en este lenguaje choto
+		}else{
+			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
+		}
+
+		char stid[6];
+		sprintf(stid, "%d", tid);
+		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
+		log_info(logger,"Actualizando TCB");
+		int result = sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB));
+
+		liberar_puntero_doble(palabras);
+		free(tareas_restantes);
+		free(str_tareas);
+		free(tcb);
+		return tarea;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -555,17 +614,43 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 
 int actualizar_tcb(t_TCB* nuevo_tcb){
 	log_debug(logger,"Actualizando TCB TID: %d", nuevo_tcb->TID);
-	t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
-	if(tcb == NULL){
-		return 0;
-	}
-	if(nuevo_tcb->estado_tripulante == 'F'){
-		eliminar_tcb(nuevo_tcb->TID);
+
+	int pid = nuevo_tcb->TID / 10000;
+	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
+		if(tcb == NULL){
+			return 0;
+		}
+		if(nuevo_tcb->estado_tripulante == 'F'){
+			eliminar_tcb(nuevo_tcb->TID);
+			return 1;
+		}
+		tcb->coord_x = nuevo_tcb->coord_x;
+		tcb->coord_y = nuevo_tcb->coord_y;
+		tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
+		//log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
+
 		return 1;
+	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
+		if(tabla == NULL){
+			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
+		}
+
+		if(nuevo_tcb->estado_tripulante == 'F'){
+			eliminar_tcb(nuevo_tcb->TID);
+			return 1;
+		}
+
+		char stid[6];
+		sprintf(stid, "%d", nuevo_tcb->TID);
+		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
+		
+		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char));
+		return result;
+	}else{
+		log_error(logger, "Esquema de memoria desconocido");
+		exit(EXIT_FAILURE);
 	}
-	tcb->coord_x = nuevo_tcb->coord_x;
-	tcb->coord_y = nuevo_tcb->coord_y;
-	tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
-	//log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
-	return 1;
+	return 0;
 }
