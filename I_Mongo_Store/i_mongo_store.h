@@ -13,11 +13,6 @@
 typedef struct {
 	int socket;
 	void (*atender)(char*);
-} hilo_tripulante;
-
-typedef struct {
-	int socket;
-	void (*atender)(char*);
 } hilo_discordiador;
 
 extern t_log* logger_mongo;
@@ -40,6 +35,7 @@ void escuchar_mongo(void* args);
 //void escuchar_mongo(int args);
 void sabotaje(int socket_discordiador);
 void iniciar_file_system();
+void sincronizar_blocks();
 void cerrar_archivos();
 void cerrar_mutexs();
 

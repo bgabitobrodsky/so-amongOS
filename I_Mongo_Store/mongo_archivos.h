@@ -36,6 +36,8 @@ uint32_t cantidad_bloques_tripulante(FILE* archivo);
 uint32_t* lista_bloques_tripulante(FILE* archivo);
 void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques);
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* lista_bloques);
+void escribir_tamanio(FILE* archivo, uint32_t tamanio);
+int bloques_contar(uint32_t* lista_bloques, char caracter);
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
