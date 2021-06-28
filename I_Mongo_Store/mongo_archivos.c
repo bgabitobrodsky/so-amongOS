@@ -111,7 +111,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 		//Marco el bit como ocupado
 		bitarray_set_bit(bitmap, bit_libre);
 
-		if(es_recurso(archivo)){
+		if (es_recurso(archivo)){
 			//Asigno el bloque a un archivo
 			asignar_bloque_recurso(archivo, bit_libre);
 
@@ -130,7 +130,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 			uint32_t tamanio = tamanio_archivo(archivo);
 			uint32_t* lista_bloques = lista_bloques_tripulante(archivo);
 			uint32_t cantidad_bloques = sizeof(lista_bloques)/sizeof(uint32_t);
-			lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente
+			lista_bloques[cantidad_bloques] = bit_libre; //Agrega el nuevo bloque al final de la lista de bloques preexistente // OJO QUE PUEDE EXPLOTAR POR MANIAS DE C
 
 			escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 		}
@@ -499,7 +499,7 @@ void asignar_bloque_recurso(FILE* archivo, int bit_libre) {
 	uint32_t tamanio = tamanio_archivo(archivo);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(archivo);
 	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
-	lista_bloques[cantidad_bloques] = bit_libre;
+	lista_bloques[cantidad_bloques] = bit_libre; 
 
 	escribir_archivo_recurso(archivo, tamanio, cantidad_bloques + 1, lista_bloques);
 }
@@ -508,7 +508,7 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
 	uint32_t tamanio = tamanio_archivo(archivo);
 	uint32_t* lista_bloques = lista_bloques_tripulante(archivo);
 	uint32_t cantidad_bloques = cantidad_bloques_tripulante(archivo);
-	lista_bloques[cantidad_bloques] = bit_libre;
+	lista_bloques[cantidad_bloques] = bit_libre; 
 
 	escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 }
