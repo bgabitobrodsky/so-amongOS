@@ -9,6 +9,9 @@ Actualizaciones MD5: No las hacía, ahora si
 obtener_bitacora: completa
 
 ### Registro de cambios
+27/06/2021
++ Desbuggeadas operaciones de entrada/salida.
+
 26/06/2021
 + Modelado el protocolo para la llegada de un sabotaje.
 
