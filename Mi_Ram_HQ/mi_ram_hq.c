@@ -234,15 +234,15 @@ void iniciar_memoria(){
 }
 
 void* buscar_tabla(int pid){	
-	log_debug(logger,"Se comienza la busqueda de tabla de pid: %d",pid);
+	//log_debug(logger,"Se comienza la busqueda de tabla de pid: %d",pid);
 	char spid[4];
 	sprintf(spid, "%d", pid);
 	void* tabla = dictionary_get(tablas,spid);
 	if(tabla == NULL){
-		log_warning(logger,"Tabla no encontrada");
+		//log_warning(logger,"Tabla no encontrada");
 		return NULL;
 	}
-	log_debug(logger,"Tabla encontrada, pid: %d",pid);
+	//log_debug(logger,"Tabla encontrada, pid: %d",pid);
 	return tabla;
 }
 
@@ -259,7 +259,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		}
 		
 		//Creamos segmento para tareas y lo guardamos en la tabla de la patota
-		log_debug(logger, "Comienza la creación del segmento de tareas con PID: %d", pid_patota);
+		log_debug(logger, "Creando segmento de tareas, PID: %d", pid_patota);
 		segmento* segmento_tareas = asignar_segmento(tamanio_tareas);
 		if(segmento_tareas == NULL){
 			matar_tabla_segmentos(pid_patota);
@@ -269,17 +269,17 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		void* puntero_a_tareas = memoria_principal + segmento_tareas->base;
 		memcpy(puntero_a_tareas, archivo->texto, tamanio_tareas);
 		tabla->segmento_tareas = segmento_tareas;
-		log_debug(logger,"Se termino la creación del segmento de tareas con PID: %d, con base: %d", pid_patota, segmento_tareas->base);
+		//log_debug(logger,"Se termino la creación del segmento de tareas con PID: %d, con base: %d", pid_patota, segmento_tareas->base);
 
 		//Creamos el PCB
-		log_debug(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
+		//log_debug(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
 		t_PCB* pcb = malloc(sizeof(t_PCB));
 		pcb->PID = pid_patota;
 		pcb->direccion_tareas = (uint32_t) puntero_a_tareas;
-		log_debug(logger,"Se termino la creación de PCB con PID: %d", pid_patota);
+		//log_debug(logger,"Se termino la creación de PCB con PID: %d", pid_patota);
 
 		//Creamos el segmento para el PCB y lo guardamos en la tabla de la patota
-		log_debug(logger, "Comienza la creación del segmento para el PCB con PID: %d", pid_patota);
+		log_debug(logger, "Creando segmento para el PCB con PID: %d", pid_patota);
 		segmento* segmento_pcb = asignar_segmento(sizeof(t_PCB));
 		if(segmento_pcb == NULL){
 			matar_tabla_segmentos(pid_patota);
@@ -288,7 +288,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		segmento_pcb->tipo = S_PCB;
 		memcpy(memoria_principal + segmento_pcb->base, pcb, sizeof(t_PCB));
 		tabla->segmento_pcb = segmento_pcb;
-		log_debug(logger, "Se terminó la creación del segmento para el PCB con PID: %d, con base: %d", pid_patota,segmento_pcb->base);
+		//log_debug(logger, "Se terminó la creación del segmento para el PCB con PID: %d, con base: %d", pid_patota,segmento_pcb->base);
 		free(pcb);
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
@@ -300,18 +300,18 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 			return 0;
 		}
 
-		log_info(logger, "Comienza la creación de las tareas con PID: %d", pid_patota);
+		log_info(logger, "Guardando tareas con PID: %d", pid_patota);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas);
 		tabla->dl_tareas = dl_tareas;
-		log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
+		//log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
 
-		log_info(logger, "Comienza la creación de PCB con PID: %d", pid_patota);
+		log_info(logger, "Guardando PCB con PID: %d", pid_patota);
 		t_PCB* pcb = malloc(sizeof(t_PCB));
 		pcb->PID = pid_patota;
 		pcb->direccion_tareas = dl_tareas;
 		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB));
 		tabla->dl_pcb = dl_pcb;
-		log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
+		//log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
 		
 		free(pcb);
 
@@ -325,7 +325,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 int gestionar_tcb(t_TCB* tcb){
 	int pid = tcb->TID / 10000;
 	size_t tamanio_tcb = sizeof(t_TCB);
-	log_debug(logger, "Comienza la creación del TCB, TID: %d", tcb->TID);
+	log_debug(logger, "Guardando TCB, TID: %d", tcb->TID);
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
 		if(tabla == NULL){ 
@@ -335,6 +335,7 @@ int gestionar_tcb(t_TCB* tcb){
 		//Creamos segmento para el tcb y lo guardamos en la tabla de la patota
 		segmento* segmento_tcb = asignar_segmento(tamanio_tcb);
 		if(segmento_tcb == NULL){
+			// si no hay mas memoria se mata toda la patota
 			matar_tabla_segmentos(pid);
 			return 0;
 		}
@@ -353,22 +354,26 @@ int gestionar_tcb(t_TCB* tcb){
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){ 
+			// esto no tendria que pasar, pero por las dudas
 			log_error(logger,"La tabla no existe pid: %d",pid);
 			return 0;
 		}
 
 		log_info(logger, "Comienza la creación de las tareas con TID: %d", tcb->TID);
 		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB));
+		if(dl_tcb == NULL){
+			//TODO: no hay más memoria, matar tabla de paginas
+			return 0;
+		}
 		char stid[6];
 		sprintf(stid,"%d", tcb->TID);
 		dictionary_put(tabla->dl_tcbs, stid, (void*) dl_tcb);
-		log_info(logger, "Se terminó de guardar el TCB de tid: %d, dirección lógica: %d", tcb->TID, dl_tcb);
-
+		//log_info(logger, "Se terminó de guardar el TCB de tid: %d, dirección lógica: %d", tcb->TID, dl_tcb);
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
-	log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
+	//log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
 	return 1;
 }
 
@@ -376,7 +381,7 @@ int gestionar_tcb(t_TCB* tcb){
 t_TCB* buscar_tcb_por_tid(int tid){
 	int pid = tid / 10000;
 	t_TCB* tcb_recuperado;
-	log_debug(logger,"Comienza la busqueda de TCB por TID: %d", tid);
+	log_debug(logger,"Buscando TCB de TID: %d", tid);
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 		
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
@@ -391,17 +396,17 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		}
 		segmento* segmento_tcb = list_find(tabla->segmentos_tcb, buscador);
 		if(segmento_tcb == NULL){
-			log_warning(logger,"TCB con TID: %d no encontrado", tid);
+			//log_warning(logger,"TCB con TID: %d no encontrado", tid);
 			return NULL;
 		}
 		tcb_recuperado = memoria_principal + segmento_tcb->base;
 
 		if(tcb_recuperado == NULL){
-			log_warning(logger,"TCB con TID: %d no encontrado", tid);
+			//log_warning(logger,"TCB con TID: %d no encontrado", tid);
 			return NULL;
 		}
 
-		log_debug(logger,"TCB con TID: %d encontrado", tid);
+		//log_warning(logger,"TCB con TID: %d encontrado", tid);
 		
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
@@ -411,6 +416,9 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		char stid[6];
 		sprintf(stid, "%d", 10001);
 		t_TCB* tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB));
+		if(tcb_recuperado == NULL){
+			return NULL;
+		}
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -419,7 +427,7 @@ t_TCB* buscar_tcb_por_tid(int tid){
 }
 
 t_list* buscar_tcbs_por_pid(int pid){
-	log_debug(logger, "Comienza la busqueda de todos los TCB por pid: %d",pid);
+	log_debug(logger, "Buscando TCBs por pid: %d",pid);
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
@@ -431,7 +439,7 @@ t_list* buscar_tcbs_por_pid(int pid){
 			segmento* segmento_tcb = (segmento*) un_segmento;
 			return memoria_principal + segmento_tcb->base;
 		}
-		log_debug(logger,"Encontrados TCBs de la patota con pid: %d", pid);
+		//log_debug(logger,"Encontrados TCBs de la patota con pid: %d", pid);
 		return list_map(tabla->segmentos_tcb, transformer);
 
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
@@ -482,7 +490,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}
 		liberar_puntero_doble(palabras);
-		log_debug(logger,"Se encontro la tarea para el tripulante %d",tid);
+		//log_debug(logger,"Se encontro la tarea para el tripulante %d",tid);
 		return tarea;
 			
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
@@ -490,15 +498,12 @@ t_tarea* buscar_siguiente_tarea(int tid){
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
-	}
-	if(tarea == NULL){
-		log_warning(logger,"No se encontro la tarea para el tripulante %d",tid);
 		return NULL;
 	}
 }
 
 int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
-	log_debug(logger,"Comenzó el sacrificio del TCB TID: %d", tid);
+	log_debug(logger,"Sacrificando TCB TID: %d", tid);
 	int pid = tid / 10000;
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
@@ -519,7 +524,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		liberar_segmento(segmento_tcb->base);
 
 		list_remove_by_condition(tabla->segmentos_tcb, buscador);
-		log_debug(logger,"TID: %d ahora descansa con Odín", tid);
+		//log_debug(logger,"TID: %d ahora descansa con Odín", tid);
 
 		if(list_size(tabla->segmentos_tcb) < 1){
 			// Si era el ultimo tripulante: MUERTE A LA TABLA ENTERA
@@ -533,7 +538,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		}
 		int result = matar_paginas_tcb(tabla, tid);
 		if(result){
-			log_info(logger, "Se mató al TCB tid: %d", tid);
+			//log_info(logger, "Se mató al TCB tid: %d", tid);
 			if(dictionary_size(tabla->dl_tcbs) == 0){
 				matar_tabla_paginas(pid);
 			}
@@ -561,6 +566,6 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 	tcb->coord_x = nuevo_tcb->coord_x;
 	tcb->coord_y = nuevo_tcb->coord_y;
 	tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
-	log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
+	//log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
 	return 1;
 }

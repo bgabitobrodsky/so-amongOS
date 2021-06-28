@@ -6,9 +6,9 @@ void ordenar_segmentos(){
     bool segmento_anterior(segmento* segmento_antes, segmento* segmento_despues) {
         return segmento_antes->base < segmento_despues->base;
     }
-	log_info(logger,"Comienzo a ordenar los segmentos");
+	//log_info(logger,"Comienzo a ordenar los segmentos");
     list_sort(segmentos, (void*) segmento_anterior);
-	log_info(logger,"Segmentos ordenados");
+	//log_info(logger,"Segmentos ordenados");
     return;
 }
 
@@ -17,7 +17,7 @@ void liberar_segmento(int base){
         segmento* x = list_get(segmentos, i);
         if(x->base == base) {
             x->libre = true;
-            log_info(logger, "Se elimina el segmento con base %d", x->base);
+            //log_info(logger, "Se elimina el segmento con base %d", x->base);
         }
     }
     ordenar_segmentos();
@@ -120,10 +120,10 @@ segmento* crear_segmento(int base, int tam, bool libre){
 
 segmento* buscar_segmento_libre(int tam){
 	if (strcmp(CRITERIO_SELECCION, "FF") == 0) {
-        log_info(logger, "Empieza busqueda FirstFit");
+        //log_info(logger, "Empieza busqueda FirstFit");
         return first_fit(tam);
     } else if (strcmp(CRITERIO_SELECCION, "BF") == 0) {
-        log_info(logger, "Empieza busqueda BestFit");
+        //log_info(logger, "Empieza busqueda BestFit");
         return best_fit(tam);
     } else {
         log_error(logger, "Metodo de asignacion desconocido");
@@ -151,15 +151,15 @@ segmento* best_fit(int tam){
     for(int i=0; i<size; i++){
         segmento* x = list_get(segmentos, i);
         if(x->libre == true && tam <= x->tam){
-            log_info(logger, "Segmento libre con suficiente espacio encontrado (base: %d)", x->base);
+            //log_info(logger, "Segmento libre con suficiente espacio encontrado (base: %d)", x->base);
             if(tam == x->tam){
-				log_info(logger, "Mejor segmento encontrado (base:%d)", x->base);
+				//log_info(logger, "Mejor segmento encontrado (base:%d)", x->base);
 				return x;
 			}
             list_add(candidatos, x);
         }
     }
-    log_info(logger, "Buscando el mejor segmento");
+    //log_info(logger, "Buscando el mejor segmento");
     int candidatos_size = list_size(candidatos);
     if(candidatos_size != 0){
         segmento* best_fit;
@@ -172,7 +172,7 @@ segmento* best_fit(int tam){
                 best_fit = y;
             }
         }
-        log_info(logger, "Mejor segmento encontrado (base:%d)", best_fit->base);
+        //log_info(logger, "Mejor segmento encontrado (base:%d)", best_fit->base);
         return best_fit;
     }else{
         log_warning(logger, "No hay segmentos disponibles");
@@ -186,7 +186,7 @@ segmento* asignar_segmento(int tam){
 		//Si el segmento es del tamaño justo, no tengo que reordenar
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
-			log_info(logger,"Segmento asignado (base:%d)", segmento_libre->base);
+			//log_info(logger,"Segmento asignado (base:%d)", segmento_libre->base);
 			return segmento_libre;
 		}
 		//Si no tengo que dividir el segmento
@@ -195,7 +195,7 @@ segmento* asignar_segmento(int tam){
 			list_add(segmentos,nuevo_segmento);
 			segmento_libre->base += tam;
 			segmento_libre->tam -= tam;
-			log_info(logger,"Segmento asignado (base:%d)", nuevo_segmento->base);
+			//log_info(logger,"Segmento asignado (base:%d)", nuevo_segmento->base);
 			//Ordeno los segmentos por base ascendente
 			ordenar_segmentos();
 
@@ -214,7 +214,7 @@ segmento* asignar_segmento(int tam){
 }
 
 tabla_segmentos* crear_tabla_segmentos(int pid){
-    log_debug(logger,"Se crea tabla de pid: %d",pid);
+    //log_debug(logger,"Se crea tabla de pid: %d",pid);
 	tabla_segmentos* nueva_tabla = malloc(sizeof(tabla_segmentos));
     nueva_tabla->segmento_pcb = NULL;
     nueva_tabla->segmento_tareas = NULL;
@@ -222,32 +222,31 @@ tabla_segmentos* crear_tabla_segmentos(int pid){
     char spid[4];
 	sprintf(spid, "%d", pid);
     dictionary_put(tablas,spid,nueva_tabla);
-    log_debug(logger,"Tabla de pid: %d creada",pid);
+    //log_debug(logger,"Tabla de pid: %d creada",pid);
 	return nueva_tabla;
 }
 
 void matar_tabla_segmentos(int pid){
-    log_debug(logger, "Se procede a efectuar la nismación de la tabla PID: %d", pid);
+    log_debug(logger, "Eliminando la patota PID: %d", pid);
     
-
     void table_destroyer(void* una_tabla){
         tabla_segmentos* tabla = (tabla_segmentos*) una_tabla;
 
         if(tabla->segmento_pcb != NULL){
-            log_info(logger, "Se mata al segmento del pcb");
+            //log_info(logger, "Se mata al segmento del pcb");
             tabla->segmento_pcb->libre = true;
         }else{
-            log_info(logger, "No tenia pcb");
+            //log_info(logger, "No tenia pcb");
         }
         if(tabla->segmento_tareas != NULL){
-            log_info(logger, "Se mata al segmento de tareas");
+            //log_info(logger, "Se mata al segmento de tareas");
             tabla->segmento_tareas->libre = true;
         }else{
-            log_info(logger, "No tenia tareas");
+            //log_info(logger, "No tenia tareas");
         }
         int size = list_size(tabla->segmentos_tcb);
         if(size > 0){
-            log_info(logger, "Se mata a los segmentos de tcb");
+            //log_info(logger, "Se mata a los segmentos de tcb");
 
             void tcb_destroyer(void* un_segmento){
                 segmento* seg = (segmento*) un_segmento;
@@ -255,7 +254,7 @@ void matar_tabla_segmentos(int pid){
             }
             list_destroy_and_destroy_elements(tabla->segmentos_tcb,tcb_destroyer);
         }else{
-            log_info(logger, "No tenia tcbs");
+            //log_info(logger, "No tenia tcbs");
         }
     }
     char spid[4];
