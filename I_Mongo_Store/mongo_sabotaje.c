@@ -79,16 +79,50 @@ int verificar_bitmap() {
 }
 
 int verificar_sizes() {
-    return reasignar_tamanios_archivo();
+    // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio alguno devuelve 3, sino 0
+	uint32_t * bloques_basura  = lista_bloques_recurso(recurso.basura);
+	uint32_t * bloques_comida  = lista_bloques_recurso(recurso.comida);
+	uint32_t * bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
+
+	int tamanio_real_B = bloques_contar(bloques_basura, 'B');
+	int tamanio_real_C = bloques_contar(bloques_basura, 'C');
+	int tamanio_real_O = bloques_contar(bloques_basura, 'O');
+
+	if(tamanio_real_B != (int) tamanio_archivo(recurso.basura)) {
+		escribir_tamanio(recurso.basura, tamanio_real_B);
+		return 3;
+	}
+	if(tamanio_real_C != (int) tamanio_archivo(recurso.comida)) {
+		escribir_tamanio(recurso.comida, tamanio_real_C);
+		return 3;
+	}
+	if(tamanio_real_O != (int) tamanio_archivo(recurso.oxigeno)) {
+		escribir_tamanio(recurso.oxigeno, tamanio_real_O);
+		return 3;
+	}
+
+	return 0;
 }
 
-int verificar_block_counts(t_TCB* tripulante) { // Ya que cambio enunciado, se podria hacer la func directamente aca adentro
-    int revision = revisar_block_count_recursos();
+int verificar_block_counts(t_TCB* tripulante) { 
+    // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve el bloque roto (1 oxigeno, 2 comida, 3 basura). Si mas de uno roto ver que hacer.
+	uint32_t cantidad_real_basura  = sizeof(lista_bloques_recurso(recurso.basura)) / sizeof(uint32_t);
+	uint32_t cantidad_real_comida  = sizeof(lista_bloques_recurso(recurso.comida)) / sizeof(uint32_t);
+	uint32_t cantidad_real_oxigeno = sizeof(lista_bloques_recurso(recurso.oxigeno)) / sizeof(uint32_t);
 
-    if (revision > 0)
-        return 4;
-    else
-        return 0;
+	if(cantidad_real_oxigeno != cantidad_bloques_recurso(recurso.oxigeno)) {
+		escribir_tamanio(recurso.oxigeno, cantidad_real_oxigeno);
+		return 4;
+	}
+	if(cantidad_real_comida  != cantidad_bloques_recurso(recurso.comida)) {
+		escribir_tamanio(recurso.comida, cantidad_real_comida);
+		return 4;
+	}
+	if(cantidad_real_basura  != cantidad_bloques_recurso(recurso.basura)) {
+		escribir_tamanio(recurso.basura, cantidad_real_basura);
+		return 4;
+	}
+	return 0;
 }
 
 int verificar_blocks() {
@@ -194,53 +228,6 @@ int contiene(int* lista, int valor) {
 	for(int i = 0; i < tamanio_lista; i++) {
 		if(lista[i] == valor)
 			return 1;
-	}
-	return 0;
-}
-
-int reasignar_tamanios_archivo() {
-    // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio alguno devuelve 3, sino 0
-	uint32_t * bloques_basura  = lista_bloques_recurso(recurso.basura);
-	uint32_t * bloques_comida  = lista_bloques_recurso(recurso.comida);
-	uint32_t * bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
-
-	int tamanio_real_B = bloques_contar(bloques_basura, 'B');
-	int tamanio_real_C = bloques_contar(bloques_basura, 'C');
-	int tamanio_real_O = bloques_contar(bloques_basura, 'O');
-
-	if(tamanio_real_B != (int) tamanio_archivo(recurso.basura)) {
-		escribir_tamanio(recurso.basura, tamanio_real_B);
-		return 3;
-	}
-	if(tamanio_real_C != (int) tamanio_archivo(recurso.comida)) {
-		escribir_tamanio(recurso.comida, tamanio_real_C);
-		return 3;
-	}
-	if(tamanio_real_O != (int) tamanio_archivo(recurso.oxigeno)) {
-		escribir_tamanio(recurso.oxigeno, tamanio_real_O);
-		return 3;
-	}
-
-	return 0;
-}
-
-int revisar_block_count_recursos() {
-    // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve el bloque roto (1 oxigeno, 2 comida, 3 basura). Si mas de uno roto ver que hacer.
-	uint32_t cantidad_real_basura  = sizeof(lista_bloques_recurso(recurso.basura)) / sizeof(uint32_t);
-	uint32_t cantidad_real_comida  = sizeof(lista_bloques_recurso(recurso.comida)) / sizeof(uint32_t);
-	uint32_t cantidad_real_oxigeno = sizeof(lista_bloques_recurso(recurso.oxigeno)) / sizeof(uint32_t);
-
-	if(cantidad_real_oxigeno != cantidad_bloques_recurso(recurso.oxigeno)) {
-		escribir_tamanio(recurso.oxigeno, cantidad_real_oxigeno);
-		return 1;
-	}
-	if(cantidad_real_comida  != cantidad_bloques_recurso(recurso.comida)) {
-		escribir_tamanio(recurso.comida, cantidad_real_comida);
-		return 2;
-	}
-	if(cantidad_real_basura  != cantidad_bloques_recurso(recurso.basura)) {
-		escribir_tamanio(recurso.basura, cantidad_real_basura);
-		return 3;
 	}
 	return 0;
 }

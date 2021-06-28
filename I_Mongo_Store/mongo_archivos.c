@@ -30,9 +30,9 @@ void inicializar_archivos() { // TODO: Puede romper
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-    recurso.oxigeno     = fopen(path_oxigeno, "w+");
-	recurso.comida      = fopen(path_comida, "w+");
-	recurso.basura      = fopen(path_basura, "w+");
+    recurso.oxigeno        = fopen(path_oxigeno, "w+");
+	recurso.comida         = fopen(path_comida, "w+");
+	recurso.basura         = fopen(path_basura, "w+");
 	directorio.superbloque = fopen(path_superbloque, "w+");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "w+");
 
@@ -70,9 +70,9 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
-	recurso.oxigeno     = fopen(path_oxigeno, "r+");
-	recurso.comida      = fopen(path_comida, "r+");
-	recurso.basura      = fopen(path_basura, "r+");
+	recurso.oxigeno        = fopen(path_oxigeno, "r+");
+	recurso.comida         = fopen(path_comida, "r+");
+	recurso.basura         = fopen(path_basura, "r+");
 	directorio.superbloque = fopen(path_superbloque, "r+");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+");
 
@@ -146,7 +146,7 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 	int cantidad_alcanzada = 0;
 
 	for(int j = 0; j < cant_bloques; j++) {
-		for (int i = 0; tipo != *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != ' '; i++) { // Cambiar Macro por revision al Superbloque
+		for (int i = 0; tipo != *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != '\t'; i++) { // Cambiar Macro por revision al Superbloque
 			
 			if (*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == ' ') {
 				*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
@@ -166,7 +166,7 @@ int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, i
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
-		for (int i = TAMANIO_BLOQUE; tipo != *(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != ' '; i--) { // Cambiar Macro por revision al Superbloque
+		for (int i = TAMANIO_BLOQUE; tipo != *(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != '\t'; i--) { // Cambiar Macro por revision al Superbloque
 			
 			if (*(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) == tipo) {
 				*(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = ' ';

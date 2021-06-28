@@ -124,8 +124,8 @@ void sabotaje(int parametro) {
 	int flag = 1;
 	int socket_discordiador;
 
-	if(flag)
-		socket_discordiador = parametro;
+	if (flag)
+		socket_discordiador = parametro; // WTF is this? 
 	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {
@@ -193,7 +193,7 @@ void iniciar_file_system() {
 		inicializar_archivos();
 	}
 
-	pthread_t un_hilo;
+	pthread_t un_hilo; // Estaria bueno crearlo en main
 	pthread_create(&un_hilo, NULL, (void*) sincronizar_blocks, NULL);
 	pthread_detach(un_hilo);
 }

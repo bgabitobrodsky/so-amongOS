@@ -40,12 +40,13 @@ void iniciar_blocks(int filedescriptor_blocks) {
     char* mapa = (char*) mmap(NULL, block_size * size, PROT_NONE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
 
     memcpy(directorio.mapa_blocks, mapa, strlen(mapa) + 1);
+    inicializar_mapa();
 }
 
 void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos con whitespace, para funciones de agregado y quitado
 
     for (int i; i < (TAMANIO_BLOQUE); i++) {
-        *(directorio.mapa_blocks +  TAMANIO_BLOQUE * numero_bloque + i) = ' ';
+        *(directorio.mapa_blocks +  TAMANIO_BLOQUE * numero_bloque + i) = '\t';
     }
 
     msync(directorio.mapa_blocks, (numero_bloque + 1) * TAMANIO_BLOQUE, MS_ASYNC);
@@ -53,7 +54,9 @@ void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos c
 }
 
 void inicializar_mapa() {
-	//TODO
+	for (int i; i < CANTIDAD_BLOQUES; i++) {
+        inicializar_bloque(i);
+    }
 }
 
 int obtener_tamanio_bloque() {
