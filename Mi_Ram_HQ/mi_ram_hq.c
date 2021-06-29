@@ -166,7 +166,7 @@ void atender_clientes(void* param) {
 					log_info(logger, "%i -KILLED", mensaje_recibido->tid);
 				}
 				else{
-					log_warning(logger, "No se pudo eliminar a %i");
+					log_warning(logger, "No se pudo eliminar a %i", mensaje_recibido->tid);
 					enviar_codigo(FALLO, parametros->socket);
 				}
 
@@ -597,6 +597,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 			if(dictionary_size(tabla->dl_tcbs) == 0){
 				matar_tabla_paginas(pid);
 			}
+			return 1;
 		}else{
 			// error
 			return 0;
