@@ -14,7 +14,7 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante);
 void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb);
 void modificar_bitacora(t_estructura* mensaje);
 void escribir_bitacora(t_bitacora* bitacora, int largo_strings, int cant_strings, ...);
-void escribir_bloque_bitacora(int bloque, char* mensaje);
+void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora);
 char* formatear_posicion(int coord_x, int coord_y);
 void borrar_bitacora(t_TCB* tcb);
 t_bitacora* quitar_bitacora_lista(t_TCB* tcb);
