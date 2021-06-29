@@ -298,11 +298,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid_patota);
 		if(tabla == NULL){ 
 			tabla = crear_tabla_paginas(pid_patota);
-		}else{
-			log_error(logger,"La tabla ya existía pid: %d",pid_patota);
-			return 0;
 		}
-
 		log_info(logger, "Guardando tareas con PID: %d", pid_patota);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas);
 		tabla->dl_tareas = dl_tareas;
