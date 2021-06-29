@@ -350,8 +350,8 @@ void test_gestionar_tcb(){
 
 void test_buscar_siguiente_tarea(){
     t_archivo_tareas* archivo = malloc(sizeof(t_archivo_tareas));
-	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5\0";
-	archivo->largo_texto = 75;
+	archivo->texto = "GENERAR_OXIGENO 12;1;1;5\nGENERAR_OXIGESI 12;5;5;5";
+	archivo->largo_texto = 50;
 	archivo->pid = 1;
 	gestionar_tareas(archivo);
     free(archivo);

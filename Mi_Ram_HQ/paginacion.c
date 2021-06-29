@@ -330,7 +330,6 @@ liberar_lista_tcbs_paginacion(t_list* lista){
 			free(un_tcb);
 		}
 		list_destroy_and_destroy_elements(lista, free_tcb);
-		free(lista);
 	}
 }
 // TEST

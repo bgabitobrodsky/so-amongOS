@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-	test_listar_tcbs();
+	//test_buscar_siguiente_tarea();
 	//test_gestionar_tarea();
 	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
