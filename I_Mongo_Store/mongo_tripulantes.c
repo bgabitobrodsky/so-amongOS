@@ -75,21 +75,23 @@ void modificar_bitacora(t_estructura* mensaje) { // Necesitara recibir dos mensa
 	char* pos_final = NULL;
 	char* nombre_tarea = NULL;
 	
-	switch (codigo_operacion) {
+	switch (mensaje->codigo_operacion) {
 		case MOVIMIENTO:
 			pos_inicial = formatear_posicion(mensaje->posicion->coord_x, mensaje->posicion->coord_y); // Ver como manejar pos inicial
 			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 			escribir_bitacora(bitacora, strlen("Se mueve de a ") + sizeof(char) * 6, "Se mueve de %s a %s", pos_inicial, pos_final); // Implementar en t_estructura y crear posicion
 			free(pos_inicial);
-			free(pos_final)
+			free(pos_final);
 			break;
 		case INICIO_TAREA:
-			char* nombre_tarea = mensaje->tarea->nombre;
+			char* nombre_tarea;
+			strcpy(nombre_tarea, mensaje->tarea->nombre);
 			escribir_bitacora(bitacora, strlen("Comienza ejecucion de tarea ") + stlen(nombre_tarea), "Comienza ejecucion de tarea %s", nombre_tarea);
 			free(nombre_tarea);
 			break;
 		case FIN_TAREA:
-			char* nombre_tarea = mensaje->tarea->nombre;
+			char* nombre_tarea;
+			strcpy(nombre_tarea, mensaje->tarea->nombre);
 			escribir_bitacora(bitacora, strlen("Se finaliza la tarea ") + stlen(nombre_tarea), "Se finaliza la tarea %s", nombre_tarea);
 			free(nombre_tarea);
 			break;
