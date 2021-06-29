@@ -324,7 +324,7 @@ void matar_tabla_paginas(int pid){
 	//log_debug(logger, "Se completó la nismación de la tabla PID: %d", pid);
 }
 
-liberar_lista_tcbs_paginacion(t_list* lista){
+void liberar_lista_tcbs_paginacion(t_list* lista){
 	if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		void free_tcb(void* un_tcb){
 			free(un_tcb);

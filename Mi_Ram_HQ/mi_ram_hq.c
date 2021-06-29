@@ -108,7 +108,6 @@ void atender_clientes(void* param) {
 
 	while(flag) {
 		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);
-		int result;
 		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera
 
 		switch(mensaje_recibido->codigo_operacion) {
@@ -362,7 +361,7 @@ int gestionar_tcb(t_TCB* tcb){
 		tcb->siguiente_instruccion = 0;
 		tcb->puntero_a_pcb = tabla->dl_pcb;
 		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB));
-		if(dl_tcb == NULL){
+		if(dl_tcb == (int) NULL){
 			//TODO: no hay más memoria, matar tabla de paginas
 			return 0;
 		}
@@ -541,7 +540,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 
 		char stid[6];
 		sprintf(stid, "%d", tid);
-		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
+		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		log_info(logger,"Actualizando TCB");
 		int result = sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB));
 
@@ -641,7 +640,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 
 		char stid[6];
 		sprintf(stid, "%d", nuevo_tcb->TID);
-		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
+		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		
 		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char));
 		return result;
