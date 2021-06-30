@@ -8,16 +8,13 @@ void enviar_posicion_sabotaje(int socket_discordiador) {
 		t_posicion posicion;
 
 		//Consigo la primera posicion del char** posiciones_sabotajes
-		//posicion.coord_x = (uint32_t) atoi(posiciones_sabotajes[0][0]); //TODO
-		//posicion.coord_y = (uint32_t) atoi(posiciones_sabotajes[0][2]);
-
 		posicion.coord_x = (uint32_t) posiciones_sabotajes[0][0];
 		posicion.coord_y = (uint32_t) posiciones_sabotajes[0][2];
 
 		empaquetar_y_enviar(serializar_posicion(posicion), POSICION, socket_discordiador);
 
 		//Remuevo la primera posición del char** posiciones_sabotajes
-		posiciones_sabotajes = posiciones_sabotajes + 1; //TODO revisar
+		posiciones_sabotajes = posiciones_sabotajes + 1; //Puede romper
 	}
 	else
 		log_warning(logger_mongo, "No hay posiciones de sabotaje");
@@ -148,8 +145,58 @@ int verificar_block_counts(t_TCB* tripulante) {
 }
 
 int verificar_blocks() {
-    // TODO: No se entiende enunciado --> Ver video
-	return 0;
+    // TODO
+	//Por cada archivo de recurso:
+	//Concatenar los bloques de la lista de bloques
+	//Hashear lo concatenado (Osea si la lista es [1,4,2], debo hashear a MD5 la cadena 142)
+	//Comparar lo hasheado con el hash del archivo. Si son iguales no hay sabotaje. Si difieren está saboteado el archivo
+	//¿Cómo reparar el archivo?
+	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
+	//Supongo que el último bloque debería completarlo de basura.
+
+	int lbs_basura  = lista_blocks_saboteada(recurso.basura);
+	int lbs_comida  = lista_blocks_saboteada(recurso.comida);
+	int lbs_oxigeno = lista_blocks_saboteada(recurso.oxigeno);
+	int flag = 0;
+
+	if(lbs_basura) {
+		reparar(recurso.basura);
+		flag = 5;
+	}
+	if(lbs_comida) {
+		reparar(recurso.comida);
+		flag = 5;
+	}
+	if(lbs_oxigeno) {
+		reparar(recurso.oxigeno);
+		flag = 5;
+	}
+	return flag;
+}
+
+int lista_blocks_saboteada(FILE* archivo) {
+
+	//Concatenar los bloques de la lista de bloques
+	char* nuevo_hash = string_new();
+	int* lista_bloques = (int*) lista_bloques_recurso(recurso.basura);
+	for(int i = 0; i < sizeof(lista_bloques) / sizeof(int); i++)
+		string_append(&nuevo_hash, string_itoa(lista_bloques[i]));
+
+	//Hashear lo concatenado (Osea si la lista es [1,4,2], debo hashear a MD5 la cadena 142)
+    unsigned char digest[16];
+    compute_md5(nuevo_hash, digest);
+
+    //Comparar lo hasheado con el hash del archivo. Si son iguales no hay sabotaje. Si difieren está saboteado el archivo
+    if(strcmp(nuevo_hash, md5_archivo(recurso.basura)))
+    	return 0;
+    else
+    	return 1;
+}
+
+void reparar(FILE* archivo) {
+	//TODO
+	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
+	//Supongo que el último bloque debería completarlo de basura.
 }
 
 void recorrer_recursos(int* lista_bloques_ocupados) {

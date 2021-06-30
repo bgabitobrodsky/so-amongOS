@@ -5,6 +5,10 @@ t_log* logger_mongo;
 t_config* config_mongo;
 t_list* bitacoras;
 
+//TODO ver tema MD5:
+//		-https://www.it-swarm-es.com/es/c/como-crear-un-hash-md5-de-una-cadena-en-c/939706723/
+//		-https://stackoverflow.com/questions/58065208/calculate-md5-in-c-display-output-as-string
+
 void inicializar_archivos() { // TODO: Puede romper
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
@@ -45,7 +49,7 @@ void inicializar_archivos() { // TODO: Puede romper
 	inicializar_mapa();
 }
 
-void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar conforme arriba. Ver que hacer con las bitacoras
+void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar conforme arriba
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
@@ -366,31 +370,11 @@ int max (int a, int b) {
 	}
 }
 
-char* crear_md5() { // String de 32
-	char* md5 = malloc(sizeof(char) * 32);
-
-	for (int i = 0; i < 32; i++){
-		md5[i] = char_random();
-	}
-
-	return md5;
-}
-
-char char_random() {
-
-	srand(time(NULL));
-	int seleccion = rand() % 2;
-
-	switch (seleccion) {
-		case 0:
-			return (char) (rand() % 9 + 48); // Devuelve un numero por ASCII
-			break;
-		case 1:
-			return (char) (rand() % 26 + 65); // Devuelve un alfa por ASCII
-			break;
-	}
-
-	return '\0';
+void crear_md5(char *str, unsigned char digest[16]) {
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, str, strlen(str));
+    MD5_Final(digest, &ctx);
 }
 
 uint32_t tamanio_archivo(FILE* archivo) {

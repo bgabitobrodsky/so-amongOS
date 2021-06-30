@@ -10,6 +10,8 @@ int verificar_bitmap();
 int verificar_sizes();
 int verificar_block_counts();
 int verificar_blocks();
+int lista_blocks_saboteada(FILE* archivo);
+void reparar(FILE* archivo);
 void recorrer_recursos(int* lista_bloques_ocupados);
 void recorrer_bitacoras(int* lista_bloques_ocupados);
 void sortear(int* lista_bloques_ocupados);
