@@ -45,7 +45,7 @@ void inicializar_archivos() { // TODO: Puede romper
 	inicializar_mapa();
 }
 
-void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar conforme arriba
+void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar conforme arriba. Ver que hacer con las bitacoras
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
@@ -467,13 +467,12 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 	fwrite(&cantidad_bloques, sizeof(uint32_t), 1, archivo);
 	fwrite(list_bloques, sizeof(uint32_t), cantidad_bloques, archivo);
 	char caracter = caracter_llenado_archivo(archivo);
-	fwrite(&caracter, strlen(caracter), 1, archivo);
+	fwrite(&caracter, strlen(&caracter), 1, archivo);
 	char* md5 = md5_archivo(archivo);
 	fwrite(&md5, strlen(md5), 1, archivo);
 
 	fflush(archivo);
 
-	free(caracter);
 	free(md5);
 }
 
@@ -513,7 +512,7 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
 	escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 }
 
-int bloques_contar(uint32_t* lista_bloques, char caracter) { //TODO ver si está bien
+int bloques_contar(uint32_t* lista_bloques, char caracter) { //TODO ver si está bien --> No está bien
 	int cantidad = 0, i;
 	int cantidad_bloques = sizeof(lista_bloques) / sizeof(uint32_t);
 	for(i=lista_bloques[i]; i < cantidad_bloques; i++){

@@ -3,8 +3,8 @@
 
 #include "mongo_tripulantes.h"
 
-void enviar_posiciones_sabotaje(int socket_discordiador);
-int reparar();
+void enviar_posicion_sabotaje(int socket_discordiador);
+char* reparar();
 int verificar_cant_bloques();
 int verificar_bitmap();
 int verificar_sizes();

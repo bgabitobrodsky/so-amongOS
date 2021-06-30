@@ -19,8 +19,8 @@ char* path_blocks;
 void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
     uint32_t block_size = 64; // Bytes
     uint32_t size = 64;
-    void* puntero_a_bits = malloc(TAMANIO_BLOQUE * 8); //De javi: con calloc te inicializa el puntero con todos 0
-    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, TAMANIO_BLOQUE * 8, LSB_FIRST); //De javi: ¿No sería CANTIDAD_BLOQUES?
+    void* puntero_a_bits = malloc(CANTIDAD_BLOQUES / 8); //De javi: con calloc te inicializa el puntero con todos 0
+    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, CANTIDAD_BLOQUES / 8, LSB_FIRST);
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
         bitarray_clean_bit(bitmap, i);
@@ -98,8 +98,22 @@ void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap) {
     fflush(directorio.superbloque);
 }
 
-t_bitarray* actualizar_bitmap() {
-	//TODO
-	t_bitarray* bitarray = malloc(sizeof(t_bitarray));
-	return bitarray;
+t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados) {
+    void* puntero_a_bits = calloc(CANTIDAD_BLOQUES / 8, 1);
+    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, CANTIDAD_BLOQUES / 8, LSB_FIRST);
+
+    for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
+    	if(contiene(lista_bloques_ocupados, i))
+    		bitarray_set_bit(bitmap, i);
+    }
+	return bitmap;
+}
+
+int contiene(int* lista, int valor) {
+	 int i;
+	    for(i = 0; i < sizeof(lista) / sizeof(lista[0]); i++) {
+	        if(lista[i] == valor)
+	            return 1;
+	    }
+	    return 0;
 }

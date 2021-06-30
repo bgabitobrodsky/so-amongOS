@@ -125,7 +125,7 @@ void sabotaje(int parametro) {
 	int socket_discordiador;
 
 	if (flag)
-		socket_discordiador = parametro; // WTF is this? 
+		socket_discordiador = parametro; // WTF is this? --> --> La primera conexión recibe el socket de mongo, el resto son por sabotajes.
 	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {
@@ -140,17 +140,17 @@ void sabotaje(int parametro) {
 
 			if (listo->codigo_operacion == LISTO) {
 
-				// Se envian posiciones de sabotaje en orden
-				enviar_posiciones_sabotaje(socket_discordiador); //TODO no enviar to.do junto
+				// Se envian la primera posicion no enviada hasta el momento
+				enviar_posicion_sabotaje(socket_discordiador);
 
 				// Se espera a que Discordiador envie un designado para reparar
 				t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
 
 				// Se activaria el protocolo fcsk
-				int rotura = reparar();
+				char* rotura = reparar();
 
 				log_info(logger_mongo, "Se reparo el sabotaje.\n");
-				log_info(logger_mongo, "Se habia saboteado %s.\n", rompio(rotura));
+				log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
 				// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
 				enviar_codigo(LISTO, socket_discordiador);
 

@@ -61,7 +61,6 @@ typedef struct {
 
     t_TCB* tripulante;
     FILE* bitacora_asociada;
-    // ¿Porqué no le pusiste a las bitácoras su tamanio y bloques?
     int tamanio;
     int* bloques;
 
@@ -85,6 +84,7 @@ int obtener_tamanio_bloque();
 int obtener_cantidad_bloques();
 t_bitarray* obtener_bitmap();
 void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap);
-t_bitarray* actualizar_bitmap();
+t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados);
+int contiene(int* lista, int valor);
 
 #endif
