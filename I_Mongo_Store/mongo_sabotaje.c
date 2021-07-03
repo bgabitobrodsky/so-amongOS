@@ -95,13 +95,10 @@ int verificar_bitmap() {
 
 int verificar_sizes() {
     // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio, devuelve 3, sino 0
-	uint32_t * bloques_basura  = lista_bloques_recurso(recurso.basura);
-	uint32_t * bloques_comida  = lista_bloques_recurso(recurso.comida);
-	uint32_t * bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
 
-	int tamanio_real_B = bloques_contar(bloques_basura, 'B');
-	int tamanio_real_C = bloques_contar(bloques_basura, 'C');
-	int tamanio_real_O = bloques_contar(bloques_basura, 'O');
+	int tamanio_real_B = bloques_contar('B');
+	int tamanio_real_C = bloques_contar('C');
+	int tamanio_real_O = bloques_contar('O');
 
 	int corrompido = 0;
 
@@ -175,7 +172,7 @@ int verificar_blocks() {
 }
 
 int lista_blocks_saboteada(FILE* archivo) {
-
+/*
 	//Concatenar los bloques de la lista de bloques
 	char* nuevo_hash = string_new();
 	int* lista_bloques = (int*) lista_bloques_recurso(recurso.basura);
@@ -183,17 +180,20 @@ int lista_blocks_saboteada(FILE* archivo) {
 		string_append(&nuevo_hash, string_itoa(lista_bloques[i]));
 
 	//Hashear lo concatenado (Osea si la lista es [1,4,2], debo hashear a MD5 la cadena 142)
-    unsigned char digest[16];
-    compute_md5(nuevo_hash, digest);
+    // TODO arreglar o cambiar
+	//unsigned char digest[16];
+    //compute_md5(nuevo_hash, digest);
 
     //Comparar lo hasheado con el hash del archivo. Si son iguales no hay sabotaje. Si difieren está saboteado el archivo
     if(strcmp(nuevo_hash, md5_archivo(recurso.basura)))
     	return 0;
     else
     	return 1;
+*/
+	return 0;
 }
 
-void reparar(FILE* archivo) {
+void reparar_blocks() {
 	//TODO
 	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
 	//Supongo que el último bloque debería completarlo de basura. Basura en nuestro caso es \t

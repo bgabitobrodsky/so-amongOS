@@ -103,13 +103,13 @@ t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados) {
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, CANTIDAD_BLOQUES / 8, LSB_FIRST);
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-    	if(contiene(lista_bloques_ocupados, i))
+    	if(contiene_generico(lista_bloques_ocupados, i))
     		bitarray_set_bit(bitmap, i);
     }
 	return bitmap;
 }
 
-int contiene(int* lista, int valor) {
+int contiene_generico(int* lista, int valor) {
 	 int i;
 	    for(i = 0; i < sizeof(lista) / sizeof(lista[0]); i++) {
 	        if(lista[i] == valor)

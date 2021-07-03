@@ -1,5 +1,6 @@
 #include "mongo_archivos.h"
 
+
 // Vars globales
 t_log* logger_mongo;
 t_config* config_mongo;
@@ -371,10 +372,12 @@ int max (int a, int b) {
 }
 
 void crear_md5(char *str, unsigned char digest[16]) {
+	/*
     MD5_CTX ctx;
     MD5_Init(&ctx);
     MD5_Update(&ctx, str, strlen(str));
     MD5_Final(digest, &ctx);
+    */
 }
 
 uint32_t tamanio_archivo(FILE* archivo) {
@@ -496,11 +499,11 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
 	escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 }
 
-int bloques_contar(uint32_t* lista_bloques, char caracter) { //TODO ver si está bien --> No está bien --> Claramente no esta bien
-	int cantidad = 0, i;
-	int cantidad_bloques = sizeof(lista_bloques) / sizeof(uint32_t);
-	for(i = lista_bloques[i] /* Como no inicializas i, aca te da trash y out of bounds */ ; i < cantidad_bloques; i++){
-		if (directorio.mapa_blocks[i] == caracter) // No haria esta comparacion, bloque puede ser de archivo y estar vacio
+int bloques_contar(char caracter) {
+	int cantidad = 0;
+
+	for(int i = 0 ; i < CANTIDAD_BLOQUES; i++){
+		if (directorio.mapa_blocks[i] == caracter && directorio.mapa_blocks[i+1] == caracter) // No haria esta comparacion, bloque puede ser de archivo y estar vacio
 			cantidad++;
 	}
 	return cantidad;

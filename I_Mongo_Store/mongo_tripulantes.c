@@ -72,32 +72,53 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 	char* pos_inicial = NULL;
 	char* pos_final = NULL;
 	char* nombre_tarea;
+	char* cadenita;
 	
-	switch (mensaje->codigo_operacion) {
+	switch (mensaje1->codigo_operacion) {
 		case MOVIMIENTO:
 			pos_inicial = formatear_posicion(mensaje2->posicion->coord_x, mensaje2->posicion->coord_y); // Ver como manejar pos inicial
 			pos_final = formatear_posicion(mensaje1->tcb->coord_x, mensaje1->tcb->coord_y);
-			escribir_bitacora(bitacora, strlen("Se mueve de a ") + sizeof(char) * 6, "Se mueve de %s a %s", pos_inicial, pos_final); // Implementar en t_estructura y crear posicion
+			cadenita = malloc(strlen("se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1);
+			strcpy(cadenita, "se mueve de ");
+			strcat(cadenita, pos_inicial);
+			strcat(cadenita, " a ");
+			strcat(cadenita, pos_final);
+
+			escribir_bitacora(bitacora, cadenita); // Implementar en t_estructura y crear posicion
 			free(pos_inicial);
 			free(pos_final);
+			free(cadenita);
 			break;
 		case INICIO_TAREA:
 			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
-			strcpy(nombre_tarea, mensaje->tarea->nombre);
-			escribir_bitacora(bitacora, strlen("Comienza ejecucion de tarea ") + strlen(nombre_tarea), "Comienza ejecucion de tarea %s", nombre_tarea);
+			strcpy(nombre_tarea, mensaje2->tarea->nombre);
+
+			cadenita = malloc(strlen("comienza ejecucion de tarea ") + strlen(nombre_tarea) + 1);
+			strcpy(cadenita, "comienza ejecucion de tarea ");
+			strcat(cadenita, nombre_tarea);
+
+			escribir_bitacora(bitacora, cadenita);
+			free(cadenita);
 			free(nombre_tarea);
 			break;
 		case FIN_TAREA:
 			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
-			strcpy(nombre_tarea, mensaje->tarea->nombre);
-			escribir_bitacora(bitacora, strlen("Se finaliza la tarea ") + strlen(nombre_tarea), "Se finaliza la tarea %s", nombre_tarea);
+			strcpy(nombre_tarea, mensaje2->tarea->nombre);
+
+			cadenita = malloc(strlen("se finaliza la tarea ") + strlen(nombre_tarea) + 1);
+			strcpy(cadenita, "se finaliza la tarea ");
+			strcat(cadenita, nombre_tarea);
+
+			escribir_bitacora(bitacora, cadenita);
+			free(cadenita);
 			free(nombre_tarea);
 			break;
 		case CORRE_SABOTAJE:
-			escribir_bitacora(bitacora, strlen("Se corre en panico a la ubicacion del sabotaje"), "Se corre en panico a la ubicacion del sabotaje");
+
+			escribir_bitacora(bitacora, "se corre en panico a la ubicacion del sabotaje");
 			break;
 		case RESUELVE_SABOTAJE:
-			escribir_bitacora(bitacora, strlen("Se resuelve el sabotaje"), "Se resuelve el sabotaje");
+			escribir_bitacora(bitacora, "se resuelve el sabotaje");
 			break;
 	}
 
@@ -108,22 +129,13 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 	bitacora->tamanio = tamanio;
 }
 
-void escribir_bitacora(t_bitacora* bitacora, int largo_strings, int cant_strings, ...) {
-	va_list lista_argumentos;
-	va_start(lista_argumentos, cant_strings);
-
-	char* mensaje = malloc(largo_strings);
-
-	for (int i; i < cant_strings; i++) {
-		strcat(mensaje, va_arg(lista_argumentos, char*));
-	}
+void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	int size_lista_bloques = sizeof(bitacora->bloques)/sizeof(int); // Revisar
 	int ultimo_bloque = bitacora->bloques[size_lista_bloques];
 
 	escribir_bloque_bitacora(ultimo_bloque, mensaje, bitacora);
 
-	va_end(lista_argumentos);
 	free(mensaje);
 }
 
@@ -148,7 +160,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 				resto_mensaje[t] = mensaje[j];
 			}
 
-			escribir_bitacora(bitacora, strlen(resto_mensaje), 1, resto_mensaje);
+			escribir_bitacora(bitacora, resto_mensaje);
 		}
 }
 

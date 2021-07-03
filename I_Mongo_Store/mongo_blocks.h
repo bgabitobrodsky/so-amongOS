@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
+#include <openssl/md5.h>
 
 #define TAMANIO_BLOQUE obtener_tamanio_bloque()
 #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
@@ -85,6 +86,6 @@ int obtener_cantidad_bloques();
 t_bitarray* obtener_bitmap();
 void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap);
 t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados);
-int contiene(int* lista, int valor);
+int contiene_generico(int* lista, int valor);
 
 #endif
