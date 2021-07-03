@@ -54,8 +54,6 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     uint32_t block_size = (uint32_t) obtener_tamanio_bloque();
 
-    log_trace(logger_mongo, "0.5");
-
     uint32_t size = (uint32_t) obtener_cantidad_bloques();
 
     log_trace(logger_mongo, "1");
@@ -67,12 +65,14 @@ void iniciar_blocks(int filedescriptor_blocks) {
     }
 
     log_trace(logger_mongo, "2");
-    // TODO verificar block_size * size, creo que lo toma mal
-    // directorio.mapa_blocks = malloc((int) (block_size * size);
 
-    // memcpy(directorio.mapa_blocks, mapa, block_size * size);
+    directorio.mapa_blocks = malloc(block_size * size);
 
-    strcpy(directorio.mapa_blocks, "Xd");
+    log_trace(logger_mongo, "block size * size %i", (int) block_size * size);
+    log_trace(logger_mongo, "block size: %i", (int) block_size);
+    log_trace(logger_mongo, "size: %i", (int) size);
+
+    memcpy(directorio.mapa_blocks, mapa, block_size * size);
 
     log_trace(logger_mongo, "3");
 
@@ -97,6 +97,7 @@ void inicializar_mapa() {
 
 uint32_t obtener_tamanio_bloque() {
     uint32_t block_size;
+    fseek(directorio.superbloque, 0, SEEK_SET);
     fread(&block_size, sizeof(uint32_t), 1, directorio.superbloque);
 
     return block_size;
