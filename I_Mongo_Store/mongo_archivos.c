@@ -10,7 +10,7 @@ t_list* bitacoras;
 //		-https://www.it-swarm-es.com/es/c/como-crear-un-hash-md5-de-una-cadena-en-c/939706723/
 //		-https://stackoverflow.com/questions/58065208/calculate-md5-in-c-display-output-as-string
 
-void inicializar_archivos() { // TODO: Puede romper
+void inicializar_archivos() {
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
@@ -31,21 +31,25 @@ void inicializar_archivos() { // TODO: Puede romper
 	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
+	log_trace(logger_mongo, "post printf");
+
     int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-    recurso.oxigeno        = fopen(path_oxigeno, "w+");
-	recurso.comida         = fopen(path_comida, "w+");
-	recurso.basura         = fopen(path_basura, "w+");
-	directorio.superbloque = fopen(path_superbloque, "w+");
-	directorio.blocks      = fdopen(filedescriptor_blocks, "w+");
+    recurso.oxigeno        = fopen(path_oxigeno, "a+");
+	recurso.comida         = fopen(path_comida, "a+");
+	recurso.basura         = fopen(path_basura, "a+");
+	directorio.superbloque = fopen(path_superbloque, "a+");
+	directorio.blocks      = fdopen(filedescriptor_blocks, "a+");
 
 	escribir_archivo_recurso(recurso.oxigeno, 0, 0, NULL);
 	escribir_archivo_recurso(recurso.comida, 0, 0, NULL);
 	escribir_archivo_recurso(recurso.basura, 0, 0, NULL);
 
+	log_trace(logger_mongo, "pre superbloque");
 	iniciar_superbloque(directorio.superbloque);
+	log_trace(logger_mongo, "post_superbloque");
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
 	inicializar_mapa();
 }
@@ -83,7 +87,9 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 
 	// TODO: Verificar si esta mappeado
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
+	log_error(logger_mongo, "3");
 	inicializar_mapa();
+	log_error(logger_mongo, "4");
 }
 
 void asignar_nuevo_bloque(FILE* archivo) {
@@ -460,7 +466,6 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 
 	fflush(archivo);
 
-	free(md5);
 }
 
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list_bloques) {

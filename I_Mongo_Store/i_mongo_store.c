@@ -14,7 +14,7 @@ int sistema_activo = 1;
 int main(int argc, char** argv){
 
 	// Se crean estructuras de registro y configuracion
-	logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
+	logger_mongo = log_create("mongo.log", "MONGO", 1, 0); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
 	signal(SIGUSR1, sabotaje);
 
@@ -190,14 +190,14 @@ void iniciar_file_system() {
 		mkdir(path_files, 0777);
 		mkdir(path_bitacoras, 0777);
 		log_info(logger_mongo, "Se creo un FileSystem.\n");
-
 		// Se asignan los archivos como antes
 		inicializar_archivos();
 	}
-
+	log_error(logger_mongo, "4");
 	pthread_t un_hilo; // Estaria bueno crearlo en main
 	pthread_create(&un_hilo, NULL, (void*) sincronizar_blocks, NULL);
 	pthread_detach(un_hilo);
+	log_error(logger_mongo, "5");
 }
 
 void sincronizar_blocks() {
