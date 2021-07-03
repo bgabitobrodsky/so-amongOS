@@ -116,7 +116,9 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
        		//Falta cerrar sockets, hacerlo despues de juntar hilos
            	}
        	}
-	close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+
+		// TODO: Ver si este close explota hilos
+		close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 	}
 }
 
@@ -125,7 +127,7 @@ void sabotaje(int parametro) {
 	int socket_discordiador;
 
 	if (flag)
-		socket_discordiador = parametro; // WTF is this? --> --> La primera conexión recibe el socket de mongo, el resto son por sabotajes.
+		socket_discordiador = parametro; // WTF is this? --> --> La primera conexión recibe el socket de mongo, el resto son por sabotajes. --> --> Claro pero en flujo son iguales socket y parametro, nunca llega un tripu aca entonces distincion al pedo, ya se hizo
 	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {

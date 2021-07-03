@@ -496,11 +496,11 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
 	escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 }
 
-int bloques_contar(uint32_t* lista_bloques, char caracter) { //TODO ver si está bien --> No está bien
+int bloques_contar(uint32_t* lista_bloques, char caracter) { //TODO ver si está bien --> No está bien --> Claramente no esta bien
 	int cantidad = 0, i;
 	int cantidad_bloques = sizeof(lista_bloques) / sizeof(uint32_t);
-	for(i=lista_bloques[i]; i < cantidad_bloques; i++){
-		if(directorio.mapa_blocks[i] == caracter)
+	for(i = lista_bloques[i] /* Como no inicializas i, aca te da trash y out of bounds */ ; i < cantidad_bloques; i++){
+		if (directorio.mapa_blocks[i] == caracter) // No haria esta comparacion, bloque puede ser de archivo y estar vacio
 			cantidad++;
 	}
 	return cantidad;

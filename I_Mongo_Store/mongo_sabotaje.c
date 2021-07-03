@@ -4,7 +4,7 @@ char** posiciones_sabotajes;//TODO = config_get_array_value(config_mongo, "POSIC
 
 void enviar_posicion_sabotaje(int socket_discordiador) {
 
-	if(posiciones_sabotajes != NULL) { //El último parámetro es NULL
+	if (posiciones_sabotajes != NULL) { //El último parámetro es NULL
 		t_posicion posicion;
 
 		//Consigo la primera posicion del char** posiciones_sabotajes
@@ -159,15 +159,15 @@ int verificar_blocks() {
 	int lbs_oxigeno = lista_blocks_saboteada(recurso.oxigeno);
 	int flag = 0;
 
-	if(lbs_basura) {
+	if (lbs_basura) {
 		reparar(recurso.basura);
 		flag = 5;
 	}
-	if(lbs_comida) {
+	if (lbs_comida) {
 		reparar(recurso.comida);
 		flag = 5;
 	}
-	if(lbs_oxigeno) {
+	if (lbs_oxigeno) {
 		reparar(recurso.oxigeno);
 		flag = 5;
 	}
@@ -196,7 +196,7 @@ int lista_blocks_saboteada(FILE* archivo) {
 void reparar(FILE* archivo) {
 	//TODO
 	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
-	//Supongo que el último bloque debería completarlo de basura.
+	//Supongo que el último bloque debería completarlo de basura. Basura en nuestro caso es \t
 }
 
 void recorrer_recursos(int* lista_bloques_ocupados) {

@@ -15,8 +15,9 @@ void manejo_tripulante(int socket_tripulante) {
 		else {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
-				// t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
-				modificar_bitacora(mensaje); // modificar_bitacora(mensaje, mensaje2);
+				t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
+				//modificar_bitacora(mensaje);
+				modificar_bitacora(mensaje, mensaje2);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
@@ -66,28 +67,28 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	asignar_nuevo_bloque(nueva_bitacora->bitacora_asociada);
 }
 
-void modificar_bitacora(t_estructura* mensaje) { //TODO Necesitara recibir dos mensajes consecutivos, parametros serian (t_estructura* mensaje1, t_estructura* mensaje2)
-	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb);
+void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO Necesitara recibir dos mensajes consecutivos, para volver a como estaba antes borrar 2do parametro
+	t_bitacora* bitacora = obtener_bitacora(mensaje1->tcb);
 	char* pos_inicial = NULL;
 	char* pos_final = NULL;
 	char* nombre_tarea;
 	
 	switch (mensaje->codigo_operacion) {
 		case MOVIMIENTO:
-			pos_inicial = formatear_posicion(mensaje->posicion->coord_x, mensaje->posicion->coord_y); // Ver como manejar pos inicial
-			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
+			pos_inicial = formatear_posicion(mensaje2->posicion->coord_x, mensaje2->posicion->coord_y); // Ver como manejar pos inicial
+			pos_final = formatear_posicion(mensaje1->tcb->coord_x, mensaje1->tcb->coord_y);
 			escribir_bitacora(bitacora, strlen("Se mueve de a ") + sizeof(char) * 6, "Se mueve de %s a %s", pos_inicial, pos_final); // Implementar en t_estructura y crear posicion
 			free(pos_inicial);
 			free(pos_final);
 			break;
 		case INICIO_TAREA:
-			nombre_tarea = malloc(strlen(mensaje->tarea->nombre) + 1);
+			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
 			strcpy(nombre_tarea, mensaje->tarea->nombre);
 			escribir_bitacora(bitacora, strlen("Comienza ejecucion de tarea ") + strlen(nombre_tarea), "Comienza ejecucion de tarea %s", nombre_tarea);
 			free(nombre_tarea);
 			break;
 		case FIN_TAREA:
-			nombre_tarea = malloc(strlen(mensaje->tarea->nombre) + 1);
+			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
 			strcpy(nombre_tarea, mensaje->tarea->nombre);
 			escribir_bitacora(bitacora, strlen("Se finaliza la tarea ") + strlen(nombre_tarea), "Se finaliza la tarea %s", nombre_tarea);
 			free(nombre_tarea);
