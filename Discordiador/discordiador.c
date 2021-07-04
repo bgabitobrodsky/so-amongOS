@@ -99,11 +99,7 @@ void notificar_fin_sabotaje(t_tripulante* un_tripulante, int socket_mongo){
 	log_debug(logger, "Notifico a Mongo que soy un heroe");
 }
 
-int entrada_salida_esta_ocupada = 0;
-
-int entrada_salida_ocupada (){
-	return(queue_size(cola_tripulantes_block) == 1);
-}
+int entrada_salida_ocupada = 0;
 
 int cpu_ocupada(){
 	return(list_size(lista_tripulantes_exec) == GRADO_MULTITAREA);
@@ -127,9 +123,10 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
+    iniciar_patota("INICIAR_PATOTA 1 Random.ims 1|1");
 
-    // iniciar_patota("INICIAR_PATOTA 1 Random.ims 1|1");
-    iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
+    // iniciar_patota("INICIAR_PATOTA 1 Prueba.ims 1|1");
+    // iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
     iniciar_planificacion();
 
 /*
@@ -156,8 +153,8 @@ int main() {
     }
 
     while(sistema_activo){
-
-    	guardian_sabotaje(socket_a_mi_ram_hq, socket_a_mongo_store);
+    	sleep(1);
+    	// guardian_sabotaje(socket_a_mi_ram_hq, socket_a_mongo_store);
     }
 
     close(socket_a_mi_ram_hq);
@@ -283,6 +280,7 @@ void iniciar_planificacion() {
 void planificador(){
     log_info(logger, "Planificando");
     while(planificacion_activa){
+    	sleep(1);
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
 
             if(comparar_strings(ALGORITMO, "FIFO")){
@@ -326,6 +324,7 @@ void tripulante(t_tripulante* un_tripulante){
 				}
 
                 if(planificacion_activa == 0){
+                	sleep(1);
                     // este espacio vacio es EXACTAMENTE lo que tiene que estar
                 }
                 else{
@@ -347,6 +346,7 @@ void tripulante(t_tripulante* un_tripulante){
 
                 if(un_tripulante->quantum_restante > 0){
                     if(planificacion_activa == 0){
+                    	sleep(1);
                         // este espacio vacio es EXACTAMENTE lo que tiene que estar
                     }
                     else{
@@ -417,6 +417,7 @@ void iniciar_tripulante(t_tripulante* un_tripulante, int socket){
 
     if (un_tripulante->estado_tripulante == estado_tripulante[NEW]){
         while(planificacion_activa == 0){
+        	sleep(1);
             // por si lo matan antes de iniciar la planificacion
             if(un_tripulante->estado_tripulante == estado_tripulante[EXIT]){
                 morir(un_tripulante);
