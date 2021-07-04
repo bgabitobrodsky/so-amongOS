@@ -19,8 +19,7 @@ FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo_recurso(int codigo);
 char* conseguir_path_recurso_codigo(int codigo_archivo);
 char* conseguir_path_recurso_archivo(FILE* archivo);
-char* crear_md5();
-char char_random();
+void crear_md5(char *str, unsigned char digest[16]);
 int max(int a, int b);
 int es_recurso(FILE* archivo);
 void asignar_bloque_recurso(FILE* archivo, int bit_libre);
@@ -37,7 +36,7 @@ uint32_t* lista_bloques_tripulante(FILE* archivo);
 void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques);
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* lista_bloques);
 void escribir_tamanio(FILE* archivo, uint32_t tamanio);
-int bloques_contar(uint32_t* lista_bloques, char caracter);
+int bloques_contar(char caracter);
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;

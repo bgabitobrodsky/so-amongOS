@@ -48,7 +48,10 @@ marco* buscar_marco_libre();
 marco* asignar_marco();
 pagina* pagina_incompleta(tabla_paginas* tabla);
 int matar_paginas_tcb(tabla_paginas* tabla, int tid);
-
+int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam);
+void liberar_lista_tcbs_paginacion(t_list* lista);
+int escribir_en_marco(marco* marco, void* data, int offset, int tam);
+void matar_tabla_paginas(int pid);
 
 #endif /* PAGINACION_H_ */
 

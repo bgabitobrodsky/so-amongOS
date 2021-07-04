@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
+#include <openssl/md5.h>
 
 #define TAMANIO_BLOQUE obtener_tamanio_bloque()
 #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
@@ -61,7 +62,6 @@ typedef struct {
 
     t_TCB* tripulante;
     FILE* bitacora_asociada;
-    // ¿Porqué no le pusiste a las bitácoras su tamanio y bloques?
     int tamanio;
     int* bloques;
 
@@ -81,10 +81,11 @@ extern t_list* bitacoras;
 void iniciar_superbloque(FILE* archivo);
 void iniciar_blocks(int filedescriptor_blocks);
 void inicializar_mapa();
-int obtener_tamanio_bloque();
-int obtener_cantidad_bloques();
+uint32_t obtener_tamanio_bloque();
+uint32_t obtener_cantidad_bloques();
 t_bitarray* obtener_bitmap();
 void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap);
-t_bitarray* actualizar_bitmap();
+t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados);
+int contiene_generico(int* lista, int valor);
 
 #endif

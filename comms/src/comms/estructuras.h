@@ -58,6 +58,13 @@ typedef struct {
 
 } t_sigkill;
 
+typedef struct {
+
+    uint32_t coord_x;
+    uint32_t coord_y;
+
+} t_posicion;
+
 typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct de una funcion
 
     t_TCB* tcb;
@@ -72,13 +79,6 @@ typedef struct { // Solucion nefasta a no poder retornar varios tipos de struct 
     t_posicion* posicion;
 
 } t_estructura;
-
-typedef struct {
-
-    uint32_t coord_x;
-    uint32_t coord_y;
-
-} t_posicion;
 
 typedef struct {
 

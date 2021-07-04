@@ -1,43 +1,58 @@
 #include "mongo_sabotaje.h"
 
-void enviar_posiciones_sabotaje(int socket_discordiador) {
-    //int* lista_posiciones = config_get_array_value(config_mongo, "POSICIONES_SABOTAJE"); // Ver como carajos los devuelve, puede que haya que acoplar numeros de posicion
-	int* lista_posiciones = malloc(sizeof(int));
-    int tamanio_lista = (sizeof(lista_posiciones)/sizeof(int)) - 1; // Ultimo es NULL segun commons
+char** posiciones_sabotajes;//TODO = config_get_array_value(config_mongo, "POSICIONES_SABOTAJE");
 
-    for (int i; i < tamanio_lista; i++) {
-        empaquetar_y_enviar(serializar_posicion(1, 2), POSICION, socket_discordiador); //TODO codear serliazar posicion en paquetes.h. Cambiar el (1,2)
-    }
+void enviar_posicion_sabotaje(int socket_discordiador) {
 
-    enviar_codigo(FIN_LISTA, socket_discordiador);
+	if (posiciones_sabotajes != NULL) { //El último parámetro es NULL
+		t_posicion posicion;
+
+		//Consigo la primera posicion del char** posiciones_sabotajes
+		posicion.coord_x = (uint32_t) posiciones_sabotajes[0][0];
+		posicion.coord_y = (uint32_t) posiciones_sabotajes[0][2];
+
+		empaquetar_y_enviar(serializar_posicion(posicion), POSICION, socket_discordiador);
+
+		//Remuevo la primera posición del char** posiciones_sabotajes
+		posiciones_sabotajes = posiciones_sabotajes + 1; //Puede romper
+	}
+	else
+		log_warning(logger_mongo, "No hay posiciones de sabotaje");
 }
 
-int reparar() {
+char* reparar() {
+	char* roto = string_new();
     int reparado = 0;
     
     reparado = verificar_cant_bloques();
 
-    if (reparado != 0)
-        return reparado; 
+    if (reparado == 1)
+    	string_append(&roto, "\n\t-la cantidad de bloques del superbloque");
 
     reparado = verificar_bitmap();
 
-    if (reparado != 0)
-        return reparado; 
+    if (reparado == 2)
+    	string_append(&roto, "\n\t-el bitmap del superbloque");
 
     reparado = verificar_sizes();
 
-    if (reparado != 0)
-        return reparado; 
+    if (reparado == 3)
+    	string_append(&roto, "\n\t-los tamanios de los archivos");
 
     reparado = verificar_block_counts();
 
-    if (reparado != 0)
-        return reparado; 
+    if (reparado == 4)
+    	string_append(&roto, "\n\t-la cantidad de bloques de los recursos");
 
     reparado = verificar_blocks();
 
-    return reparado;
+    if (reparado == 5)
+    	string_append(&roto, "\n\t-la lista de bloques de los recursos");
+
+    if (reparado == 0)
+    	string_append(&roto, "\n\t-nada");
+
+    return roto;
 }
 
 int verificar_cant_bloques() {
@@ -68,7 +83,7 @@ int verificar_bitmap() {
     sortear(lista_bloques_ocupados);
 
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
-        t_bitarray* bitmap = actualizar_bitmap();
+        t_bitarray* bitmap = actualizar_bitmap(lista_bloques_ocupados);
         reescribir_superbloque(obtener_tamanio_bloque(), obtener_cantidad_bloques(), bitmap);
 
         return 2;
@@ -79,55 +94,109 @@ int verificar_bitmap() {
 }
 
 int verificar_sizes() {
-    // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio alguno devuelve 3, sino 0
-	uint32_t * bloques_basura  = lista_bloques_recurso(recurso.basura);
-	uint32_t * bloques_comida  = lista_bloques_recurso(recurso.comida);
-	uint32_t * bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
+    // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio, devuelve 3, sino 0
 
-	int tamanio_real_B = bloques_contar(bloques_basura, 'B');
-	int tamanio_real_C = bloques_contar(bloques_basura, 'C');
-	int tamanio_real_O = bloques_contar(bloques_basura, 'O');
+	int tamanio_real_B = bloques_contar('B');
+	int tamanio_real_C = bloques_contar('C');
+	int tamanio_real_O = bloques_contar('O');
+
+	int corrompido = 0;
 
 	if(tamanio_real_B != (int) tamanio_archivo(recurso.basura)) {
 		escribir_tamanio(recurso.basura, tamanio_real_B);
-		return 3;
+		corrompido = 3;
 	}
 	if(tamanio_real_C != (int) tamanio_archivo(recurso.comida)) {
 		escribir_tamanio(recurso.comida, tamanio_real_C);
-		return 3;
+		corrompido = 3;
 	}
 	if(tamanio_real_O != (int) tamanio_archivo(recurso.oxigeno)) {
 		escribir_tamanio(recurso.oxigeno, tamanio_real_O);
-		return 3;
+		corrompido = 3;
 	}
 
-	return 0;
+	return corrompido;
 }
 
 int verificar_block_counts(t_TCB* tripulante) { 
-    // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve el bloque roto (1 oxigeno, 2 comida, 3 basura). Si mas de uno roto ver que hacer.
+    // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve 4 si algún recurso fue corrompido
 	uint32_t cantidad_real_basura  = sizeof(lista_bloques_recurso(recurso.basura)) / sizeof(uint32_t);
 	uint32_t cantidad_real_comida  = sizeof(lista_bloques_recurso(recurso.comida)) / sizeof(uint32_t);
 	uint32_t cantidad_real_oxigeno = sizeof(lista_bloques_recurso(recurso.oxigeno)) / sizeof(uint32_t);
 
+	int corrompido = 0;
+
 	if(cantidad_real_oxigeno != cantidad_bloques_recurso(recurso.oxigeno)) {
 		escribir_tamanio(recurso.oxigeno, cantidad_real_oxigeno);
-		return 4;
+		corrompido = 4;
 	}
 	if(cantidad_real_comida  != cantidad_bloques_recurso(recurso.comida)) {
 		escribir_tamanio(recurso.comida, cantidad_real_comida);
-		return 4;
+		corrompido = 4;
 	}
 	if(cantidad_real_basura  != cantidad_bloques_recurso(recurso.basura)) {
 		escribir_tamanio(recurso.basura, cantidad_real_basura);
-		return 4;
+		corrompido = 4;
 	}
-	return 0;
+	return corrompido;
 }
 
 int verificar_blocks() {
-    // TODO: No se entiende enunciado
+    // TODO
+	//Por cada archivo de recurso:
+	//Concatenar los bloques de la lista de bloques
+	//Hashear lo concatenado (Osea si la lista es [1,4,2], debo hashear a MD5 la cadena 142)
+	//Comparar lo hasheado con el hash del archivo. Si son iguales no hay sabotaje. Si difieren está saboteado el archivo
+	//¿Cómo reparar el archivo?
+	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
+	//Supongo que el último bloque debería completarlo de basura.
+
+	int lbs_basura  = lista_blocks_saboteada(recurso.basura);
+	int lbs_comida  = lista_blocks_saboteada(recurso.comida);
+	int lbs_oxigeno = lista_blocks_saboteada(recurso.oxigeno);
+	int flag = 0;
+
+	if (lbs_basura) {
+		reparar(recurso.basura);
+		flag = 5;
+	}
+	if (lbs_comida) {
+		reparar(recurso.comida);
+		flag = 5;
+	}
+	if (lbs_oxigeno) {
+		reparar(recurso.oxigeno);
+		flag = 5;
+	}
+	return flag;
+}
+
+int lista_blocks_saboteada(FILE* archivo) {
+/*
+	//Concatenar los bloques de la lista de bloques
+	char* nuevo_hash = string_new();
+	int* lista_bloques = (int*) lista_bloques_recurso(recurso.basura);
+	for(int i = 0; i < sizeof(lista_bloques) / sizeof(int); i++)
+		string_append(&nuevo_hash, string_itoa(lista_bloques[i]));
+
+	//Hashear lo concatenado (Osea si la lista es [1,4,2], debo hashear a MD5 la cadena 142)
+    // TODO arreglar o cambiar
+	//unsigned char digest[16];
+    //compute_md5(nuevo_hash, digest);
+
+    //Comparar lo hasheado con el hash del archivo. Si son iguales no hay sabotaje. Si difieren está saboteado el archivo
+    if(strcmp(nuevo_hash, md5_archivo(recurso.basura)))
+    	return 0;
+    else
+    	return 1;
+*/
 	return 0;
+}
+
+void reparar_blocks() {
+	//TODO
+	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
+	//Supongo que el último bloque debería completarlo de basura. Basura en nuestro caso es \t
 }
 
 void recorrer_recursos(int* lista_bloques_ocupados) {
@@ -200,7 +269,7 @@ void sortear(int* lista_bloques_ocupados) {
     }
 }
 
-int bloques_ocupados_difieren(int* lista_bloques_ocupados) { //TODO Nico, si queres cambiale el nombre al flag.
+int bloques_ocupados_difieren(int* lista_bloques_ocupados) {
     // Compara lista contra el bitmap, apenas difieren devuelve 1 (como true), sino 0
 	int no_difieren;
 
@@ -229,23 +298,5 @@ int contiene(int* lista, int valor) {
 		if(lista[i] == valor)
 			return 1;
 	}
-	return 0;
-}
-
-char* rompio(int codigo) {
-    switch (codigo) {
-        case 0:
-            return "nada";
-        case 1:
-            return "la cantidad de bloques del superbloque";
-        case 2:
-            return "el bitmap del superbloque";
-        case 3:
-            return "los tamanios de los archivos";
-        case 4:
-            return "la cantidad de bloques de los recursos";
-        case 5:
-            return "el blocks";
-    }
 	return 0;
 }

@@ -15,8 +15,9 @@ void manejo_tripulante(int socket_tripulante) {
 		else {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
-				// t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
-				modificar_bitacora(mensaje); // modificar_bitacora(mensaje, mensaje2);
+				t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
+				//modificar_bitacora(mensaje);
+				modificar_bitacora(mensaje, mensaje2);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
@@ -45,7 +46,6 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: 
 	// Se obtiene el path particular del tripulante, identificado con su TID
 	char* path_tripulante = fpath_tripulante(tcb);
 	
-	// TODO: Habria que verificar si archivo ya existe
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
 	
@@ -65,68 +65,86 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	list_add(bitacoras, nueva_bitacora);
 
 	asignar_nuevo_bloque(nueva_bitacora->bitacora_asociada);
-
-	// TODO: Asignar cosas en Struct bitacora
 }
 
-void modificar_bitacora(t_estructura* mensaje) { // Necesitara recibir dos mensajes consecutivos, parametros serian (t_estructura* mensaje1, t_estructura* mensaje2)
-	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb);
+void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO Necesitara recibir dos mensajes consecutivos, para volver a como estaba antes borrar 2do parametro
+	t_bitacora* bitacora = obtener_bitacora(mensaje1->tcb);
 	char* pos_inicial = NULL;
 	char* pos_final = NULL;
-	char* nombre_tarea = NULL;
+	char* nombre_tarea;
+	char* cadenita;
 	
-	switch (codigo_operacion) {
+	switch (mensaje1->codigo_operacion) {
 		case MOVIMIENTO:
-			pos_inicial = formatear_posicion(mensaje->posicion->coord_x, mensaje->posicion->coord_y); // Ver como manejar pos inicial
-			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
-			escribir_bitacora(bitacora, strlen("Se mueve de a ") + sizeof(char) * 6, "Se mueve de %s a %s", pos_inicial, pos_final); // Implementar en t_estructura y crear posicion
+			pos_inicial = formatear_posicion(mensaje2->posicion->coord_x, mensaje2->posicion->coord_y); // Ver como manejar pos inicial
+			pos_final = formatear_posicion(mensaje1->tcb->coord_x, mensaje1->tcb->coord_y);
+			cadenita = malloc(strlen("se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1);
+			strcpy(cadenita, "se mueve de ");
+			strcat(cadenita, pos_inicial);
+			strcat(cadenita, " a ");
+			strcat(cadenita, pos_final);
+
+			escribir_bitacora(bitacora, cadenita); // Implementar en t_estructura y crear posicion
 			free(pos_inicial);
-			free(pos_final)
+			free(pos_final);
+			free(cadenita);
 			break;
 		case INICIO_TAREA:
-			char* nombre_tarea = mensaje->tarea->nombre;
-			escribir_bitacora(bitacora, strlen("Comienza ejecucion de tarea ") + stlen(nombre_tarea), "Comienza ejecucion de tarea %s", nombre_tarea);
+			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
+			strcpy(nombre_tarea, mensaje2->tarea->nombre);
+
+			cadenita = malloc(strlen("comienza ejecucion de tarea ") + strlen(nombre_tarea) + 1);
+			strcpy(cadenita, "comienza ejecucion de tarea ");
+			strcat(cadenita, nombre_tarea);
+
+			escribir_bitacora(bitacora, cadenita);
+			free(cadenita);
 			free(nombre_tarea);
 			break;
 		case FIN_TAREA:
-			char* nombre_tarea = mensaje->tarea->nombre;
-			escribir_bitacora(bitacora, strlen("Se finaliza la tarea ") + stlen(nombre_tarea), "Se finaliza la tarea %s", nombre_tarea);
+			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
+			strcpy(nombre_tarea, mensaje2->tarea->nombre);
+
+			cadenita = malloc(strlen("se finaliza la tarea ") + strlen(nombre_tarea) + 1);
+			strcpy(cadenita, "se finaliza la tarea ");
+			strcat(cadenita, nombre_tarea);
+
+			escribir_bitacora(bitacora, cadenita);
+			free(cadenita);
 			free(nombre_tarea);
 			break;
 		case CORRE_SABOTAJE:
-			escribir_bitacora(bitacora, strlen("Se corre en panico a la ubicacion del sabotaje"), "Se corre en panico a la ubicacion del sabotaje");
+
+			escribir_bitacora(bitacora, "se corre en panico a la ubicacion del sabotaje");
 			break;
 		case RESUELVE_SABOTAJE:
-			escribir_bitacora(bitacora, strlen("Se resuelve el sabotaje"), "Se resuelve el sabotaje");
+			escribir_bitacora(bitacora, "se resuelve el sabotaje");
 			break;
 	}
 
-	// TODO: Actualizar struct bitacora
+	//Actualizo struct bitacora
+	int* lista_bloques = (int*) lista_bloques_tripulante(bitacora->bitacora_asociada);
+	int tamanio = (int) tamanio_archivo(bitacora->bitacora_asociada);
+	bitacora->bloques = lista_bloques;
+	bitacora->tamanio = tamanio;
 }
 
-void escribir_bitacora(t_bitacora* bitacora, int largo_strings, int cant_strings, ...) {
-	va_list lista_argumentos;
-	va_start(lista_argumentos, cant_strings);
-
-	char* mensaje = malloc(largo_strings);
-
-	for (int i; i < cant_strings; i++) {
-		strcat(mensaje, va_arg(lista_argumentos, char*));
-	}
+void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	int size_lista_bloques = sizeof(bitacora->bloques)/sizeof(int); // Revisar
 	int ultimo_bloque = bitacora->bloques[size_lista_bloques];
 
 	escribir_bloque_bitacora(ultimo_bloque, mensaje, bitacora);
 
-	va_end(lista_argumentos);
 	free(mensaje);
 }
 
 void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 		int cantidad_alcanzada = 0;
-		
-		for (int i = 0; tipo != *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) { 
+		int i, j, t;
+		uint32_t* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
+
+		for (i = 0; *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) {
 			
 			if (*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == '\t') {
 				*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = mensaje[i];
@@ -138,19 +156,19 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 			asignar_nuevo_bloque(bitacora->bitacora_asociada);
 			char* resto_mensaje = malloc(strlen(mensaje) - cantidad_alcanzada);
 
-			for (int j = cantidad_alcanzada, t = 0; j < strlen(mensaje); j++, t++) {
+			for (j = cantidad_alcanzada, t = 0; j < strlen(mensaje); j++, t++) {
 				resto_mensaje[t] = mensaje[j];
 			}
 
-			escribir_bitacora(bitacora, strlen(resto_mensaje), resto_mensaje);
+			escribir_bitacora(bitacora, resto_mensaje);
 		}
 }
 
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks
 	char* posicion_formateada = malloc(sizeof(char) * 3); // Ejemplo: 1|2, 3 chars
-	strcat(posicion_formateada, itoa(coord_x));
-	strcat(posicion_formateada, '|');
-	strcat(posicion_formateada, itoa(coord_y));
+	strcat(posicion_formateada, string_itoa(coord_x));
+	strcat(posicion_formateada, "|");
+	strcat(posicion_formateada, string_itoa(coord_y));
 
 	return posicion_formateada;
 }

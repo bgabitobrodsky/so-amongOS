@@ -115,7 +115,6 @@ void atender_clientes(void* param) {
 
 	while(flag) {
 		t_estructura* mensaje_recibido = recepcion_y_deserializacion(parametros->socket);
-		int result;
 		//sleep(1); //para que no se rompa en casos de bug o tiempos de espera
 
 		switch(mensaje_recibido->codigo_operacion) {
@@ -173,7 +172,7 @@ void atender_clientes(void* param) {
 					log_info(logger, "%i -KILLED", mensaje_recibido->tid);
 				}
 				else{
-					log_warning(logger, "No se pudo eliminar a %i");
+					log_warning(logger, "No se pudo eliminar a %i", mensaje_recibido->tid);
 					enviar_codigo(FALLO, parametros->socket);
 				}
 
@@ -560,7 +559,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 
 		char stid[8];
 		sprintf(stid, "%d", tid);
-		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
+		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		log_info(logger,"Actualizando TCB");
 		int result = sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB));
 
@@ -616,6 +615,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 			if(dictionary_size(tabla->dl_tcbs) == 0){
 				matar_tabla_paginas(pid);
 			}
+			return 1;
 		}else{
 			// error
 			return 0;

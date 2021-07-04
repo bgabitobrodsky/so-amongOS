@@ -294,8 +294,8 @@ int matar_paginas_tcb(tabla_paginas* tabla, int tid){
 	log_info(logger, "Eliminando TCB tid: %d", tid);
 	char stid[6];
 	sprintf(stid, "%d", tid);
-	int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
-	if(dl_tcb == NULL){
+	int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
+	if(dl_tcb == (int) NULL){
 		return 0;
 	}
 	liberar_paginas(tabla, dl_tcb, sizeof(t_TCB));

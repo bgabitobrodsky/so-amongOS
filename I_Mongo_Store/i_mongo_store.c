@@ -14,7 +14,7 @@ int sistema_activo = 1;
 int main(int argc, char** argv){
 
 	// Se crean estructuras de registro y configuracion
-	logger_mongo = log_create("mongo.log", "MONGO", 1, LOG_LEVEL_DEBUG); // Corregir nombres
+	logger_mongo = log_create("mongo.log", "MONGO", 1, 0); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
 	signal(SIGUSR1, sabotaje);
 
@@ -116,7 +116,9 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
        		//Falta cerrar sockets, hacerlo despues de juntar hilos
            	}
        	}
-	close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+
+		// TODO: Ver si este close explota hilos
+		close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 	}
 }
 
@@ -125,7 +127,7 @@ void sabotaje(int parametro) {
 	int socket_discordiador;
 
 	if (flag)
-		socket_discordiador = parametro; // WTF is this? 
+		socket_discordiador = parametro; // WTF is this? --> --> La primera conexión recibe el socket de mongo, el resto son por sabotajes. --> --> Claro pero en flujo son iguales socket y parametro, nunca llega un tripu aca entonces distincion al pedo, ya se hizo
 	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {
@@ -140,17 +142,17 @@ void sabotaje(int parametro) {
 
 			if (listo->codigo_operacion == LISTO) {
 
-				// Se envian posiciones de sabotaje en orden
-				enviar_posiciones_sabotaje(socket_discordiador); //TODO no enviar to.do junto
+				// Se envian la primera posicion no enviada hasta el momento
+				enviar_posicion_sabotaje(socket_discordiador);
 
 				// Se espera a que Discordiador envie un designado para reparar
 				t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
 
 				// Se activaria el protocolo fcsk
-				int rotura = reparar();
+				char* rotura = reparar();
 
 				log_info(logger_mongo, "Se reparo el sabotaje.\n");
-				log_info(logger_mongo, "Se habia saboteado %s.\n", rompio(rotura));
+				log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
 				// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
 				enviar_codigo(LISTO, socket_discordiador);
 
@@ -188,14 +190,14 @@ void iniciar_file_system() {
 		mkdir(path_files, 0777);
 		mkdir(path_bitacoras, 0777);
 		log_info(logger_mongo, "Se creo un FileSystem.\n");
-
 		// Se asignan los archivos como antes
 		inicializar_archivos();
 	}
-
+	log_error(logger_mongo, "4");
 	pthread_t un_hilo; // Estaria bueno crearlo en main
 	pthread_create(&un_hilo, NULL, (void*) sincronizar_blocks, NULL);
 	pthread_detach(un_hilo);
+	log_error(logger_mongo, "5");
 }
 
 void sincronizar_blocks() {

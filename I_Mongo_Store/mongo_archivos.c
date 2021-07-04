@@ -1,11 +1,16 @@
 #include "mongo_archivos.h"
 
+
 // Vars globales
 t_log* logger_mongo;
 t_config* config_mongo;
 t_list* bitacoras;
 
-void inicializar_archivos() { // TODO: Puede romper
+//TODO ver tema MD5:
+//		-https://www.it-swarm-es.com/es/c/como-crear-un-hash-md5-de-una-cadena-en-c/939706723/
+//		-https://stackoverflow.com/questions/58065208/calculate-md5-in-c-display-output-as-string
+
+void inicializar_archivos() {
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
@@ -26,21 +31,25 @@ void inicializar_archivos() { // TODO: Puede romper
 	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
+	log_trace(logger_mongo, "post printf");
+
     int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-    recurso.oxigeno        = fopen(path_oxigeno, "w+");
-	recurso.comida         = fopen(path_comida, "w+");
-	recurso.basura         = fopen(path_basura, "w+");
-	directorio.superbloque = fopen(path_superbloque, "w+");
-	directorio.blocks      = fdopen(filedescriptor_blocks, "w+");
+    recurso.oxigeno        = fopen(path_oxigeno, "a+");
+	recurso.comida         = fopen(path_comida, "a+");
+	recurso.basura         = fopen(path_basura, "a+");
+	directorio.superbloque = fopen(path_superbloque, "a+");
+	directorio.blocks      = fdopen(filedescriptor_blocks, "a+");
 
 	escribir_archivo_recurso(recurso.oxigeno, 0, 0, NULL);
 	escribir_archivo_recurso(recurso.comida, 0, 0, NULL);
 	escribir_archivo_recurso(recurso.basura, 0, 0, NULL);
 
+	log_trace(logger_mongo, "pre superbloque");
 	iniciar_superbloque(directorio.superbloque);
+	log_trace(logger_mongo, "post_superbloque");
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
 	inicializar_mapa();
 }
@@ -78,7 +87,9 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 
 	// TODO: Verificar si esta mappeado
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
+	log_error(logger_mongo, "3");
 	inicializar_mapa();
+	log_error(logger_mongo, "4");
 }
 
 void asignar_nuevo_bloque(FILE* archivo) {
@@ -366,31 +377,13 @@ int max (int a, int b) {
 	}
 }
 
-char* crear_md5() { // String de 32
-	char* md5 = malloc(sizeof(char) * 32);
-
-	for (int i = 0; i < 32; i++){
-		md5[i] = char_random();
-	}
-
-	return md5;
-}
-
-char char_random() {
-
-	srand(time(NULL));
-	int seleccion = rand() % 2;
-
-	switch (seleccion) {
-		case 0:
-			return (char) (rand() % 9 + 48); // Devuelve un numero por ASCII
-			break;
-		case 1:
-			return (char) (rand() % 26 + 65); // Devuelve un alfa por ASCII
-			break;
-	}
-
-	return '\0';
+void crear_md5(char *str, unsigned char digest[16]) {
+	/*
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, str, strlen(str));
+    MD5_Final(digest, &ctx);
+    */
 }
 
 uint32_t tamanio_archivo(FILE* archivo) {
@@ -467,14 +460,12 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 	fwrite(&cantidad_bloques, sizeof(uint32_t), 1, archivo);
 	fwrite(list_bloques, sizeof(uint32_t), cantidad_bloques, archivo);
 	char caracter = caracter_llenado_archivo(archivo);
-	fwrite(&caracter, strlen(caracter), 1, archivo);
+	fwrite(&caracter, strlen(&caracter), 1, archivo);
 	char* md5 = md5_archivo(archivo);
 	fwrite(&md5, strlen(md5), 1, archivo);
 
 	fflush(archivo);
 
-	free(caracter);
-	free(md5);
 }
 
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list_bloques) {
@@ -513,11 +504,11 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
 	escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
 }
 
-int bloques_contar(uint32_t* lista_bloques, char caracter) { //TODO ver si está bien
-	int cantidad = 0, i;
-	int cantidad_bloques = sizeof(lista_bloques) / sizeof(uint32_t);
-	for(i=lista_bloques[i]; i < cantidad_bloques; i++){
-		if(directorio.mapa_blocks[i] == caracter)
+int bloques_contar(char caracter) {
+	int cantidad = 0;
+
+	for(int i = 0 ; i < CANTIDAD_BLOQUES; i++){
+		if (directorio.mapa_blocks[i] == caracter && directorio.mapa_blocks[i+1] == caracter) // No haria esta comparacion, bloque puede ser de archivo y estar vacio
 			cantidad++;
 	}
 	return cantidad;
