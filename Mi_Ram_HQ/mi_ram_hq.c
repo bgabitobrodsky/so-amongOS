@@ -14,6 +14,13 @@
 #define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define LIMIT_CONNECTIONS 10
+#define ASSERT_CREATE(nivel, id, err)                                                   \
+    if(err) {                                                                           \
+        nivel_destruir(nivel);                                                          \
+        nivel_gui_terminar();                                                           \
+        fprintf(stderr, "Error al crear '%c': %s\n", id, nivel_gui_string_error(err));  \
+        return EXIT_FAILURE;                                                            \
+    }
 
 
 void dump(int n){
@@ -22,7 +29,7 @@ void dump(int n){
 		if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 			dump_segmentacion();
 		}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-
+			dump_paginacion();
 		}else{
 			log_error(logger, "Esquema de memoria desconocido");
 			exit(EXIT_FAILURE);
@@ -37,15 +44,15 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 	// Inicializar
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_ERROR);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
 	//test_buscar_siguiente_tarea();
-	//test_gestionar_tarea();
-	//iniciar_mapa(); TODO dibujar mapa inicial vacio
 
+	//test_gestionar_tarea();
+	iniciar_mapa();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     	args_escuchar args_miram;
@@ -57,7 +64,7 @@ int main(int argc, char** argv) {
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
 	close(socket_oyente);
-
+	matar_mapa();
 	log_destroy(logger);
 	config_destroy(config);
 
@@ -115,7 +122,7 @@ void atender_clientes(void* param) {
 
 			case ARCHIVO_TAREAS:
 				log_info(logger, "Recibido contenido del archivo\n");
-				printf("\tpid:%i. \n\tlongitud; %i. \n%s\n", mensaje_recibido->archivo_tareas->pid, mensaje_recibido->archivo_tareas->largo_texto, mensaje_recibido->archivo_tareas->texto);
+				//printf("\tpid:%i. \n\tlongitud; %i. \n%s\n", mensaje_recibido->archivo_tareas->pid, mensaje_recibido->archivo_tareas->largo_texto, mensaje_recibido->archivo_tareas->texto);
 
 				if(gestionar_tareas(mensaje_recibido->archivo_tareas)){
 					enviar_codigo(EXITO, parametros->socket);
@@ -207,6 +214,12 @@ void atender_clientes(void* param) {
 }
 
 
+// ███╗░░░███╗███████╗███╗░░░███╗░█████╗░██████╗░██╗░█████╗░
+// ████╗░████║██╔════╝████╗░████║██╔══██╗██╔══██╗██║██╔══██╗
+// ██╔████╔██║█████╗░░██╔████╔██║██║░░██║██████╔╝██║███████║
+// ██║╚██╔╝██║██╔══╝░░██║╚██╔╝██║██║░░██║██╔══██╗██║██╔══██║
+// ██║░╚═╝░██║███████╗██║░╚═╝░██║╚█████╔╝██║░░██║██║██║░░██║
+// ╚═╝░░░░░╚═╝╚══════╝╚═╝░░░░░╚═╝░╚════╝░╚═╝░░╚═╝╚═╝╚═╝░░╚═╝
 
 
 void iniciar_memoria(){
@@ -300,7 +313,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 			tabla = crear_tabla_paginas(pid_patota);
 		}
 		log_info(logger, "Guardando tareas con PID: %d", pid_patota);
-		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas);
+		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid_patota);
 		tabla->dl_tareas = dl_tareas;
 		//log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
 
@@ -308,7 +321,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		t_PCB* pcb = malloc(sizeof(t_PCB));
 		pcb->PID = pid_patota;
 		pcb->direccion_tareas = dl_tareas;
-		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB));
+		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB), pid_patota);
 		tabla->dl_pcb = dl_pcb;
 		//log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
 		
@@ -361,12 +374,13 @@ int gestionar_tcb(t_TCB* tcb){
 		log_info(logger, "Guardando TCB TID: %d", tcb->TID);
 		tcb->siguiente_instruccion = 0;
 		tcb->puntero_a_pcb = tabla->dl_pcb;
-		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB));
+		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB), pid);
 		if(dl_tcb == NULL){
 			//TODO: no hay más memoria, matar tabla de paginas
+			matar_tabla_paginas(pid);
 			return 0;
 		}
-		char stid[6];
+		char stid[8];
 		sprintf(stid,"%d", tcb->TID);
 		dictionary_put(tabla->dl_tcbs, stid, (void*) dl_tcb);
 		//log_info(logger, "Se terminó de guardar el TCB de tid: %d, dirección lógica: %d", tcb->TID, dl_tcb);
@@ -375,6 +389,11 @@ int gestionar_tcb(t_TCB* tcb){
 		exit(EXIT_FAILURE);
 	}
 	//log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
+
+	char mapa_tcb_key = mapa_iniciar_tcb(tcb);
+	char stid[8];
+	sprintf(stid, "%d", tcb->TID);
+	dictionary_put(mapa_indices, stid, mapa_tcb_key);
 	return 1;
 }
 
@@ -414,7 +433,7 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		if(tabla == NULL){
 			return NULL;
 		}
-		char stid[6];
+		char stid[8];
 		sprintf(stid, "%d", 10001);
 		tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB));
 		if(tcb_recuperado == NULL){
@@ -539,7 +558,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}
 
-		char stid[6];
+		char stid[8];
 		sprintf(stid, "%d", tid);
 		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
 		log_info(logger,"Actualizando TCB");
@@ -606,12 +625,19 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
+	char stid[8];
+	sprintf(stid, "%d",tid);
+	char key = (char) dictionary_get(mapa_indices,stid);
+	item_borrar(nivel, key);
+	nivel_gui_dibujar(nivel);
 }
 
 int actualizar_tcb(t_TCB* nuevo_tcb){
 	log_debug(logger,"Actualizando TCB TID: %d", nuevo_tcb->TID);
 
 	int pid = nuevo_tcb->TID / 10000;
+	char stid[8];
+	sprintf(stid, "%d", nuevo_tcb->TID);
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
 		if(tcb == NULL){
@@ -626,7 +652,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
 		//log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
 
-		return 1;
+		
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){
@@ -638,15 +664,58 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 			return 1;
 		}
 
-		char stid[6];
-		sprintf(stid, "%d", nuevo_tcb->TID);
+		
 		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
 		
 		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char));
-		return result;
+		if(!result){
+			return 0;
+		}
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
-	return 0;
+
+	char key = (char) dictionary_get(mapa_indices,stid);
+	item_desplazar(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
+	nivel_gui_dibujar(nivel);
+	return 1;
 }
+
+int tamanio_tarea(t_tarea* tarea){
+    int tam = sizeof(uint32_t) * 5;
+    tam += tarea->largo_nombre * sizeof(char);
+    return tam;
+}
+
+
+// ███╗░░░███╗░█████╗░██████╗░░█████╗░
+// ████╗░████║██╔══██╗██╔══██╗██╔══██╗
+// ██╔████╔██║███████║██████╔╝███████║
+// ██║╚██╔╝██║██╔══██║██╔═══╝░██╔══██║
+// ██║░╚═╝░██║██║░░██║██║░░░░░██║░░██║
+// ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝
+
+
+void iniciar_mapa(){
+    nivel_gui_inicializar();
+	nivel_gui_get_area_nivel(&cols, &rows);
+    nivel = nivel_crear("AmongOS - NO MATAR A REY DE FUEGO");
+	nivel_gui_dibujar(nivel);
+	mapa_indices = dictionary_create();
+}
+
+char mapa_iniciar_tcb(t_TCB* tcb){
+	err = personaje_crear(nivel, last_key + 1, tcb->coord_x, tcb->coord_y);
+	ASSERT_CREATE(nivel, last_key, err);
+	nivel_gui_dibujar(nivel);
+	last_key++;
+	return last_key;
+}
+
+
+void matar_mapa(){
+	nivel_destruir(nivel);
+	nivel_gui_terminar();
+}
+

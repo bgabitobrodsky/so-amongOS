@@ -11,12 +11,14 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam){
 	int offset = dl % TAMANIO_PAGINA;
 	if(offset > 0){
 		pagina = list_get(tabla->paginas, numero_pagina);
+		// TODO: PAGINA UPDATE LRU/CLOCK
 		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}
 	while(progreso < tam){
 		pagina = list_get(tabla->paginas, numero_pagina);
+		// TODO: PAGINA UPDATE LRU/CLOCK
 		progreso += rescatar_de_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
@@ -43,12 +45,14 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam){
 	//log_info(logger, "Se empieza a buscar en la pagina %d con offset %d, tam %d", numero_pagina, offset, tam);
 	if(offset > 0){
 		pagina = list_get(tabla->paginas, numero_pagina);
+		// TODO: PAGINA UPDATE LRU/CLOCK
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
 	}
 	while(faltante > 0){
 		pagina = list_get(tabla->paginas, numero_pagina);
+		// TODO: PAGINA UPDATE LRU/CLOCK
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
@@ -84,7 +88,7 @@ int completar_pagina(pagina* pagina, void* data, int tam){
 	return disponible; // pude guardar solo el tamaño disponible 
 }
 
-int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam){
+int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int pid){
 	// esta función devuelve la dirección lógica de lo que se guardó
 	int dl;
 	int progreso = 0;
@@ -93,9 +97,11 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam){
 	int offset;
 
 	pagina* ultima_pagina = pagina_incompleta(tabla);
+	// TODO: PAGINA UPDATE LRU/CLOCK
 	if(ultima_pagina != NULL){ // si hay una pagina incompleta
 		offset = ultima_pagina->tamano_ocupado;
 		numero_pagina = list_size(tabla->paginas) - 1;
+		// TODO: PAGINA UPDATE LRU/CLOCK
 		progreso += completar_pagina(ultima_pagina, data, tam);
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}else{
@@ -105,16 +111,20 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam){
 	dl = numero_pagina * TAMANIO_PAGINA + offset;
 
 	while(progreso < tam){
-		progreso += agregar_pagina(tabla, data + progreso, tam - progreso);
+		progreso += agregar_pagina(tabla, data + progreso, tam - progreso, pid);
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}
 	return dl;	
 }
 
-int agregar_pagina(tabla_paginas* tabla, void* data, int tam){
+int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid){
 	// retorna lo que se logró guardar
 	marco* marco = asignar_marco();
 	pagina* pagina = crear_pagina(marco);
+	int num_pagina = list_size(tabla->paginas) + 1;
+	marco->num_pagina = num_pagina;
+	marco->pid = pid;
+	// TODO: PAGINA UPDATE LRU/CLOCK
 	list_add(tabla->paginas,pagina);
 
 	if(tam <= TAMANIO_PAGINA){
@@ -324,13 +334,37 @@ void matar_tabla_paginas(int pid){
 	//log_debug(logger, "Se completó la nismación de la tabla PID: %d", pid);
 }
 
-liberar_lista_tcbs_paginacion(t_list* lista){
+void liberar_lista_tcbs_paginacion(t_list* lista){
 	if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		void free_tcb(void* un_tcb){
 			free(un_tcb);
 		}
 		list_destroy_and_destroy_elements(lista, free_tcb);
 	}
+}
+
+void dump_paginacion(){
+	//TODO CAMBIAR .DUMP
+	char* path = string_from_format("./dump/Dump_%d.dmp", (int) time(NULL));
+    FILE* file = fopen(path,"w");
+    free(path);
+	int num_marco = 0;
+    void impresor_dump(void* un_marco){
+		char* dump_row;
+        marco* marquito = (marco*) un_marco;
+		if(marquito->libre){
+			dump_row = string_from_format("Marco: %d\tEstado: Libre\tProceso: -\tPagina: -\n", num_marco);
+		}else{
+        	dump_row = string_from_format("Marco: %d\tEstado: Ocupado\tProceso: %d\tPagina: %d\n", num_marco, marquito->pid, marquito->num_pagina);
+		}
+        txt_write_in_file(file, dump_row);
+        free(dump_row);
+		num_marco++;
+    }
+
+    txt_write_in_file(file, string_from_format("Dump: %s\n", temporal_get_string_time("%d/%m/%y %H:%M:%S")));
+    list_iterate(marcos, impresor_dump);
+    txt_close_file(file);
 }
 // TEST
 
@@ -353,7 +387,11 @@ void imprimir_marcos(){
     printf("\n<------ MARCOS -----------\n");
     for(int i = 0; i < size; i++) {
         marco* marco = list_get(marcos, i);
-        printf("marco %d\tbase: %d\tlibre: %s \n", i, marco->base, marco->libre ? "true" : "false");
+		if(marco->libre){
+			printf("marco %d\tbase: %d\tlibre: true\t proceso: -\tpagina: -\n", i, marco->base);
+		}else{
+        	printf("marco %d\tbase: %d\tlibre: false\t proceso: %d\tpagina:%d\n", i, marco->base, marco->pid, marco->num_pagina);
+		}
     }
     printf("------------------->\n");
 }

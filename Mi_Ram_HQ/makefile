@@ -1,5 +1,5 @@
 TARGET = mi_ram_hq
-LIBS = -lcommons -lpthread -lcomms -lcunit
+LIBS = -lcommons -lpthread -lcomms -lcunit -lnivel-gui -lncurses
 CC = gcc
 CFLAGS = -g -Wall
 
