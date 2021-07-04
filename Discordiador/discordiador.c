@@ -68,6 +68,8 @@ void resolver_sabotaje(t_tripulante* un_tripulante, int socket_ram, int socket_m
 t_tripulante* tripulante_mas_cercano_a(char* posicion);
 void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mongo);
 void guardian_sabotaje(int socket_ram, int socket_mongo);
+int es_mi_turno(t_tripulante* un_tripulante);
+
 
 void notificar_fin_de_tarea(t_tripulante* un_tripulante, int socket_mongo){
 	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
@@ -122,11 +124,17 @@ int main() {
 
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
+/*
+    t_tripulante* t1 = crear_puntero_tripulante(10001, "1|1");
+    queue_push(cola_tripulantes_block, t1);
 
-    iniciar_patota("INICIAR_PATOTA 1 Random.ims 1|1");
+    log_error(logger, "%i", es_mi_turno(t1));
+    log_error(logger, "%i", queue_size(cola_tripulantes_block));
+*/
+    // iniciar_patota("INICIAR_PATOTA 1 Random.ims 1|1");
 
     // iniciar_patota("INICIAR_PATOTA 1 Prueba.ims 1|1");
-    // iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
     iniciar_planificacion();
 
 /*
@@ -165,7 +173,7 @@ int main() {
 
     return EXIT_SUCCESS;
 
-}
+    }
 }
 
 int correr_tests(int enumerado) {
@@ -331,7 +339,12 @@ void tripulante(t_tripulante* un_tripulante){
                     realizar_tarea(un_tripulante, st_ram, st_ram);
                 }
             } else if (un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
-            	esperar_entrada_salida(un_tripulante, st_ram, st_ram);
+            	if(es_mi_turno(un_tripulante)){
+            		esperar_entrada_salida(un_tripulante, st_ram, st_ram);
+            	} else {
+            		log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
+            		sleep(1); // espero hasta que la entrada deje de estar ocupada
+            	}
             }
             verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
         }
@@ -362,9 +375,13 @@ void tripulante(t_tripulante* un_tripulante){
                     actualizar_tripulante(un_tripulante, st_ram);
                 }
             } else if (un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
-            	esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
+            	if(es_mi_turno(un_tripulante)){
+            		esperar_entrada_salida(un_tripulante, st_ram, st_ram);
+            	} else {
+            		log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
+            		sleep(1); // espero hasta que la entrada deje de estar ocupada
+            	}
             }
-
 
         verificar_cambio_estado(&estado_guardado, un_tripulante, st_ram);
         }
@@ -1125,4 +1142,9 @@ void guardian_sabotaje(int st_ram, int st_mongo){
 		log_info(logger, "No hay sabotajes a la vista");
 	}
 
+}
+
+int es_mi_turno(t_tripulante* un_tripulante){
+	t_tripulante* titular = monitor_cola_pop_or_peek(sem_cola_block, (void*) queue_peek, cola_tripulantes_block);
+	return (titular == un_tripulante);
 }
