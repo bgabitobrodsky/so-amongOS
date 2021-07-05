@@ -56,24 +56,6 @@ int planificacion_activa = 0;
 int sistema_activo = 1;
 int testeo = DISCORDIADOR;
 
-void test_config_discordiador();
-void peligro(char* pos_sabotaje, int socket_ram);
-void* eliminar_patota_de_lista(t_list* lista, int elemento);
-int soy_el_ultimo_de_mi_especie(int tid);
-void test_soy_el_ultimo_de_mi_especie();
-void test_eliminar_patota_de_lista();
-int verificacion_tcb(int socket);
-void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket_ram);
-void resolver_sabotaje(t_tripulante* un_tripulante, int socket_ram, int socket_mongo);
-t_tripulante* tripulante_mas_cercano_a(char* posicion);
-void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mongo);
-void guardian_sabotaje(int socket_ram, int socket_mongo);
-int es_mi_turno(t_tripulante* un_tripulante);
-void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado);
-void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado);
-
-
-
 void notificar_fin_de_tarea(t_tripulante* un_tripulante, int socket_mongo){
 	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
 	empaquetar_y_enviar(trip_buffer, FIN_TAREA, socket_mongo);
@@ -104,12 +86,6 @@ void notificar_fin_sabotaje(t_tripulante* un_tripulante, int socket_mongo){
 	log_debug(logger, "Notifico a Mongo que soy un heroe");
 }
 
-int entrada_salida_ocupada = 0;
-
-int cpu_ocupada(){
-	return(list_size(lista_tripulantes_exec) == GRADO_MULTITAREA);
-}
-
 int main() {
     if(testeo != DISCORDIADOR)
         correr_tests(testeo);
@@ -134,9 +110,8 @@ int main() {
     // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
     iniciar_planificacion();
 
-    sleep(1);
-
-    peligro("9|9", socket_a_mi_ram_hq);
+    // sleep(1);
+    // peligro("9|9", socket_a_mi_ram_hq);
 
     if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
 
@@ -929,7 +904,7 @@ void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket){
 }
 
 
-void peligro(char* posicion_sabotaje, int socket_ram){ // tambien deberia pasarle la pos del sabotaje
+void peligro(char* posicion_sabotaje, int socket_ram){
 	// PRIMERO los de EXEC, los de mayor TID primero
 	// despues lo de READY, los de mayor TID primero
 
@@ -1073,7 +1048,7 @@ void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mong
 	atomic_no_me_despierten_estoy_trabajando(un_tripulante, st_ram, st_mongo);
 }
 
-void guardian_sabotaje(int st_ram, int st_mongo){
+void guardian_sabotaje(int st_ram, int st_mongo){ // TODO: Sinergia con el mongo
 
 	t_estructura* mensaje_peligro = recepcion_y_deserializacion(st_mongo);
 	if (mensaje_peligro->codigo_operacion == SABOTAJE){
