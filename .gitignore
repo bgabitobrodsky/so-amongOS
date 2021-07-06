@@ -9,6 +9,7 @@
 *.so
 *.dump
 *.dmp
+*.bin
 /Discordiador/discordiador
 /Mi_Ram_HQ/mi_ram_hq
 /I_Mongo_Store/i_mongo_store

@@ -44,10 +44,10 @@ void proceso_handler(void* args);
  * MAPA
 **/
 
-NIVEL* nivel;
-int cols = 9, rows = 9;
-int err;
-char last_key = 0;
+// NIVEL* nivel;
+// int cols = 9, rows = 9;
+// int err;
+// char last_key = 0;
 
 t_dictionary* mapa_indices;
 
@@ -64,7 +64,11 @@ void* memoria_principal;
 t_dictionary* tablas;
 t_log* logger;
 t_config* config;
+
+//memo virtual
 FILE* disco;
+int marcos_disco_size;
+bool* bitmap_disco;
 
 void iniciar_memoria();
 void iniciar_mapa();

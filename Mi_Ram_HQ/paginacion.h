@@ -14,14 +14,14 @@ t_list* marcos;
 
 
 typedef struct pagina {
-    marco* puntero_marco;
-    int tamano_ocupado;
-    uint64_t ultimo_uso; // para LRU
-    //bool usado // para clock
     bool en_memoria;
+    uint64_t ultimo_uso; // para LRU
     int disk_index;
+    bool modificada;
+    int tamano_ocupado;
+    marco* puntero_marco;
+    //bool usado // para clock
     //bool bloqueada?
-    //bool modificado
 } pagina;
 t_list* paginas;
 
@@ -32,6 +32,8 @@ typedef struct tabla_paginas {
     t_dictionary* dl_tcbs;
     t_list* paginas;
 } tabla_paginas;
+
+int intento_asignar_marco;
 
 
 void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam);
@@ -54,6 +56,12 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam);
 void liberar_lista_tcbs_paginacion(t_list* lista);
 int escribir_en_marco(marco* marco, void* data, int offset, int tam);
 void matar_tabla_paginas(int pid);
+pagina* get_lru();
+void swap_in(pagina* pagina);
+void swap_out(pagina* pagina);
+void algoritmo_de_reemplazo();
+void page_fault(pagina* pag);
+uint64_t unix_epoch();
 
 #endif /* PAGINACION_H_ */
 

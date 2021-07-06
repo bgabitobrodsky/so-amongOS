@@ -13,7 +13,7 @@
 #define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define PATH_SWAP config_get_string_value(config, "PATH_SWAP")
-#define TAMANIO_SWAP config_get_string_value(config, "TAMANIO_SWAP")
+#define TAMANIO_SWAP config_get_int_value(config, "TAMANIO_SWAP")
 #define LIMIT_CONNECTIONS 10
 #define ASSERT_CREATE(nivel, id, err)                                                   \
     if(err) {                                                                           \
@@ -45,15 +45,47 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 	// Inicializar
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_ERROR);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-	//test_buscar_siguiente_tarea();
+	//iniciar_mapa();
 
-	//test_gestionar_tarea();
-	iniciar_mapa();
+	t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
+	arc->texto = "GENERAR_OXIGENO 10;1;1;1";
+	arc->largo_texto = 25;
+	arc->pid = 1;
+	gestionar_tareas(arc);
+    free(arc);
+
+	t_archivo_tareas* arc2 = malloc(sizeof(t_archivo_tareas));
+	arc2->texto = "GENERAR_OXIGENO 10;1;1;1";
+	arc2->largo_texto = 25;
+	arc2->pid = 2;
+	gestionar_tareas(arc2);
+    free(arc2);
+
+	imprimir_paginas(1);
+	imprimir_paginas(2);
+
+	tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(1);
+	char* tareas = (char*) rescatar_de_paginas(tabla, 0, tabla->dl_pcb);
+	log_info(logger,"Tareas: %s", tareas);
+	free(tareas);
+	imprimir_paginas(1);
+	imprimir_paginas(2);
+
+	/*tabla_paginas* tabla = buscar_tabla(1);
+	pagina* pag = list_get(tabla->paginas, 0);
+	
+	swap_in(pag);
+	log_debug(logger, "Estado de la primer pagina: disk_index: %d, en_memoria: %s", pag->disk_index, pag->en_memoria?"Si":"No");
+
+	swap_out(pag);
+	log_debug(logger, "Estado de la primer pagina: disk_index: %d, en_memoria: %s", pag->disk_index, pag->en_memoria?"Si":"No");
+	*/
+
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     	args_escuchar args_miram;
@@ -65,7 +97,7 @@ int main(int argc, char** argv) {
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
 	close(socket_oyente);
-	matar_mapa();
+	//matar_mapa();
 	log_destroy(logger);
 	config_destroy(config);
 
@@ -244,7 +276,13 @@ void iniciar_memoria(){
 			list_add(marcos,marco);
 		}
 
-		disco = fopen(PATH_SWAP, "wb");
+		disco = fopen("swapFile.bin", "w");
+		marcos_disco_size = TAMANIO_SWAP / TAMANIO_PAGINA;
+		bitmap_disco = malloc(sizeof(bool) * marcos_disco_size);
+		for(int i = 0; i < marcos_disco_size; i++){
+			// inicializo todos los lugares del disco como libres
+			bitmap_disco[i] = false;
+		}
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -316,24 +354,16 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		}
 		log_info(logger, "Guardando tareas con PID: %d", pid_patota);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid_patota);
-		if(dl_tareas == NULL){
-			matar_tabla_paginas(pid_patota);
-			return 0;
-		}
 		tabla->dl_tareas = dl_tareas;
-		//log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
+		log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
 
 		log_info(logger, "Guardando PCB con PID: %d", pid_patota);
 		t_PCB* pcb = malloc(sizeof(t_PCB));
 		pcb->PID = pid_patota;
 		pcb->direccion_tareas = dl_tareas;
 		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB), pid_patota);
-		if(dl_pcb == NULL){
-			matar_tabla_paginas(pid_patota);
-			return 0;
-		}
 		tabla->dl_pcb = dl_pcb;
-		//log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
+		log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
 		
 		free(pcb);
 
@@ -399,10 +429,10 @@ int gestionar_tcb(t_TCB* tcb){
 	}
 	//log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
 
-	char mapa_tcb_key = mapa_iniciar_tcb(tcb);
-	char stid[8];
-	sprintf(stid, "%d", tcb->TID);
-	dictionary_put(mapa_indices, stid, mapa_tcb_key);
+	// char mapa_tcb_key = mapa_iniciar_tcb(tcb);
+	// char stid[8];
+	// sprintf(stid, "%d", tcb->TID);
+	// dictionary_put(mapa_indices, stid, mapa_tcb_key);
 	return 1;
 }
 
@@ -635,11 +665,11 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
-	char stid[8];
-	sprintf(stid, "%d",tid);
-	char key = (char) dictionary_get(mapa_indices,stid);
-	item_borrar(nivel, key);
-	nivel_gui_dibujar(nivel);
+	// char stid[8];
+	// sprintf(stid, "%d",tid);
+	// char key = (char) dictionary_get(mapa_indices,stid);
+	// item_borrar(nivel, key);
+	// nivel_gui_dibujar(nivel);
 }
 
 int actualizar_tcb(t_TCB* nuevo_tcb){
@@ -686,9 +716,9 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		exit(EXIT_FAILURE);
 	}
 
-	char key = (char) dictionary_get(mapa_indices,stid);
-	item_desplazar(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
-	nivel_gui_dibujar(nivel);
+	// char key = (char) dictionary_get(mapa_indices,stid);
+	// item_desplazar(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
+	// nivel_gui_dibujar(nivel);
 	return 1;
 }
 
@@ -706,7 +736,7 @@ int tamanio_tarea(t_tarea* tarea){
 // ██║░╚═╝░██║██║░░██║██║░░░░░██║░░██║
 // ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝
 
-
+/*
 void iniciar_mapa(){
     nivel_gui_inicializar();
 	nivel_gui_get_area_nivel(&cols, &rows);
@@ -728,4 +758,4 @@ void matar_mapa(){
 	nivel_destruir(nivel);
 	nivel_gui_terminar();
 }
-
+*/
