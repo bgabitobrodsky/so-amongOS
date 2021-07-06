@@ -16,12 +16,14 @@ t_list* marcos;
 typedef struct pagina {
     marco* puntero_marco;
     int tamano_ocupado;
-    //uint64_t ultimo_uso; // para LRU
+    uint64_t ultimo_uso; // para LRU
     //bool usado // para clock
-    //bool en_memoria
+    bool en_memoria;
+    int disk_index;
     //bool bloqueada?
     //bool modificado
 } pagina;
+t_list* paginas;
 
 
 typedef struct tabla_paginas {

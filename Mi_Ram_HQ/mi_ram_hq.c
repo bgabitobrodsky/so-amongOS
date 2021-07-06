@@ -6,13 +6,14 @@
  */
 
 #include "mi_ram_hq.h"
-#include <comms/generales.h>
 
 #define	IP config_get_string_value(config, "IP")
 #define PUERTO config_get_string_value(config, "PUERTO")
 #define TAMANIO_MEMORIA config_get_int_value(config, "TAMANIO_MEMORIA")
 #define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
+#define PATH_SWAP config_get_string_value(config, "PATH_SWAP")
+#define TAMANIO_SWAP config_get_string_value(config, "TAMANIO_SWAP")
 #define LIMIT_CONNECTIONS 10
 #define ASSERT_CREATE(nivel, id, err)                                                   \
     if(err) {                                                                           \
@@ -233,6 +234,7 @@ void iniciar_memoria(){
 		
 		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
 		marcos = list_create();
+		paginas = list_create();
 
 		int cantidad_marcos = TAMANIO_MEMORIA/TAMANIO_PAGINA;
 		
@@ -242,6 +244,7 @@ void iniciar_memoria(){
 			list_add(marcos,marco);
 		}
 
+		disco = fopen(PATH_SWAP, "wb");
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -313,6 +316,10 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		}
 		log_info(logger, "Guardando tareas con PID: %d", pid_patota);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid_patota);
+		if(dl_tareas == NULL){
+			matar_tabla_paginas(pid_patota);
+			return 0;
+		}
 		tabla->dl_tareas = dl_tareas;
 		//log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
 
@@ -321,6 +328,10 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		pcb->PID = pid_patota;
 		pcb->direccion_tareas = dl_tareas;
 		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB), pid_patota);
+		if(dl_pcb == NULL){
+			matar_tabla_paginas(pid_patota);
+			return 0;
+		}
 		tabla->dl_pcb = dl_pcb;
 		//log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
 		
@@ -375,7 +386,6 @@ int gestionar_tcb(t_TCB* tcb){
 		tcb->puntero_a_pcb = tabla->dl_pcb;
 		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB), pid);
 		if(dl_tcb == NULL){
-			//TODO: no hay más memoria, matar tabla de paginas
 			matar_tabla_paginas(pid);
 			return 0;
 		}

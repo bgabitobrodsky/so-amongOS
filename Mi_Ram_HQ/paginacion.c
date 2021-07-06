@@ -1,6 +1,7 @@
 #include "paginacion.h"
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define TAMANIO_PAGINA config_get_int_value(config, "TAMANIO_PAGINA")
+#define ALGORITMO_REEMPLAZO config_get_string_value(config, "ALGORITMO_REEMPLAZO")
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -111,20 +112,36 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 	dl = numero_pagina * TAMANIO_PAGINA + offset;
 
 	while(progreso < tam){
-		progreso += agregar_pagina(tabla, data + progreso, tam - progreso, pid);
-		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
+		int temp = agregar_pagina(tabla, data + progreso, tam - progreso, pid); 
+		if(temp > 0){
+			progreso += temp; 
+			//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
+		}else{
+			// hubo mas progreso, por ende no hay mas memoria
+			matar_tabla_paginas(pid);
+			return NULL;
+		}
 	}
+
+	// TODO hacer una funcion rollback que borre todo lo hecho en caso de no haber mas memoria
 	return dl;	
 }
 
 int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid){
 	// retorna lo que se logró guardar
 	marco* marco = asignar_marco();
+	if(marco == NULL){
+		// no hay mas memoria
+		return 0;
+	}
+
 	pagina* pagina = crear_pagina(marco);
 	int num_pagina = list_size(tabla->paginas) + 1;
 	marco->num_pagina = num_pagina;
 	marco->pid = pid;
 	// TODO: PAGINA UPDATE LRU/CLOCK
+	pagina->ultimo_uso = time(NULL);
+	pagina->en_memoria = true;
 	list_add(tabla->paginas,pagina);
 
 	if(tam <= TAMANIO_PAGINA){
@@ -154,28 +171,10 @@ pagina* crear_pagina(marco* marco){
 	pagina* pagina = malloc(sizeof(pagina));
     marco->libre = false;
 	pagina->puntero_marco = marco;
+	pagina->disk_index = -1; // todavia no está en disco
 	//log_info(logger,"Se crea página para el marco de base %d", marco->base);
 	return pagina;
 }
-
-/*
-int cantidad_marcos_completos(int tam){
-    log_info(logger,"Calculando cantidad de marcos para el tamaño %d", tam);
-	int marcos = tam / TAMANIO_PAGINA;  
-	return marcos;
-}
-
-int ocupa_marco_incompleto(int tam){
-	int parte_ocupada = tam % TAMANIO_PAGINA; 
-	return parte_ocupada;
-}
-
-void liberar_marco(int num_marco){
-    marco* x = list_get(marcos, num_marco);
-    x->libre = true;
-    log_info(logger, "Se libera el marco %d", num_marco);
-
-}*/
 
 marco* crear_marco(int base, bool libre){
     marco* nuevo_marco = malloc(sizeof(marco));
@@ -223,7 +222,30 @@ marco* asignar_marco(){
 	}
 	else{
 		//TODO: efectuar swap
+		algoritmo_de_reemplazo();
 	}
+}
+
+void algoritmo_de_reemplazo(){
+	pagina* pagina;
+
+	if(strcmp(ALGORITMO_REEMPLAZO,"LRU")==0){
+		pagina = get_lru();
+	}else if(strcmp(ALGORITMO_REEMPLAZO,"CLOCK")==0){
+		
+	}else{
+		log_error(logger,"Algoritmo de reemplazo desconocido");
+		exit(EXIT_FAILURE);
+	}
+
+	pagina->disco_index = swap_in(pagina);
+
+}
+
+int swap_in(pagina* pagina){
+
+	fseek(fp, 0L, SEEK_END);
+	sz = ftell(fp);
 }
 
 int liberar_pagina(pagina* pagina, int offset, int faltante){
@@ -343,8 +365,29 @@ void liberar_lista_tcbs_paginacion(t_list* lista){
 	}
 }
 
+pagina* get_lru(){
+	uint64_t lru_ts = time(NULL);
+    pagina* lru_p;
+    
+	void table_iterator(void* una_tabla){
+		tabla_paginas* tabla = (tabla_paginas*) una_tabla;
+
+		void page_iterator(void* una_pagina){
+			pagina* pag = (pagina*) una_pagina;
+			if(pag->ultimo_uso < lru_ts && !pag->puntero_marco->libre){
+				lru_ts = pag->ultimo_uso;
+				lru_p = pag;
+			}
+		}
+
+		list_iterate(tabla->paginas, page_iterator);
+	}
+
+	dictionary_iterator(tablas, table_iterator);
+    return lru_p;
+}
+
 void dump_paginacion(){
-	//TODO CAMBIAR .DUMP
 	char* path = string_from_format("./dump/Dump_%d.dmp", (int) time(NULL));
     FILE* file = fopen(path,"w");
     free(path);
