@@ -183,6 +183,7 @@ segmento* best_fit(int tam){
 segmento* asignar_segmento(int tam){
 	segmento* segmento_libre = buscar_segmento_libre(tam);
 	if(segmento_libre != NULL){
+        intento_asignar_segmento = 0;
 		//Si el segmento es del tamaño justo, no tengo que reordenar
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
@@ -198,7 +199,6 @@ segmento* asignar_segmento(int tam){
 			//log_info(logger,"Segmento asignado (base:%d)", nuevo_segmento->base);
 			//Ordeno los segmentos por base ascendente
 			ordenar_segmentos();
-
 			return nuevo_segmento;
 		}
 	}else{

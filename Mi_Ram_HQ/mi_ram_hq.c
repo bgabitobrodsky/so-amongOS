@@ -51,41 +51,7 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 	//iniciar_mapa();
-
-	t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
-	arc->texto = "GENERAR_OXIGENO 10;1;1;1";
-	arc->largo_texto = 25;
-	arc->pid = 1;
-	gestionar_tareas(arc);
-    free(arc);
-
-	t_archivo_tareas* arc2 = malloc(sizeof(t_archivo_tareas));
-	arc2->texto = "GENERAR_OXIGENO 10;1;1;1";
-	arc2->largo_texto = 25;
-	arc2->pid = 2;
-	gestionar_tareas(arc2);
-    free(arc2);
-
-	imprimir_paginas(1);
-	imprimir_paginas(2);
-
-	tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(1);
-	char* tareas = (char*) rescatar_de_paginas(tabla, 0, tabla->dl_pcb);
-	log_info(logger,"Tareas: %s", tareas);
-	free(tareas);
-	imprimir_paginas(1);
-	imprimir_paginas(2);
-
-	/*tabla_paginas* tabla = buscar_tabla(1);
-	pagina* pag = list_get(tabla->paginas, 0);
-	
-	swap_in(pag);
-	log_debug(logger, "Estado de la primer pagina: disk_index: %d, en_memoria: %s", pag->disk_index, pag->en_memoria?"Si":"No");
-
-	swap_out(pag);
-	log_debug(logger, "Estado de la primer pagina: disk_index: %d, en_memoria: %s", pag->disk_index, pag->en_memoria?"Si":"No");
-	*/
-
+	test_gestionar_tareas_paginacion();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     	args_escuchar args_miram;
@@ -276,7 +242,7 @@ void iniciar_memoria(){
 			list_add(marcos,marco);
 		}
 
-		disco = fopen("swapFile.bin", "w");
+		disco = fopen("swapFile.bin", "w+b");
 		marcos_disco_size = TAMANIO_SWAP / TAMANIO_PAGINA;
 		bitmap_disco = malloc(sizeof(bool) * marcos_disco_size);
 		for(int i = 0; i < marcos_disco_size; i++){
@@ -473,8 +439,8 @@ t_TCB* buscar_tcb_por_tid(int tid){
 			return NULL;
 		}
 		char stid[8];
-		sprintf(stid, "%d", 10001);
-		tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB));
+		sprintf(stid, "%d", tid);
+		tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB), pid);
 		if(tcb_recuperado == NULL){
 			return NULL;
 		}
@@ -510,7 +476,7 @@ t_list* buscar_tcbs_por_pid(int pid){
 
 		void tcb_finder(char* stid, void* una_dl){
 			int dl = (int) una_dl;
-			t_TCB* tcb = rescatar_de_paginas(tabla,dl,sizeof(t_TCB));
+			t_TCB* tcb = rescatar_de_paginas(tabla,dl,sizeof(t_TCB), pid);
 			list_add(lista_tcbs, tcb);
 		}
 		
@@ -583,7 +549,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
 			return NULL;
 		}
-		char* str_tareas = rescatar_de_paginas(tabla, tabla->dl_tareas, tabla->dl_pcb);
+		char* str_tareas = rescatar_de_paginas(tabla, tabla->dl_tareas, tabla->dl_pcb, pid);
 		char* tareas_restantes = string_substring_from(str_tareas, dl_tarea_tcb);
 		char** palabras = string_split(tareas_restantes, "\n");
 		char* str_tarea = palabras[0];
@@ -601,7 +567,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		sprintf(stid, "%d", tid);
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		log_info(logger,"Actualizando TCB");
-		int result = sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB));
+		int result = sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
 
 		liberar_puntero_doble(palabras);
 		free(tareas_restantes);
@@ -651,7 +617,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		}
 		int result = matar_paginas_tcb(tabla, tid);
 		if(result){
-			//log_info(logger, "Se mató al TCB tid: %d", tid);
+			log_info(logger, "Se mató al TCB tid: %d", tid);
 			if(dictionary_size(tabla->dl_tcbs) == 0){
 				matar_tabla_paginas(pid);
 			}
@@ -707,7 +673,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		
 		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
 		
-		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char));
+		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char), pid);
 		if(!result){
 			return 0;
 		}
