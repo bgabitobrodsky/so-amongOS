@@ -14,8 +14,9 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 		pagina = list_get(tabla->paginas, numero_pagina);
 		if(!pagina->en_memoria){
 			page_fault(pagina, pid, numero_pagina + 1);
+		}else{
+			pagina->ultimo_uso = unix_epoch();
 		}
-		// TODO: PAGINA UPDATE LRU/CLOCK
 		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
@@ -24,8 +25,9 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 		pagina = list_get(tabla->paginas, numero_pagina);
 		if(!pagina->en_memoria){
 			page_fault(pagina, pid, numero_pagina + 1);
+		}else{
+			pagina->ultimo_uso = unix_epoch();
 		}
-		// TODO: PAGINA UPDATE LRU/CLOCK
 		progreso += rescatar_de_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
@@ -35,12 +37,15 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 
 int escribir_en_marco(marco* marco, void* data, int offset, int tam){
 	// retorna lo que se logró escribir
-	if(tam <= TAMANIO_PAGINA){
+	if(tam + offset <= TAMANIO_PAGINA){
 		memcpy(memoria_principal + marco->base + offset, data, tam);
 		return tam;
 	}else{
-		memcpy(memoria_principal + marco->base + offset, data, TAMANIO_PAGINA);
-		return TAMANIO_PAGINA;
+		memcpy(memoria_principal + marco->base + offset, data, TAMANIO_PAGINA - offset);
+		return TAMANIO_PAGINA - offset;
+	}
+	memcpy(memoria_principal + marco->base + offset, data, TAMANIO_PAGINA);
+	return TAMANIO_PAGINA;
 	}
 }
 
@@ -50,13 +55,14 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	int faltante = tam;
 	int numero_pagina = dl / TAMANIO_PAGINA;
 	int offset = dl % TAMANIO_PAGINA;
-	log_info(logger, "Se empieza a buscar en la pagina %d con offset %d, tam %d", numero_pagina, offset, tam);
+
 	if(offset > 0){
 		pagina = list_get(tabla->paginas, numero_pagina);
 		if(!pagina->en_memoria){
 			page_fault(pagina, pid, numero_pagina + 1);
+		}else{
+			pagina->ultimo_uso =  unix_epoch();
 		}
-		// TODO: PAGINA UPDATE LRU/CLOCK
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
@@ -66,13 +72,13 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 		pagina = list_get(tabla->paginas, numero_pagina);
 		if(!pagina->en_memoria){
 			page_fault(pagina, pid, numero_pagina + 1);
+		}else{
+			pagina->ultimo_uso =  unix_epoch();
 		}
-		// TODO: PAGINA UPDATE LRU/CLOCK
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
 	}
-
 	return data;
 }
 
@@ -92,7 +98,7 @@ int completar_pagina(pagina* pagina, void* data, int tam){
 	marco* marco = pagina->puntero_marco;
 
 	// me alcanza con esa pagina?
-	if(disponible - tam >= 0){
+	if(disponible >= tam){
 		pagina->tamano_ocupado += tam;
 		memcpy(memoria_principal + marco->base + ocupado, data, tam);
 		return tam; // pude guardar todo
@@ -136,8 +142,6 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 			//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 		}else{
 			// no hubo mas progreso, por ende no hay mas memoria
-			// rollback que borre todo lo hecho en caso de no haber mas memoria
-			matar_tabla_paginas(pid);
 			return NULL;
 		}
 	}
