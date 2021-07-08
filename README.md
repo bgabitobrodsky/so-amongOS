@@ -16,6 +16,9 @@ Actualizaciones MD5: No las hacía, ahora si
 obtener_bitacora: completa
 
 ### Registro de cambios
+4/7/2021
++ Ahora los tripulantes no puede ejecutar sus ráfagas de E/S en paralelo.
+
 27/06/2021
 + Desbuggeadas operaciones de entrada/salida.
 

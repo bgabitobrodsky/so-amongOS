@@ -87,6 +87,7 @@ void obtener_bitacora(char* leido);
 // PROCESOS
 t_patota* crear_patota(uint32_t un_pid);
 int nuevo_pid();
+void* eliminar_patota_de_lista(t_list* lista, int elemento);
 
 // AUXILIARES
 int reconocer_comando(char* str);
@@ -99,16 +100,25 @@ void iniciar_semaforos();
 void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket);
 void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
 void enviar_pid_a_ram(uint32_t pid, int socket);
-void enviar_tcb_a_ram(t_TCB un_tcb, int socket);
-int esta_tcb_en_lista(t_list* lista, int elemento);
+
+// SABOTAJES
+void peligro(char* pos_sabotaje, int socket_ram);
+void resolver_sabotaje(t_tripulante* un_tripulante, int socket_ram, int socket_mongo);
+t_tripulante* tripulante_mas_cercano_a(char* posicion);
+void guardian_sabotaje(int socket_ram, int socket_mongo);
+
+// TRIPULANTES
 int esta_tripulante_en_lista(t_list* lista, int elemento);
-void* eliminar_tcb_de_lista(t_list* lista, int elemento);
 void* eliminar_tripulante_de_lista(t_list* lista, int elemento);
 void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket);
 t_tripulante* crear_tripulante(int tid, int x, int y, char estado);
-t_TCB* crear_puntero_tcb(t_PCB* pcb, int tid, char* posicion);
-t_TCB crear_tcb(t_PCB* pcb, int tid, char* posicion);
 t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion);
-
+int soy_el_ultimo_de_mi_especie(int tid);
+int verificacion_tcb(int socket);
+void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket_ram);
+void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mongo);
+int es_mi_turno(t_tripulante* un_tripulante);
+void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado);
+void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado);
 
 #endif /* DISCORDIADOR_UTILS_H_ */
