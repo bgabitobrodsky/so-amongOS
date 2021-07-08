@@ -44,10 +44,10 @@ void proceso_handler(void* args);
  * MAPA
 **/
 
-// NIVEL* nivel;
-// int cols = 9, rows = 9;
-// int err;
-// char last_key = 0;
+NIVEL* nivel;
+int cols = 9, rows = 9;
+int err;
+char last_key = 0;
 
 t_dictionary* mapa_indices;
 

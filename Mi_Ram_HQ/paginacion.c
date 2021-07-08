@@ -28,7 +28,7 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 		}else{
 			pagina->ultimo_uso = unix_epoch();
 		}
-		progreso += rescatar_de_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
+		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}

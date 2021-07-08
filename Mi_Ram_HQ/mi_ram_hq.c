@@ -45,12 +45,12 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 	// Inicializar
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_ERROR);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR2,dump);
 
 	iniciar_memoria();
-	//iniciar_mapa();
+	iniciar_mapa();
 	//test_gestionar_tareas_paginacion();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 	close(socket_oyente);
 	fclose(disco);
 	free(bitmap_disco);
-	//matar_mapa();
+	matar_mapa();
 	log_destroy(logger);
 	config_destroy(config);
 
@@ -205,7 +205,7 @@ void atender_clientes(void* param) {
 
 			default:
 				log_info(logger, "Se recibio un codigo invalido.\n");
-				printf("El codigo es %d\n", mensaje_recibido->codigo_operacion);
+				//printf("El codigo es %d\n", mensaje_recibido->codigo_operacion);
 				break;
 		}
 		// free(mensaje_recibido);
@@ -397,10 +397,10 @@ int gestionar_tcb(t_TCB* tcb){
 	}
 	//log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
 
-	// char mapa_tcb_key = mapa_iniciar_tcb(tcb);
-	// char stid[8];
-	// sprintf(stid, "%d", tcb->TID);
-	// dictionary_put(mapa_indices, stid, mapa_tcb_key);
+	char mapa_tcb_key = mapa_iniciar_tcb(tcb);
+	char stid[8];
+	sprintf(stid, "%d", tcb->TID);
+	dictionary_put(mapa_indices, stid, mapa_tcb_key);
 	return 1;
 }
 
@@ -633,11 +633,11 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
-	// char stid[8];
-	// sprintf(stid, "%d",tid);
-	// char key = (char) dictionary_get(mapa_indices,stid);
-	// item_borrar(nivel, key);
-	// nivel_gui_dibujar(nivel);
+	char stid[8];
+	sprintf(stid, "%d",tid);
+	char key = (char) dictionary_get(mapa_indices,stid);
+	item_borrar(nivel, key);
+	nivel_gui_dibujar(nivel);
 }
 
 int actualizar_tcb(t_TCB* nuevo_tcb){
@@ -680,9 +680,9 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		exit(EXIT_FAILURE);
 	}
 
-	// char key = (char) dictionary_get(mapa_indices,stid);
-	// item_mover(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
-	// nivel_gui_dibujar(nivel);
+	char key = (char) dictionary_get(mapa_indices,stid);
+	item_mover(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
+	nivel_gui_dibujar(nivel);
 	return 1;
 }
 
@@ -700,7 +700,7 @@ int tamanio_tarea(t_tarea* tarea){
 // ██║░╚═╝░██║██║░░██║██║░░░░░██║░░██║
 // ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝
 
-/*
+
 void iniciar_mapa(){
     nivel_gui_inicializar();
 	nivel_gui_get_area_nivel(&cols, &rows);
@@ -722,4 +722,4 @@ void matar_mapa(){
 	nivel_destruir(nivel);
 	nivel_gui_terminar();
 }
-*/
+
