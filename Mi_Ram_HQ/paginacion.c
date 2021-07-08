@@ -46,7 +46,6 @@ int escribir_en_marco(marco* marco, void* data, int offset, int tam){
 	}
 	memcpy(memoria_principal + marco->base + offset, data, TAMANIO_PAGINA);
 	return TAMANIO_PAGINA;
-	}
 }
 
 void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){

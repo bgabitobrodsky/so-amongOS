@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 	//iniciar_mapa();
-	test_gestionar_tareas_paginacion();
+	//test_gestionar_tareas_paginacion();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     	args_escuchar args_miram;
@@ -63,6 +63,8 @@ int main(int argc, char** argv) {
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
 	close(socket_oyente);
+	fclose(disco);
+	free(bitmap_disco);
 	//matar_mapa();
 	log_destroy(logger);
 	config_destroy(config);
@@ -657,8 +659,6 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		tcb->coord_y = nuevo_tcb->coord_y;
 		tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
 		//log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
-
-		
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){
@@ -669,10 +669,8 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 			eliminar_tcb(nuevo_tcb->TID);
 			return 1;
 		}
-
-		
+		// no me traigo el tcb actual sino sobreescribo directamente sus paginas
 		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
-		
 		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char), pid);
 		if(!result){
 			return 0;
@@ -683,7 +681,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 	}
 
 	// char key = (char) dictionary_get(mapa_indices,stid);
-	// item_desplazar(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
+	// item_mover(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
 	// nivel_gui_dibujar(nivel);
 	return 1;
 }
