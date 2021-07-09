@@ -33,17 +33,16 @@ void inicializar_archivos() {
 
 	log_trace(logger_mongo, "post printf");
 
-    // int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-    recurso.oxigeno        = fopen(path_oxigeno, "a+");
-	recurso.comida         = fopen(path_comida, "a+");
-	recurso.basura         = fopen(path_basura, "a+");
-	directorio.superbloque = fopen(path_superbloque, "a+");
-	directorio.blocks      = fdopen(filedescriptor_blocks, "a+");
+    recurso.oxigeno        = fopen(path_oxigeno, "a+b");
+	recurso.comida         = fopen(path_comida, "a+b");
+	recurso.basura         = fopen(path_basura, "a+b");
+	directorio.superbloque = fopen(path_superbloque, "a+b");
+	directorio.blocks      = fdopen(filedescriptor_blocks, "a+b");
 
 	escribir_archivo_recurso(recurso.oxigeno, 0, 0, NULL);
 	escribir_archivo_recurso(recurso.comida, 0, 0, NULL);
