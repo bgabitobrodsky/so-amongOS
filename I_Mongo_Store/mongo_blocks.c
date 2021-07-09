@@ -19,8 +19,8 @@ char* path_blocks;
 
 void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 	log_trace(logger_mongo, "entro");
-    uint32_t block_size = 64; // Bytes
-    uint32_t size = 64;
+    uint8_t block_size = 64; // Bytes
+    uint8_t size = 64;
     void* puntero_a_bits = malloc(size); //De javi: con calloc te inicializa el puntero con todos 0
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
 
@@ -29,8 +29,6 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
     }
 
     log_trace(logger_mongo, "pre write");
-
-    uint32_t size_aux = 63;
 
     fwrite(&block_size, sizeof(uint32_t), 1, archivo);
 
@@ -52,13 +50,13 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 void iniciar_blocks(int filedescriptor_blocks) {
     log_trace(logger_mongo, "0");
 
-    uint32_t block_size = (uint32_t) obtener_tamanio_bloque();
+    uint8_t block_size = (uint8_t) obtener_tamanio_bloque();
 
-    uint32_t size = (uint32_t) obtener_cantidad_bloques();
+    uint8_t size = (uint8_t) obtener_cantidad_bloques();
 
     log_trace(logger_mongo, "1");
 
-    char* mapa = (char*) mmap(NULL, block_size * size, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
+    void* mapa = (void*) mmap(NULL, block_size * size, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
 
     if(mapa == MAP_FAILED){
         log_trace(logger_mongo, "FAIL");
@@ -68,9 +66,9 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     directorio.mapa_blocks = malloc(block_size * size);
 
-    log_trace(logger_mongo, "block size * size %i", (int) block_size * size);
-    log_trace(logger_mongo, "block size: %i", (int) block_size);
-    log_trace(logger_mongo, "size: %i", (int) size);
+    log_trace(logger_mongo, "block size * size %i", block_size * size);
+    log_trace(logger_mongo, "block size: %i", block_size);
+    log_trace(logger_mongo, "size: %i", size);
 
     memcpy(directorio.mapa_blocks, mapa, block_size * size);
 
@@ -98,7 +96,7 @@ void inicializar_mapa() {
 uint32_t obtener_tamanio_bloque() {
     uint32_t block_size;
     fseek(directorio.superbloque, 0, SEEK_SET);
-    fread(&block_size, sizeof(uint32_t), 1, directorio.superbloque);
+    fread(&block_size, sizeof(uint8_t), 1, directorio.superbloque);
 
     return block_size;
 }
@@ -107,7 +105,7 @@ uint32_t obtener_cantidad_bloques() {
     obtener_tamanio_bloque();
 
     uint32_t size;
-    fread(&size, sizeof(uint32_t), 1, directorio.superbloque);
+    fread(&size, sizeof(uint8_t), 1, directorio.superbloque);
 
     return size;
 }

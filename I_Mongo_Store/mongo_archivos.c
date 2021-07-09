@@ -75,7 +75,9 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 	path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_files);
 
-    int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+    // int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, mode_t);
+	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0600);
+
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
