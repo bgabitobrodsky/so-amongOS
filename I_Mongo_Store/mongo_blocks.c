@@ -21,7 +21,7 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 	log_trace(logger_mongo, "entro");
     uint8_t block_size = 64; // Bytes
     uint8_t size = 64;
-    void* puntero_a_bits = malloc(size);
+    void* puntero_a_bits = malloc(size/8);
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
 
     for(int i = 0; i < size; i++) {
@@ -40,7 +40,7 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 
     log_info(logger_mongo, "tamanio: %i, %s", strlen(arc), arc);
 
-    fwrite(bitmap, sizeof(bitmap), 1, archivo);
+    fwrite(bitmap->bitarray, bitmap->size, 1, archivo);
 
     log_trace(logger_mongo, "post-write");
 
