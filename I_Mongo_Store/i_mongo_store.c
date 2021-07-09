@@ -9,6 +9,7 @@
 
 #define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP") // Verificar sintaxis
 #define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
+#define LIMIT_CONNECTIONS 10
 int sistema_activo = 1;
 
 int main(int argc, char** argv){
@@ -62,11 +63,6 @@ int main(int argc, char** argv){
 	free(path_bitacoras);
 }
 
-
-/*
- void escuchar_mongo(int args) { // args no se cierra, fijarse donde cerrarlo
-    int socket_escucha = args;
- */
 void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerrarlo
     args_escuchar *p = malloc(sizeof(args_escuchar));
     p = args;
@@ -76,13 +72,13 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 
     struct sockaddr_storage direccion_a_escuchar;
     socklen_t tamanio_direccion;
-    int socket_especifico; // Sera el socket hijo que hara la conexion con el cliente
+    int socket_especifico;
 
-    if (listen(socket_escucha, 10) == -1) // Se pone el socket a esperar llamados, con una cola maxima dada por el 2do parametro, se eligio 10 arbitrariamente //TODO esto esta hardcodeado
-        log_info(logger_mongo, "Error al configurar recepcion de mensajes\n"); // Se verifica
+    if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)
+        log_info(logger_mongo, "Error al configurar recepcion de mensajes\n");
 
     struct sigaction sa;
-    sa.sa_handler = sigchld_handler; // Limpieza de procesos muertos
+    sa.sa_handler = sigchld_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     if (sigaction(SIGCHLD, &sa, NULL) == -1) {
@@ -90,7 +86,7 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
         exit(1);
     }
 
-	while (1) { // Loop infinito donde aceptara clientes
+	while (1) {
         tamanio_direccion = sizeof(direccion_a_escuchar);
         socket_especifico = accept(socket_escucha, (struct sockaddr*) &direccion_a_escuchar, &tamanio_direccion); // Se acepta (por FIFO si no me equivoco) el llamado entrante a socket escucha
 

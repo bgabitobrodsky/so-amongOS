@@ -106,7 +106,7 @@ int main() {
 
     // iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
 
-    iniciar_patota("INICIAR_PATOTA 4 Prueba.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
     // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
     //iniciar_planificacion();
 
