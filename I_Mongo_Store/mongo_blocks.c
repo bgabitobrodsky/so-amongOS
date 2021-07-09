@@ -1,6 +1,8 @@
 #include "mongo_blocks.h"
 #include "comms/generales.h"
 
+#include <fcntl.h>
+
 t_log* logger_mongo;
 t_config* config_mongo;
 t_directorio directorio;
@@ -74,6 +76,8 @@ void iniciar_blocks(int filedescriptor_blocks) {
     log_trace(logger_mongo, "block size: %i", block_size);
     log_trace(logger_mongo, "size: %i", size);
 
+    posix_fallocate(filedescriptor_blocks, 0, block_size * size);
+
     memcpy(directorio.mapa_blocks, mapa, block_size * size);
 
     log_trace(logger_mongo, "3");
@@ -82,19 +86,22 @@ void iniciar_blocks(int filedescriptor_blocks) {
 }
 
 void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos con whitespace, para funciones de agregado y quitado
-
-    for (int i; i < (TAMANIO_BLOQUE); i++) {
+    log_trace(logger_mongo, "inicializar_bloque_inicio");
+    log_trace(logger_mongo, "inicializar_bloque_pre_for");
+    for (int i = 0; i < (TAMANIO_BLOQUE); i++) {
         *(directorio.mapa_blocks +  TAMANIO_BLOQUE * numero_bloque + i) = '\t';
     }
-
+    log_trace(logger_mongo, "inicializar_bloque_pre_sync");
     msync(directorio.mapa_blocks, (numero_bloque + 1) * TAMANIO_BLOQUE, MS_ASYNC);
-
+    log_trace(logger_mongo, "inicializar_bloque_fin");
 }
 
 void inicializar_mapa() {
+    log_trace(logger_mongo, "iniciando mapita");
 	for (int i; i < CANTIDAD_BLOQUES; i++) {
         inicializar_bloque(i);
     }
+	log_trace(logger_mongo, "terminando mapita");
 }
 
 uint32_t obtener_tamanio_bloque() {
