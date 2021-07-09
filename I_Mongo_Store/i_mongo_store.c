@@ -11,6 +11,7 @@
 #define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
 #define LIMIT_CONNECTIONS 10
 int sistema_activo = 1;
+char** posiciones_sabotajes;
 
 int main(int argc, char** argv){
 
@@ -18,6 +19,7 @@ int main(int argc, char** argv){
 	logger_mongo = log_create("mongo.log", "MONGO", 1, 0); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
 	signal(SIGUSR1, sabotaje);
+	posiciones_sabotajes = config_get_array_value(config_mongo, "POSICIONES_SABOTAJE");
 
 	// Se crea la lista de bitacoras para los tripulantes, lista actua de registro para saber que tripulantes poseen bitacora en Mongo
 	bitacoras = list_create();
@@ -42,7 +44,7 @@ int main(int argc, char** argv){
 	// pthread_detach(hilo_escucha);
 
 	//TODO ver cuando debería terminarse el mongo
-	pthread_join(hilo_escucha);
+	pthread_join(hilo_escucha, NULL);
 
 	// Se cierran vestigios del pasado
 	cerrar_archivos();
@@ -93,9 +95,9 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 
 		// Se verifica que la primera conexion a Mongo sea del modulo Discordiador, debe ser asi por defecto
         if (es_discordiador == 1) {
-       		es_discordiador = 0; // Se cambia flujo para que to.do lo subsiguiente sean tripulantes
+       		es_discordiador = 0; // Se cambia flujo para que los subsiguientes sean tripulantes
 
-       		hilo_discordiador* parametros = malloc(sizeof(hilo_tripulante));
+       		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
        		parametros->socket = socket_especifico;
        		pthread_t un_hilo_discordiador;
        		pthread_create(&un_hilo_discordiador, NULL, (void*) sabotaje, (void *) parametros);
@@ -113,17 +115,15 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
        	}
 
 		// TODO: Ver si este close explota hilos
-		close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+		// close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 	}
 }
 
-void sabotaje(int parametro) {
-	int flag = 1;
-	int socket_discordiador;
+// TODO: esta mezclado?
+// parametro es un socket, como puede ser SIGUSR1 a la vez?
+void sabotaje(void* parametro) {
+	int socket_discordiador = ((hilo_tripulante*) parametro)->socket;
 
-	if (flag)
-		socket_discordiador = parametro; // WTF is this? --> --> La primera conexión recibe el socket de mongo, el resto son por sabotajes. --> --> Claro pero en flujo son iguales socket y parametro, nunca llega un tripu aca entonces distincion al pedo, ya se hizo
-	
 	// Se cicla infinitamente en espera a sabotajes
 	while(1) {
 

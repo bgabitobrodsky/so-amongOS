@@ -1,6 +1,8 @@
 #include "mongo_tripulantes.h"
 
-void manejo_tripulante(int socket_tripulante) {
+void manejo_tripulante(void* socket) {
+	int socket_tripulante = ((hilo_tripulante*) socket)->socket;
+
 	while(1) {
 		// Se espera a ver que manda el tripulante
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
@@ -142,6 +144,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 		int cantidad_alcanzada = 0;
 		int i, j, t;
+		j = 0; // TODO como funciona esto?
 		uint32_t* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
 
 		for (i = 0; *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) {

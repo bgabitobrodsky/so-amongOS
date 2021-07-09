@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
-	signal(SIGUSR2,dump);
+	signal(SIGUSR2, dump);
 
 	pthread_mutex_init(&m_compactacion,NULL);
 	pthread_mutex_init(&m_swap,NULL);

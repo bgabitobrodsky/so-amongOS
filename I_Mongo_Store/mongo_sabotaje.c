@@ -1,23 +1,27 @@
 #include "mongo_sabotaje.h"
 
-char** posiciones_sabotajes;//TODO = config_get_array_value(config_mongo, "POSICIONES_SABOTAJE");
+extern char** posiciones_sabotajes;
+int pos_actual_sabotaje = 0;
 
 void enviar_posicion_sabotaje(int socket_discordiador) {
 
-	if (posiciones_sabotajes != NULL) { //El último parámetro es NULL
+	if (pos_actual_sabotaje != contar_palabras(posiciones_sabotajes)) { //El último parámetro es NULL
 		t_posicion posicion;
 
 		//Consigo la primera posicion del char** posiciones_sabotajes
-		posicion.coord_x = (uint32_t) posiciones_sabotajes[0][0];
-		posicion.coord_y = (uint32_t) posiciones_sabotajes[0][2];
+		posicion.coord_x = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][0] - 48; // EQUIVALENCIA ASCII NUMERO
+		posicion.coord_y = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][2] - 48; // EQUIVALENCIA ASCII NUMERO
 
 		empaquetar_y_enviar(serializar_posicion(posicion), POSICION, socket_discordiador);
 
 		//Remuevo la primera posición del char** posiciones_sabotajes
-		posiciones_sabotajes = posiciones_sabotajes + 1; //Puede romper
+		pos_actual_sabotaje++; //Puede romper
 	}
-	else
+	else{
 		log_warning(logger_mongo, "No hay posiciones de sabotaje");
+		pos_actual_sabotaje = 0; //reset para que vuelva a ser posible sabotear
+	}
+
 }
 
 char* reparar() {

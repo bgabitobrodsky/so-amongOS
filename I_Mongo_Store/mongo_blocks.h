@@ -15,6 +15,7 @@
 #include <comms/estructuras.h>
 #include <comms/paquetes.h>
 #include <comms/socketes.h>
+#include <comms/generales.h>
 #include <pthread.h>
 #include <readline/readline.h>
 #include <sys/types.h>
@@ -28,6 +29,7 @@
 #define TAMANIO_BLOQUE obtener_tamanio_bloque()
 #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
 #define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
+#define POSICIONES_SABOTAJE config_get_string_value(config_mongo, "POSICIONES_SABOTAJE");
 
 /* ESTRUCTURAS PROPIAS */
 
