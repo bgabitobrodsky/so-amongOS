@@ -26,6 +26,7 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 
     for(int i = 0; i < size; i++) {
  	   bitarray_clean_bit(bitmap, i);
+ 	   // bitarray_set_bit(bitmap, i);
     }
 
     log_trace(logger_mongo, "pre write");
@@ -35,12 +36,15 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
     fwrite(&size, sizeof(uint8_t), 1, archivo);
 
     fflush(archivo);
-
+    // lineas de debug, NO SIRVEN, usar xxd -b SuperBloque.ims
     char* arc = leer_archivo_entero(path_superbloque);
-
     log_info(logger_mongo, "tamanio: %i, %s", strlen(arc), arc);
 
-    fwrite(bitmap->bitarray, bitmap->size, 1, archivo);
+    if(fwrite(bitmap->bitarray, bitmap->size, 1, archivo) > 0){
+    	log_trace(logger_mongo, "bien");
+    }else{
+    	log_trace(logger_mongo, "mal");
+    }
 
     log_trace(logger_mongo, "post-write");
 
