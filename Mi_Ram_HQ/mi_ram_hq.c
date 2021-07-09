@@ -23,7 +23,6 @@
         return EXIT_FAILURE;                                                            \
     }
 
-
 void dump(int n){
 	if(n == SIGUSR2){
 		log_debug(logger,"Se inicia el dump de memoria");
@@ -44,13 +43,17 @@ int main(int argc, char** argv) {
 	// Reinicio el log
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
-	// Inicializar
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_ERROR);
+
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR2,dump);
 
+	pthread_mutex_init(&m_compactacion,NULL);
+	pthread_mutex_init(&m_swap,NULL);
+	pthread_mutex_init(&m_tablas,NULL);
+
 	iniciar_memoria();
-	iniciar_mapa();
+	//iniciar_mapa();
 	//test_gestionar_tareas_paginacion();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
@@ -65,7 +68,7 @@ int main(int argc, char** argv) {
 	close(socket_oyente);
 	fclose(disco);
 	free(bitmap_disco);
-	matar_mapa();
+	//matar_mapa();
 	log_destroy(logger);
 	config_destroy(config);
 
@@ -396,11 +399,12 @@ int gestionar_tcb(t_TCB* tcb){
 		exit(EXIT_FAILURE);
 	}
 	//log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
-
+	/*
 	char mapa_tcb_key = mapa_iniciar_tcb(tcb);
 	char stid[8];
 	sprintf(stid, "%d", tcb->TID);
 	dictionary_put(mapa_indices, stid, mapa_tcb_key);
+	*/
 	return 1;
 }
 
@@ -620,9 +624,11 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		int result = matar_paginas_tcb(tabla, tid);
 		if(result){
 			log_info(logger, "Se mató al TCB tid: %d", tid);
+			pthread_mutex_lock(&(tabla->mutex));
 			if(dictionary_size(tabla->dl_tcbs) == 0){
 				matar_tabla_paginas(pid);
 			}
+			pthread_mutex_unlock(&(tabla->mutex));
 			return 1;
 		}else{
 			// error
@@ -633,11 +639,13 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
+	/*
 	char stid[8];
 	sprintf(stid, "%d",tid);
 	char key = (char) dictionary_get(mapa_indices,stid);
 	item_borrar(nivel, key);
 	nivel_gui_dibujar(nivel);
+	*/
 }
 
 int actualizar_tcb(t_TCB* nuevo_tcb){
@@ -646,28 +654,25 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 	int pid = nuevo_tcb->TID / 10000;
 	char stid[8];
 	sprintf(stid, "%d", nuevo_tcb->TID);
+	
+	if(nuevo_tcb->estado_tripulante == 'F'){
+		eliminar_tcb(nuevo_tcb->TID);
+		return 1;
+	}
+	
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
 		if(tcb == NULL){
 			return 0;
 		}
-		if(nuevo_tcb->estado_tripulante == 'F'){
-			eliminar_tcb(nuevo_tcb->TID);
-			return 1;
-		}
 		tcb->coord_x = nuevo_tcb->coord_x;
 		tcb->coord_y = nuevo_tcb->coord_y;
 		tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
-		//log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
+		log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
-		}
-
-		if(nuevo_tcb->estado_tripulante == 'F'){
-			eliminar_tcb(nuevo_tcb->TID);
-			return 1;
 		}
 		// no me traigo el tcb actual sino sobreescribo directamente sus paginas
 		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
@@ -679,10 +684,11 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
-
+	/*
 	char key = (char) dictionary_get(mapa_indices,stid);
 	item_mover(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
 	nivel_gui_dibujar(nivel);
+	*/
 	return 1;
 }
 
@@ -700,7 +706,7 @@ int tamanio_tarea(t_tarea* tarea){
 // ██║░╚═╝░██║██║░░██║██║░░░░░██║░░██║
 // ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝
 
-
+/*
 void iniciar_mapa(){
     nivel_gui_inicializar();
 	nivel_gui_get_area_nivel(&cols, &rows);
@@ -723,3 +729,4 @@ void matar_mapa(){
 	nivel_gui_terminar();
 }
 
+*/

@@ -43,12 +43,12 @@ void proceso_handler(void* args);
 /**
  * MAPA
 **/
-
+/*
 NIVEL* nivel;
 int cols = 9, rows = 9;
 int err;
 char last_key = 0;
-
+*/
 t_dictionary* mapa_indices;
 
 void iniciar_mapa();
@@ -59,12 +59,16 @@ void matar_mapa();
  * MANEJO DE MEMORIA
 **/
 
+
 void* memoria_principal;
 
 t_dictionary* tablas;
 t_log* logger;
 t_config* config;
 
+pthread_mutex_t m_compactacion;
+pthread_mutex_t m_swap;
+pthread_mutex_t m_tablas;
 //memo virtual
 FILE* disco;
 int marcos_disco_size;

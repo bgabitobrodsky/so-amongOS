@@ -287,6 +287,7 @@ void swap_out(pagina* pagina){
 }
 
 void page_fault(pagina* pag, int pid, int num){
+	pthread_mutex_lock(&m_swap);
 	log_error(logger,"PF pid: %d, pag: %d", pid, num);
 	swap_out(pag);
 	pag->puntero_marco->pid = pid;
@@ -294,6 +295,7 @@ void page_fault(pagina* pag, int pid, int num){
 	pag->en_memoria = true;
 	pag->modificada = false;
 	pag->ultimo_uso =  unix_epoch();
+	pthread_mutex_unlock(&m_swap);
 }
 
 int liberar_pagina(pagina* pagina, int offset, int faltante){
@@ -473,6 +475,7 @@ tabla_paginas* crear_tabla_paginas(uint32_t pid){
     log_info(logger,"se creo tabla de paginas de pid %d", pid);
 	nueva_tabla->paginas = list_create();
 	nueva_tabla->dl_tcbs = dictionary_create();
+	pthread_mutex_init(&(nueva_tabla->mutex), NULL);
 	char spid[4];
 	sprintf(spid, "%d", pid);
     dictionary_put(tablas,spid,nueva_tabla);

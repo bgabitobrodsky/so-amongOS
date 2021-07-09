@@ -108,7 +108,7 @@ int main() {
 
     // iniciar_patota("INICIAR_PATOTA 1 Prueba.ims 1|1");
     // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
-    iniciar_planificacion();
+    //iniciar_planificacion();
 
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
@@ -289,9 +289,10 @@ void tripulante(t_tripulante* un_tripulante){
         log_info(logger, "ALGORITMO RR\n");
         ciclo_de_vida_rr(un_tripulante, st_ram, st_ram, &estado_guardado);
     }
-
+    actualizar_tripulante(un_tripulante,st_ram);
     close(st_ram);
     // close(st_mongo);
+
     morir(un_tripulante);
 
 }
@@ -315,7 +316,7 @@ int conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket_ram, int s
 
 void morir(t_tripulante* un_tripulante){
     // YA ESTA ACTUALIZADO EN RAM, ASI QUE NO HACE FALTA ACTUALIZAR AHI
-
+    
     quitar_tripulante_de_listas(un_tripulante);
 
     if(esta_tripulante_en_lista(lista_tripulantes, un_tripulante->TID)){

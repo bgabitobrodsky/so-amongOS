@@ -27,6 +27,7 @@ t_list* paginas;
 
 
 typedef struct tabla_paginas {
+    pthread_mutex_t mutex;
     int dl_pcb;
     int dl_tareas;
     t_dictionary* dl_tcbs;
