@@ -104,9 +104,9 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    iniciar_patota("INICIAR_PATOTA 4 Random.ims 9|9");
+    // iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
 
-    // iniciar_patota("INICIAR_PATOTA 1 Prueba.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 4 Prueba.ims 1|1");
     // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
     //iniciar_planificacion();
 
@@ -284,12 +284,11 @@ void tripulante(t_tripulante* un_tripulante){
     if(comparar_strings(ALGORITMO, "FIFO")){
         log_info(logger, "ALGORITMO FIFO\n");
         ciclo_de_vida_fifo(un_tripulante, st_ram, st_ram, &estado_guardado);
-
     } else if (comparar_strings(ALGORITMO, "RR")){
         log_info(logger, "ALGORITMO RR\n");
         ciclo_de_vida_rr(un_tripulante, st_ram, st_ram, &estado_guardado);
     }
-    actualizar_tripulante(un_tripulante,st_ram);
+
     close(st_ram);
     // close(st_mongo);
 
@@ -308,7 +307,7 @@ int conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket_ram, int s
         return 1;
     }
     else if(tarea->codigo_operacion == FALLO){
-        un_tripulante->estado_tripulante = estado_tripulante[EXIT];
+    	log_error(logger, "%i pasamo a exit", un_tripulante->TID);
     	cambiar_estado(un_tripulante, estado_tripulante[EXIT], socket_ram);
     }
     return 0;
@@ -508,7 +507,6 @@ void atomic_llegar_a_destino(t_tripulante* un_tripulante, int socket){
 
 	}
 
-	actualizar_tripulante(un_tripulante, socket);
 	log_trace(logger, "%i Distancia restante: %i!%i", un_tripulante->TID, distancia_x, distancia_y);
 
 }
@@ -877,10 +875,10 @@ void verificar_cambio_estado(char* estado_guardado, t_tripulante* un_tripulante,
 }
 
 void actualizar_tripulante(t_tripulante* un_tripulante, int socket){
-    if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
-        t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
-        empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
-    }
+
+	t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
+	empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
+
 }
 
 int verificacion_tcb(int socket){

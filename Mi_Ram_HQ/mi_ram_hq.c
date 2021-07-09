@@ -142,11 +142,11 @@ void atender_clientes(void* param) {
 				if(una_tarea != NULL){
 					t_buffer* buffer_tarea = serializar_tarea(*una_tarea);
 					empaquetar_y_enviar(buffer_tarea, TAREA, parametros->socket);
+					free(una_tarea);
 				}else{
 					// esto puede ser por algun fallo o porque ya no queden tareas
 					enviar_codigo(FALLO, parametros->socket);
 				}
-				free(una_tarea);
 
 				break;
 
