@@ -82,40 +82,45 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     log_trace(logger_mongo, "3");
 
-    inicializar_mapa();
+    // inicializar_mapa();
 }
 
 void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos con whitespace, para funciones de agregado y quitado
-    log_trace(logger_mongo, "inicializar_bloque_inicio");
-    log_trace(logger_mongo, "inicializar_bloque_pre_for");
-    for (int i = 0; i < (TAMANIO_BLOQUE); i++) {
-        *(directorio.mapa_blocks +  TAMANIO_BLOQUE * numero_bloque + i) = '\t';
+    // log_trace(logger_mongo, "inicializar_bloque_inicio");
+    // log_trace(logger_mongo, "inicializar_bloque_pre_for");
+	// log_trace(logger_mongo, "TAMANIO_BLOQUE %i", (uint8_t) TAMANIO_BLOQUE);
+
+    for (int i = 0; i < TAMANIO_BLOQUE; i++) {
+        // log_trace(logger_mongo, "valor de i %i", i);
+        *(directorio.mapa_blocks +  (TAMANIO_BLOQUE * numero_bloque) + i) = '\t';
     }
-    log_trace(logger_mongo, "inicializar_bloque_pre_sync");
+    // log_trace(logger_mongo, "inicializar_bloque_pre_sync");
     msync(directorio.mapa_blocks, (numero_bloque + 1) * TAMANIO_BLOQUE, MS_ASYNC);
-    log_trace(logger_mongo, "inicializar_bloque_fin");
+    // log_trace(logger_mongo, "inicializar_bloque_fin");
 }
 
 void inicializar_mapa() {
-    log_trace(logger_mongo, "iniciando mapita");
-	for (int i; i < CANTIDAD_BLOQUES; i++) {
+	log_trace(logger_mongo, "iniciando mapita");
+	log_trace(logger_mongo, "CANTIDAD_BLOQUES %i", CANTIDAD_BLOQUES);
+
+	for (int i = 0; i < CANTIDAD_BLOQUES; i++) {
         inicializar_bloque(i);
     }
 	log_trace(logger_mongo, "terminando mapita");
 }
 
-uint32_t obtener_tamanio_bloque() {
-    uint32_t block_size;
+uint8_t obtener_tamanio_bloque() {
+	uint8_t block_size;
     fseek(directorio.superbloque, 0, SEEK_SET);
     fread(&block_size, sizeof(uint8_t), 1, directorio.superbloque);
 
     return block_size;
 }
 
-uint32_t obtener_cantidad_bloques() {
+uint8_t obtener_cantidad_bloques() {
     obtener_tamanio_bloque();
 
-    uint32_t size;
+    uint8_t size;
     fread(&size, sizeof(uint8_t), 1, directorio.superbloque);
 
     return size;

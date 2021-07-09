@@ -41,9 +41,8 @@ int main(int argc, char** argv){
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
 
-	/*while(sistema_activo){
-		usleep(1);
-	}*/ //TODO ver cuando debería terminarse el mongo
+	sleep(1000);
+	//TODO ver cuando debería terminarse el mongo
 
 	// Se cierra to.do lo que se usa
 	cerrar_archivos();
