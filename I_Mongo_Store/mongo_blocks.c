@@ -22,7 +22,7 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
     uint32_t block_size = 64; // Bytes
     uint32_t size = 64;
     void* puntero_a_bits = malloc(size); //De javi: con calloc te inicializa el puntero con todos 0
-    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size, LSB_FIRST);
+    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
 
     for(int i = 0; i < size; i++) {
  	   bitarray_clean_bit(bitmap, i);

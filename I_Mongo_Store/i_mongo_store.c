@@ -142,7 +142,7 @@ void sabotaje(int parametro) {
 				enviar_posicion_sabotaje(socket_discordiador);
 
 				// Se espera a que Discordiador envie un designado para reparar
-				t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador); // TODO: Agregar cosas a Estructura
+				t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
 
 				// Se activaria el protocolo fcsk
 				char* rotura = reparar();
