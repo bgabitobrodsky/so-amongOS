@@ -39,12 +39,12 @@ int main(int argc, char** argv){
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
-	pthread_detach(hilo_escucha);
+	// pthread_detach(hilo_escucha);
 
-	sleep(1000);
 	//TODO ver cuando debería terminarse el mongo
+	pthread_join(hilo_escucha);
 
-	// Se cierra to.do lo que se usa
+	// Se cierran vestigios del pasado
 	cerrar_archivos();
 	cerrar_mutexs();
 	close(socket_oyente);

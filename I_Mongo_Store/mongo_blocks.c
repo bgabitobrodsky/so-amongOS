@@ -28,7 +28,6 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 
     for(int i = 0; i < size; i++) {
  	   bitarray_clean_bit(bitmap, i);
- 	   // bitarray_set_bit(bitmap, i);
     }
 
     log_trace(logger_mongo, "pre write");
@@ -56,9 +55,10 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 void iniciar_blocks(int filedescriptor_blocks) {
     log_trace(logger_mongo, "0");
 
-    uint8_t block_size = (uint8_t) obtener_tamanio_bloque();
+    uint8_t block_size = obtener_tamanio_bloque();
+    log_trace(logger_mongo, "OBTENIENDO TAMANIO");
 
-    uint8_t size = (uint8_t) obtener_cantidad_bloques();
+    uint8_t size = obtener_cantidad_bloques();
 
     log_trace(logger_mongo, "1");
 

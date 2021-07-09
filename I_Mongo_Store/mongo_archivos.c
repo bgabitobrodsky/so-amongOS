@@ -76,17 +76,23 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 	path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_files);
 
-    // int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, mode_t);
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
-	recurso.oxigeno        = fopen(path_oxigeno, "r+");
-	recurso.comida         = fopen(path_comida, "r+");
-	recurso.basura         = fopen(path_basura, "r+");
-	directorio.superbloque = fopen(path_superbloque, "r+");
-	directorio.blocks      = fdopen(filedescriptor_blocks, "r+");
+	/*
+	recurso.oxigeno        = fopen(path_oxigeno, "r+b");
+	recurso.comida         = fopen(path_comida, "r+b");
+	recurso.basura         = fopen(path_basura, "r+b");
+	directorio.superbloque = fopen(path_superbloque, "r+b");
+	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
+	*/
+	recurso.oxigeno        = fopen(path_oxigeno, "a+b");
+	recurso.comida         = fopen(path_comida, "a+b");
+	recurso.basura         = fopen(path_basura, "a+b");
+	directorio.superbloque = fopen(path_superbloque, "a+b");
+	directorio.blocks      = fdopen(filedescriptor_blocks, "a+b");
 
 	// TODO: Verificar si esta mappeado
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
