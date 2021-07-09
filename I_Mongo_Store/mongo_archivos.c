@@ -33,7 +33,9 @@ void inicializar_archivos() {
 
 	log_trace(logger_mongo, "post printf");
 
-    int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+    // int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT);
+	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
@@ -76,7 +78,7 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 	sprintf(path_blocks, "%s/Blocks.ims", path_files);
 
     // int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, mode_t);
-	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0600);
+	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
