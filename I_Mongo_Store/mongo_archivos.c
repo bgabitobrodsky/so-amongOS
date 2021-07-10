@@ -59,7 +59,6 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
-
 	// Se obtiene el path al archivo comida dentro de la carpeta files
 	path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
 	sprintf(path_comida, "%s/Comida.ims", path_files);

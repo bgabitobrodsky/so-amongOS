@@ -5,10 +5,15 @@ void manejo_tripulante(void* socket) {
 
 	while(1) {
 		// Se espera a ver que manda el tripulante
+		log_error(logger_mongo, "espero mensaje ");
+
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
+		log_error(logger_mongo, "osa");
 
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
 		if (mensaje->codigo_operacion == RECIBIR_TCB) {
+		    log_trace(logger_mongo, "entro en el if de recibirdaskjhfaisd");
+
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_info(logger_mongo, "Se creo la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 			free(mensaje->tcb);
@@ -17,8 +22,10 @@ void manejo_tripulante(void* socket) {
 		else {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
+
+				log_error(logger_mongo, "IF ENTRE ");
 				t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
-				//modificar_bitacora(mensaje);
+				log_error(logger_mongo, "recibo");
 				modificar_bitacora(mensaje, mensaje2);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
@@ -44,15 +51,20 @@ void manejo_tripulante(void* socket) {
 	}
 }
 
-void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) { // TODO: Verificar estructura, funcion boceto.
+void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 	// Se obtiene el path particular del tripulante, identificado con su TID
+    log_trace(logger_mongo, "-1");
+
 	char* path_tripulante = fpath_tripulante(tcb);
-	
+    log_trace(logger_mongo, "0");
+
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
+    log_trace(logger_mongo, "1");
 	
 	//Se inicializan los datos del tripulante
 	escribir_archivo_tripulante(file_tripulante, 0, NULL);
+    log_trace(logger_mongo, "2");
 
 	// Se lo guarda en la bitacora
 	acomodar_bitacora(file_tripulante, tcb);
@@ -206,11 +218,30 @@ t_bitacora* obtener_bitacora(t_TCB* tcb) {
 }
 
 char* fpath_tripulante(t_TCB* tcb) {
-	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + sizeof(string_itoa(tcb->TID)) + 1);
+	log_warning(logger_mongo, "0");
+	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + strlen(string_itoa((int) (tcb->TID))) + 1);
+	log_warning(logger_mongo, "1");
 	char* path_bitacoras_aux = malloc(strlen(path_bitacoras) + 1);
+	log_warning(logger_mongo, "2");
 	strcpy(path_bitacoras_aux, path_bitacoras);
+	log_warning(logger_mongo, "3");
 	path_tripulante = strcat(path_bitacoras_aux, "/Tripulante");
-	path_tripulante = strcat(path_tripulante, string_itoa(tcb->TID));
+
+	// TODO: rompe el logger Xd
+	// log_warning(logger_mongo, "path queda: %s", path_tripulante);
+
+	log_warning(logger_mongo, "4");
+
+	// todo: rompe esto
+	// path_tripulante = strcat(path_tripulante, string_itoa((int) (tcb->TID)));
+
+	// path_tripulante = strcat(path_tripulante, "10004");
+
+
+	log_warning(logger_mongo, "5");
+
 	path_tripulante = strcat(path_tripulante, ".ims");
+
+	log_warning(logger_mongo, "6");
 	return path_tripulante;
 }

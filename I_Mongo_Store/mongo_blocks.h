@@ -79,6 +79,7 @@ pthread_mutex_t mutex_blocks;
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_list* bitacoras;
+extern char* mapa;
 
 void iniciar_superbloque(FILE* archivo);
 void iniciar_blocks(int filedescriptor_blocks);

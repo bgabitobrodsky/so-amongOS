@@ -13,6 +13,7 @@
 int sistema_activo = 1;
 char** posiciones_sabotajes;
 
+
 int main(int argc, char** argv){
 
 	// Se crean estructuras de registro y configuracion
@@ -32,6 +33,8 @@ int main(int argc, char** argv){
 	// Se settea el FileSystem
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
+
+
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
@@ -197,7 +200,8 @@ void iniciar_file_system() {
 
 void sincronizar_blocks() {
 	while(1) {
-		msync(directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
+		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
 		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
 	}
 }

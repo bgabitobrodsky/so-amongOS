@@ -18,8 +18,11 @@ char* path_basura;
 char* path_superbloque;
 char* path_blocks;
 
+char* mapa;
 
 void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
+	// TODO: CAMBIAR uint8_t por UINT32_T, y usar por mmap
+
 	log_trace(logger_mongo, "entro");
     uint8_t block_size = 64; // Bytes
     uint8_t size = 64;
@@ -62,7 +65,7 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     log_trace(logger_mongo, "1");
 
-    void* mapa = (void*) mmap(NULL, block_size * size, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
+    mapa = (void*) mmap(NULL, block_size * size, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
 
     if(mapa == MAP_FAILED){
         log_trace(logger_mongo, "FAIL");
@@ -84,28 +87,29 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     // inicializar_mapa();
 }
-
+ // TODO: Borrarr
+/*
 void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos con whitespace, para funciones de agregado y quitado
-    // log_trace(logger_mongo, "inicializar_bloque_inicio");
-    // log_trace(logger_mongo, "inicializar_bloque_pre_for");
-	// log_trace(logger_mongo, "TAMANIO_BLOQUE %i", (uint8_t) TAMANIO_BLOQUE);
 
     for (int i = 0; i < TAMANIO_BLOQUE; i++) {
-        // log_trace(logger_mongo, "valor de i %i", i);
         *(directorio.mapa_blocks +  (TAMANIO_BLOQUE * numero_bloque) + i) = '\t';
     }
-    // log_trace(logger_mongo, "inicializar_bloque_pre_sync");
+
     msync(directorio.mapa_blocks, (numero_bloque + 1) * TAMANIO_BLOQUE, MS_ASYNC);
-    // log_trace(logger_mongo, "inicializar_bloque_fin");
 }
+*/
 
 void inicializar_mapa() {
 	log_trace(logger_mongo, "iniciando mapita");
 	log_trace(logger_mongo, "CANTIDAD_BLOQUES %i", CANTIDAD_BLOQUES);
 
-	for (int i = 0; i < CANTIDAD_BLOQUES; i++) {
-        inicializar_bloque(i);
-    }
+	for (int i = 0; i < CANTIDAD_BLOQUES * TAMANIO_BLOQUE ; i++) {
+        *(directorio.mapa_blocks + i) = '\t';
+	}
+
+	memcpy(mapa, directorio.superbloque, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+    msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
+
 	log_trace(logger_mongo, "terminando mapita");
 }
 
