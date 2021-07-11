@@ -27,7 +27,7 @@ char* path_blocks;
 
 
 void escuchar_mongo(void* args);
-void sabotaje(void* socket_discordiador);
+void sabotaje(int n);
 void iniciar_file_system();
 void sincronizar_blocks();
 void cerrar_archivos();

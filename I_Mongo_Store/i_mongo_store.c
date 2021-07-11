@@ -7,9 +7,7 @@
 
 #include "i_mongo_store.h"
 
-#define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP") // Verificar sintaxis
-#define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
-#define LIMIT_CONNECTIONS 10
+int socket_discordiador;
 int sistema_activo = 1;
 char** posiciones_sabotajes;
 
@@ -100,12 +98,15 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
         if (es_discordiador == 1) {
        		es_discordiador = 0; // Se cambia flujo para que los subsiguientes sean tripulantes
 
+       		socket_discordiador = socket_especifico;
+       		/*
        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
        		parametros->socket = socket_especifico;
        		pthread_t un_hilo_discordiador;
        		pthread_create(&un_hilo_discordiador, NULL, (void*) sabotaje, (void *) parametros);
        		pthread_detach(un_hilo_discordiador);
        		//Falta cerrar sockets, hacerlo despues de juntar hilos
+       		*/
        	}
        	else { // Flujo para tripulantes
        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
@@ -122,42 +123,36 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 	}
 }
 
-// TODO: esta mezclado?
-// parametro es un socket, como puede ser SIGUSR1 a la vez?
-void sabotaje(void* parametro) {
-	int socket_discordiador = ((hilo_tripulante*) parametro)->socket;
+void sabotaje(int n) {
 
-	// Se cicla infinitamente en espera a sabotajes
-	while(1) {
+	// Se espera que set reciva la signal correspondiente
+	if (n == SIGUSR1) {
+		log_info(logger_mongo, "Se detecto un sabotaje.\n");
+		// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
+		enviar_codigo(SABOTAJE, socket_discordiador);
 
-		// Se espera que set reciva la signal correspondiente
-		if (parametro == SIGUSR1) {
-			log_info(logger_mongo, "Se detecto un sabotaje.\n");
-			// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
-			enviar_codigo(SABOTAJE, socket_discordiador);
+		t_estructura* listo = recepcion_y_deserializacion(socket_discordiador);
 
-			t_estructura* listo = recepcion_y_deserializacion(socket_discordiador);
+		if (listo->codigo_operacion == LISTO) {
 
-			if (listo->codigo_operacion == LISTO) {
+			// Se envian la primera posicion no enviada hasta el momento
+			enviar_posicion_sabotaje(socket_discordiador);
 
-				// Se envian la primera posicion no enviada hasta el momento
-				enviar_posicion_sabotaje(socket_discordiador);
+			// Se espera a que Discordiador envie un designado para reparar
+			t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
 
-				// Se espera a que Discordiador envie un designado para reparar
-				t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
+			// Se activaria el protocolo fcsk
+			char* rotura = reparar();
 
-				// Se activaria el protocolo fcsk
-				char* rotura = reparar();
+			log_info(logger_mongo, "Se reparo el sabotaje.\n");
+			log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
+			// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
+			enviar_codigo(LISTO, socket_discordiador);
 
-				log_info(logger_mongo, "Se reparo el sabotaje.\n");
-				log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
-				// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
-				enviar_codigo(LISTO, socket_discordiador);
-
-				free(mensaje);
-			}
+			free(mensaje);
 		}
 	}
+
 }
 
 void iniciar_file_system() {
@@ -165,7 +160,7 @@ void iniciar_file_system() {
 	struct stat dir = {0};
 
 	// Se obtiene el path donde estara el arbol de directorios, de config
-	path_directorio = config_get_string_value(config_mongo, "PUNTO_MONTAJE");
+	path_directorio = PUNTO_MONTAJE;
 
 	// Se settea el path a files, carpeta dentro del punto de montaje
 	path_files = malloc(strlen(path_directorio) + strlen("/Files") + 1);
