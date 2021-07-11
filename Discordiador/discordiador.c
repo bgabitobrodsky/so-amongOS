@@ -276,6 +276,9 @@ void tripulante(t_tripulante* un_tripulante){
     int st_mongo = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     usleep(500);
+
+    enviar_tripulante_a_ram(*un_tripulante, st_mongo);
+
     log_trace(logger, "Iniciando tripulante: %i", un_tripulante->TID);
     char estado_guardado = un_tripulante->estado_tripulante; // NEW
     iniciar_tripulante(un_tripulante, st_ram);

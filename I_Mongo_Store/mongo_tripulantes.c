@@ -218,30 +218,13 @@ t_bitacora* obtener_bitacora(t_TCB* tcb) {
 }
 
 char* fpath_tripulante(t_TCB* tcb) {
-	log_warning(logger_mongo, "0");
+
 	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + strlen(string_itoa((int) (tcb->TID))) + 1);
-	log_warning(logger_mongo, "1");
-	char* path_bitacoras_aux = malloc(strlen(path_bitacoras) + 1);
-	log_warning(logger_mongo, "2");
-	strcpy(path_bitacoras_aux, path_bitacoras);
-	log_warning(logger_mongo, "3");
-	path_tripulante = strcat(path_bitacoras_aux, "/Tripulante");
-
-	// TODO: rompe el logger Xd
-	// log_warning(logger_mongo, "path queda: %s", path_tripulante);
-
-	log_warning(logger_mongo, "4");
-
-	// todo: rompe esto
-	// path_tripulante = strcat(path_tripulante, string_itoa((int) (tcb->TID)));
-
-	// path_tripulante = strcat(path_tripulante, "10004");
-
-
-	log_warning(logger_mongo, "5");
-
+	strcpy(path_tripulante, path_bitacoras);
+	path_tripulante = strcat(path_tripulante, "/Tripulante");
+	path_tripulante = strcat(path_tripulante, string_itoa((int) (tcb->TID)));
 	path_tripulante = strcat(path_tripulante, ".ims");
+	log_debug(logger_mongo, "Nuevo path de bitacora: %s", path_tripulante);
 
-	log_warning(logger_mongo, "6");
 	return path_tripulante;
 }
