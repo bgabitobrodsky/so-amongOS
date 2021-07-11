@@ -85,19 +85,7 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     log_trace(logger_mongo, "3");
 
-    // inicializar_mapa();
 }
- // TODO: Borrarr
-/*
-void inicializar_bloque(int numero_bloque) { // Inicializa bloques de recursos con whitespace, para funciones de agregado y quitado
-
-    for (int i = 0; i < TAMANIO_BLOQUE; i++) {
-        *(directorio.mapa_blocks +  (TAMANIO_BLOQUE * numero_bloque) + i) = '\t';
-    }
-
-    msync(directorio.mapa_blocks, (numero_bloque + 1) * TAMANIO_BLOQUE, MS_ASYNC);
-}
-*/
 
 void inicializar_mapa() {
 	log_trace(logger_mongo, "iniciando mapita");

@@ -237,14 +237,14 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	}
 	else if (offset < 100) { // No paso bloques. ¿No sería TAMANIO_BLOQUES?
 		msync(directorio.mapa_blocks, offset + 1, MS_SYNC); //TODO eliminar msync
-		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
+		sleep(TIEMPO_SINCRONIZACION);
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
 		msync(directorio.mapa_blocks, cant_bloques_local * TAMANIO_BLOQUE + offset + 1, MS_SYNC); //TODO eliminar msync
-		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
+		sleep(TIEMPO_SINCRONIZACION);
 	}
 
 	escribir_archivo_recurso(archivo, tam_archivo + cantidad, cant_bloques, lista_bloques);
@@ -265,14 +265,14 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 	}
 	else if (offset < 100) { // No paso bloques
 		msync(directorio.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_SYNC); //TODO eliminar msync
-		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
+		sleep(TIEMPO_SINCRONIZACION);
 	}
 	else if (offset > 100) { // Se paso bloques
 		int cant_bloques_local = offset / 100;
 		offset = offset % 100;
 		
 		msync(directorio.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_SYNC); //TODO eliminar msync
-		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
+		sleep(TIEMPO_SINCRONIZACION);
 	}
 
 	escribir_archivo_recurso(archivo, tam_archivo - cantidad, cant_bloques, lista_bloques);

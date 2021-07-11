@@ -202,7 +202,7 @@ void sincronizar_blocks() {
 	while(1) {
 		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
 		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
-		sleep(config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION"));
+		sleep(TIEMPO_SINCRONIZACION);
 	}
 }
 
