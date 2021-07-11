@@ -101,20 +101,25 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 }
 
 void asignar_nuevo_bloque(FILE* archivo) {
+	log_trace(logger_mongo, "inicio asignar_nuevo_bloque");
 
 	uint32_t tamanio_bloque;
-	fread(&tamanio_bloque, sizeof(uint32_t), 1, directorio.superbloque);
+	fread(&tamanio_bloque, sizeof(uint8_t), 1, directorio.superbloque);
 
+	log_trace(logger_mongo, "0");
 	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint32_t), 1, directorio.superbloque);
+	fread(&cant_bloques, sizeof(uint8_t), 1, directorio.superbloque);
 
+	log_trace(logger_mongo, "1");
+	// TODO: por que tengo dos cantidad_bloques ?
 	int cantidad_bloques = obtener_cantidad_bloques();
-	char* puntero_a_bitmap = calloc(cantidad_bloques / 8, 1);
-	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques, LSB_FIRST);
 
-	bitmap = bitarray_create_with_mode(bitmap->bitarray, cant_bloques, LSB_FIRST); //Puede romper
+	char* puntero_a_bitmap = malloc(cantidad_bloques / 8);
+	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques/8, LSB_FIRST);
+	bitmap = bitarray_create_with_mode(bitmap->bitarray, cant_bloques/8, LSB_FIRST); //Puede romper
 	fread(puntero_a_bitmap, 1, cant_bloques/8, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
 	int bit_libre = -1;
+	log_trace(logger_mongo, "2");
 
 	//Recorro todas las pociciones del bitarray
 	for (uint32_t i = 0; i < cant_bloques; i++){
@@ -124,14 +129,16 @@ void asignar_nuevo_bloque(FILE* archivo) {
 			break;
 		}
 	}
-
+	log_trace(logger_mongo, "3");
 	//Si había un bloque libre
 	if (bit_libre >= 0) {
+		log_trace(logger_mongo, "bloque libre");
 		//Marco el bit como ocupado
 		bitarray_set_bit(bitmap, bit_libre);
 
 		if (es_recurso(archivo)){
 			//Asigno el bloque a un archivo
+			log_trace(logger_mongo, "es recurso");
 			asignar_bloque_recurso(archivo, bit_libre);
 
 			//Actualizo la metadata del archivo
@@ -143,6 +150,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 			escribir_archivo_recurso(archivo, tamanio, cantidad_bloques, lista_bloques);
 		}
 		else {
+			log_trace(logger_mongo, "no es recurso");
 			asignar_bloque_tripulante(archivo, bit_libre);
 
 			//Actualizo la metadata del archivo
@@ -158,7 +166,9 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	else
 		log_info(logger_mongo, "No hay bloques disponibles en este momento");
 
+	log_trace(logger_mongo, "4");
 	free(puntero_a_bitmap);
+	log_trace(logger_mongo, "fin acomodar bitacora");
 }
 
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
@@ -477,10 +487,26 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 }
 
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list_bloques) {
+    log_trace(logger_mongo, "1 escribir_archivo_tripulante");
 	fseek(archivo, 0, SEEK_SET);
+	log_trace(logger_mongo, "2 escribir_archivo_tripulante");
 	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
-	uint32_t cant_bloques = sizeof(list_bloques); //Puede ser que sea sizeof(list_bloques)/2; por un tema del sizeof()
-	fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
+	log_trace(logger_mongo, "3 escribir_archivo_tripulante");
+	uint32_t cant_bloques = sizeof(*list_bloques) / sizeof(uint32_t);
+	log_trace(logger_mongo, "4 escribir_archivo_tripulante");
+	log_trace(logger_mongo, "%i bloques ", cant_bloques);
+
+	if(list_bloques == NULL){
+		int var = 0;
+		fwrite(&var, sizeof(uint32_t), 1, archivo);
+	} else{
+		log_trace(logger_mongo, "varios bloques");
+		fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
+	}
+
+	fflush(archivo);
+
+	log_trace(logger_mongo, "5 escribir_archivo_tripulante");
 }
 
 void escribir_tamanio(FILE* archivo, uint32_t tamanio) {
@@ -490,7 +516,8 @@ void escribir_tamanio(FILE* archivo, uint32_t tamanio) {
 
 int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.do en minúscula
 	char* nombre = conseguir_path_recurso_archivo(archivo);
-	int boolean = strcmp(nombre, "El archivo no era un recurso") ? 0 : 1;
+	int boolean = strcmp(nombre, "El archivo no era un recurso");
+	log_error(logger_mongo, "boolean = %i", boolean);
 	return boolean;
 }
 

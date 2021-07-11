@@ -8,14 +8,13 @@ void manejo_tripulante(void* socket) {
 		log_error(logger_mongo, "espero mensaje ");
 
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
-		log_error(logger_mongo, "osa");
 
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
 		if (mensaje->codigo_operacion == RECIBIR_TCB) {
-		    log_trace(logger_mongo, "entro en el if de recibirdaskjhfaisd");
+		    log_trace(logger_mongo, "entro en el if crear tripu");
 
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
-			log_info(logger_mongo, "Se creo la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
+			log_info(logger_mongo, "Se creo la bitacora del tripulante %i.\n", mensaje->tcb->TID);
 			free(mensaje->tcb);
 		}
 		// Si no lo es, puede ser o agregar/quitar recursos o cambiar informacion en la bitacora
@@ -40,11 +39,11 @@ void manejo_tripulante(void* socket) {
 		// Ultimo mensaje del tripulante, al morir o algo, sera la desconexion, lo cual borra la bitacora y libera los recursos
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
 			borrar_bitacora(mensaje->tcb);
-			log_info(logger_mongo, "Se desconecto el tripulante %s.\n", string_itoa(mensaje->tcb->TID));
+			log_info(logger_mongo, "Se desconecto un tripulante.\n");
 			free(mensaje);
 
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
-			exit(0);
+			pthread_exit(0);
 		}
 
 		free(mensaje);		
@@ -63,7 +62,9 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
     log_trace(logger_mongo, "1");
 	
 	//Se inicializan los datos del tripulante
+    // TODO atado con cables, no entiendo lo que hace.
 	escribir_archivo_tripulante(file_tripulante, 0, NULL);
+
     log_trace(logger_mongo, "2");
 
 	// Se lo guarda en la bitacora
@@ -72,6 +73,7 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 
 void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	// Se utiliza un struct que conoce al tripulante y a su archivo, para luego saber donde se realizan los cambios pedidos por el mismo
+    log_trace(logger_mongo, "Acomodando bitacora");
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->tripulante = tcb;
@@ -79,6 +81,7 @@ void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
 	list_add(bitacoras, nueva_bitacora);
 
 	asignar_nuevo_bloque(nueva_bitacora->bitacora_asociada);
+    log_trace(logger_mongo, "Acomodada bitacora");
 }
 
 void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO Necesitara recibir dos mensajes consecutivos, para volver a como estaba antes borrar 2do parametro
