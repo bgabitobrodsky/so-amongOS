@@ -29,9 +29,8 @@
 #define TAMANIO_BLOQUE obtener_tamanio_bloque()
 #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
 #define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
-#define POSICIONES_SABOTAJE config_get_string_value(config_mongo, "POSICIONES_SABOTAJE");
+#define POSICIONES_SABOTAJE config_get_array_value(config_mongo, "POSICIONES_SABOTAJE")
 #define TIEMPO_SINCRONIZACION config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION")
-#define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE")
 #define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP")
 #define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
 #define LIMIT_CONNECTIONS 10

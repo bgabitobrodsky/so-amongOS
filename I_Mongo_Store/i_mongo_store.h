@@ -25,7 +25,6 @@ char* path_basura;
 char* path_superbloque;
 char* path_blocks;
 
-
 void escuchar_mongo(void* args);
 void sabotaje(int n);
 void iniciar_file_system();

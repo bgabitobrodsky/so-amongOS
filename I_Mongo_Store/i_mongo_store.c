@@ -18,7 +18,7 @@ int main(int argc, char** argv){
 	logger_mongo = log_create("mongo.log", "MONGO", 1, 0); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
 	signal(SIGUSR1, sabotaje);
-	posiciones_sabotajes = config_get_array_value(config_mongo, "POSICIONES_SABOTAJE");
+	posiciones_sabotajes = POSICIONES_SABOTAJE;
 
 	// Se crea la lista de bitacoras para los tripulantes, lista actua de registro para saber que tripulantes poseen bitacora en Mongo
 	bitacoras = list_create();
@@ -31,8 +31,6 @@ int main(int argc, char** argv){
 	// Se settea el FileSystem
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
-
-
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
