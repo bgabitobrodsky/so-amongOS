@@ -64,8 +64,8 @@ int verificar_cant_bloques() {
     int cantidad_real = sizeof(directorio.mapa_blocks)/sizeof(char); // Verificar que asi obtenga tamanio
 
     if (cant_bloques != cantidad_real) {
-        int tamanio = obtener_tamanio_bloque();
-        obtener_cantidad_bloques(); // Para desplazamiento only
+        int tamanio = TAMANIO_BLOQUE;
+        CANTIDAD_BLOQUES; // Para desplazamiento only
 
         t_bitarray* bitmap = obtener_bitmap();
         reescribir_superbloque(tamanio, cantidad_real, bitmap);
@@ -88,7 +88,7 @@ int verificar_bitmap() {
 
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
         t_bitarray* bitmap = actualizar_bitmap(lista_bloques_ocupados);
-        reescribir_superbloque(obtener_tamanio_bloque(), obtener_cantidad_bloques(), bitmap);
+        reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
 
         return 2;
     }

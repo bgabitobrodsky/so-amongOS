@@ -26,8 +26,11 @@
 #include <time.h>
 #include <openssl/md5.h>
 
-#define TAMANIO_BLOQUE obtener_tamanio_bloque()
-#define CANTIDAD_BLOQUES obtener_cantidad_bloques()
+// #define TAMANIO_BLOQUE obtener_tamanio_bloque()
+// #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
+
+#define TAMANIO_BLOQUE 64
+#define CANTIDAD_BLOQUES 64
 #define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 #define POSICIONES_SABOTAJE config_get_array_value(config_mongo, "POSICIONES_SABOTAJE")
 #define TIEMPO_SINCRONIZACION config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION")
@@ -45,12 +48,6 @@ typedef struct{
     char** posiciones_sabotaje;
 
 } config_mongo_t;
-
-typedef struct {
-
-    int socket_oyente;
-
-} args_escuchar_mongo;
 
 typedef struct {
     FILE* superbloque;
@@ -88,11 +85,12 @@ extern char* mapa;
 void iniciar_superbloque(FILE* archivo);
 void iniciar_blocks(int filedescriptor_blocks);
 void inicializar_mapa();
-uint8_t obtener_tamanio_bloque();
-uint8_t obtener_cantidad_bloques();
+uint32_t obtener_tamanio_bloque();
+uint32_t obtener_cantidad_bloques();
 t_bitarray* obtener_bitmap();
 void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap);
 t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados);
 int contiene_generico(int* lista, int valor);
+char devolver_char(int numero_de_byte);
 
 #endif

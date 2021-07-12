@@ -62,8 +62,11 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
     log_trace(logger_mongo, "1");
 	
 	//Se inicializan los datos del tripulante
+
     // TODO atado con cables, no entiendo lo que hace.
-	escribir_archivo_tripulante(file_tripulante, 0, NULL);
+	// escribir_archivo_tripulante(file_tripulante, 0, NULL);
+    uint32_t var_text = 64;
+    escribir_archivo_tripulante(file_tripulante, 0, &var_text);
 
     log_trace(logger_mongo, "2");
 
@@ -157,6 +160,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 }
 
 void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
+	// TODO REVISAR
 		int cantidad_alcanzada = 0;
 		int i, j, t;
 		j = 0; // TODO como funciona esto?

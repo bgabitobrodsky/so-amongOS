@@ -55,10 +55,11 @@ void inicializar_archivos() {
 	inicializar_mapa();
 }
 
-void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar conforme arriba
+void inicializar_archivos_preexistentes() {
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
 	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
+
 	// Se obtiene el path al archivo comida dentro de la carpeta files
 	path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
 	sprintf(path_comida, "%s/Comida.ims", path_files);
@@ -68,18 +69,18 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
 	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_superbloque = malloc((strlen(path_files)+1) + strlen("/SuperBloque.ims"));
-	sprintf(path_superbloque, "%s/SuperBloque.ims", path_files); 
+	path_superbloque = malloc((strlen(path_directorio)+1) + strlen("/SuperBloque.ims"));
+	sprintf(path_superbloque, "%s/SuperBloque.ims", path_directorio);
 
 	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_blocks = malloc((strlen(path_files)+1) + strlen("/Blocks.ims"));
-	sprintf(path_blocks, "%s/Blocks.ims", path_files);
+	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
+	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
-
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
+
 	/*
 	recurso.oxigeno        = fopen(path_oxigeno, "r+b");
 	recurso.comida         = fopen(path_comida, "r+b");
@@ -87,49 +88,48 @@ void inicializar_archivos_preexistentes() { // TODO: Puede romper, actualizar co
 	directorio.superbloque = fopen(path_superbloque, "r+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
 	*/
+
+	log_error(logger_mongo, "path superbloque: %s", path_superbloque);
+
 	recurso.oxigeno        = fopen(path_oxigeno, "a+b");
 	recurso.comida         = fopen(path_comida, "a+b");
 	recurso.basura         = fopen(path_basura, "a+b");
 	directorio.superbloque = fopen(path_superbloque, "a+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "a+b");
 
-	// TODO: Verificar si esta mappeado
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
-	log_error(logger_mongo, "3");
-	inicializar_mapa();
-	log_error(logger_mongo, "4");
+	// mapea y sincroniza
+	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+    msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
+
+	log_error(logger_mongo, "3 inicializar_archivos_preexistentes");
 }
 
 void asignar_nuevo_bloque(FILE* archivo) {
-	log_trace(logger_mongo, "inicio asignar_nuevo_bloque");
+	log_trace(logger_mongo, "0 asignar_nuevo_bloque");
 
 	uint32_t tamanio_bloque;
-	fread(&tamanio_bloque, sizeof(uint8_t), 1, directorio.superbloque);
+	fread(&tamanio_bloque, sizeof(uint32_t), 1, directorio.superbloque);
 
-	log_trace(logger_mongo, "0");
-	uint32_t cant_bloques;
-	fread(&cant_bloques, sizeof(uint8_t), 1, directorio.superbloque);
+	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
+	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, LSB_FIRST);
 
-	log_trace(logger_mongo, "1");
-	// TODO: por que tengo dos cantidad_bloques ?
-	int cantidad_bloques = obtener_cantidad_bloques();
+	bitmap = bitarray_create_with_mode(bitmap->bitarray, CANTIDAD_BLOQUES/8, LSB_FIRST); //Puede romper
 
-	char* puntero_a_bitmap = malloc(cantidad_bloques / 8);
-	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques/8, LSB_FIRST);
-	bitmap = bitarray_create_with_mode(bitmap->bitarray, cant_bloques/8, LSB_FIRST); //Puede romper
-	fread(puntero_a_bitmap, 1, cant_bloques/8, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
+	fread(puntero_a_bitmap, 1, CANTIDAD_BLOQUES/8, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
+
 	int bit_libre = -1;
-	log_trace(logger_mongo, "2");
+	log_trace(logger_mongo, "1 asignar_nuevo_bloque");
 
 	//Recorro todas las pociciones del bitarray
-	for (uint32_t i = 0; i < cant_bloques; i++){
+	for (uint32_t i = 0; i < CANTIDAD_BLOQUES; i++){
 		//Entra si el bit del bitmap está en 0 y no se encontro bit_libre (< 0). Se puede mejorar
 		if(!bitarray_test_bit(bitmap, i) && bit_libre < 0){
 			bit_libre = i;
 			break;
 		}
 	}
-	log_trace(logger_mongo, "3");
+	log_trace(logger_mongo, "2 asignar_nuevo_bloque");
 	//Si había un bloque libre
 	if (bit_libre >= 0) {
 		log_trace(logger_mongo, "bloque libre");
@@ -166,12 +166,12 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	else
 		log_info(logger_mongo, "No hay bloques disponibles en este momento");
 
-	log_trace(logger_mongo, "4");
+	log_trace(logger_mongo, "5 asignar_nuevo_bloque");
 	free(puntero_a_bitmap);
-	log_trace(logger_mongo, "fin acomodar bitacora");
 }
 
 int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
+	log_trace(logger_mongo, "0 asignar_primer_bloque");
 	int cantidad_alcanzada = 0;
 
 	for(int j = 0; j < cant_bloques; j++) {
@@ -192,6 +192,7 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 }
 
 int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
+	log_trace(logger_mongo, "0 quitar_ultimo_bloque");
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
@@ -212,6 +213,8 @@ int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, i
 }
 
 void alterar(int codigo_archivo, int cantidad) {  
+	log_trace(logger_mongo, "0 alterar");
+
 	if (cantidad >= 0){
 		agregar(codigo_archivo, cantidad);
 		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
@@ -223,6 +226,8 @@ void alterar(int codigo_archivo, int cantidad) {
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
+	log_trace(logger_mongo, "0 agregar");
+
 	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
@@ -235,17 +240,6 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		asignar_nuevo_bloque(archivo);
 		agregar(tipo, offset * -1); // Recursividad con la cantidad que falto
 	}
-	else if (offset < 100) { // No paso bloques. ¿No sería TAMANIO_BLOQUES?
-		msync(directorio.mapa_blocks, offset + 1, MS_SYNC); //TODO eliminar msync
-		sleep(TIEMPO_SINCRONIZACION);
-	}
-	else if (offset > 100) { // Se paso bloques
-		int cant_bloques_local = offset / 100;
-		offset = offset % 100;
-		
-		msync(directorio.mapa_blocks, cant_bloques_local * TAMANIO_BLOQUE + offset + 1, MS_SYNC); //TODO eliminar msync
-		sleep(TIEMPO_SINCRONIZACION);
-	}
 
 	escribir_archivo_recurso(archivo, tam_archivo + cantidad, cant_bloques, lista_bloques);
 
@@ -253,6 +247,8 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 }
 
 void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de fopens, revisar
+	log_trace(logger_mongo, "0 quitar");
+
 	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
@@ -281,6 +277,7 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 }
 
 char conseguir_char(int codigo_operacion) {
+
 	switch(codigo_operacion) {
 	case OXIGENO:
 		return 'O';
@@ -396,6 +393,7 @@ int max (int a, int b) {
 }
 
 void crear_md5(char *str, unsigned char digest[16]) {
+	log_trace(logger_mongo, "0 md5, TODO"); // TODO
 	/*
     MD5_CTX ctx;
     MD5_Init(&ctx);
@@ -487,6 +485,7 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 }
 
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list_bloques) {
+	// TODO revisar
     log_trace(logger_mongo, "1 escribir_archivo_tripulante");
 	fseek(archivo, 0, SEEK_SET);
 	log_trace(logger_mongo, "2 escribir_archivo_tripulante");
@@ -497,7 +496,8 @@ void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list
 	log_trace(logger_mongo, "%i bloques ", cant_bloques);
 
 	if(list_bloques == NULL){
-		int var = 0;
+		log_trace(logger_mongo, "lista_bloques_null");
+		char var = ',';
 		fwrite(&var, sizeof(uint32_t), 1, archivo);
 	} else{
 		log_trace(logger_mongo, "varios bloques");

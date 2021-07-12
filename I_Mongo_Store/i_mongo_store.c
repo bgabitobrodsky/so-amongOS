@@ -11,7 +11,6 @@ int socket_discordiador;
 int sistema_activo = 1;
 char** posiciones_sabotajes;
 
-
 int main(int argc, char** argv){
 
 	// Se crean estructuras de registro y configuracion
@@ -19,6 +18,9 @@ int main(int argc, char** argv){
 	config_mongo = config_create("i_mongo_store.config");
 	signal(SIGUSR1, sabotaje);
 	posiciones_sabotajes = POSICIONES_SABOTAJE;
+
+	FILE* f = fopen("mongo.log", "w");
+    fclose(f);
 
 	// Se crea la lista de bitacoras para los tripulantes, lista actua de registro para saber que tripulantes poseen bitacora en Mongo
 	bitacoras = list_create();
@@ -97,14 +99,7 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
        		es_discordiador = 0; // Se cambia flujo para que los subsiguientes sean tripulantes
 
        		socket_discordiador = socket_especifico;
-       		/*
-       		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
-       		parametros->socket = socket_especifico;
-       		pthread_t un_hilo_discordiador;
-       		pthread_create(&un_hilo_discordiador, NULL, (void*) sabotaje, (void *) parametros);
-       		pthread_detach(un_hilo_discordiador);
-       		//Falta cerrar sockets, hacerlo despues de juntar hilos
-       		*/
+
        	}
        	else { // Flujo para tripulantes
        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
@@ -209,4 +204,24 @@ void cerrar_mutexs() {
 	pthread_mutex_destroy(&mutex_oxigeno);
 	pthread_mutex_destroy(&mutex_comida);
 	pthread_mutex_destroy(&mutex_basura);
+}
+
+char devolver_char(int numero_de_byte){
+	FILE* archivo = fopen("/home/utnso/polus/SuperBloque.ims", "r+b"); // TODO esta hardcodeado
+	char* contenido;
+	int tamanio_archivo;
+	if (archivo == NULL){
+		printf("Archivo inexistente.\n");
+		return NULL;
+	}
+	else{
+		fseek(archivo, 0, SEEK_END);
+		tamanio_archivo = ftell(archivo);
+		fseek(archivo, 0, SEEK_SET);
+		contenido = malloc(tamanio_archivo + 1);
+		fread(contenido, 1, tamanio_archivo, archivo);
+		contenido[tamanio_archivo] = '\0';
+	}
+
+	return contenido[numero_de_byte];
 }

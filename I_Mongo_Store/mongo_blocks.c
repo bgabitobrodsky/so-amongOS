@@ -22,27 +22,19 @@ char* mapa;
 
 void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 	// TODO: CAMBIAR uint8_t por UINT32_T, y usar por mmap
-
 	log_trace(logger_mongo, "entro");
-    uint8_t block_size = 64; // Bytes
-    uint8_t size = 64;
+    uint32_t block_size = 64; // Bytes
+    uint32_t size = 64; // TODO: Deshardcodear esto con un DEFINE
     void* puntero_a_bits = malloc(size/8);
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
-
     for(int i = 0; i < size; i++) {
  	   bitarray_clean_bit(bitmap, i);
     }
-
     log_trace(logger_mongo, "pre write");
 
-    fwrite(&block_size, sizeof(uint8_t), 1, archivo);
-
-    fwrite(&size, sizeof(uint8_t), 1, archivo);
-
+    fwrite(&block_size, sizeof(uint32_t), 1, archivo);
+    fwrite(&size, sizeof(uint32_t), 1, archivo);
     fflush(archivo);
-    // lineas de debug, NO SIRVEN, usar xxd -b SuperBloque.ims
-    char* arc = leer_archivo_entero(path_superbloque);
-    log_info(logger_mongo, "tamanio: %i, %s", strlen(arc), arc);
 
     if(fwrite(bitmap->bitarray, bitmap->size, 1, archivo) > 0){
     	log_trace(logger_mongo, "bien");
@@ -56,22 +48,16 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 }
 
 void iniciar_blocks(int filedescriptor_blocks) {
-    log_trace(logger_mongo, "0");
+    log_trace(logger_mongo, "0 iniciar_blocks");
 
-    uint8_t block_size = obtener_tamanio_bloque();
-    log_trace(logger_mongo, "OBTENIENDO TAMANIO");
-
-    uint8_t size = obtener_cantidad_bloques();
-
-    log_trace(logger_mongo, "1");
+    uint32_t block_size = obtener_tamanio_bloque();
+    uint32_t size = obtener_cantidad_bloques();
 
     mapa = (void*) mmap(NULL, block_size * size, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
 
     if(mapa == MAP_FAILED){
-        log_trace(logger_mongo, "FAIL");
+        log_trace(logger_mongo, "Fallo el mapa, posiblemente por tamanio");
     }
-
-    log_trace(logger_mongo, "2");
 
     directorio.mapa_blocks = malloc(block_size * size);
 
@@ -83,37 +69,35 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     memcpy(directorio.mapa_blocks, mapa, block_size * size);
 
-    log_trace(logger_mongo, "3");
+    log_trace(logger_mongo, "fin iniciar_blocks");
 
 }
 
 void inicializar_mapa() {
-	log_trace(logger_mongo, "iniciando mapita");
-	log_trace(logger_mongo, "CANTIDAD_BLOQUES %i", CANTIDAD_BLOQUES);
+	log_trace(logger_mongo, "0 inicializar_mapa");
 
 	for (int i = 0; i < CANTIDAD_BLOQUES * TAMANIO_BLOQUE ; i++) {
-        *(directorio.mapa_blocks + i) = '\t';
+        *(directorio.mapa_blocks + i) = ',';
 	}
 
-	memcpy(mapa, directorio.superbloque, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
-	log_trace(logger_mongo, "terminando mapita");
+	log_trace(logger_mongo, "fin inicializar_mapa");
 }
 
-uint8_t obtener_tamanio_bloque() {
-	uint8_t block_size;
+uint32_t obtener_tamanio_bloque() {
+	uint32_t block_size;
     fseek(directorio.superbloque, 0, SEEK_SET);
-    fread(&block_size, sizeof(uint8_t), 1, directorio.superbloque);
-
+    fread(&block_size, sizeof(uint32_t), 1, directorio.superbloque);
     return block_size;
 }
 
-uint8_t obtener_cantidad_bloques() {
+uint32_t obtener_cantidad_bloques() {
     obtener_tamanio_bloque();
 
-    uint8_t size;
-    fread(&size, sizeof(uint8_t), 1, directorio.superbloque);
+    uint32_t size;
+    fread(&size, sizeof(uint32_t), 1, directorio.superbloque);
 
     return size;
 }
@@ -131,6 +115,7 @@ t_bitarray* obtener_bitmap() {
 }
 
 void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap) {
+	log_trace(logger_mongo, "0 reescribir_superbloque");
     fclose(directorio.superbloque);
     directorio.superbloque = fopen(path_superbloque, "w+");
 
@@ -142,6 +127,8 @@ void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap) {
 }
 
 t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados) {
+	log_trace(logger_mongo, "0 actualizar_bitmap");
+
     void* puntero_a_bits = calloc(CANTIDAD_BLOQUES / 8, 1);
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, CANTIDAD_BLOQUES / 8, LSB_FIRST);
 
