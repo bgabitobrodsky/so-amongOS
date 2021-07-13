@@ -212,7 +212,7 @@ char devolver_char(int numero_de_byte){
 	int tamanio_archivo;
 	if (archivo == NULL){
 		printf("Archivo inexistente.\n");
-		return NULL;
+		return 0;
 	}
 	else{
 		fseek(archivo, 0, SEEK_END);

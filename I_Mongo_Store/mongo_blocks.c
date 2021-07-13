@@ -21,10 +21,10 @@ char* path_blocks;
 char* mapa;
 
 void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
-	// TODO: CAMBIAR uint8_t por UINT32_T, y usar por mmap
+	// TODO usar por mmap
 	log_trace(logger_mongo, "entro");
-    uint32_t block_size = 64; // Bytes
-    uint32_t size = 64; // TODO: Deshardcodear esto con un DEFINE
+    uint32_t block_size = TAMANIO_BLOQUE; // Bytes
+    uint32_t size = CANTIDAD_BLOQUES;
     void* puntero_a_bits = malloc(size/8);
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
     for(int i = 0; i < size; i++) {
@@ -50,8 +50,8 @@ void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
 void iniciar_blocks(int filedescriptor_blocks) {
     log_trace(logger_mongo, "0 iniciar_blocks");
 
-    uint32_t block_size = obtener_tamanio_bloque();
-    uint32_t size = obtener_cantidad_bloques();
+    uint32_t block_size = TAMANIO_BLOQUE;
+    uint32_t size = CANTIDAD_BLOQUES;
 
     mapa = (void*) mmap(NULL, block_size * size, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_blocks, 0); // Revisar flags
 

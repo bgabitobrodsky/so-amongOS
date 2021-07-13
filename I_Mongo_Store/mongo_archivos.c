@@ -89,15 +89,13 @@ void inicializar_archivos_preexistentes() {
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
 	*/
 
-	log_error(logger_mongo, "path superbloque: %s", path_superbloque);
-
 	recurso.oxigeno        = fopen(path_oxigeno, "a+b");
 	recurso.comida         = fopen(path_comida, "a+b");
 	recurso.basura         = fopen(path_basura, "a+b");
 	directorio.superbloque = fopen(path_superbloque, "a+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "a+b");
 
-	iniciar_blocks(filedescriptor_blocks); // Actualizar struct
+	iniciar_blocks(filedescriptor_blocks); // Actualizar struct TODO: que?
 	// mapea y sincroniza
 	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
@@ -108,44 +106,42 @@ void inicializar_archivos_preexistentes() {
 void asignar_nuevo_bloque(FILE* archivo) {
 	log_trace(logger_mongo, "0 asignar_nuevo_bloque");
 
-	uint32_t tamanio_bloque;
-	fread(&tamanio_bloque, sizeof(uint32_t), 1, directorio.superbloque);
-
 	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
 	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, LSB_FIRST);
 
-	bitmap = bitarray_create_with_mode(bitmap->bitarray, CANTIDAD_BLOQUES/8, LSB_FIRST); //Puede romper
-
 	fread(puntero_a_bitmap, 1, CANTIDAD_BLOQUES/8, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
 
-	int bit_libre = -1;
+	int bit_libre = 0;
+	int pos_libre;
+
 	log_trace(logger_mongo, "1 asignar_nuevo_bloque");
 
-	//Recorro todas las pociciones del bitarray
+	//Recorro todas las posiciones del bitarray
 	for (uint32_t i = 0; i < CANTIDAD_BLOQUES; i++){
-		//Entra si el bit del bitmap está en 0 y no se encontro bit_libre (< 0). Se puede mejorar
-		if(!bitarray_test_bit(bitmap, i) && bit_libre < 0){
-			bit_libre = i;
+		//Entra si el bit del bitmap está en 0
+		if(!bitarray_test_bit(bitmap, i)){
+			bit_libre = 1;
+			pos_libre = i;
 			break;
 		}
 	}
 	log_trace(logger_mongo, "2 asignar_nuevo_bloque");
 	//Si había un bloque libre
-	if (bit_libre >= 0) {
+	if (bit_libre == 1) {
 		log_trace(logger_mongo, "bloque libre");
 		//Marco el bit como ocupado
-		bitarray_set_bit(bitmap, bit_libre);
+		bitarray_set_bit(bitmap, pos_libre);
 
-		log_error(logger_mongo, "El bit libre es = %i", bit_libre);
+		log_error(logger_mongo, "El bit libre es = %i", pos_libre);
 
 		if (es_recurso(archivo)){
 			//Asigno el bloque a un archivo
 			log_trace(logger_mongo, "es recurso");
-			asignar_bloque_recurso(archivo, bit_libre);
+			asignar_bloque_recurso(archivo, pos_libre);
 		}
 		else {
 			log_trace(logger_mongo, "no es recurso");
-			asignar_bloque_tripulante(archivo, bit_libre);
+			asignar_bloque_tripulante(archivo, pos_libre);
 		}
 	}
 	//Si no había un bloque libre

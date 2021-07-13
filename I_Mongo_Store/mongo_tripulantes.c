@@ -64,10 +64,7 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 	
 	//Se inicializan los datos del tripulante
 
-    // TODO atado con cables, no entiendo lo que hace.
 	escribir_archivo_tripulante(file_tripulante, 0, NULL);
-    uint32_t var_text = 64;
-    //escribir_archivo_tripulante(file_tripulante, 0, &var_text);
 
     log_trace(logger_mongo, "2");
 
