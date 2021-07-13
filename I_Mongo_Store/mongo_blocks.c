@@ -103,12 +103,9 @@ uint32_t obtener_cantidad_bloques() {
 }
 
 t_bitarray* obtener_bitmap() {
-	int cant_bloques = obtener_cantidad_bloques();
-	char* puntero_a_bitmap = calloc(cant_bloques / 8, 1);
 
-	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, cant_bloques, LSB_FIRST);
-	fread(puntero_a_bitmap, 1, cant_bloques/8, directorio.superbloque);
-
+	char* puntero_a_bitmap = crear_puntero_a_bitmap();
+	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, LSB_FIRST);
 	free(puntero_a_bitmap);
 
 	return bitmap;
@@ -129,7 +126,7 @@ void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap) {
 t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados) {
 	log_trace(logger_mongo, "0 actualizar_bitmap");
 
-    void* puntero_a_bits = calloc(CANTIDAD_BLOQUES / 8, 1);
+    char* puntero_a_bits = crear_puntero_a_bitmap();
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, CANTIDAD_BLOQUES / 8, LSB_FIRST);
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {

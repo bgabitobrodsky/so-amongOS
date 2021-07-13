@@ -35,7 +35,6 @@ void inicializar_archivos() {
 
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
-
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
     recurso.oxigeno        = fopen(path_oxigeno, "a+b");
@@ -106,10 +105,8 @@ void inicializar_archivos_preexistentes() {
 void asignar_nuevo_bloque(FILE* archivo) {
 	log_trace(logger_mongo, "0 asignar_nuevo_bloque");
 
-	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
+	char* puntero_a_bitmap = crear_puntero_a_bitmap();
 	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, LSB_FIRST);
-
-	fread(puntero_a_bitmap, 1, CANTIDAD_BLOQUES/8, directorio.superbloque); //CHAR_BIT: represents the number of bits in a char
 
 	int bit_libre = 0;
 	int pos_libre;
@@ -157,7 +154,6 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 	int cantidad_alcanzada = 0;
 
 	log_error(logger_mongo, "Cant bloques %i", cant_bloques);
-
 
 	for(int j = 0; j < cant_bloques; j++) {
 		log_error(logger_mongo, "En bloque %i", lista_bloques[j]);
@@ -243,21 +239,7 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
 	char tipo = caracter_llenado_archivo(archivo);
 
-	int offset = quitar_ultimo_bloque_libre(lista_bloques, cant_bloques, cantidad * -1, tipo);
-
-	if (offset < 0) { // Se quiso quitar mas de lo existente, no hace nada (queda para comprension)
-	}
-	else if (offset < 100) { // No paso bloques
-		msync(directorio.mapa_blocks, lista_bloques[cant_bloques - 1] * TAMANIO_BLOQUE + 1, MS_SYNC); //TODO eliminar msync
-		sleep(TIEMPO_SINCRONIZACION);
-	}
-	else if (offset > 100) { // Se paso bloques
-		int cant_bloques_local = offset / 100;
-		offset = offset % 100;
-		
-		msync(directorio.mapa_blocks, lista_bloques[(cant_bloques_local - 1)] * TAMANIO_BLOQUE + offset + 1, MS_SYNC); //TODO eliminar msync
-		sleep(TIEMPO_SINCRONIZACION);
-	}
+	quitar_ultimo_bloque_libre(lista_bloques, cant_bloques, cantidad * -1, tipo); // Eliminar esto?
 
 	escribir_archivo_recurso(archivo, tam_archivo - cantidad, cant_bloques, lista_bloques);
 
@@ -436,11 +418,11 @@ char* md5_archivo(FILE* archivo) {
 }
 
 uint32_t cantidad_bloques_tripulante(FILE* archivo) {
-	fseek(archivo, 0, SEEK_SET);
 	uint32_t tamanio_archivo;
-	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
+	uint32_t cant_bloques = 0;
 
-	uint32_t cant_bloques = 0; // Lees la lista
+	fseek(archivo, 0, SEEK_SET);
+	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
 	do {
 		fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
@@ -561,4 +543,14 @@ int bloques_contar(char caracter) {
 			cantidad++;
 	}
 	return cantidad;
+}
+
+
+char* crear_puntero_a_bitmap(){
+	// CREA UN PUNTERO AL BITMAP DE BLOQUES
+	// EL RETORNO SE DEBE LIBERAR
+	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
+	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_CUR);
+	fread(puntero_a_bitmap, 1, CANTIDAD_BLOQUES/8, directorio.superbloque);
+	return puntero_a_bitmap;
 }
