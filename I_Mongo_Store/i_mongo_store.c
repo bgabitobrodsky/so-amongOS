@@ -8,7 +8,6 @@
 #include "i_mongo_store.h"
 
 int socket_discordiador;
-int sistema_activo = 1;
 char** posiciones_sabotajes;
 
 int main(int argc, char** argv){
@@ -44,7 +43,7 @@ int main(int argc, char** argv){
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	// pthread_detach(hilo_escucha);
 
-	//TODO ver cuando debería terminarse el mongo
+	// TODO ver cuando debería terminarse el mongo
 	pthread_join(hilo_escucha, NULL);
 
 	// Se cierran vestigios del pasado
@@ -96,8 +95,8 @@ void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerra
 
 		// Se verifica que la primera conexion a Mongo sea del modulo Discordiador, debe ser asi por defecto
         if (es_discordiador == 1) {
-       		es_discordiador = 0; // Se cambia flujo para que los subsiguientes sean tripulantes
 
+       		es_discordiador = 0; // Se cambia flujo para que los subsiguientes sean tripulantes
        		socket_discordiador = socket_especifico;
 
        	}
@@ -206,22 +205,22 @@ void cerrar_mutexs() {
 	pthread_mutex_destroy(&mutex_basura);
 }
 
-char devolver_char(int numero_de_byte){
-	FILE* archivo = fopen("/home/utnso/polus/SuperBloque.ims", "r+b"); // TODO esta hardcodeado
+char devolver_byte(int numero_de_byte){
 	char* contenido;
 	int tamanio_archivo;
-	if (archivo == NULL){
+	if (directorio.superbloque == NULL){
 		printf("Archivo inexistente.\n");
 		return 0;
 	}
 	else{
-		fseek(archivo, 0, SEEK_END);
-		tamanio_archivo = ftell(archivo);
-		fseek(archivo, 0, SEEK_SET);
+		fseek(directorio.superbloque, 0, SEEK_END);
+		tamanio_archivo = ftell(directorio.superbloque);
+		fseek(directorio.superbloque, 0, SEEK_SET);
 		contenido = malloc(tamanio_archivo + 1);
-		fread(contenido, 1, tamanio_archivo, archivo);
+		fread(contenido, 1, tamanio_archivo, directorio.superbloque);
 		contenido[tamanio_archivo] = '\0';
 	}
-
-	return contenido[numero_de_byte];
+	char byte = contenido[numero_de_byte];
+	free(contenido);
+	return byte;
 }
