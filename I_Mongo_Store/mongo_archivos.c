@@ -80,19 +80,20 @@ void inicializar_archivos_preexistentes() {
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
 
-	/*
+
 	recurso.oxigeno        = fopen(path_oxigeno, "r+b");
 	recurso.comida         = fopen(path_comida, "r+b");
 	recurso.basura         = fopen(path_basura, "r+b");
 	directorio.superbloque = fopen(path_superbloque, "r+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
-	*/
 
+	/*
 	recurso.oxigeno        = fopen(path_oxigeno, "a+b");
 	recurso.comida         = fopen(path_comida, "a+b");
 	recurso.basura         = fopen(path_basura, "a+b");
 	directorio.superbloque = fopen(path_superbloque, "a+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "a+b");
+	*/
 
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct TODO: que?
 	// mapea y sincroniza
@@ -550,7 +551,7 @@ char* crear_puntero_a_bitmap(){
 	// CREA UN PUNTERO AL BITMAP DE BLOQUES
 	// EL RETORNO SE DEBE LIBERAR
 	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
-	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_CUR);
+	fseek(directorio.superbloque, CANTIDAD_BLOQUES / 8, SEEK_SET);
 	fread(puntero_a_bitmap, 1, CANTIDAD_BLOQUES/8, directorio.superbloque);
 	return puntero_a_bitmap;
 }

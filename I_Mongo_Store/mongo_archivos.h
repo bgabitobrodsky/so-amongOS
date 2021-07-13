@@ -37,6 +37,7 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* lista_bloques);
 void escribir_tamanio(FILE* archivo, uint32_t tamanio);
 int bloques_contar(char caracter);
+void imprimir_bitmap();
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;

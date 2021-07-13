@@ -32,6 +32,7 @@ int main(int argc, char** argv){
 	// Se settea el FileSystem
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
+	imprimir_bitmap();
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
@@ -223,4 +224,21 @@ char devolver_byte(int numero_de_byte){
 	char byte = contenido[numero_de_byte];
 	free(contenido);
 	return byte;
+}
+
+void imprimir_bitmap(){
+	t_bitarray* mapilla = obtener_bitmap();
+
+	log_info(logger_mongo, "Tamanio del bitmap %i", bitarray_get_max_bit(mapilla));
+
+	for(int i = 0; i < bitarray_get_max_bit(mapilla); i+=8){
+		// El tocho es para que se vea cada byte en una linea.
+		log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(mapilla, i), bitarray_test_bit(mapilla, i+1), bitarray_test_bit(mapilla, i+2), bitarray_test_bit(mapilla, i+3), bitarray_test_bit(mapilla, i+4), bitarray_test_bit(mapilla, i+5), bitarray_test_bit(mapilla, i+6), bitarray_test_bit(mapilla, i+7));
+	}
+	bitarray_set_bit(mapilla, 0);
+
+	reescribir_superbloque(64, 64, mapilla);
+
+	free(mapilla->bitarray);
+	free(mapilla);
 }

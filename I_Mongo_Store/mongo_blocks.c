@@ -105,20 +105,19 @@ uint32_t obtener_cantidad_bloques() {
 t_bitarray* obtener_bitmap() {
 
 	char* puntero_a_bitmap = crear_puntero_a_bitmap();
-	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, LSB_FIRST);
-	free(puntero_a_bitmap);
+	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, MSB_FIRST);
 
 	return bitmap;
 }
 
-void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap) {
+void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap) {
 	log_trace(logger_mongo, "0 reescribir_superbloque");
     fclose(directorio.superbloque);
-    directorio.superbloque = fopen(path_superbloque, "w+");
+    directorio.superbloque = fopen(path_superbloque, "w+b");
 
     fwrite(&tamanio, sizeof(uint32_t), 1, directorio.superbloque);
     fwrite(&cantidad, sizeof(uint32_t), 1, directorio.superbloque);
-    fwrite(bitmap, sizeof(bitmap), 1, directorio.superbloque);
+    fwrite(bitmap->bitarray, sizeof(uint32_t)*2, 1, directorio.superbloque);
 
     fflush(directorio.superbloque);
 }
