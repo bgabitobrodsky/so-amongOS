@@ -64,9 +64,9 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 	//Se inicializan los datos del tripulante
 
     // TODO atado con cables, no entiendo lo que hace.
-	// escribir_archivo_tripulante(file_tripulante, 0, NULL);
+	escribir_archivo_tripulante(file_tripulante, 0, NULL);
     uint32_t var_text = 64;
-    escribir_archivo_tripulante(file_tripulante, 0, &var_text);
+    //escribir_archivo_tripulante(file_tripulante, 0, &var_text);
 
     log_trace(logger_mongo, "2");
 
@@ -165,6 +165,8 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 		int i, j, t;
 		j = 0; // TODO como funciona esto?
 		uint32_t* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
+
+		log_trace(logger_mongo, "Lista bloque primer elemento %i", lista_bloques[0]);
 
 		for (i = 0; *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) {
 			
