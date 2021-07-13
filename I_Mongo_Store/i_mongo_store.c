@@ -235,9 +235,6 @@ void imprimir_bitmap(){
 		// El tocho es para que se vea cada byte en una linea.
 		log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(mapilla, i), bitarray_test_bit(mapilla, i+1), bitarray_test_bit(mapilla, i+2), bitarray_test_bit(mapilla, i+3), bitarray_test_bit(mapilla, i+4), bitarray_test_bit(mapilla, i+5), bitarray_test_bit(mapilla, i+6), bitarray_test_bit(mapilla, i+7));
 	}
-	bitarray_set_bit(mapilla, 0);
-
-	reescribir_superbloque(64, 64, mapilla);
 
 	free(mapilla->bitarray);
 	free(mapilla);
