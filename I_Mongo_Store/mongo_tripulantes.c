@@ -32,6 +32,7 @@ void manejo_tripulante(void* socket) {
 
 			// Si es otro codigo
 			else if(mensaje->codigo_operacion > TAREA && mensaje->codigo_operacion < MOVIMIENTO){
+				log_error(logger_mongo, "Toy por alterar");
 				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 			}
 		}

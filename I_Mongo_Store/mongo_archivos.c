@@ -160,13 +160,19 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 	log_trace(logger_mongo, "0 asignar_primer_bloque");
 	int cantidad_alcanzada = 0;
 
+	log_error(logger_mongo, "Cant bloques %i", cant_bloques);
+
+
 	for(int j = 0; j < cant_bloques; j++) {
-		for (int i = 0; tipo != *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) != '\t'; i++) { // Cambiar Macro por revision al Superbloque
+		log_error(logger_mongo, "En bloque %i", lista_bloques[j]);
+		for (int i = 0; tipo != *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) == ','; i++) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == ' ') {
+			if (*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == ',') {
 				*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
 				cantidad_alcanzada++;
 			}
+
+			log_error(logger_mongo, "Cantidad de recursos escritos %i", cantidad_alcanzada);
 
 			if (cantidad_alcanzada == cantidad_deseada) {
 				return j * 100 + i;
