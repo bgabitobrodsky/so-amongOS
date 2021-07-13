@@ -92,6 +92,5 @@ char* crear_puntero_a_bitmap();
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap);
 t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados);
 int contiene_generico(int* lista, int valor);
-char devolver_byte(int numero_de_byte);
 
 #endif

@@ -125,13 +125,13 @@ void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bit
 t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados) {
 	log_trace(logger_mongo, "0 actualizar_bitmap");
 
-    char* puntero_a_bits = crear_puntero_a_bitmap();
-    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, CANTIDAD_BLOQUES / 8, LSB_FIRST);
+    t_bitarray* bitmap = obtener_bitmap();
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
     	if(contiene_generico(lista_bloques_ocupados, i))
     		bitarray_set_bit(bitmap, i);
     }
+
 	return bitmap;
 }
 

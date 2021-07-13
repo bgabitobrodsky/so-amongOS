@@ -34,6 +34,11 @@ int main(int argc, char** argv){
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
 	imprimir_bitmap();
 
+	fseek(directorio.blocks, 0, SEEK_END);
+	int tamanio_en_bytes = ftell(directorio.blocks);
+
+	log_info(logger_mongo, "tamanio mapa blocks %i, cadena %s", tamanio_en_bytes, directorio.mapa_blocks);
+
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
 	pthread_mutex_init(&mutex_comida, NULL);
@@ -44,7 +49,6 @@ int main(int argc, char** argv){
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	// pthread_detach(hilo_escucha);
 
-	// TODO ver cuando debería terminarse el mongo
 	pthread_join(hilo_escucha, NULL);
 
 	// Se cierran vestigios del pasado
@@ -65,7 +69,7 @@ int main(int argc, char** argv){
 	free(path_bitacoras);
 }
 
-void escuchar_mongo(void* args) { // TODO args no se cierra, fijarse donde cerrarlo
+void escuchar_mongo(void* args) {
     args_escuchar *p = malloc(sizeof(args_escuchar));
     p = args;
     int socket_escucha = p->socket_oyente;
@@ -162,7 +166,7 @@ void iniciar_file_system() {
 
 	// Se settea el path a bitacoras, carpeta dentro de files
 	path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
-	strncpy(path_bitacoras , path_files, strlen(path_files) + 1);
+	strncpy(path_bitacoras, path_files, strlen(path_files) + 1);
 	path_bitacoras = strcat(path_bitacoras, "/Bitacoras");
 
 	// Se verifica si ya tengo carpetas hechas, o sea, un filesystem
@@ -204,26 +208,6 @@ void cerrar_mutexs() {
 	pthread_mutex_destroy(&mutex_oxigeno);
 	pthread_mutex_destroy(&mutex_comida);
 	pthread_mutex_destroy(&mutex_basura);
-}
-
-char devolver_byte(int numero_de_byte){
-	char* contenido;
-	int tamanio_archivo;
-	if (directorio.superbloque == NULL){
-		printf("Archivo inexistente.\n");
-		return 0;
-	}
-	else{
-		fseek(directorio.superbloque, 0, SEEK_END);
-		tamanio_archivo = ftell(directorio.superbloque);
-		fseek(directorio.superbloque, 0, SEEK_SET);
-		contenido = malloc(tamanio_archivo + 1);
-		fread(contenido, 1, tamanio_archivo, directorio.superbloque);
-		contenido[tamanio_archivo] = '\0';
-	}
-	char byte = contenido[numero_de_byte];
-	free(contenido);
-	return byte;
 }
 
 void imprimir_bitmap(){

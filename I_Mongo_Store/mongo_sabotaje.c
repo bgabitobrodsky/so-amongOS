@@ -61,11 +61,11 @@ char* reparar() {
 
 int verificar_cant_bloques() {
     int cant_bloques = obtener_cantidad_bloques();
-    int cantidad_real = sizeof(directorio.mapa_blocks)/sizeof(char); // Verificar que asi obtenga tamanio
+    int cantidad_real = strlen(directorio.mapa_blocks); // no sirve strlen ni sizeof, por los /0
 
     if (cant_bloques != cantidad_real) {
         int tamanio = TAMANIO_BLOQUE;
-        CANTIDAD_BLOQUES; // Para desplazamiento only
+        obtener_cantidad_bloques();// Para desplazamiento only
 
         t_bitarray* bitmap = obtener_bitmap();
         reescribir_superbloque(tamanio, cantidad_real, bitmap);
@@ -89,7 +89,6 @@ int verificar_bitmap() {
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
         t_bitarray* bitmap = actualizar_bitmap(lista_bloques_ocupados);
         reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
-
         return 2;
     }
     else
