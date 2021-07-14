@@ -135,3 +135,9 @@ t_bitarray* actualizar_bitmap(t_list* lista_bloques_ocupados) {
 	return bitmap;
 }
 
+void reemplazar(t_list* lista, int index, void* elemento){
+	void liberar(void* un_elemento){
+		free(un_elemento);
+	}
+	list_replace_and_destroy_element(lista, index, elemento, liberar);
+}

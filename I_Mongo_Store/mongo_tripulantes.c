@@ -159,31 +159,31 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	// TODO REVISAR
-		int cantidad_alcanzada = 0;
-		int i, j, t;
-		j = 0; // TODO como funciona esto?
-		t_list* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
+	int cantidad_alcanzada = 0;
+	int i, j, t;
+	j = 0; // TODO como funciona esto?
+	t_list* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
 
-		log_trace(logger_mongo, "Lista bloque primer elemento %i", lista_bloques[0]);
+	log_trace(logger_mongo, "Lista bloque primer elemento %i", list_get(lista_bloques, 0));
 
-		for (i = 0; *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) {
-			
-			if (*(directorio.mapa_blocks + (int)list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) == '\t') {
-				*(directorio.mapa_blocks + (int)list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) = mensaje[i];
-				cantidad_alcanzada++;
-			}
+	for (i = 0; *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) {
+
+		if (*(directorio.mapa_blocks + (int)list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) == '\t') {
+			*(directorio.mapa_blocks + (int)list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) = mensaje[i];
+			cantidad_alcanzada++;
 		}
-		
-		if (cantidad_alcanzada != strlen(mensaje)) {
-			asignar_nuevo_bloque(bitacora->bitacora_asociada);
-			char* resto_mensaje = malloc(strlen(mensaje) - cantidad_alcanzada);
+	}
 
-			for (j = cantidad_alcanzada, t = 0; j < strlen(mensaje); j++, t++) {
-				resto_mensaje[t] = mensaje[j];
-			}
+	if (cantidad_alcanzada != strlen(mensaje)) {
+		asignar_nuevo_bloque(bitacora->bitacora_asociada);
+		char* resto_mensaje = malloc(strlen(mensaje) - cantidad_alcanzada);
 
-			escribir_bitacora(bitacora, resto_mensaje);
+		for (j = cantidad_alcanzada, t = 0; j < strlen(mensaje); j++, t++) {
+			resto_mensaje[t] = mensaje[j];
 		}
+
+		escribir_bitacora(bitacora, resto_mensaje);
+	}
 }
 
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks

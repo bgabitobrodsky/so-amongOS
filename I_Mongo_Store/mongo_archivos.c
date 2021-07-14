@@ -532,8 +532,7 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
 
 	log_error(logger_mongo, "cant = %i", cantidad_bloques);
 
-	int* aux = list_get(lista_bloques, cantidad_bloques);
-	*aux = bit_libre;
+	reemplazar(lista_bloques, cantidad_bloques, (void*) bit_libre); // lista_bloques[cantidad_bloques] = bit_libre;
 
 	log_error(logger_mongo, "Lo que acabo de acomodar %i", lista_bloques[cantidad_bloques]);
 

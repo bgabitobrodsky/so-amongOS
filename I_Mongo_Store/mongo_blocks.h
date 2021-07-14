@@ -91,5 +91,6 @@ t_bitarray* obtener_bitmap(); // testeado
 char* crear_puntero_a_bitmap(); // testeado
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // testeado
 t_bitarray* actualizar_bitmap(t_list* lista_bloques_ocupados);
+void reemplazar(t_list* lista, int index, void* elemento); // patear a generales
 
 #endif
