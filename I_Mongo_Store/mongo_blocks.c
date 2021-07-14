@@ -82,15 +82,15 @@ void inicializar_mapa() {
 	log_trace(logger_mongo, "fin inicializar_mapa");
 }
 
-uint32_t obtener_tamanio_bloque() {
+uint32_t obtener_tamanio_bloque_superbloque() {
 	uint32_t block_size;
     fseek(directorio.superbloque, 0, SEEK_SET);
     fread(&block_size, sizeof(uint32_t), 1, directorio.superbloque);
     return block_size;
 }
 
-uint32_t obtener_cantidad_bloques() {
-    obtener_tamanio_bloque();
+uint32_t obtener_cantidad_bloques_superbloque() {
+    obtener_tamanio_bloque_superbloque();
 
     uint32_t size;
     fread(&size, sizeof(uint32_t), 1, directorio.superbloque);

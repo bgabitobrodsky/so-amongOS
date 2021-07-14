@@ -142,7 +142,7 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 	}
 
 	//Actualizo struct bitacora
-	t_list* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
+	t_list* lista_bloques = obtener_lista_bloques(bitacora->bitacora_asociada);
 	int tamanio = (int) tamanio_archivo(bitacora->bitacora_asociada);
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio;
@@ -163,7 +163,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	int cantidad_alcanzada = 0;
 	int i, j, t;
 	j = 0; // TODO como funciona esto?
-	t_list* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
+	t_list* lista_bloques = obtener_lista_bloques(bitacora->bitacora_asociada);
 
 	log_trace(logger_mongo, "Lista bloque primer elemento %i", list_get(lista_bloques, 0));
 

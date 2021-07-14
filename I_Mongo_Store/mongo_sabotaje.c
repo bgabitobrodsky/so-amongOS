@@ -107,15 +107,15 @@ int verificar_sizes() {
 	int corrompido = 0;
 
 	if(tamanio_real_B != (int) tamanio_archivo(recurso.basura)) {
-		escribir_tamanio(recurso.basura, tamanio_real_B);
+		set_tam(recurso.basura, tamanio_real_B);
 		corrompido = 3;
 	}
 	if(tamanio_real_C != (int) tamanio_archivo(recurso.comida)) {
-		escribir_tamanio(recurso.comida, tamanio_real_C);
+		set_tam(recurso.comida, tamanio_real_C);
 		corrompido = 3;
 	}
 	if(tamanio_real_O != (int) tamanio_archivo(recurso.oxigeno)) {
-		escribir_tamanio(recurso.oxigeno, tamanio_real_O);
+		set_tam(recurso.oxigeno, tamanio_real_O);
 		corrompido = 3;
 	}
 
@@ -124,22 +124,22 @@ int verificar_sizes() {
 
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve 4 si algún recurso fue corrompido
-	uint32_t cantidad_real_basura = list_size(lista_bloques_recurso(recurso.basura));
-	uint32_t cantidad_real_comida = list_size(lista_bloques_recurso(recurso.comida));
-	uint32_t cantidad_real_oxigeno = list_size(lista_bloques_recurso(recurso.oxigeno));;
+	uint32_t cantidad_real_basura = list_size(obtener_lista_bloques(recurso.basura));
+	uint32_t cantidad_real_comida = list_size(obtener_lista_bloques(recurso.comida));
+	uint32_t cantidad_real_oxigeno = list_size(obtener_lista_bloques(recurso.oxigeno));;
 
 	int corrompido = 0;
 
 	if(cantidad_real_oxigeno != cantidad_bloques_recurso(recurso.oxigeno)) {
-		escribir_tamanio(recurso.oxigeno, cantidad_real_oxigeno);
+		set_tam(recurso.oxigeno, cantidad_real_oxigeno);
 		corrompido = 4;
 	}
 	if(cantidad_real_comida  != cantidad_bloques_recurso(recurso.comida)) {
-		escribir_tamanio(recurso.comida, cantidad_real_comida);
+		set_tam(recurso.comida, cantidad_real_comida);
 		corrompido = 4;
 	}
 	if(cantidad_real_basura  != cantidad_bloques_recurso(recurso.basura)) {
-		escribir_tamanio(recurso.basura, cantidad_real_basura);
+		set_tam(recurso.basura, cantidad_real_basura);
 		corrompido = 4;
 	}
 	return corrompido;
@@ -179,7 +179,7 @@ int lista_blocks_saboteada(FILE* archivo) {
 /*
 	//Concatenar los bloques de la lista de bloques
 	char* nuevo_hash = string_new();
-	int* lista_bloques = (int*) lista_bloques_recurso(recurso.basura);
+	int* lista_bloques = (int*) obtener_lista_bloques(recurso.basura);
 	for(int i = 0; i < sizeof(lista_bloques) / sizeof(int); i++)
 		string_append(&nuevo_hash, string_itoa(lista_bloques[i]));
 
@@ -209,7 +209,7 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 
 	//BASURA
 	uint32_t cantidad_bloques_basura = cantidad_bloques_recurso(recurso.basura);
-	t_list* lista_bloques_basura = lista_bloques_recurso(recurso.basura);
+	t_list* lista_bloques_basura = obtener_lista_bloques(recurso.basura);
 
 	for(uint32_t j = 0; j < cantidad_bloques_basura; j++) {
 		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_basura, j)); // lista_bloques_ocupados[i] =lista_bloques_basura[j]
@@ -218,7 +218,7 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 
 	//COMIDA
 	uint32_t cantidad_bloques_comida = cantidad_bloques_recurso(recurso.comida);
-	t_list* lista_bloques_comida = lista_bloques_recurso(recurso.comida);
+	t_list* lista_bloques_comida = obtener_lista_bloques(recurso.comida);
 
 	for(uint32_t j = 0; j < cantidad_bloques_comida; j++) {
 		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_comida, j));
@@ -228,7 +228,7 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 
 	//OXIGENO
 	uint32_t cantidad_bloques_oxigeno = cantidad_bloques_recurso(recurso.oxigeno);
-	t_list* lista_bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
+	t_list* lista_bloques_oxigeno = obtener_lista_bloques(recurso.oxigeno);
 
 	for(uint32_t j = 0; j < cantidad_bloques_oxigeno; j++) {
 		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_oxigeno, j));

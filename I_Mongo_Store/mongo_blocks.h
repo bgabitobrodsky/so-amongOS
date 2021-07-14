@@ -80,16 +80,19 @@ extern char* mapa;
 void iniciar_superbloque(FILE* archivo); // testeado
 void iniciar_blocks(int filedescriptor_blocks); // testeado
 void inicializar_mapa(); // testeado
-uint32_t obtener_tamanio_bloque(); // testeado
-uint32_t obtener_cantidad_bloques(); // testeado
+uint32_t obtener_tamanio_bloque_superbloque(); // testeado
+uint32_t obtener_tamanio_bloque_superbloque(); // testeado
 t_bitarray* obtener_bitmap(); // TESTEADO
 char* crear_puntero_a_bitmap(); // TESTEADO
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // TESTEADO
 void actualizar_bitmap(t_list* lista_bloques_ocupados); // TESTEADO
 void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
 
-void set_bloq_bitacora(char* path, t_list* lista);
-void set_tam_bitacora(char* path, int tamanio);
-
+void set_bloq(char* path, t_list* lista);
+void set_tam(char* path, int tamanio);
+void set_md5(char* path, char* md5);
+void set_caracter_llenado(char* path, char caracter);
+void set_cant_bloques(char* path, int cant);
+void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques);
 
 #endif

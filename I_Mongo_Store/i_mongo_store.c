@@ -34,12 +34,6 @@ int main(int argc, char** argv){
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
 	imprimir_bitmap();
 
-/*
-	fseek(directorio.blocks, 0, SEEK_END);
-	int tamanio_en_bytes = ftell(directorio.blocks);
-	fseek(directorio.blocks, 0, SEEK_SET);
-	log_info(logger_mongo, "tamanio mapa blocks %i, cadena %s", tamanio_en_bytes, directorio.mapa_blocks);
-*/
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
 	pthread_mutex_init(&mutex_comida, NULL);
@@ -154,6 +148,7 @@ void sabotaje(int n) {
 }
 
 void iniciar_file_system() {
+	log_trace(logger_mongo, "INICIO iniciar_file_system");
 	// Se crea estructura para verificar directorios
 	struct stat dir = {0};
 
@@ -177,18 +172,18 @@ void iniciar_file_system() {
 	}
 	else {
 		// Como no hay carpetas, se crean
-		mkdir(path_directorio, 0777);
-		mkdir(path_files, 0777);
-		mkdir(path_bitacoras, 0777);
+		mkdir(path_directorio, (mode_t) 0777);
+		mkdir(path_files, (mode_t) 0777);
+		mkdir(path_bitacoras, (mode_t) 0777);
 		log_info(logger_mongo, "Se creo un FileSystem.\n");
 		// Se asignan los archivos como antes
 		inicializar_archivos();
 	}
-	log_error(logger_mongo, "4");
+
 	pthread_t un_hilo; // Estaria bueno crearlo en main
 	pthread_create(&un_hilo, NULL, (void*) sincronizar_blocks, NULL);
 	pthread_detach(un_hilo);
-	log_error(logger_mongo, "5");
+	log_trace(logger_mongo, "FIN iniciar_file_system");
 }
 
 void sincronizar_blocks() {

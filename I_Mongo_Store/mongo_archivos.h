@@ -22,20 +22,18 @@ char* conseguir_path_recurso_archivo(FILE* archivo);
 void crear_md5(char *str, unsigned char digest[16]);
 int max(int a, int b);
 int es_recurso(FILE* archivo);
-void asignar_bloque_recurso(FILE* archivo, int bit_libre);
-void asignar_bloque_tripulante(FILE* archivo, int bit_libre);
+void asignar_bloque_recurso(char* archivo, int bit_libre);
+void asignar_bloque_tripulante(char* archivo, int bit_libre);
 
 // devuelven la metadata del archivo
-uint32_t tamanio_archivo(FILE* archivo);
-uint32_t cantidad_bloques_recurso(FILE* archivo);
-t_list* lista_bloques_recurso(FILE* archivo);
-char caracter_llenado_archivo(FILE* archivo);
-char* md5_archivo(FILE* archivo);
-uint32_t cantidad_bloques_tripulante(FILE* archivo);
-t_list* lista_bloques_tripulante(FILE* archivo);
-void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, t_list* list_bloques);
-void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, t_list* lista_bloques);
-void escribir_tamanio(FILE* archivo, uint32_t tamanio); // testeado
+t_list* obtener_lista_bloques(char* path);
+uint32_t tamanio_archivo(char* path);
+uint32_t cantidad_bloques_recurso(char* path);
+char caracter_llenado_archivo(char* path);
+char* md5_archivo(char* path);
+uint32_t cantidad_bloques_tripulante(char* path);
+void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* lista_bloques);
+void escribir_tamanio(char* path, uint32_t tamanio);
 int bloques_contar(char caracter);
 void imprimir_bitmap(); // TESTEADO
 
