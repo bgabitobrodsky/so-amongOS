@@ -82,7 +82,6 @@ int verificar_cant_bloques() {
 int verificar_bitmap() {
 	//Creo la lista
 	t_list* lista_bloques_ocupados = list_create();
-	// int* lista_bloques_ocupados = malloc(sizeof(int) * obtener_cantidad_bloques());
 
 	//Agrego los bloques usados en la lista, con en el indice = n° bloque
     recorrer_recursos(lista_bloques_ocupados);
@@ -128,9 +127,9 @@ int verificar_sizes() {
 
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve 4 si algún recurso fue corrompido
-	uint32_t cantidad_real_basura  = sizeof(lista_bloques_recurso(recurso.basura)) / sizeof(uint32_t);
-	uint32_t cantidad_real_comida  = sizeof(lista_bloques_recurso(recurso.comida)) / sizeof(uint32_t);
-	uint32_t cantidad_real_oxigeno = sizeof(lista_bloques_recurso(recurso.oxigeno)) / sizeof(uint32_t);
+	uint32_t cantidad_real_basura = list_size(lista_bloques_recurso(recurso.basura));
+	uint32_t cantidad_real_comida = list_size(lista_bloques_recurso(recurso.comida));
+	uint32_t cantidad_real_oxigeno = list_size(lista_bloques_recurso(recurso.oxigeno));;
 
 	int corrompido = 0;
 
@@ -217,7 +216,7 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 	t_list* lista_bloques_basura = lista_bloques_recurso(recurso.basura);
 
 	for(uint32_t j = 0; j < cantidad_bloques_basura; j++) {
-		reemplazar(lista_bloques_ocupados, i, (int) list_get(lista_bloques_basura, j)); // lista_bloques_ocupados[i] =lista_bloques_basura[j]
+		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_basura, j)); // lista_bloques_ocupados[i] =lista_bloques_basura[j]
 		i++;
 	}
 
@@ -226,7 +225,7 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 	t_list* lista_bloques_comida = lista_bloques_recurso(recurso.comida);
 
 	for(uint32_t j = 0; j < cantidad_bloques_comida; j++) {
-		reemplazar(lista_bloques_ocupados, i, (int) list_get(lista_bloques_comida, j));
+		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_comida, j));
 		i++;
 
 	}
@@ -236,7 +235,7 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 	t_list* lista_bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
 
 	for(uint32_t j = 0; j < cantidad_bloques_oxigeno; j++) {
-		reemplazar(lista_bloques_ocupados, i, (int) list_get(lista_bloques_oxigeno, j));
+		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_oxigeno, j));
 		i++;
 	}
 
@@ -256,11 +255,11 @@ void recorrer_bitacoras(t_list* lista_bloques_ocupados) {
 	//Itero por todas las bitacoras
 	for(int j = 0; j < cant_bitacoras; j++) {
 		t_bitacora* bitacora = list_get(bitacoras, i);
-		int cant_bloques_bitacora = (int) sizeof(bitacora->bloques) / sizeof(int);
+		int cant_bloques_bitacora = (int) sizeof(bitacora->bloques) / sizeof(int); // TODO
 		//Le asigno a lista_bloques_ocupados el bloque n°k de la bitacora n°j
 		for(int k = 0; k < cant_bloques_bitacora; k++){
-			reemplazar(lista_bloques_ocupados, i, (int) bitacora->bloques[k]);
-			// reemplazar(lista_bloques_ocupados, i, (int) list_get(bitacora->bloques, k));
+			reemplazar(lista_bloques_ocupados, i, (void*) bitacora->bloques[k]);
+			// reemplazar(lista_bloques_ocupados, i, list_get(bitacora->bloques, k));
 
 		}
 	}
@@ -275,7 +274,7 @@ void sortear(t_list* lista_bloques_ocupados) {
         for (j = 0; j < n-i-1; j++) {
             if (list_get(lista_bloques_ocupados, j) > list_get(lista_bloques_ocupados, j+1)) {
                 int temp = (int) list_get(lista_bloques_ocupados, j);
-    			reemplazar(lista_bloques_ocupados, j, (int) list_get(lista_bloques_ocupados, j+1));
+    			reemplazar(lista_bloques_ocupados, j, list_get(lista_bloques_ocupados, j+1));
     			reemplazar(lista_bloques_ocupados, j+1, (void*) temp);
             }
         }
