@@ -5,17 +5,15 @@ int pos_actual_sabotaje = 0;
 
 void enviar_posicion_sabotaje(int socket_discordiador) {
 
-	if (pos_actual_sabotaje != contar_palabras(posiciones_sabotajes)) { //El último parámetro es NULL
+	if (pos_actual_sabotaje != contar_palabras(posiciones_sabotajes)) {
 		t_posicion posicion;
 
-		//Consigo la primera posicion del char** posiciones_sabotajes
 		posicion.coord_x = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][0] - 48; // EQUIVALENCIA ASCII NUMERO
 		posicion.coord_y = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][2] - 48; // EQUIVALENCIA ASCII NUMERO
 
 		empaquetar_y_enviar(serializar_posicion(posicion), POSICION, socket_discordiador);
 
-		//Remuevo la primera posición del char** posiciones_sabotajes
-		pos_actual_sabotaje++; //Puede romper
+		pos_actual_sabotaje++;
 	}
 	else{
 		log_warning(logger_mongo, "No hay posiciones de sabotaje");
@@ -80,7 +78,7 @@ int verificar_cant_bloques() {
 }
 
 int verificar_bitmap() {
-	//Creo la lista
+	//Creo la lista // TODO de donde saco la lista?
 	t_list* lista_bloques_ocupados = list_create();
 
 	//Agrego los bloques usados en la lista, con en el indice = n° bloque
@@ -90,8 +88,7 @@ int verificar_bitmap() {
     sortear(lista_bloques_ocupados);
 
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
-        t_bitarray* bitmap = actualizar_bitmap(lista_bloques_ocupados);
-        reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
+        actualizar_bitmap(lista_bloques_ocupados);
         return 2;
     }
     else

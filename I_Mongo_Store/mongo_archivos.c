@@ -96,10 +96,10 @@ void inicializar_archivos_preexistentes() {
 }
 
 void asignar_nuevo_bloque(FILE* archivo) {
+	// TODO actualizar bitmap?
 	log_trace(logger_mongo, "0 asignar_nuevo_bloque");
 
-	char* puntero_a_bitmap = crear_puntero_a_bitmap();
-	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, LSB_FIRST);
+	t_bitarray* bitmap = obtener_bitmap();
 
 	int bit_libre = 0;
 	int pos_libre;
@@ -115,6 +115,7 @@ void asignar_nuevo_bloque(FILE* archivo) {
 			break;
 		}
 	}
+
 	log_trace(logger_mongo, "2 asignar_nuevo_bloque");
 	//Si había un bloque libre
 	if (bit_libre == 1) {
@@ -125,7 +126,6 @@ void asignar_nuevo_bloque(FILE* archivo) {
 		log_error(logger_mongo, "El bit libre es = %i", pos_libre);
 
 		if (es_recurso(archivo)){
-			//Asigno el bloque a un archivo
 			log_trace(logger_mongo, "es recurso");
 			asignar_bloque_recurso(archivo, pos_libre);
 		}
@@ -134,12 +134,13 @@ void asignar_nuevo_bloque(FILE* archivo) {
 			asignar_bloque_tripulante(archivo, pos_libre);
 		}
 	}
-	//Si no había un bloque libre
-	else
+	else{
 		log_info(logger_mongo, "No hay bloques disponibles en este momento");
+	}
 
-	log_trace(logger_mongo, "5 asignar_nuevo_bloque");
-	free(puntero_a_bitmap);
+	log_trace(logger_mongo, "fin asignar_nuevo_bloque");
+
+	bitarray_destroy(bitmap);
 }
 
 int asignar_primer_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
@@ -325,8 +326,14 @@ char* conseguir_path_recurso_codigo(int codigo) {
 }
 
 char* conseguir_path_recurso_archivo(FILE* archivo) {
+
+	log_trace(logger_mongo, "INICIO conseguir_path_recurso_archivo");
+
 	int codigo_archivo;
+
 	char caracter = caracter_llenado_archivo(archivo);
+
+	log_trace(logger_mongo, "0 conseguir_path_recurso_archivo");
 
 	switch(caracter) {
 	case 'O':
@@ -377,20 +384,29 @@ uint32_t tamanio_archivo(FILE* archivo) {
 }
 
 uint32_t cantidad_bloques_recurso(FILE* archivo) {
-	tamanio_archivo(archivo);
+	log_trace(logger_mongo, "INICIO cantidad_bloques_recurso");
+
+	if(tamanio_archivo(archivo) == 0){
+		log_trace(logger_mongo, "EL archivo no tiene bloques asignados");
+		return 0;
+	}
 
 	uint32_t cant_bloques;
 	fread(&cant_bloques, sizeof(uint32_t), 1, archivo);
+	log_trace(logger_mongo, "2 cant bloques %i ", cant_bloques);
 
 	return cant_bloques;
 }
 
 char caracter_llenado_archivo(FILE* archivo) {
+	log_trace(logger_mongo, "INICIO caracter_llenado_archivo");
+
 	lista_bloques_recurso(archivo);
 
 	char caracter_llenado;
 	fread(&caracter_llenado, sizeof(char), 1, archivo);
 
+	log_trace(logger_mongo, "FIN caracter_llenado_archivo");
 	return caracter_llenado;
 }
 
@@ -404,19 +420,24 @@ char* md5_archivo(FILE* archivo) {
 }
 
 uint32_t cantidad_bloques_tripulante(FILE* archivo) {
+
+	log_debug(logger_mongo, "0 cantidad_bloques_tripulante");
+
 	uint32_t tamanio_archivo;
 	uint32_t cant_bloques = 0;
 
 	fseek(archivo, 0, SEEK_SET);
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
-	do {
+	log_debug(logger_mongo, "1 cantidad_bloques_tripulante");
+
+	while (!feof(archivo)){
 		fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 		cant_bloques++;
-		log_error(logger_mongo, "Cant bloques rn %i", cant_bloques);
-	} while (!feof(archivo));
+		log_error(logger_mongo, "Cant bloques de momento: %i", cant_bloques);
+	}
 
-	cant_bloques--;
+	log_debug(logger_mongo, "FIN cantidad_bloques_tripulante");
 
 	return cant_bloques;
 }
@@ -424,6 +445,8 @@ uint32_t cantidad_bloques_tripulante(FILE* archivo) {
 // TODO TESTEAR Y REVISAR
 t_list* lista_bloques_recurso(FILE* archivo) {
 	// ESTA FUNCION DEBE LIBERAR EL RETORNO
+
+	log_trace(logger_mongo, "INICIO lista_bloques_recurso");
 
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
 	uint32_t* aux = malloc(sizeof(uint32_t) * cant_bloques);
@@ -439,16 +462,28 @@ t_list* lista_bloques_recurso(FILE* archivo) {
 
 // TODO TESTEAR Y REVISAR
 t_list* lista_bloques_tripulante(FILE* archivo) {
+	log_debug(logger_mongo, "lista_bloques_tripulante");
+
 	fseek(archivo, 0, SEEK_SET);
 	uint32_t cant_bloques = cantidad_bloques_tripulante(archivo);
+
+	log_debug(logger_mongo, "1 cant bloques %i", cant_bloques);
+
+	if(cant_bloques == 0){
+		return NULL;
+	}
 
 	uint32_t* aux = malloc(sizeof(uint32_t) * cant_bloques);
 	t_list* lista_bloques = list_create();
 	fread(aux , sizeof(uint32_t), cant_bloques, archivo);
 
+	log_debug(logger_mongo, "2 lista_bloques_tripulante");
+
 	for(int i = 0; i < cant_bloques; i++){
 		list_add(lista_bloques, (aux + i));
 	}
+
+	log_debug(logger_mongo, "2 lista_bloques_tripulante");
 
 	return lista_bloques;
 }
@@ -469,25 +504,19 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 }
 
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, t_list* list_bloques) {
-	// TODO revisar
-    log_trace(logger_mongo, "1 escribir_archivo_tripulante");
+
+	log_trace(logger_mongo, "1 escribir_archivo_tripulante");
 	fseek(archivo, 0, SEEK_SET);
-	log_trace(logger_mongo, "2 escribir_archivo_tripulante");
 	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
-	log_trace(logger_mongo, "3 escribir_archivo_tripulante");
-	uint32_t cant_bloques = list_size(list_bloques);
-	log_trace(logger_mongo, "4 escribir_archivo_tripulante");
+	uint32_t cant_bloques;
 
 	if (list_bloques == NULL) {
 		cant_bloques = 0;
 	}
 
-	log_trace(logger_mongo, "%i bloques ", cant_bloques);
-
 	if(list_bloques != NULL){
-		log_trace(logger_mongo, "varios bloques");
-		log_error(logger_mongo, "La lista tiene como primer elemento = %i", (int) list_get(list_bloques, 0));
-		log_error(logger_mongo, "La lista tiene como ultimo elemento = %i", (int) list_get(list_bloques, cant_bloques-1));
+		cant_bloques = list_size(list_bloques);
+		log_trace(logger_mongo, "uno o mas bloques");
 		fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
 	}
 
@@ -502,10 +531,14 @@ void escribir_tamanio(FILE* archivo, uint32_t tamanio) {
 }
 
 int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.do en minúscula
+
+	log_trace(logger_mongo, "INICIO es_recurso");
 	char* nombre = conseguir_path_recurso_archivo(archivo);
 	int boolean = strcmp(nombre, "El archivo no era un recurso");
 	log_error(logger_mongo, "boolean = %i", boolean);
+	log_trace(logger_mongo, "FIN es_recurso");
 	return boolean;
+
 }
 
 void asignar_bloque_recurso(FILE* archivo, int bit_libre) {
@@ -513,30 +546,30 @@ void asignar_bloque_recurso(FILE* archivo, int bit_libre) {
 	uint32_t tamanio = tamanio_archivo(archivo);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(archivo);
 	t_list* lista_bloques = lista_bloques_recurso(archivo);
+
 	int* aux = list_get(lista_bloques, cantidad_bloques);
 	*aux = bit_libre;
+
 	escribir_archivo_recurso(archivo, tamanio, cantidad_bloques + 1, lista_bloques);
 }
 
-void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
+void asignar_bloque_tripulante(FILE* archivo, int pos_libre) {
 	// TODO revisar
-	log_error(logger_mongo, "bit libre = %i", bit_libre);
 
 	uint32_t tamanio = tamanio_archivo(archivo);
-
 	log_error(logger_mongo, "tamanio = %i", tamanio);
 
 	t_list* lista_bloques = lista_bloques_tripulante(archivo);
-
 	uint32_t cantidad_bloques = cantidad_bloques_tripulante(archivo);
 
 	log_error(logger_mongo, "cant = %i", cantidad_bloques);
+	log_error(logger_mongo, "pos_libre = %i", pos_libre);
 
-	reemplazar(lista_bloques, cantidad_bloques, (void*) bit_libre); // lista_bloques[cantidad_bloques] = bit_libre;
+	list_add(lista_bloques, (void*) pos_libre);
 
-	log_error(logger_mongo, "Lo que acabo de acomodar %i", lista_bloques[cantidad_bloques]);
-
+	log_trace(logger_mongo, "Lo que acabo de acomodar %i", list_get(lista_bloques, cantidad_bloques));
 	escribir_archivo_tripulante(archivo, tamanio, lista_bloques);
+
 }
 
 int bloques_contar(char caracter) {

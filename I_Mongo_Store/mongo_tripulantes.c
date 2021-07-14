@@ -53,23 +53,21 @@ void manejo_tripulante(void* socket) {
 
 void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 	// Se obtiene el path particular del tripulante, identificado con su TID
-    log_trace(logger_mongo, "-1");
+    log_trace(logger_mongo, "0 crear_estructuras_tripulante");
 
+    // TODO liberar path?
 	char* path_tripulante = fpath_tripulante(tcb);
-    log_trace(logger_mongo, "0");
 
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
-    log_trace(logger_mongo, "1");
 	
 	//Se inicializan los datos del tripulante
-
 	escribir_archivo_tripulante(file_tripulante, 0, NULL);
-
-    log_trace(logger_mongo, "2");
 
 	// Se lo guarda en la bitacora
 	acomodar_bitacora(file_tripulante, tcb);
+    log_trace(logger_mongo, "fin crear_estructuras_tripulante");
+
 }
 
 void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {

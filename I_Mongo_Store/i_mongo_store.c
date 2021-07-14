@@ -5,8 +5,6 @@
  *      Author: utnso
  */
 
-// TODO: Refactorear con list_replace
-
 #include "i_mongo_store.h"
 
 int socket_discordiador;
@@ -223,6 +221,5 @@ void imprimir_bitmap(){
 		log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(mapilla, i), bitarray_test_bit(mapilla, i+1), bitarray_test_bit(mapilla, i+2), bitarray_test_bit(mapilla, i+3), bitarray_test_bit(mapilla, i+4), bitarray_test_bit(mapilla, i+5), bitarray_test_bit(mapilla, i+6), bitarray_test_bit(mapilla, i+7));
 	}
 
-	free(mapilla->bitarray);
-	free(mapilla);
+	bitarray_destroy(mapilla);
 }

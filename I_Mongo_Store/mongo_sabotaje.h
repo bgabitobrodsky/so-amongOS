@@ -11,7 +11,6 @@ int verificar_sizes();
 int verificar_block_counts();
 int verificar_blocks();
 int lista_blocks_saboteada(FILE* archivo);
-char* reparar();
 void recorrer_recursos(t_list* lista_bloques_ocupados);
 void recorrer_bitacoras(t_list* lista_bloques_ocupados);
 void sortear(t_list* lista_bloques_ocupados);
