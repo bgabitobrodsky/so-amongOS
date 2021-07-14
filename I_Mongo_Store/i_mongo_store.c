@@ -9,6 +9,7 @@
 
 int socket_discordiador;
 char** posiciones_sabotajes;
+t_list* lista_bloques_ocupados;
 
 int main(int argc, char** argv){
 
@@ -17,6 +18,7 @@ int main(int argc, char** argv){
 	config_mongo = config_create("i_mongo_store.config");
 	signal(SIGUSR1, sabotaje);
 	posiciones_sabotajes = POSICIONES_SABOTAJE;
+	lista_bloques_ocupados = list_create();
 
 	FILE* f = fopen("mongo.log", "w");
     fclose(f);

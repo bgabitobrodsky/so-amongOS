@@ -62,6 +62,7 @@ typedef struct {
     FILE* bitacora_asociada;
     int tamanio;
     t_list* bloques;
+    char* path;
 
 } t_bitacora;
 
@@ -75,24 +76,25 @@ pthread_mutex_t mutex_blocks;
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_list* bitacoras;
+extern t_list* lista_bloques_ocupados;
 extern char* mapa;
 
 void iniciar_superbloque(FILE* archivo); // testeado
 void iniciar_blocks(int filedescriptor_blocks); // testeado
 void inicializar_mapa(); // testeado
 uint32_t obtener_tamanio_bloque_superbloque(); // testeado
-uint32_t obtener_tamanio_bloque_superbloque(); // testeado
+uint32_t obtener_cantidad_bloques_superbloque(); // testeado
 t_bitarray* obtener_bitmap(); // TESTEADO
 char* crear_puntero_a_bitmap(); // TESTEADO
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // TESTEADO
 void actualizar_bitmap(t_list* lista_bloques_ocupados); // TESTEADO
 void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
 
-void set_bloq(char* path, t_list* lista);
-void set_tam(char* path, int tamanio);
-void set_md5(char* path, char* md5);
-void set_caracter_llenado(char* path, char caracter);
-void set_cant_bloques(char* path, int cant);
-void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques);
+void set_bloq(char* path, t_list* lista); // TESTEADO
+void set_tam(char* path, int tamanio); // TESTEADO
+void set_md5(char* path, char* md5); // TESTEADO
+void set_caracter_llenado(char* path, char caracter); // TESTEADO
+void set_cant_bloques(char* path, int cant); // TESTEADO
+void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques); // TESTEADO
 
 #endif

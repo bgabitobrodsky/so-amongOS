@@ -7,7 +7,7 @@
 
 void inicializar_archivos();
 void inicializar_archivos_preexistentes();
-void asignar_nuevo_bloque(FILE* archivo);
+void asignar_nuevo_bloque(char* path);
 int asignar_primer_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 int quitar_ultimo_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 void alterar(int codigo_archivo, int cantidad);
@@ -21,9 +21,10 @@ char* conseguir_path_recurso_codigo(int codigo_archivo);
 char* conseguir_path_recurso_archivo(FILE* archivo);
 void crear_md5(char *str, unsigned char digest[16]);
 int max(int a, int b);
-int es_recurso(FILE* archivo);
+int es_recurso(char* path);
 void asignar_bloque_recurso(char* archivo, int bit_libre);
 void asignar_bloque_tripulante(char* archivo, int bit_libre);
+FILE* conseguir_archivo(char* path);
 
 // devuelven la metadata del archivo
 t_list* obtener_lista_bloques(char* path);

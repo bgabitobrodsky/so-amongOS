@@ -58,31 +58,31 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 	// Se obtiene el path particular del tripulante, identificado con su TID
     log_trace(logger_mongo, "0 crear_estructuras_tripulante");
 
-    // TODO liberar path?
 	char* path_tripulante = fpath_tripulante(tcb);
 
 	// Se crea el archivo del tripulante y se lo abre
 	FILE* file_tripulante = fopen(path_tripulante, "w+");
 	
 	//Se inicializan los datos del tripulante
-	escribir_archivo_tripulante(file_tripulante, 0, NULL);
+	escribir_archivo_tripulante(path_tripulante, 0, NULL);
 
 	// Se lo guarda en la bitacora
-	acomodar_bitacora(file_tripulante, tcb);
+	acomodar_bitacora(file_tripulante, path_tripulante, tcb);
     log_trace(logger_mongo, "fin crear_estructuras_tripulante");
 
 }
 
-void acomodar_bitacora(FILE* file_tripulante, t_TCB* tcb) {
+void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb) {
 	// Se utiliza un struct que conoce al tripulante y a su archivo, para luego saber donde se realizan los cambios pedidos por el mismo
     log_trace(logger_mongo, "Acomodando bitacora");
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
+	nueva_bitacora->path = path_tripulante;
 	nueva_bitacora->tripulante = tcb;
 
 	list_add(bitacoras, nueva_bitacora);
 
-	asignar_nuevo_bloque(nueva_bitacora->bitacora_asociada);
+	asignar_nuevo_bloque(nueva_bitacora->path);
     log_trace(logger_mongo, "Acomodada bitacora");
 }
 
@@ -142,8 +142,8 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 	}
 
 	//Actualizo struct bitacora
-	t_list* lista_bloques = obtener_lista_bloques(bitacora->bitacora_asociada);
-	int tamanio = (int) tamanio_archivo(bitacora->bitacora_asociada);
+	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
+	int tamanio = (int) tamanio_archivo(bitacora->path);
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio;
 }
@@ -163,7 +163,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	int cantidad_alcanzada = 0;
 	int i, j, t;
 	j = 0; // TODO como funciona esto?
-	t_list* lista_bloques = obtener_lista_bloques(bitacora->bitacora_asociada);
+	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
 
 	log_trace(logger_mongo, "Lista bloque primer elemento %i", list_get(lista_bloques, 0));
 
@@ -176,7 +176,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	}
 
 	if (cantidad_alcanzada != strlen(mensaje)) {
-		asignar_nuevo_bloque(bitacora->bitacora_asociada);
+		asignar_nuevo_bloque(bitacora->path);
 		char* resto_mensaje = malloc(strlen(mensaje) - cantidad_alcanzada);
 
 		for (j = cantidad_alcanzada, t = 0; j < strlen(mensaje); j++, t++) {
@@ -201,6 +201,7 @@ void borrar_bitacora(t_TCB* tcb) {
 
 	fclose(bitacora->bitacora_asociada);
 	free(bitacora->tripulante);
+	free(bitacora->path);
 	free(bitacora);
 }
 

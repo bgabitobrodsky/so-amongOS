@@ -95,7 +95,7 @@ void inicializar_archivos_preexistentes() {
 	log_error(logger_mongo, "3 inicializar_archivos_preexistentes");
 }
 
-void asignar_nuevo_bloque(FILE* archivo) {
+void asignar_nuevo_bloque(char* path) {
 	// TODO actualizar bitmap?
 	log_trace(logger_mongo, "0 asignar_nuevo_bloque");
 
@@ -125,21 +125,24 @@ void asignar_nuevo_bloque(FILE* archivo) {
 
 		log_error(logger_mongo, "El bit libre es = %i", pos_libre);
 
-		if (es_recurso(archivo)){
+		if (es_recurso(path)){
 			log_trace(logger_mongo, "es recurso");
-			asignar_bloque_recurso(archivo, pos_libre);
+			asignar_bloque_recurso(path, pos_libre);
 		}
 		else {
 			log_trace(logger_mongo, "no es recurso");
-			asignar_bloque_tripulante(archivo, pos_libre);
+			asignar_bloque_tripulante(path, pos_libre);
 		}
+
+		list_add(lista_bloques_ocupados, (void*) pos_libre);
+		actualizar_bitmap(lista_bloques_ocupados);
+
 	}
 	else{
 		log_info(logger_mongo, "No hay bloques disponibles en este momento");
 	}
 
 	log_trace(logger_mongo, "fin asignar_nuevo_bloque");
-
 	bitarray_destroy(bitmap);
 }
 
@@ -208,7 +211,6 @@ void alterar(int codigo_archivo, int cantidad) {
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
 	log_trace(logger_mongo, "0 agregar %i", codigo_archivo);
 
-	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
@@ -221,7 +223,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
 
 	if (offset < 0) { // Falto agregar cantidad, dada por offset
-		asignar_nuevo_bloque(archivo);
+		asignar_nuevo_bloque(path);
 		agregar(tipo, offset * -1); // Recursividad con la cantidad que falto
 	}
 
@@ -349,7 +351,15 @@ FILE* conseguir_archivo(char* path) {
 		return recurso.oxigeno;
 	}
 
-	log_info(logger_mongo, "No se pudo conseguir el path del recurso");
+	else{
+		t_bitacora* aux;
+		for(int i = 0; i < list_size(bitacoras); i++){
+			aux = list_get(bitacoras, i);
+			if(comparar_strings(aux->path, path)){
+				return aux->bitacora_asociada;
+			}
+		}
+	}
 
 	return NULL;
 }
@@ -431,10 +441,23 @@ t_list* obtener_lista_bloques(char* path){
 	log_trace(logger_mongo, "INICIO obtener_lista_bloques");
 
 	t_config* config = config_create(path);
+	if(!config_has_property(config, "BLOCK_COUNT")){
+		log_trace(logger_mongo, "Lista de bloques vacias en %s", path);
+		t_list* lista_bloques = list_create();
+		return lista_bloques;
+	}
+
 	uint32_t cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 
+	log_trace(logger_mongo, "0");
+
 	char** bloques = config_get_array_value(config, "BLOCKS");
+
+	log_trace(logger_mongo, "1");
+
 	t_list* lista_bloques = list_create();
+
+	log_trace(logger_mongo, "2");
 
 	for(int i = 0; i < cant_bloques; i++){
 		list_add(lista_bloques, bloques[i]);
@@ -472,7 +495,7 @@ void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloq
 
 	log_trace(logger_mongo, "5 escribir_archivo_tripulante");
 }
-
+/*
 int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.do en minúscula
 
 	char* nombre = conseguir_path_recurso_archivo(archivo);
@@ -480,15 +503,34 @@ int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.
 	return boolean;
 
 }
+*/
+int es_recurso(char* path) { //Solo sirve si en las bitácoras escribimos to.do en minúscula
+
+	if(comparar_strings(path, path_basura)){
+		return 1;
+	}
+	if(comparar_strings(path, path_oxigeno)){
+		return 1;
+	}
+	if(comparar_strings(path, path_comida)){
+		return 1;
+	}
+
+	return 0;
+
+}
 
 void asignar_bloque_recurso(char* path, int bit_libre) {
-	// TODO cambiar
 
 	uint32_t tamanio = tamanio_archivo(path);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = obtener_lista_bloques(path);
 
-	list_replace(lista_bloques, cantidad_bloques, (void*) bit_libre);
+	if(list_is_empty(lista_bloques)){
+		list_add(lista_bloques, (void*) bit_libre);
+	}else{
+		list_add(lista_bloques, (void*) bit_libre);
+	}
 
 	iniciar_archivo_recurso(path, tamanio, cantidad_bloques + 1, lista_bloques);
 }
@@ -540,7 +582,7 @@ void set_tam(char* path, int tamanio){
 
 
 void set_bloq(char* path, t_list* lista){
-	// TODO validar lista vacia
+
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 

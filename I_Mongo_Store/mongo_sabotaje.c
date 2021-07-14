@@ -59,7 +59,8 @@ char* reparar() {
 }
 
 int verificar_cant_bloques() {
-    int cant_bloques = obtener_cantidad_bloques();
+	// TODO adaptar
+    int cant_bloques = (int) obtener_cantidad_bloques_superbloque();
 
 	fseek(directorio.blocks, 0, SEEK_END);
 	int tamanio_en_bytes = ftell(directorio.blocks);
@@ -106,16 +107,16 @@ int verificar_sizes() {
 
 	int corrompido = 0;
 
-	if(tamanio_real_B != (int) tamanio_archivo(recurso.basura)) {
-		set_tam(recurso.basura, tamanio_real_B);
+	if(tamanio_real_B != (int) tamanio_archivo(path_basura)) {
+		set_tam(path_basura, tamanio_real_B);
 		corrompido = 3;
 	}
-	if(tamanio_real_C != (int) tamanio_archivo(recurso.comida)) {
-		set_tam(recurso.comida, tamanio_real_C);
+	if(tamanio_real_C != (int) tamanio_archivo(path_comida)) {
+		set_tam(path_comida, tamanio_real_C);
 		corrompido = 3;
 	}
-	if(tamanio_real_O != (int) tamanio_archivo(recurso.oxigeno)) {
-		set_tam(recurso.oxigeno, tamanio_real_O);
+	if(tamanio_real_O != (int) tamanio_archivo(path_oxigeno)) {
+		set_tam(path_oxigeno, tamanio_real_O);
 		corrompido = 3;
 	}
 
@@ -124,22 +125,22 @@ int verificar_sizes() {
 
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve 4 si algún recurso fue corrompido
-	uint32_t cantidad_real_basura = list_size(obtener_lista_bloques(recurso.basura));
-	uint32_t cantidad_real_comida = list_size(obtener_lista_bloques(recurso.comida));
-	uint32_t cantidad_real_oxigeno = list_size(obtener_lista_bloques(recurso.oxigeno));;
+	uint32_t cantidad_real_basura = list_size(obtener_lista_bloques(path_basura));
+	uint32_t cantidad_real_comida = list_size(obtener_lista_bloques(path_comida));
+	uint32_t cantidad_real_oxigeno = list_size(obtener_lista_bloques(path_oxigeno));;
 
 	int corrompido = 0;
 
-	if(cantidad_real_oxigeno != cantidad_bloques_recurso(recurso.oxigeno)) {
-		set_tam(recurso.oxigeno, cantidad_real_oxigeno);
+	if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
+		set_tam(path_oxigeno, cantidad_real_oxigeno);
 		corrompido = 4;
 	}
-	if(cantidad_real_comida  != cantidad_bloques_recurso(recurso.comida)) {
-		set_tam(recurso.comida, cantidad_real_comida);
+	if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
+		set_tam(path_comida, cantidad_real_comida);
 		corrompido = 4;
 	}
-	if(cantidad_real_basura  != cantidad_bloques_recurso(recurso.basura)) {
-		set_tam(recurso.basura, cantidad_real_basura);
+	if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
+		set_tam(path_basura, cantidad_real_basura);
 		corrompido = 4;
 	}
 	return corrompido;
@@ -208,8 +209,8 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 	int i = 0;
 
 	//BASURA
-	uint32_t cantidad_bloques_basura = cantidad_bloques_recurso(recurso.basura);
-	t_list* lista_bloques_basura = obtener_lista_bloques(recurso.basura);
+	uint32_t cantidad_bloques_basura = cantidad_bloques_recurso(path_basura);
+	t_list* lista_bloques_basura = obtener_lista_bloques(path_basura);
 
 	for(uint32_t j = 0; j < cantidad_bloques_basura; j++) {
 		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_basura, j)); // lista_bloques_ocupados[i] =lista_bloques_basura[j]
@@ -217,8 +218,8 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 	}
 
 	//COMIDA
-	uint32_t cantidad_bloques_comida = cantidad_bloques_recurso(recurso.comida);
-	t_list* lista_bloques_comida = obtener_lista_bloques(recurso.comida);
+	uint32_t cantidad_bloques_comida = cantidad_bloques_recurso(path_comida);
+	t_list* lista_bloques_comida = obtener_lista_bloques(path_comida);
 
 	for(uint32_t j = 0; j < cantidad_bloques_comida; j++) {
 		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_comida, j));
@@ -227,8 +228,8 @@ void recorrer_recursos(t_list* lista_bloques_ocupados) {
 	}
 
 	//OXIGENO
-	uint32_t cantidad_bloques_oxigeno = cantidad_bloques_recurso(recurso.oxigeno);
-	t_list* lista_bloques_oxigeno = obtener_lista_bloques(recurso.oxigeno);
+	uint32_t cantidad_bloques_oxigeno = cantidad_bloques_recurso(path_oxigeno);
+	t_list* lista_bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
 
 	for(uint32_t j = 0; j < cantidad_bloques_oxigeno; j++) {
 		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_oxigeno, j));
