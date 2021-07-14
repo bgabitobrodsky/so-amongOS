@@ -207,7 +207,6 @@ void reparar_blocks() {
 }
 
 void recorrer_recursos(t_list* lista_bloques_ocupados) {
-
     // Recorre las listas de las metadatas de los recursos y va anotando en la lista que bloques estan ocupados
 	int i = 0;
 
@@ -255,12 +254,10 @@ void recorrer_bitacoras(t_list* lista_bloques_ocupados) {
 	//Itero por todas las bitacoras
 	for(int j = 0; j < cant_bitacoras; j++) {
 		t_bitacora* bitacora = list_get(bitacoras, i);
-		int cant_bloques_bitacora = (int) sizeof(bitacora->bloques) / sizeof(int); // TODO
+		int cant_bloques_bitacora = list_size(bitacora->bloques);
 		//Le asigno a lista_bloques_ocupados el bloque n°k de la bitacora n°j
 		for(int k = 0; k < cant_bloques_bitacora; k++){
-			reemplazar(lista_bloques_ocupados, i, (void*) bitacora->bloques[k]);
-			// reemplazar(lista_bloques_ocupados, i, list_get(bitacora->bloques, k));
-
+			reemplazar(lista_bloques_ocupados, i, list_get(bitacora->bloques, k));
 		}
 	}
 }

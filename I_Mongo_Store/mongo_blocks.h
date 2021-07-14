@@ -40,25 +40,20 @@
 
 /* ESTRUCTURAS PROPIAS */
 
-typedef struct{
-
-    char* punto_montaje;
-    int puerto;
-    int tiempo_sincronizacion;
-    char** posiciones_sabotaje;
-
-} config_mongo_t;
-
 typedef struct {
+
     FILE* superbloque;
     FILE* blocks;
     char* mapa_blocks;
+
 } t_directorio;
 
 typedef struct {
+
     FILE* oxigeno;
     FILE* comida;
     FILE* basura;
+
 } t_recurso;
 
 typedef struct {
@@ -66,7 +61,7 @@ typedef struct {
     t_TCB* tripulante;
     FILE* bitacora_asociada;
     int tamanio;
-    int* bloques;
+    t_list* bloques;
 
 } t_bitacora;
 
@@ -82,15 +77,15 @@ extern t_config* config_mongo;
 extern t_list* bitacoras;
 extern char* mapa;
 
-void iniciar_superbloque(FILE* archivo);
-void iniciar_blocks(int filedescriptor_blocks);
-void inicializar_mapa();
-uint32_t obtener_tamanio_bloque();
-uint32_t obtener_cantidad_bloques();
-t_bitarray* obtener_bitmap(); // testeado
-char* crear_puntero_a_bitmap(); // testeado
-void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // testeado
-t_bitarray* actualizar_bitmap(t_list* lista_bloques_ocupados);
-void reemplazar(t_list* lista, int index, void* elemento); // patear a generales
+void iniciar_superbloque(FILE* archivo); // testeado
+void iniciar_blocks(int filedescriptor_blocks); // testeado
+void inicializar_mapa(); // testeado
+uint32_t obtener_tamanio_bloque(); // testeado
+uint32_t obtener_cantidad_bloques(); // testeado
+t_bitarray* obtener_bitmap(); // TESTEADO
+char* crear_puntero_a_bitmap(); // TESTEADO
+void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // TESTEADO
+t_bitarray* actualizar_bitmap(t_list* lista_bloques_ocupados); // TESTEADO
+void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
 
 #endif

@@ -20,31 +20,27 @@ char* path_blocks;
 
 char* mapa;
 
-void iniciar_superbloque(FILE* archivo) { // No se destruye bitarray
+void iniciar_superbloque(FILE* archivo) {
 	// TODO usar por mmap
-	log_trace(logger_mongo, "entro");
+	log_trace(logger_mongo, "0 iniciar_superbloque");
     uint32_t block_size = TAMANIO_BLOQUE; // Bytes
     uint32_t size = CANTIDAD_BLOQUES;
+
     void* puntero_a_bits = malloc(size/8);
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
+
     for(int i = 0; i < size; i++) {
  	   bitarray_clean_bit(bitmap, i);
     }
-    log_trace(logger_mongo, "pre write");
 
     fwrite(&block_size, sizeof(uint32_t), 1, archivo);
     fwrite(&size, sizeof(uint32_t), 1, archivo);
     fflush(archivo);
 
-    if(fwrite(bitmap->bitarray, bitmap->size, 1, archivo) > 0){
-    	log_trace(logger_mongo, "bien");
-    }else{
-    	log_trace(logger_mongo, "mal");
-    }
-
-    log_trace(logger_mongo, "post-write");
-
+    fwrite(bitmap->bitarray, bitmap->size, 1, archivo);
     fflush(archivo);
+    bitarray_destroy(bitmap);
+	log_trace(logger_mongo, "fin iniciar_superbloque");
 }
 
 void iniciar_blocks(int filedescriptor_blocks) {
@@ -76,11 +72,13 @@ void iniciar_blocks(int filedescriptor_blocks) {
 void inicializar_mapa() {
 	log_trace(logger_mongo, "0 inicializar_mapa");
 
+	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+
 	for (int i = 0; i < CANTIDAD_BLOQUES * TAMANIO_BLOQUE ; i++) {
         *(directorio.mapa_blocks + i) = ',';
 	}
 
-	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+	memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
 	log_trace(logger_mongo, "fin inicializar_mapa");
@@ -111,33 +109,41 @@ t_bitarray* obtener_bitmap() {
 }
 
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap) {
+
 	log_trace(logger_mongo, "0 reescribir_superbloque");
     fclose(directorio.superbloque);
     directorio.superbloque = fopen(path_superbloque, "w+b");
 
     fwrite(&tamanio, sizeof(uint32_t), 1, directorio.superbloque);
     fwrite(&cantidad, sizeof(uint32_t), 1, directorio.superbloque);
-    fwrite(bitmap->bitarray, sizeof(uint32_t)*2, 1, directorio.superbloque);
+    fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
 
     fflush(directorio.superbloque);
+
 }
 
 t_bitarray* actualizar_bitmap(t_list* lista_bloques_ocupados) {
-	log_trace(logger_mongo, "0 actualizar_bitmap");
 
     t_bitarray* bitmap = obtener_bitmap();
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-    	if(esta_en_lista(lista_bloques_ocupados, i))
+
+    	if(esta_en_lista(lista_bloques_ocupados, i)){
+    		log_trace(logger_mongo, "seteo");
     		bitarray_set_bit(bitmap, i);
+    	}
     }
 
-	return bitmap;
+    return bitmap;
 }
 
 void reemplazar(t_list* lista, int index, void* elemento){
+	list_replace(lista, index, elemento);
+	/*
 	void liberar(void* un_elemento){
 		free(un_elemento);
 	}
+
 	list_replace_and_destroy_element(lista, index, elemento, liberar);
+	*/
 }

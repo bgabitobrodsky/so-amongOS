@@ -141,7 +141,7 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 	}
 
 	//Actualizo struct bitacora
-	int* lista_bloques = (int*) lista_bloques_tripulante(bitacora->bitacora_asociada);
+	t_list* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
 	int tamanio = (int) tamanio_archivo(bitacora->bitacora_asociada);
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio;
@@ -149,8 +149,8 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 
 void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
-	int size_lista_bloques = sizeof(bitacora->bloques)/sizeof(int); // Revisar
-	int ultimo_bloque = bitacora->bloques[size_lista_bloques];
+	int size_lista_bloques = list_size(bitacora->bloques);
+	int ultimo_bloque = (int) list_get(bitacora->bloques, size_lista_bloques); // TODO restar 1 o esta bien?
 
 	escribir_bloque_bitacora(ultimo_bloque, mensaje, bitacora);
 
