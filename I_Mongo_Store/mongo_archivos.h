@@ -35,7 +35,7 @@ uint32_t cantidad_bloques_tripulante(FILE* archivo);
 t_list* lista_bloques_tripulante(FILE* archivo);
 void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, t_list* list_bloques);
 void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, t_list* lista_bloques);
-void escribir_tamanio(FILE* archivo, uint32_t tamanio);
+void escribir_tamanio(FILE* archivo, uint32_t tamanio); // testeado
 int bloques_contar(char caracter);
 void imprimir_bitmap(); // TESTEADO
 

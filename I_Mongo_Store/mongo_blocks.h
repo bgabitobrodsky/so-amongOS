@@ -88,4 +88,8 @@ void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bit
 void actualizar_bitmap(t_list* lista_bloques_ocupados); // TESTEADO
 void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
 
+void set_bloq_bitacora(char* path, t_list* lista);
+void set_tam_bitacora(char* path, int tamanio);
+
+
 #endif

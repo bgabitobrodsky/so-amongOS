@@ -197,22 +197,23 @@ void alterar(int codigo_archivo, int cantidad) {
 
 	if (cantidad >= 0){
 		agregar(codigo_archivo, cantidad);
-		log_info(logger_mongo, "Se agregaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
+		log_info(logger_mongo, "Se agregaron %i unidades a %s.\n", cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 	else{
 		quitar(codigo_archivo, cantidad);
-		log_info(logger_mongo, "Se quitaron %s unidades a %s.\n", string_itoa(cantidad), conseguir_tipo(conseguir_char(codigo_archivo)));
+		log_info(logger_mongo, "Se quitaron %i unidades a %s.\n", cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
-	log_trace(logger_mongo, "0 agregar");
+	log_trace(logger_mongo, "0 agregar %i", codigo_archivo );
 
 	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
 	t_list* lista_bloques = lista_bloques_recurso(archivo);
 	char tipo = caracter_llenado_archivo(archivo);
+	log_trace(logger_mongo, "1 agregar");
 
 	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
 
@@ -221,7 +222,11 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		agregar(tipo, offset * -1); // Recursividad con la cantidad que falto
 	}
 
+	log_trace(logger_mongo, "2 agregar");
+
 	escribir_archivo_recurso(archivo, tam_archivo + cantidad, cant_bloques, lista_bloques);
+
+	log_trace(logger_mongo, "3 agregar");
 
     pthread_mutex_unlock(&mutex_blocks);
 }
@@ -233,7 +238,8 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
 	t_list* lista_bloques = lista_bloques_recurso(archivo);
-	char tipo = caracter_llenado_archivo(archivo);
+	char tipo = conseguir_char(codigo_archivo);
+	// char tipo = caracter_llenado_archivo(archivo);
 
 	quitar_ultimo_bloque_libre(lista_bloques, cant_bloques, cantidad * -1, tipo); // Eliminar esto?
 
@@ -333,8 +339,6 @@ char* conseguir_path_recurso_archivo(FILE* archivo) {
 
 	char caracter = caracter_llenado_archivo(archivo);
 
-	log_trace(logger_mongo, "0 conseguir_path_recurso_archivo");
-
 	switch(caracter) {
 	case 'O':
 		codigo_archivo = OXIGENO;
@@ -429,8 +433,6 @@ uint32_t cantidad_bloques_tripulante(FILE* archivo) {
 	fseek(archivo, 0, SEEK_SET);
 	fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 
-	log_debug(logger_mongo, "1 cantidad_bloques_tripulante");
-
 	while (!feof(archivo)){
 		fread(&tamanio_archivo, sizeof(uint32_t), 1, archivo);
 		cant_bloques++;
@@ -462,12 +464,10 @@ t_list* lista_bloques_recurso(FILE* archivo) {
 
 // TODO TESTEAR Y REVISAR
 t_list* lista_bloques_tripulante(FILE* archivo) {
-	log_debug(logger_mongo, "lista_bloques_tripulante");
+	log_debug(logger_mongo, "INICIO lista_bloques_tripulante");
 
 	fseek(archivo, 0, SEEK_SET);
 	uint32_t cant_bloques = cantidad_bloques_tripulante(archivo);
-
-	log_debug(logger_mongo, "1 cant bloques %i", cant_bloques);
 
 	if(cant_bloques == 0){
 		return NULL;
@@ -475,15 +475,13 @@ t_list* lista_bloques_tripulante(FILE* archivo) {
 
 	uint32_t* aux = malloc(sizeof(uint32_t) * cant_bloques);
 	t_list* lista_bloques = list_create();
-	fread(aux , sizeof(uint32_t), cant_bloques, archivo);
-
-	log_debug(logger_mongo, "2 lista_bloques_tripulante");
+	fread(aux, sizeof(uint32_t), cant_bloques, archivo);
 
 	for(int i = 0; i < cant_bloques; i++){
 		list_add(lista_bloques, (aux + i));
 	}
 
-	log_debug(logger_mongo, "2 lista_bloques_tripulante");
+	log_debug(logger_mongo, "FIN lista_bloques_tripulante");
 
 	return lista_bloques;
 }
@@ -532,11 +530,8 @@ void escribir_tamanio(FILE* archivo, uint32_t tamanio) {
 
 int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.do en minúscula
 
-	log_trace(logger_mongo, "INICIO es_recurso");
 	char* nombre = conseguir_path_recurso_archivo(archivo);
 	int boolean = strcmp(nombre, "El archivo no era un recurso");
-	log_error(logger_mongo, "boolean = %i", boolean);
-	log_trace(logger_mongo, "FIN es_recurso");
 	return boolean;
 
 }
@@ -562,8 +557,7 @@ void asignar_bloque_tripulante(FILE* archivo, int pos_libre) {
 	t_list* lista_bloques = lista_bloques_tripulante(archivo);
 	uint32_t cantidad_bloques = cantidad_bloques_tripulante(archivo);
 
-	log_error(logger_mongo, "cant = %i", cantidad_bloques);
-	log_error(logger_mongo, "pos_libre = %i", pos_libre);
+	log_error(logger_mongo, "cant = %i, pos_libre = %i", cantidad_bloques, pos_libre);
 
 	list_add(lista_bloques, (void*) pos_libre);
 
@@ -584,10 +578,45 @@ int bloques_contar(char caracter) {
 
 
 char* crear_puntero_a_bitmap(){
-	// CREA UN PUNTERO AL BITMAP DE BLOQUES
 	// EL RETORNO SE DEBE LIBERAR
 	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
 	fseek(directorio.superbloque, CANTIDAD_BLOQUES / 8, SEEK_SET);
 	fread(puntero_a_bitmap, 1, CANTIDAD_BLOQUES/8, directorio.superbloque);
 	return puntero_a_bitmap;
+}
+
+void set_tam_bitacora(char* path, int tamanio){
+
+	t_config* config = config_create(path);
+	config_save_in_file(config, path);
+	config_set_value(config, "SIZE", string_itoa(tamanio));
+	config_save(config);
+	config_destroy(config);
+
+}
+
+
+void set_bloq_bitacora(char* path, t_list* lista){
+	// TODO no funca, tengo mucho sueño
+	log_error(logger_mongo, "0");
+	int array[list_size(lista)];
+	char* lista_bloques = malloc(2 + list_size(lista)*5 + list_size(lista) - 1); // 2 corchetes,  los numeros, y las comas
+	log_error(logger_mongo, "0");
+	strcpy(lista_bloques, "[");
+	log_error(logger_mongo, "0");
+	for(int i = 0; i < list_size(lista); i++){
+		strcat(lista_bloques, string_itoa(array[i]));
+	}
+	log_error(logger_mongo, "0");
+	strcat(lista_bloques, "]");
+	log_error(logger_mongo, "0");
+	t_config* config = config_create(path);
+	config_save_in_file(config, path);
+	log_error(logger_mongo, "0");
+
+	config_set_value(config, "BLOCKS", lista_bloques);
+
+	config_save(config);
+	config_destroy(config);
+	free(lista_bloques);
 }

@@ -57,9 +57,7 @@ void iniciar_blocks(int filedescriptor_blocks) {
 
     directorio.mapa_blocks = malloc(block_size * size);
 
-    log_trace(logger_mongo, "block size * size %i", block_size * size);
-    log_trace(logger_mongo, "block size: %i", block_size);
-    log_trace(logger_mongo, "size: %i", size);
+    log_trace(logger_mongo, "block size * size: %i * %i = %i", block_size, size, block_size * size);
 
     posix_fallocate(filedescriptor_blocks, 0, block_size * size);
 
