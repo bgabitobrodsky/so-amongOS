@@ -8,8 +8,8 @@
 void inicializar_archivos();
 void inicializar_archivos_preexistentes();
 void asignar_nuevo_bloque(FILE* archivo);
-int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
-int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
+int asignar_primer_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
+int quitar_ultimo_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(int codigo_archivo, int cantidad);
 void quitar(int codigo_archivo, int cantidad);
@@ -28,13 +28,13 @@ void asignar_bloque_tripulante(FILE* archivo, int bit_libre);
 // devuelven la metadata del archivo
 uint32_t tamanio_archivo(FILE* archivo);
 uint32_t cantidad_bloques_recurso(FILE* archivo);
-uint32_t* lista_bloques_recurso(FILE* archivo);
+t_list* lista_bloques_recurso(FILE* archivo);
 char caracter_llenado_archivo(FILE* archivo);
 char* md5_archivo(FILE* archivo);
 uint32_t cantidad_bloques_tripulante(FILE* archivo);
-uint32_t* lista_bloques_tripulante(FILE* archivo);
-void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques);
-void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* lista_bloques);
+t_list* lista_bloques_tripulante(FILE* archivo);
+void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, t_list* list_bloques);
+void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, t_list* lista_bloques);
 void escribir_tamanio(FILE* archivo, uint32_t tamanio);
 int bloques_contar(char caracter);
 void imprimir_bitmap();

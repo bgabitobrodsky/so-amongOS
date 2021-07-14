@@ -122,24 +122,16 @@ void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bit
     fflush(directorio.superbloque);
 }
 
-t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados) {
+t_bitarray* actualizar_bitmap(t_list* lista_bloques_ocupados) {
 	log_trace(logger_mongo, "0 actualizar_bitmap");
 
     t_bitarray* bitmap = obtener_bitmap();
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-    	if(contiene_generico(lista_bloques_ocupados, i))
+    	if(esta_en_lista(lista_bloques_ocupados, i))
     		bitarray_set_bit(bitmap, i);
     }
 
 	return bitmap;
 }
 
-int contiene_generico(int* lista, int valor) {
-	 int i;
-	    for(i = 0; i < sizeof(lista) / sizeof(lista[0]); i++) {
-	        if(lista[i] == valor)
-	            return 1;
-	    }
-	    return 0;
-}

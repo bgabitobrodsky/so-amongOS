@@ -5,6 +5,8 @@
  *      Author: utnso
  */
 
+// TODO: Refactorear con list_replace
+
 #include "i_mongo_store.h"
 
 int socket_discordiador;
@@ -36,7 +38,7 @@ int main(int argc, char** argv){
 
 	fseek(directorio.blocks, 0, SEEK_END);
 	int tamanio_en_bytes = ftell(directorio.blocks);
-
+	fseek(directorio.blocks, 0, SEEK_SET);
 	log_info(logger_mongo, "tamanio mapa blocks %i, cadena %s", tamanio_en_bytes, directorio.mapa_blocks);
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)

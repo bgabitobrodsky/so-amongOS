@@ -87,10 +87,9 @@ void iniciar_blocks(int filedescriptor_blocks);
 void inicializar_mapa();
 uint32_t obtener_tamanio_bloque();
 uint32_t obtener_cantidad_bloques();
-t_bitarray* obtener_bitmap();
-char* crear_puntero_a_bitmap();
-void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap);
-t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados);
-int contiene_generico(int* lista, int valor);
+t_bitarray* obtener_bitmap(); // testeado
+char* crear_puntero_a_bitmap(); // testeado
+void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // testeado
+t_bitarray* actualizar_bitmap(t_list* lista_bloques_ocupados);
 
 #endif

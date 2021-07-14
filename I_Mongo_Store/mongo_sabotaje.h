@@ -12,11 +12,10 @@ int verificar_block_counts();
 int verificar_blocks();
 int lista_blocks_saboteada(FILE* archivo);
 char* reparar();
-void recorrer_recursos(int* lista_bloques_ocupados);
-void recorrer_bitacoras(int* lista_bloques_ocupados);
-void sortear(int* lista_bloques_ocupados);
-int bloques_ocupados_difieren(int* lista_bloques_ocupados);
-int contiene(int* lista, int valor);
+void recorrer_recursos(t_list* lista_bloques_ocupados);
+void recorrer_bitacoras(t_list* lista_bloques_ocupados);
+void sortear(t_list* lista_bloques_ocupados);
+int bloques_ocupados_difieren(t_list* lista_bloques_ocupados);
 char* rompio(int codigo);
 
 #endif

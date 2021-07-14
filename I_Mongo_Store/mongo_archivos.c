@@ -87,14 +87,6 @@ void inicializar_archivos_preexistentes() {
 	directorio.superbloque = fopen(path_superbloque, "r+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
 
-	/*
-	recurso.oxigeno        = fopen(path_oxigeno, "a+b");
-	recurso.comida         = fopen(path_comida, "a+b");
-	recurso.basura         = fopen(path_basura, "a+b");
-	directorio.superbloque = fopen(path_superbloque, "a+b");
-	directorio.blocks      = fdopen(filedescriptor_blocks, "a+b");
-	*/
-
 	iniciar_blocks(filedescriptor_blocks); // Actualizar struct TODO: que?
 	// mapea y sincroniza
 	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
@@ -150,7 +142,9 @@ void asignar_nuevo_bloque(FILE* archivo) {
 	free(puntero_a_bitmap);
 }
 
-int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
+int asignar_primer_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) { // ESPANTOSO, fijarse si funca, puede explotar por ser un void* (desplazamiento numerico tiene que ser bytes para que funque)
+	// TODO refactorear
+
 	log_trace(logger_mongo, "0 asignar_primer_bloque");
 	int cantidad_alcanzada = 0;
 
@@ -158,10 +152,10 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 
 	for(int j = 0; j < cant_bloques; j++) {
 		log_error(logger_mongo, "En bloque %i", lista_bloques[j]);
-		for (int i = 0; tipo != *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i + 1) == ','; i++) { // Cambiar Macro por revision al Superbloque
+		for (int i = 0; tipo != *(directorio.mapa_blocks + (int) list_get(lista_bloques, j) * TAMANIO_BLOQUE + i + 1) && *(directorio.mapa_blocks + (int) list_get(lista_bloques, j) * TAMANIO_BLOQUE + i + 1) == ','; i++) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == ',') {
-				*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = tipo;
+			if (*(directorio.mapa_blocks + (int) list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) == ',') {
+				*(directorio.mapa_blocks + (int) list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) = tipo;
 				cantidad_alcanzada++;
 			}
 
@@ -176,15 +170,15 @@ int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, 
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
-int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
+int quitar_ultimo_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
 	log_trace(logger_mongo, "0 quitar_ultimo_bloque");
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
-		for (int i = TAMANIO_BLOQUE; tipo != *(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) && *(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i - 1) != '\t'; i--) { // Cambiar Macro por revision al Superbloque
+		for (int i = TAMANIO_BLOQUE; tipo != *(directorio.mapa_blocks + (((int) list_get(lista_bloques, j)) + 1) * TAMANIO_BLOQUE - i - 1) && *(directorio.mapa_blocks + (((int) list_get(lista_bloques, j)) + 1) * TAMANIO_BLOQUE - i - 1) != '\t'; i--) { // Cambiar Macro por revision al Superbloque
 			
-			if (*(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) == tipo) {
-				*(directorio.mapa_blocks + (lista_bloques[j] + 1) * TAMANIO_BLOQUE - i) = ' ';
+			if (*(directorio.mapa_blocks + (((int) list_get(lista_bloques, j)) + 1) * TAMANIO_BLOQUE - i) == tipo) {
+				*(directorio.mapa_blocks + (((int) list_get(lista_bloques, j)) + 1) * TAMANIO_BLOQUE - i) = ' ';
 				cantidad_alcanzada++;
 			}
 
@@ -216,7 +210,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
-	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
+	t_list* lista_bloques = lista_bloques_recurso(archivo);
 	char tipo = caracter_llenado_archivo(archivo);
 
 	int offset = asignar_primer_bloque_libre(lista_bloques, cant_bloques, cantidad, tipo);
@@ -237,7 +231,7 @@ void quitar(int codigo_archivo, int cantidad) { // Puede explotar en manejo de f
 	FILE* archivo = conseguir_archivo_recurso(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(archivo);
 	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
-	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
+	t_list* lista_bloques = lista_bloques_recurso(archivo);
 	char tipo = caracter_llenado_archivo(archivo);
 
 	quitar_ultimo_bloque_libre(lista_bloques, cant_bloques, cantidad * -1, tipo); // Eliminar esto?
@@ -391,15 +385,6 @@ uint32_t cantidad_bloques_recurso(FILE* archivo) {
 	return cant_bloques;
 }
 
-uint32_t* lista_bloques_recurso(FILE* archivo) {
-	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
-
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
-
-	return lista_bloques;
-}
-
 char caracter_llenado_archivo(FILE* archivo) {
 	lista_bloques_recurso(archivo);
 
@@ -436,22 +421,40 @@ uint32_t cantidad_bloques_tripulante(FILE* archivo) {
 	return cant_bloques;
 }
 
-uint32_t* lista_bloques_tripulante(FILE* archivo) {
-	fseek(archivo, 0, SEEK_SET);
+// TODO TESTEAR Y REVISAR
+t_list* lista_bloques_recurso(FILE* archivo) {
+	// ESTA FUNCION DEBE LIBERAR EL RETORNO
 
-	uint32_t cant_bloques = cantidad_bloques_tripulante(archivo);
+	uint32_t cant_bloques = cantidad_bloques_recurso(archivo);
+	uint32_t* aux = malloc(sizeof(uint32_t) * cant_bloques);
+	t_list* lista_bloques = list_create();
+	fread(aux , sizeof(uint32_t), cant_bloques, archivo);
 
-	log_trace(logger_mongo, "Cantidad de bloques %i", (int) cant_bloques);
-
-	uint32_t* lista_bloques = malloc(sizeof(uint32_t) * cant_bloques);
-
-	fread(lista_bloques, sizeof(uint32_t), cant_bloques, archivo);
+	for(int i = 0; i < cant_bloques; i++){
+		list_add(lista_bloques, (aux + i));
+	}
 
 	return lista_bloques;
 }
 
-void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques) {
+// TODO TESTEAR Y REVISAR
+t_list* lista_bloques_tripulante(FILE* archivo) {
+	fseek(archivo, 0, SEEK_SET);
+	uint32_t cant_bloques = cantidad_bloques_tripulante(archivo);
 
+	uint32_t* aux = malloc(sizeof(uint32_t) * cant_bloques);
+	t_list* lista_bloques = list_create();
+	fread(aux , sizeof(uint32_t), cant_bloques, archivo);
+
+	for(int i = 0; i < cant_bloques; i++){
+		list_add(lista_bloques, (aux + i));
+	}
+
+	return lista_bloques;
+}
+
+void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, t_list* list_bloques) {
+	// TODO rever
 	fseek(archivo, 0, SEEK_SET);
 	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
 	fwrite(&cantidad_bloques, sizeof(uint32_t), 1, archivo);
@@ -465,14 +468,14 @@ void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad
 
 }
 
-void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list_bloques) {
+void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, t_list* list_bloques) {
 	// TODO revisar
     log_trace(logger_mongo, "1 escribir_archivo_tripulante");
 	fseek(archivo, 0, SEEK_SET);
 	log_trace(logger_mongo, "2 escribir_archivo_tripulante");
 	fwrite(&tamanio, sizeof(uint32_t), 1, archivo);
 	log_trace(logger_mongo, "3 escribir_archivo_tripulante");
-	uint32_t cant_bloques = sizeof(*list_bloques) / sizeof(uint32_t);
+	uint32_t cant_bloques = list_size(list_bloques);
 	log_trace(logger_mongo, "4 escribir_archivo_tripulante");
 
 	if (list_bloques == NULL) {
@@ -483,8 +486,8 @@ void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* list
 
 	if(list_bloques != NULL){
 		log_trace(logger_mongo, "varios bloques");
-		log_error(logger_mongo, "La lista tiene como primer elemento = %i", (int)list_bloques[0]);
-		log_error(logger_mongo, "La lista tiene como ultimo elemento = %i", (int)list_bloques[cant_bloques - 1]);
+		log_error(logger_mongo, "La lista tiene como primer elemento = %i", (int) list_get(list_bloques, 0));
+		log_error(logger_mongo, "La lista tiene como ultimo elemento = %i", (int) list_get(list_bloques, cant_bloques-1));
 		fwrite(list_bloques, sizeof(uint32_t), cant_bloques, archivo);
 	}
 
@@ -506,30 +509,31 @@ int es_recurso(FILE* archivo) { //Solo sirve si en las bitácoras escribimos to.
 }
 
 void asignar_bloque_recurso(FILE* archivo, int bit_libre) {
+	// TODO revisar
 	uint32_t tamanio = tamanio_archivo(archivo);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(archivo);
-	uint32_t* lista_bloques = lista_bloques_recurso(archivo);
-	lista_bloques[cantidad_bloques] = bit_libre; 
-
+	t_list* lista_bloques = lista_bloques_recurso(archivo);
+	int* aux = list_get(lista_bloques, cantidad_bloques);
+	*aux = bit_libre;
 	escribir_archivo_recurso(archivo, tamanio, cantidad_bloques + 1, lista_bloques);
 }
 
 void asignar_bloque_tripulante(FILE* archivo, int bit_libre) {
-
+	// TODO revisar
 	log_error(logger_mongo, "bit libre = %i", bit_libre);
 
 	uint32_t tamanio = tamanio_archivo(archivo);
 
 	log_error(logger_mongo, "tamanio = %i", tamanio);
 
-	uint32_t* lista_bloques = lista_bloques_tripulante(archivo);
+	t_list* lista_bloques = lista_bloques_tripulante(archivo);
 
 	uint32_t cantidad_bloques = cantidad_bloques_tripulante(archivo);
 
 	log_error(logger_mongo, "cant = %i", cantidad_bloques);
 
-	// Puede que este out of bounds
-	lista_bloques[cantidad_bloques] = bit_libre;
+	int* aux = list_get(lista_bloques, cantidad_bloques);
+	*aux = bit_libre;
 
 	log_error(logger_mongo, "Lo que acabo de acomodar %i", lista_bloques[cantidad_bloques]);
 

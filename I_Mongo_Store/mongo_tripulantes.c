@@ -162,14 +162,14 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 		int cantidad_alcanzada = 0;
 		int i, j, t;
 		j = 0; // TODO como funciona esto?
-		uint32_t* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
+		t_list* lista_bloques = lista_bloques_tripulante(bitacora->bitacora_asociada);
 
 		log_trace(logger_mongo, "Lista bloque primer elemento %i", lista_bloques[0]);
 
 		for (i = 0; *(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i + 1) != '\t'; i++) {
 			
-			if (*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) == '\t') {
-				*(directorio.mapa_blocks + lista_bloques[j] * TAMANIO_BLOQUE + i) = mensaje[i];
+			if (*(directorio.mapa_blocks + (int)list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) == '\t') {
+				*(directorio.mapa_blocks + (int)list_get(lista_bloques, j) * TAMANIO_BLOQUE + i) = mensaje[i];
 				cantidad_alcanzada++;
 			}
 		}

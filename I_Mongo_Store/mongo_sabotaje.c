@@ -25,6 +25,7 @@ void enviar_posicion_sabotaje(int socket_discordiador) {
 }
 
 char* reparar() {
+	// TODO: mejorable
 	char* roto = string_new();
     int reparado = 0;
     
@@ -61,12 +62,14 @@ char* reparar() {
 
 int verificar_cant_bloques() {
     int cant_bloques = obtener_cantidad_bloques();
-    int cantidad_real = strlen(directorio.mapa_blocks); // no sirve strlen ni sizeof, por los /0
+
+	fseek(directorio.blocks, 0, SEEK_END);
+	int tamanio_en_bytes = ftell(directorio.blocks);
+	fseek(directorio.blocks, 0, SEEK_SET);
+    int cantidad_real = tamanio_en_bytes / TAMANIO_BLOQUE;
 
     if (cant_bloques != cantidad_real) {
         int tamanio = TAMANIO_BLOQUE;
-        obtener_cantidad_bloques();// Para desplazamiento only
-
         t_bitarray* bitmap = obtener_bitmap();
         reescribir_superbloque(tamanio, cantidad_real, bitmap);
 
@@ -78,7 +81,8 @@ int verificar_cant_bloques() {
 
 int verificar_bitmap() {
 	//Creo la lista
-	int* lista_bloques_ocupados = malloc(sizeof(int) * obtener_cantidad_bloques());
+	t_list* lista_bloques_ocupados = list_create();
+	// int* lista_bloques_ocupados = malloc(sizeof(int) * obtener_cantidad_bloques());
 
 	//Agrego los bloques usados en la lista, con en el indice = n° bloque
     recorrer_recursos(lista_bloques_ocupados);
@@ -94,6 +98,7 @@ int verificar_bitmap() {
     else
         return 0;
 
+    list_destroy(lista_bloques_ocupados);
 }
 
 int verificar_sizes() {
@@ -202,34 +207,39 @@ void reparar_blocks() {
 	//Supongo que el último bloque debería completarlo de basura. Basura en nuestro caso es \t
 }
 
-void recorrer_recursos(int* lista_bloques_ocupados) {
+void recorrer_recursos(t_list* lista_bloques_ocupados) {
+
     // Recorre las listas de las metadatas de los recursos y va anotando en la lista que bloques estan ocupados
 	int i = 0;
-
+	int* aux;
 	//BASURA
 	uint32_t cantidad_bloques_basura = cantidad_bloques_recurso(recurso.basura);
-	uint32_t* lista_bloques_basura = lista_bloques_recurso(recurso.basura);
+	t_list* lista_bloques_basura = lista_bloques_recurso(recurso.basura);
 
 	for(uint32_t j = 0; j < cantidad_bloques_basura; j++) {
-		lista_bloques_ocupados[i] = (int) lista_bloques_basura[j];
+		aux = list_get(lista_bloques_ocupados, i);
+		*aux = (int) list_get(lista_bloques_basura, j);
 		i++;
 	}
 
 	//COMIDA
 	uint32_t cantidad_bloques_comida = cantidad_bloques_recurso(recurso.comida);
-	uint32_t* lista_bloques_comida = lista_bloques_recurso(recurso.comida);
+	t_list* lista_bloques_comida = lista_bloques_recurso(recurso.comida);
 
 	for(uint32_t j = 0; j < cantidad_bloques_comida; j++) {
-		lista_bloques_ocupados[i] = (int) lista_bloques_comida[j];
+		aux = list_get(lista_bloques_ocupados, i);
+		*aux = (int) list_get(lista_bloques_comida, j);
 		i++;
+
 	}
 
 	//OXIGENO
 	uint32_t cantidad_bloques_oxigeno = cantidad_bloques_recurso(recurso.oxigeno);
-	uint32_t* lista_bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
+	t_list* lista_bloques_oxigeno = lista_bloques_recurso(recurso.oxigeno);
 
 	for(uint32_t j = 0; j < cantidad_bloques_oxigeno; j++) {
-		lista_bloques_ocupados[i] =(int) lista_bloques_oxigeno[j];
+		aux = list_get(lista_bloques_ocupados, i);
+		*aux = (int) list_get(lista_bloques_oxigeno, j);
 		i++;
 	}
 
@@ -238,67 +248,67 @@ void recorrer_recursos(int* lista_bloques_ocupados) {
 	free(lista_bloques_oxigeno);
 }
 
-void recorrer_bitacoras(int* lista_bloques_ocupados) {
+void recorrer_bitacoras(t_list* lista_bloques_ocupados) {
+	// TODO: revisar
 	// Recorre las listas de las metadatas de las bitacoras y va anotando en la lista que bloques estan ocupados
 
 	//Obtengo la cantidad de bloques de lista_bloques_ocupados y la cantidad de bitacoras
-	int i = sizeof(lista_bloques_ocupados) / sizeof(int);
+	int i = list_size(lista_bloques_ocupados);
 	int cant_bitacoras = list_size(bitacoras);
+	int* aux;
 
 	//Itero por todas las bitacoras
 	for(int j = 0; j < cant_bitacoras; j++) {
 		t_bitacora* bitacora = list_get(bitacoras, i);
 		int cant_bloques_bitacora = (int) sizeof(bitacora->bloques) / sizeof(int);
 		//Le asigno a lista_bloques_ocupados el bloque n°k de la bitacora n°j
-		for(int k = 0; k < cant_bloques_bitacora; k++)
-			lista_bloques_ocupados[i] = bitacora->bloques[k];
-		i++;
+		for(int k = 0; k < cant_bloques_bitacora; k++){
+			aux = list_get(lista_bloques_ocupados, i);
+			*aux = (int) bitacora->bloques[k];
+			// *aux = (int) list_get(bitacora->bloques, k);
+		}
 	}
 }
 
-void sortear(int* lista_bloques_ocupados) {
+void sortear(t_list* lista_bloques_ocupados) {
 	//Obtengo la cantidad de bloques de lista_bloques_ocupados
-	int n = sizeof(lista_bloques_ocupados) / sizeof(int);
+	int n = list_size(lista_bloques_ocupados);
+	int* aux;
+	int* aux2;
 
     int i, j;
     for (i = 0; i < n-1; i++) {
         for (j = 0; j < n-i-1; j++) {
-            if (lista_bloques_ocupados[j] > lista_bloques_ocupados[j+1]) {
-                int temp = lista_bloques_ocupados[j];
-                lista_bloques_ocupados[j] = lista_bloques_ocupados[j+1];
-                lista_bloques_ocupados[j+1] = temp;
+            if (list_get(lista_bloques_ocupados, j) > list_get(lista_bloques_ocupados, j+1)) {
+                int temp = (int) list_get(lista_bloques_ocupados, j);
+                aux2 = list_get(lista_bloques_ocupados, j);
+                *aux2 = (int) list_get(lista_bloques_ocupados, j+1);
+                aux = list_get(lista_bloques_ocupados, j+1);
+                *aux = temp;
             }
         }
     }
 }
 
-int bloques_ocupados_difieren(int* lista_bloques_ocupados) {
+int bloques_ocupados_difieren(t_list* lista_bloques_ocupados) {
+	// TODO: revisar BIEN el for
     // Compara lista contra el bitmap, apenas difieren devuelve 1 (como true), sino 0
 	int no_difieren;
 
+	t_bitarray* bitmap = obtener_bitmap();
+
 	for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-		t_bitarray* bitmap = obtener_bitmap();
 
 		//Si el bit es 1, la lista debe contener el bloque n° i
 		if(bitarray_test_bit(bitmap, i))
-			no_difieren = contiene(lista_bloques_ocupados, i);
+			no_difieren = esta_en_lista(lista_bloques_ocupados, i);
 
 		//Si el bit es 0, la lista no debe contener el bloque n° i
 		else
-			no_difieren = ! contiene(lista_bloques_ocupados, i);
+			no_difieren = ! esta_en_lista(lista_bloques_ocupados, i);
 
 		//Si el flag es 0, los bloques difieren
 		if(! no_difieren)
-			return 1;
-	}
-	return 0;
-}
-
-int contiene(int* lista, int valor) {
-	int tamanio_lista = (int) sizeof(lista) / sizeof(int);
-
-	for(int i = 0; i < tamanio_lista; i++) {
-		if(lista[i] == valor)
 			return 1;
 	}
 	return 0;
