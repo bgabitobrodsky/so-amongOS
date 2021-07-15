@@ -395,6 +395,15 @@ int max (int a, int b) {
 	}
 }
 
+int min (int a, int b) {
+	if (a < b) {
+		return a;
+	}
+	else {
+		return b;
+	}
+}
+
 void crear_md5(char *str, unsigned char digest[16]) {
 	log_trace(logger_mongo, "0 md5, TODO"); // TODO
 	/*
@@ -608,13 +617,15 @@ void set_tam(char* path, int tamanio){
 void set_bloq(char* path, t_list* lista){
 	log_trace(logger_mongo, "INICIO SET BLOQ");
 	t_config* config = config_create(path);
-	config_save_in_file(config, path);
+
+	log_debug(logger_mongo, "la lista de bloques es %s", config_get_string_value(config, "BLOCKS"));
 
 	t_list* list_aux;
 	if(lista == NULL){
 		list_aux = list_create();
 	} else{
-		list_aux = list_duplicate(lista);
+		t_list* nueva = lista;
+		list_aux = list_duplicate(nueva);
 	}
 
 	int* aux;
@@ -647,16 +658,22 @@ void set_bloq(char* path, t_list* lista){
 	if(list_aux == NULL || list_is_empty(list_aux)){
 	    log_trace(logger_mongo, "empty");
 
-		lista_bloques = malloc(2);
+		lista_bloques = malloc(2 + 1);
 		strcpy(lista_bloques, "[]");
 
 	} else {
 
 		log_trace(logger_mongo, "not empty %i", list_is_empty(list_aux));
-		int cant_numeros = list_size(list_aux);
-		int comas = list_size(list_aux)-1;
+		int comas = max(list_size(list_aux)-1, 0);
+		int cant_numeros = 0;
 
-		lista_bloques = malloc(2 + cant_numeros + comas);
+		for(int i = 0; i < list_size(list_aux); i++){
+			aux = list_get(list_aux, i);
+			cant_numeros += strlen(string_itoa(*aux));
+		}
+
+		log_trace(logger_mongo, "le asigno %i", 2 + cant_numeros + comas);
+		lista_bloques = malloc(2 + cant_numeros + comas + 1);
 		strcpy(lista_bloques, "[");
 
 		// log_error(logger_mongo, "printeando lista");
@@ -680,23 +697,15 @@ void set_bloq(char* path, t_list* lista){
 	config_set_value(config, "BLOCKS", lista_bloques);
 	log_debug(logger_mongo, "la lista de bloques queda %s", config_get_string_value(config, "BLOCKS"));
 
+	config_save(config);
+	config_destroy(config);
+
 	log_trace(logger_mongo, "pre-destruir lista");
-	// list_destroy_and_destroy_elements(list_aux, free); // esta no va, no estoy seguro por que
+	// list_destroy_and_destroy_elements(list_aux, free); // TODO esta no va, no estoy seguro por que
 	list_destroy(list_aux);
 	log_trace(logger_mongo, "post-destruir lista");
 
-	log_trace(logger_mongo, "pre-destruir cadena");
-	// free(lista_bloques); // TODO DESCOMENTAR
-	log_trace(logger_mongo, "post-destruir cadena");
-
-	log_trace(logger_mongo, "pre save");
-	// config_save_in_file(config, path);
-	config_save(config);
-	log_trace(logger_mongo, "post save");
-
-	log_trace(logger_mongo, "pre-destruir config");
-	config_destroy(config);
-	log_trace(logger_mongo, "post-destruir config");
+	free(lista_bloques);
 
 }
 
