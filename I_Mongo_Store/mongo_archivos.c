@@ -145,7 +145,7 @@ void asignar_nuevo_bloque(char* path) {
 	bitarray_destroy(bitmap);
 }
 
-int llenar_bloque(t_list* lista_bloques, int cantidad_deseada, char tipo, char* path) {
+int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo, char* path) {
 
 	log_trace(logger_mongo, "0 asignar_primer_bloque");
 	int cantidad_alcanzada = 0;
@@ -233,7 +233,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	char tipo = caracter_llenado_archivo(path);
 	log_trace(logger_mongo, "1 agregar");
 
-	int offset = llenar_bloque(lista_bloques, cantidad, tipo, path);
+	int offset = llenar_bloque_recurso(lista_bloques, cantidad, tipo, path);
 
 	log_trace(logger_mongo, "list tamanio %i", list_size(lista_bloques));
 	log_trace(logger_mongo, "OFFSET: %i", offset);

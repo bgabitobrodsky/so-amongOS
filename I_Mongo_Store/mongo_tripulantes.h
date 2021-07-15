@@ -18,7 +18,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora);
 char* formatear_posicion(int coord_x, int coord_y);
 void borrar_bitacora(t_TCB* tcb);
 t_bitacora* quitar_bitacora_lista(t_TCB* tcb);
-t_bitacora* obtener_bitacora(t_TCB* tcb);
+t_bitacora* obtener_bitacora(t_TCB* tcb); // testeado
 char* fpath_tripulante(t_TCB* tcb); // TESTEADO
 
 #endif
