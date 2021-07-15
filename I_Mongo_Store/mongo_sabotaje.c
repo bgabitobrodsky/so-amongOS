@@ -59,8 +59,8 @@ char* reparar() {
 }
 
 int verificar_cant_bloques() {
-	// TODO adaptar
-    int cant_bloques = (int) obtener_cantidad_bloques_superbloque();
+
+	uint32_t cant_bloques = obtener_cantidad_bloques_superbloque();
 
 	fseek(directorio.blocks, 0, SEEK_END);
 	int tamanio_en_bytes = ftell(directorio.blocks);
@@ -68,14 +68,13 @@ int verificar_cant_bloques() {
     int cantidad_real = tamanio_en_bytes / TAMANIO_BLOQUE;
 
     if (cant_bloques != cantidad_real) {
-        int tamanio = TAMANIO_BLOQUE;
         t_bitarray* bitmap = obtener_bitmap();
-        reescribir_superbloque(tamanio, cantidad_real, bitmap);
-
+        reescribir_superbloque(TAMANIO_BLOQUE, cantidad_real, bitmap);
         return 1;
     }
-    else
-        return 0;
+    else{
+    	return 0;
+    }
 }
 
 int verificar_bitmap() {
@@ -101,21 +100,21 @@ int verificar_bitmap() {
 int verificar_sizes() {
     // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio, devuelve 3, sino 0
 
-	int tamanio_real_B = bloques_contar('B');
-	int tamanio_real_C = bloques_contar('C');
-	int tamanio_real_O = bloques_contar('O');
+	uint32_t tamanio_real_B = bloques_contar('B');
+	uint32_t tamanio_real_C = bloques_contar('C');
+	uint32_t tamanio_real_O = bloques_contar('O');
 
 	int corrompido = 0;
 
-	if(tamanio_real_B != (int) tamanio_archivo(path_basura)) {
+	if(tamanio_real_B != tamanio_archivo(path_basura)) {
 		set_tam(path_basura, tamanio_real_B);
 		corrompido = 3;
 	}
-	if(tamanio_real_C != (int) tamanio_archivo(path_comida)) {
+	if(tamanio_real_C != tamanio_archivo(path_comida)) {
 		set_tam(path_comida, tamanio_real_C);
 		corrompido = 3;
 	}
-	if(tamanio_real_O != (int) tamanio_archivo(path_oxigeno)) {
+	if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
 		set_tam(path_oxigeno, tamanio_real_O);
 		corrompido = 3;
 	}
@@ -125,6 +124,7 @@ int verificar_sizes() {
 
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve 4 si algún recurso fue corrompido
+
 	uint32_t cantidad_real_basura = list_size(obtener_lista_bloques(path_basura));
 	uint32_t cantidad_real_comida = list_size(obtener_lista_bloques(path_comida));
 	uint32_t cantidad_real_oxigeno = list_size(obtener_lista_bloques(path_oxigeno));;

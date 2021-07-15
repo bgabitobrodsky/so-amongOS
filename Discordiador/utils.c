@@ -145,10 +145,6 @@ void enviar_pid_a_ram(uint32_t pid, int socket){
 void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket){
     t_buffer* buffer_t = serializar_tripulante(un_tripulante);
     empaquetar_y_enviar(buffer_t, RECIBIR_TCB, socket);
-
-    // Nico estuvo aqui
-    int i = 90;
-    empaquetar_y_enviar(serializar_cantidad(i), COMIDA, socket);
 }
 
 int esta_tripulante_en_lista(t_list* lista, int elemento){

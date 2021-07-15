@@ -22,10 +22,8 @@ void manejo_tripulante(void* socket) {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
 
-				log_error(logger_mongo, "IF ENTRE ");
-				// t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
 				log_error(logger_mongo, "recibo");
-				modificar_bitacora(mensaje, &posicion_tripulante);
+				modificar_bitacora(mensaje, &posicion_tripulante, socket_tripulante);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 			}
 
@@ -84,7 +82,7 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
     log_trace(logger_mongo, "Acomodada bitacora");
 }
 
-void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesitara recibir dos mensajes consecutivos, para volver a como estaba antes borrar 2do parametro
+void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	log_error(logger_mongo, "0 modificar_bitacora");
 
 	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb);
@@ -92,11 +90,12 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesit
 	char* pos_final = NULL;
 	char* nombre_tarea;
 	char* cadenita;
+	t_estructura* mensaje_tarea;
 
 	switch (mensaje->codigo_operacion) {
 		case MOVIMIENTO:
 			log_debug(logger_mongo, "Me llega un movimiento de %i", mensaje->tcb->TID);
-			pos_inicial = malloc(sizeof(char)*4);
+			pos_inicial = malloc(sizeof(char)*3);
 			strcpy(pos_inicial, *posicion);
 			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 			cadenita = malloc(strlen("se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1);
@@ -113,8 +112,11 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesit
 			break;
 		case INICIO_TAREA:
 			log_debug(logger_mongo, "Inicio de tarea de %i", mensaje->tcb->TID);
-			nombre_tarea = malloc(strlen(mensaje->tarea->nombre) + 1);
-			strcpy(nombre_tarea, mensaje->tarea->nombre);
+			free(mensaje->tcb);
+			free(mensaje);
+			mensaje_tarea = recepcion_y_deserializacion(socket);
+			nombre_tarea = malloc(strlen(mensaje_tarea->tarea->nombre) + 1);
+			strcpy(nombre_tarea, mensaje_tarea->tarea->nombre);
 
 			cadenita = malloc(strlen("comienza ejecucion de tarea ") + strlen(nombre_tarea) + 1);
 			strcpy(cadenita, "comienza ejecucion de tarea ");
@@ -125,9 +127,13 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesit
 			free(nombre_tarea);
 			break;
 		case FIN_TAREA:
+
 			log_debug(logger_mongo, "Fin de tarea de %i", mensaje->tcb->TID);
-			nombre_tarea = malloc(strlen(mensaje->tarea->nombre) + 1);
-			strcpy(nombre_tarea, mensaje->tarea->nombre);
+			free(mensaje->tcb);
+			free(mensaje);
+			mensaje_tarea = recepcion_y_deserializacion(socket);
+			nombre_tarea = malloc(strlen(mensaje_tarea->tarea->nombre) + 1);
+			strcpy(nombre_tarea, mensaje_tarea->tarea->nombre);
 
 			cadenita = malloc(strlen("se finaliza la tarea ") + strlen(nombre_tarea) + 1);
 			strcpy(cadenita, "se finaliza la tarea ");
@@ -149,25 +155,24 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesit
 
 	//Actualizo struct bitacora
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
-	int tamanio = (int) tamanio_archivo(bitacora->path);
+	uint32_t tamanio = tamanio_archivo(bitacora->path);
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio;
 }
 
 void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
-	log_error(logger_mongo, "0 escribir_bitacora");
-	log_error(logger_mongo, "1 path: %s", bitacora->path);
+	log_trace(logger_mongo, "0 escribir_bitacora, path: %s", bitacora->path);
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
-	log_error(logger_mongo, "2 escribir_bitacora");
 
 	int* ultimo_bloque = list_get(lista_bloques, list_size(lista_bloques) - 1);
-	log_error(logger_mongo, "3 escribir_bitacora, %i", *ultimo_bloque);
+	log_trace(logger_mongo, "1 escribir_bitacora");
+	log_trace(logger_mongo, "2 escribir_bitacora, el ultimo bloque es: %i", *ultimo_bloque);
 
 	escribir_bloque_bitacora(*ultimo_bloque, mensaje, bitacora);
 }
 
 void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
-	log_error(logger_mongo, "0 escribir_bloque_bitacora");
+	log_trace(logger_mongo, "0 escribir_bloque_bitacora");
 
 	int cantidad_alcanzada = 0;
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
@@ -201,23 +206,23 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	}
 
 	if (cantidad_alcanzada != strlen(mensaje)) {
+		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
+		log_debug(logger_mongo, "alcance %i de %i, ", cantidad_alcanzada, strlen(mensaje));
 		asignar_nuevo_bloque(bitacora->path);
 		char* resto_mensaje = malloc(strlen(mensaje) - cantidad_alcanzada);
 		strcpy(resto_mensaje, (mensaje + cantidad_alcanzada));
-		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
 		log_debug(logger_mongo, "EL resto del mensaje queda: %s", resto_mensaje);
 		escribir_bitacora(bitacora, resto_mensaje);
 	}
 }
 
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks
-	char* posicion_formateada = malloc(sizeof(char) * 4); // Ejemplo: 1|2, 3 chars
+	char* posicion_formateada = malloc(sizeof(char) * 3); // Ejemplo: 1|2, 3 chars
 
 	strcpy(posicion_formateada, string_itoa(coord_x));
 	strcat(posicion_formateada, "|");
 	strcat(posicion_formateada, string_itoa(coord_y));
-
-	log_error(logger_mongo, "posicion formateada: %s", posicion_formateada);
+	// log_debug(logger_mongo, "Posicion formateada: %s", posicion_formateada);
 
 	return posicion_formateada;
 }
@@ -265,7 +270,7 @@ char* fpath_tripulante(t_TCB* tcb) {
 	path_tripulante = strcat(path_tripulante, "/Tripulante");
 	path_tripulante = strcat(path_tripulante, string_itoa((int) (tcb->TID)));
 	path_tripulante = strcat(path_tripulante, ".ims");
-	log_debug(logger_mongo, "Nuevo path de bitacora: %s", path_tripulante);
+	log_debug(logger_mongo, "Creado path bitacora: %s", path_tripulante);
 
 	return path_tripulante;
 }

@@ -571,7 +571,7 @@ void asignar_bloque_tripulante(char* path, int pos_libre) {
 	log_debug(logger_mongo, "fin asignar_bloque_tripulante");
 }
 
-int bloques_contar(char caracter) {
+uint32_t bloques_contar(char caracter) {
 	int cantidad = 0;
 
 	for(int i = 0 ; i < CANTIDAD_BLOQUES; i++){

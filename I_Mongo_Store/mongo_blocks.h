@@ -60,7 +60,7 @@ typedef struct {
 
     t_TCB* tripulante;
     FILE* bitacora_asociada;
-    int tamanio;
+    uint32_t tamanio;
     t_list* bloques;
     char* path;
 
