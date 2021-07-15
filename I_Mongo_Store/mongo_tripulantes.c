@@ -22,15 +22,15 @@ void manejo_tripulante(void* socket) {
 		else {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
-				log_info(logger_mongo, "Pedido de modificar de bitacora");
-				log_trace(logger_mongo, "Modificando bitacora del tripulante %i", mensaje->tcb->TID);
+				log_info(logger_mongo, "Pedido de modificar bitacora");
+				// log_trace(logger_mongo, "Modificando bitacora del tripulante %i", mensaje->tcb->TID); // eventualmente rompe, no perder el tiempo con esto
 				modificar_bitacora(mensaje, &posicion_tripulante, socket_tripulante);
 			}
 
 			// Si es otro codigo
 			else if(mensaje->codigo_operacion > TAREA && mensaje->codigo_operacion < MOVIMIENTO){
-				log_info(logger_mongo, "Pedido de modificar de bitacora");
-				log_trace(logger_mongo, "Recibo un pedido de alterar, tripulante %i", mensaje->tcb->TID);
+				log_info(logger_mongo, "Pedido de alterar cositas");
+				// log_trace(logger_mongo, "Recibo un pedido de alterar, tripulante %i", mensaje->tcb->TID); // eventualmente rompe, no perder el tiempo con esto
 				log_trace(logger_mongo, "Numero de codigo: %i", mensaje->codigo_operacion);
 				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 			}
@@ -124,6 +124,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			escribir_bitacora(bitacora, cadenita);
 			free(cadenita);
 			free(nombre_tarea);
+			free(mensaje_tarea);
 			break;
 		case FIN_TAREA:
 
@@ -141,6 +142,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			escribir_bitacora(bitacora, cadenita);
 			free(cadenita);
 			free(nombre_tarea);
+			free(mensaje_tarea);
 			break;
 		case CORRE_SABOTAJE:
 			log_debug(logger_mongo, "Corre hacia el sabotaje %i", mensaje->tcb->TID);

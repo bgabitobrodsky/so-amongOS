@@ -199,12 +199,11 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 	int* aux = malloc(sizeof(int));
 
 	log_trace(logger_mongo, "Entrando al for de quitar");
+	for(int i = (list_size(lista_bloques) - 1); i >= 0 ; i--){
 
-	for(int i = list_size(lista_bloques); i > 0 ; i--){
 		aux = list_get(lista_bloques, i);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
-			
 			if (*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) == tipo) {
 				*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) = ',';
 				cantidad_alcanzada++;
@@ -227,7 +226,7 @@ void alterar(int codigo_archivo, int cantidad) {
 		log_info(logger_mongo, "Se agregaron %i unidades a %s.", cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 	else{
-		quitar(codigo_archivo, cantidad);
+		quitar(codigo_archivo, cantidad * (-1));
 		log_info(logger_mongo, "Se quitaron %i unidades a %s.", cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
 }
@@ -274,10 +273,10 @@ void quitar(int codigo_archivo, int cantidad) {
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = obtener_lista_bloques(path);
 	char tipo = caracter_llenado_archivo(path);
-	log_trace(logger_mongo, "1 quitar");
 
-	quitar_ultimo_bloque_libre(lista_bloques, cantidad * -1, tipo);
+	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
 
+	// TODO: ver como quitar los bloques que se eliminan al quitar
 	iniciar_archivo_recurso(path, tam_archivo - cantidad, cant_bloques, lista_bloques);
 
 	log_trace(logger_mongo, "FIN quitar");
