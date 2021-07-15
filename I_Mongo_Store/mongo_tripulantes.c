@@ -6,7 +6,7 @@ void manejo_tripulante(void* socket) {
 
 	while(1) {
 		// Se espera a ver que manda el tripulante
-		log_error(logger_mongo, "espero mensaje ");
+		log_debug(logger_mongo, "espero mensaje ");
 
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
 
@@ -16,7 +16,6 @@ void manejo_tripulante(void* socket) {
 		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_info(logger_mongo, "Se creo la bitacora del tripulante %i.\n", mensaje->tcb->TID);
-			free(mensaje->tcb);
 		}
 		// Si no lo es, puede ser o agregar/quitar recursos o cambiar informacion en la bitacora
 		else {
@@ -28,7 +27,6 @@ void manejo_tripulante(void* socket) {
 				log_error(logger_mongo, "recibo");
 				modificar_bitacora(mensaje, &posicion_tripulante);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
-				free(mensaje->tcb);
 			}
 
 			// Si es otro codigo
@@ -77,6 +75,7 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->path = path_tripulante;
+	nueva_bitacora->tripulante = malloc(sizeof(t_TCB));
 	nueva_bitacora->tripulante = tcb;
 
 	list_add(bitacoras, nueva_bitacora);
@@ -87,6 +86,9 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 
 void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesitara recibir dos mensajes consecutivos, para volver a como estaba antes borrar 2do parametro
 	log_error(logger_mongo, "0 ");
+
+	log_error(logger_mongo, "TCB a buscar: %i ", mensaje->tcb->TID);
+
 	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb);
 	char* pos_inicial = NULL;
 	char* pos_final = NULL;
@@ -159,7 +161,6 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesit
 void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	log_error(logger_mongo, "0 escribir_bitacora");
 	log_error(logger_mongo, "1 path: %s", bitacora->path);
-	log_error(logger_mongo, "0 xd");
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
 	log_error(logger_mongo, "2 escribir_bitacora");
 
@@ -241,15 +242,18 @@ t_bitacora* obtener_bitacora(t_TCB* tcb) {
 
 	log_error(logger_mongo, "tamanio bitacoras: %i", list_size(bitacoras));
 
-	t_bitacora* bitacora = list_find(bitacoras, contains);
-	// t_bitacora* bitacora = list_get(bitacoras, 0);
+	// t_bitacora* bitacora = list_find(bitacoras, contains);
+	log_error(logger_mongo, "TID que llega: %i", tcb->TID);
+
+	t_bitacora* bitacora = list_get(bitacoras, 0);
+	log_error(logger_mongo, "TID: %i", bitacora->tripulante->TID);
+	log_error(logger_mongo, "path: %s", bitacora->path);
 
 	if(bitacora == NULL){
 		log_error(logger_mongo, "efe");
 		return NULL;
 	}
 	log_error(logger_mongo, "afa");
-	log_error(logger_mongo, "bitacora: %s", bitacora->path);
 	return bitacora;
 }
 
