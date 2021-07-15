@@ -169,11 +169,12 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	log_error(logger_mongo, "0 escribir_bloque_bitacora");
 
-	// TODO REVISAR
 	int cantidad_alcanzada = 0;
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
 
-	log_trace(logger_mongo, "Lista bloque primer elemento %i", list_get(lista_bloques, 0));
+	// Dos lineas para testeo
+	int* aux_print = list_get(lista_bloques, 0);
+	log_trace(logger_mongo, "Lista bloque primer elemento %i", *aux_print);
 
 	int* aux = malloc(sizeof(int));
 
@@ -202,13 +203,9 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	if (cantidad_alcanzada != strlen(mensaje)) {
 		asignar_nuevo_bloque(bitacora->path);
 		char* resto_mensaje = malloc(strlen(mensaje) - cantidad_alcanzada);
-		// TODO verificar
 		strcpy(resto_mensaje, (mensaje + cantidad_alcanzada));
-		/*
-		for (j = cantidad_alcanzada, t = 0; j < strlen(mensaje); j++, t++) {
-			resto_mensaje[t] = mensaje[j];
-		}
-		*/
+		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
+		log_debug(logger_mongo, "EL resto del mensaje queda: %s", resto_mensaje);
 		escribir_bitacora(bitacora, resto_mensaje);
 	}
 }
