@@ -2,6 +2,7 @@
 
 void manejo_tripulante(void* socket) {
 	int socket_tripulante = ((hilo_tripulante*) socket)->socket;
+	char* posicion_tripulante;
 
 	while(1) {
 		// Se espera a ver que manda el tripulante
@@ -12,7 +13,7 @@ void manejo_tripulante(void* socket) {
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
 		if (mensaje->codigo_operacion == RECIBIR_TCB) {
 		    log_trace(logger_mongo, "entro en el if crear tripu");
-
+		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_info(logger_mongo, "Se creo la bitacora del tripulante %i.\n", mensaje->tcb->TID);
 			free(mensaje->tcb);
@@ -23,9 +24,9 @@ void manejo_tripulante(void* socket) {
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
 
 				log_error(logger_mongo, "IF ENTRE ");
-				t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
+				// t_estructura* mensaje2 = recepcion_y_deserializacion(socket_tripulante); // Aca recibe la info adicional
 				log_error(logger_mongo, "recibo");
-				modificar_bitacora(mensaje, mensaje2);
+				modificar_bitacora(mensaje, &posicion_tripulante);
 				log_info(logger_mongo, "Se modifico la bitacora del tripulante %s.\n", string_itoa(mensaje->tcb->TID));
 				free(mensaje->tcb);
 			}
@@ -84,31 +85,40 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
     log_trace(logger_mongo, "Acomodada bitacora");
 }
 
-void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO Necesitara recibir dos mensajes consecutivos, para volver a como estaba antes borrar 2do parametro
-	t_bitacora* bitacora = obtener_bitacora(mensaje1->tcb);
+void modificar_bitacora(t_estructura* mensaje, char** posicion) { //TODO Necesitara recibir dos mensajes consecutivos, para volver a como estaba antes borrar 2do parametro
+	log_error(logger_mongo, "0 ");
+	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb);
 	char* pos_inicial = NULL;
 	char* pos_final = NULL;
 	char* nombre_tarea;
 	char* cadenita;
-	
-	switch (mensaje1->codigo_operacion) {
+	log_error(logger_mongo, "1 ");
+
+	switch (mensaje->codigo_operacion) {
 		case MOVIMIENTO:
-			pos_inicial = formatear_posicion(mensaje2->posicion->coord_x, mensaje2->posicion->coord_y); // Ver como manejar pos inicial
-			pos_final = formatear_posicion(mensaje1->tcb->coord_x, mensaje1->tcb->coord_y);
+			pos_inicial = malloc(sizeof(char)*4);
+			log_error(logger_mongo, "pos %s", *posicion);
+			strcpy(pos_inicial, *posicion);
+			log_error(logger_mongo, "mov1");
+			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
+			log_error(logger_mongo, "mov2");
 			cadenita = malloc(strlen("se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1);
 			strcpy(cadenita, "se mueve de ");
 			strcat(cadenita, pos_inicial);
 			strcat(cadenita, " a ");
 			strcat(cadenita, pos_final);
+			log_error(logger_mongo, "mov3");
 
 			escribir_bitacora(bitacora, cadenita); // Implementar en t_estructura y crear posicion
+
+			log_error(logger_mongo, "mov4");
 			free(pos_inicial);
 			free(pos_final);
 			free(cadenita);
 			break;
 		case INICIO_TAREA:
-			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
-			strcpy(nombre_tarea, mensaje2->tarea->nombre);
+			nombre_tarea = malloc(strlen(mensaje->tarea->nombre) + 1);
+			strcpy(nombre_tarea, mensaje->tarea->nombre);
 
 			cadenita = malloc(strlen("comienza ejecucion de tarea ") + strlen(nombre_tarea) + 1);
 			strcpy(cadenita, "comienza ejecucion de tarea ");
@@ -119,8 +129,8 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 			free(nombre_tarea);
 			break;
 		case FIN_TAREA:
-			nombre_tarea = malloc(strlen(mensaje2->tarea->nombre) + 1);
-			strcpy(nombre_tarea, mensaje2->tarea->nombre);
+			nombre_tarea = malloc(strlen(mensaje->tarea->nombre) + 1);
+			strcpy(nombre_tarea, mensaje->tarea->nombre);
 
 			cadenita = malloc(strlen("se finaliza la tarea ") + strlen(nombre_tarea) + 1);
 			strcpy(cadenita, "se finaliza la tarea ");
@@ -147,11 +157,16 @@ void modificar_bitacora(t_estructura* mensaje1, t_estructura* mensaje2) { //TODO
 }
 
 void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
+	log_error(logger_mongo, "0 escribir_bitacora");
+	log_error(logger_mongo, "1 path: %s", bitacora->path);
+	log_error(logger_mongo, "0 xd");
+	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
+	log_error(logger_mongo, "2 escribir_bitacora");
 
-	int size_lista_bloques = list_size(bitacora->bloques);
-	int ultimo_bloque = (int) list_get(bitacora->bloques, size_lista_bloques); // TODO restar 1 o esta bien?
+	int* ultimo_bloque = list_get(lista_bloques, list_size(lista_bloques) - 1);
+	log_error(logger_mongo, "3 escribir_bitacora, %i", *ultimo_bloque);
 
-	escribir_bloque_bitacora(ultimo_bloque, mensaje, bitacora);
+	escribir_bloque_bitacora(*ultimo_bloque, mensaje, bitacora);
 
 	free(mensaje);
 }
@@ -186,10 +201,13 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 }
 
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks
-	char* posicion_formateada = malloc(sizeof(char) * 3); // Ejemplo: 1|2, 3 chars
-	strcat(posicion_formateada, string_itoa(coord_x));
+	char* posicion_formateada = malloc(sizeof(char) * 4); // Ejemplo: 1|2, 3 chars
+
+	strcpy(posicion_formateada, string_itoa(coord_x));
 	strcat(posicion_formateada, "|");
 	strcat(posicion_formateada, string_itoa(coord_y));
+
+	log_error(logger_mongo, "posicion formateada: %s", posicion_formateada);
 
 	return posicion_formateada;
 }
@@ -214,13 +232,24 @@ t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
 }
 
 t_bitacora* obtener_bitacora(t_TCB* tcb) {
+	log_error(logger_mongo, "0 obtener_bitacora");
 
-	bool contains(void* tcb1) {
-		return (tcb == ((t_bitacora*) tcb1)->tripulante);
+	// TODO: NO FUNCIONA EL CONTAINS
+	bool contains(void* bitacora) {
+		return (tcb->TID == ((t_bitacora*) bitacora)->tripulante->TID);
 	}
 
-	t_bitacora* bitacora = list_remove_by_condition(bitacoras, contains);
-	list_add(bitacoras, bitacora);
+	log_error(logger_mongo, "tamanio bitacoras: %i", list_size(bitacoras));
+
+	t_bitacora* bitacora = list_find(bitacoras, contains);
+	// t_bitacora* bitacora = list_get(bitacoras, 0);
+
+	if(bitacora == NULL){
+		log_error(logger_mongo, "efe");
+		return NULL;
+	}
+	log_error(logger_mongo, "afa");
+	log_error(logger_mongo, "bitacora: %s", bitacora->path);
 	return bitacora;
 }
 

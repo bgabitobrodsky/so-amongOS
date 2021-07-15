@@ -108,7 +108,7 @@ int main() {
     iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
     // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
-    //iniciar_planificacion();
+    iniciar_planificacion();
 
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
