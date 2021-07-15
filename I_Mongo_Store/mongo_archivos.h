@@ -8,7 +8,7 @@
 void inicializar_archivos();
 void inicializar_archivos_preexistentes();
 void asignar_nuevo_bloque(char* path);
-int asignar_primer_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
+int asignar_primer_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo,  char* path);
 int quitar_ultimo_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(int codigo_archivo, int cantidad);
@@ -27,7 +27,7 @@ void asignar_bloque_tripulante(char* archivo, int bit_libre);
 FILE* conseguir_archivo(char* path);
 
 // devuelven la metadata del archivo
-t_list* obtener_lista_bloques(char* path);
+t_list* obtener_lista_bloques(char* path); // TESTEADA
 uint32_t tamanio_archivo(char* path);
 uint32_t cantidad_bloques_recurso(char* path);
 char caracter_llenado_archivo(char* path);

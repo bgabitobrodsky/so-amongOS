@@ -144,3 +144,16 @@ void reemplazar(t_list* lista, int index, void* elemento){
 	list_replace_and_destroy_element(lista, index, elemento, liberar);
 	*/
 }
+
+void cargar_bitmap(){
+
+	t_bitarray* bitmap = obtener_bitmap();
+	int* aux;
+	for(int i = 0; i < CANTIDAD_BLOQUES; i++){
+		if(bitarray_test_bit(bitmap, i)){
+			aux = malloc(sizeof(int));
+			*aux = i;
+			list_add(lista_bloques_ocupados, aux);
+		}
+	}
+}

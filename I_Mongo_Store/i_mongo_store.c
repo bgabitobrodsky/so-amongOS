@@ -193,6 +193,7 @@ void sincronizar_blocks() {
 		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
 		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
 		sleep(TIEMPO_SINCRONIZACION);
+		imprimir_bitmap();
 	}
 }
 

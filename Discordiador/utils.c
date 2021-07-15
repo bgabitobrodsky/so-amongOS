@@ -147,8 +147,8 @@ void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket){
     empaquetar_y_enviar(buffer_t, RECIBIR_TCB, socket);
 
     // Nico estuvo aqui
-    int i = 5;
-    empaquetar_y_enviar(serializar_cantidad(i), BASURA, socket);
+    int i = 90;
+    empaquetar_y_enviar(serializar_cantidad(i), COMIDA, socket);
 }
 
 int esta_tripulante_en_lista(t_list* lista, int elemento){

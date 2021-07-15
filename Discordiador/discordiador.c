@@ -286,10 +286,10 @@ void tripulante(t_tripulante* un_tripulante){
 
     if(comparar_strings(ALGORITMO, "FIFO")){
         log_info(logger, "ALGORITMO FIFO\n");
-        ciclo_de_vida_fifo(un_tripulante, st_ram, st_ram, &estado_guardado);
+        ciclo_de_vida_fifo(un_tripulante, st_ram, st_mongo, &estado_guardado);
     } else if (comparar_strings(ALGORITMO, "RR")){
         log_info(logger, "ALGORITMO RR\n");
-        ciclo_de_vida_rr(un_tripulante, st_ram, st_ram, &estado_guardado);
+        ciclo_de_vida_rr(un_tripulante, st_ram, st_mongo, &estado_guardado);
     }
 
     close(st_ram);
