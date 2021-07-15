@@ -12,24 +12,25 @@ void manejo_tripulante(void* socket) {
 
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
 		if (mensaje->codigo_operacion == RECIBIR_TCB) {
+		    log_info(logger_mongo, "Pedido de crear bitacora");
 		    log_trace(logger_mongo, "Creando bitacora para el tripulante %i.", mensaje->tcb->TID);
 		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
-			log_info(logger_mongo, "Se creo la bitacora del tripulante %i.", mensaje->tcb->TID);
+			log_trace(logger_mongo, "Se creo la bitacora del tripulante %i.", mensaje->tcb->TID);
 		}
 		// Si no lo es, puede ser o agregar/quitar recursos o cambiar informacion en la bitacora
 		else {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
-
-				log_error(logger_mongo, "Recibo un pedido de modificar de bitacora");
+				log_info(logger_mongo, "Pedido de modificar de bitacora");
+				log_trace(logger_mongo, "Modificando bitacora del tripulante %i", mensaje->tcb->TID);
 				modificar_bitacora(mensaje, &posicion_tripulante, socket_tripulante);
-				log_info(logger_mongo, "Se modifico la bitacora del tripulante %i.", mensaje->tcb->TID);
 			}
 
 			// Si es otro codigo
 			else if(mensaje->codigo_operacion > TAREA && mensaje->codigo_operacion < MOVIMIENTO){
-				log_trace(logger_mongo, "Toy por alterar");
+				log_info(logger_mongo, "Pedido de modificar de bitacora");
+				log_trace(logger_mongo, "Recibo un pedido de alterar, tripulante %i", mensaje->tcb->TID);
 				log_trace(logger_mongo, "Numero de codigo: %i", mensaje->codigo_operacion);
 				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 			}
@@ -44,8 +45,6 @@ void manejo_tripulante(void* socket) {
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
 			pthread_exit(0);
 		}
-
-		free(mensaje);		
 	}
 }
 
