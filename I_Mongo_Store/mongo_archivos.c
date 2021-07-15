@@ -462,6 +462,8 @@ t_list* obtener_lista_bloques(char* path){
 
 	log_trace(logger_mongo, "INICIO obtener_lista_bloques");
 
+	log_trace(logger_mongo, "pre-crear");
+	log_trace(logger_mongo, "path config: %s", path);
 	t_config* config = config_create(path);
 	log_trace(logger_mongo, "creada la config");
 
@@ -470,7 +472,6 @@ t_list* obtener_lista_bloques(char* path){
 		log_trace(logger_mongo, "Soy un tripulante! %s", path);
 		t_list* lista_bloques = list_create();
 
-		t_config* config = config_create(path);
 		char** bloques = config_get_array_value(config, "BLOCKS");
 
 		int* aux;
@@ -644,14 +645,14 @@ void set_bloq(char* path, t_list* lista){
 	}*/
 
 	if(list_aux == NULL || list_is_empty(list_aux)){
-	    // log_trace(logger_mongo, "empty");
+	    log_trace(logger_mongo, "empty");
 
 		lista_bloques = malloc(2);
 		strcpy(lista_bloques, "[]");
 
 	} else {
 
-		// log_trace(logger_mongo, "not empty %i", list_is_empty(list_aux));
+		log_trace(logger_mongo, "not empty %i", list_is_empty(list_aux));
 		int cant_numeros = list_size(list_aux);
 		int comas = list_size(list_aux)-1;
 
@@ -679,19 +680,23 @@ void set_bloq(char* path, t_list* lista){
 	config_set_value(config, "BLOCKS", lista_bloques);
 	log_debug(logger_mongo, "la lista de bloques queda %s", config_get_string_value(config, "BLOCKS"));
 
-	log_trace(logger_mongo, "pre-destruir");
+	log_trace(logger_mongo, "pre-destruir lista");
 	// list_destroy_and_destroy_elements(list_aux, free); // esta no va, no estoy seguro por que
 	list_destroy(list_aux);
-
-	log_trace(logger_mongo, "post-destruir");
+	log_trace(logger_mongo, "post-destruir lista");
 
 	log_trace(logger_mongo, "pre-destruir cadena");
 	// free(lista_bloques); // TODO DESCOMENTAR
 	log_trace(logger_mongo, "post-destruir cadena");
 
+	log_trace(logger_mongo, "pre save");
+	// config_save_in_file(config, path);
 	config_save(config);
-	config_destroy(config);
+	log_trace(logger_mongo, "post save");
 
+	log_trace(logger_mongo, "pre-destruir config");
+	config_destroy(config);
+	log_trace(logger_mongo, "post-destruir config");
 
 }
 

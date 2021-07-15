@@ -215,17 +215,13 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 
 	if (cantidad_alcanzada != strlen(mensaje)) {
 		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
-		log_debug(logger_mongo, "alcance %i de %i, ", cantidad_alcanzada, strlen(mensaje));
+		log_debug(logger_mongo, "Alcance %i bytes de %i bytes, ", cantidad_alcanzada, strlen(mensaje));
 		asignar_nuevo_bloque(bitacora->path);
-		log_debug(logger_mongo, "pre malloc resto_mensaje");
 		char* resto_mensaje = malloc(strlen(mensaje + cantidad_alcanzada) + 1);
-		log_debug(logger_mongo, "post malloc, le asigne %i bytes de espacio", strlen(mensaje + cantidad_alcanzada) + 1);
-		log_debug(logger_mongo, "quiero copiar %s", mensaje);
-		log_debug(logger_mongo, "que en realidad queda %s", mensaje + cantidad_alcanzada);
-		log_debug(logger_mongo, "Al resto del mensaje", mensaje);
+		log_debug(logger_mongo, "Me falta copiar: %s", mensaje + cantidad_alcanzada);
+		log_debug(logger_mongo, "De longitud:", strlen(mensaje + cantidad_alcanzada));
 		strcpy(resto_mensaje, (mensaje + cantidad_alcanzada));
-		log_debug(logger_mongo, "log de prueba %s", resto_mensaje);
-		log_debug(logger_mongo, "EL resto del mensaje queda: %s", resto_mensaje);
+		log_debug(logger_mongo, "El resto del mensaje queda: %s", resto_mensaje);
 
 		escribir_bitacora(bitacora, resto_mensaje);
 	}
