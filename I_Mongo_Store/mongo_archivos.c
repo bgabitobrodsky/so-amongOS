@@ -92,6 +92,8 @@ void inicializar_archivos_preexistentes() {
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
     cargar_bitmap(); // cargando la lista de bloqueados
+    // limpiar_cuerpos(); // TODO codear
+    // rename("/home/utnso/polus/Files/Bitacoras/Tripulante10001.ims", "/home/utnso/polus/Files/Bitacoras/OldTripulante10001.ims");
 
 	log_error(logger_mongo, "3 inicializar_archivos_preexistentes");
 }
