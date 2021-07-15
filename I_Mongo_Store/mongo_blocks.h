@@ -30,7 +30,7 @@
 // #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
 
 #define TAMANIO_BLOQUE 64
-#define CANTIDAD_BLOQUES 64
+#define CANTIDAD_BLOQUES 1024
 #define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 #define POSICIONES_SABOTAJE config_get_array_value(config_mongo, "POSICIONES_SABOTAJE")
 #define TIEMPO_SINCRONIZACION config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION")

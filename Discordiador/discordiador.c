@@ -114,9 +114,9 @@ int main() {
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     // iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
-    iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
+    // iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
-    // iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
     iniciar_planificacion();
 
     // sleep(1);
