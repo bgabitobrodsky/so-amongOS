@@ -97,6 +97,7 @@ void set_caracter_llenado(char* path, char caracter); // TESTEADO
 void set_cant_bloques(char* path, int cant); // TESTEADO
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques); // TESTEADO
 void cargar_bitmap();
+void imprimir_bitmap(); // TESTEADO
 
 
 #endif

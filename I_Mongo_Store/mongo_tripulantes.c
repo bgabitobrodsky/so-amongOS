@@ -161,8 +161,13 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 }
 
 void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
+	log_trace(logger_mongo, "Logger de prueba");
 	log_trace(logger_mongo, "0 escribir_bitacora, path: %s", bitacora->path);
+	log_trace(logger_mongo, "Otro logger de prueba");
+
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
+
+	log_trace(logger_mongo, "Conseguimos la listita de bloques");
 
 	int* ultimo_bloque = list_get(lista_bloques, list_size(lista_bloques) - 1);
 	log_trace(logger_mongo, "1 escribir_bitacora");

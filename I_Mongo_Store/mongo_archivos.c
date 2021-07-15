@@ -37,11 +37,11 @@ void inicializar_archivos() {
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-    recurso.oxigeno        = fopen(path_oxigeno, "a+b");
-	recurso.comida         = fopen(path_comida, "a+b");
-	recurso.basura         = fopen(path_basura, "a+b");
-	directorio.superbloque = fopen(path_superbloque, "a+b");
-	directorio.blocks      = fdopen(filedescriptor_blocks, "a+b");
+    recurso.oxigeno        = fopen(path_oxigeno, "w+b");
+	recurso.comida         = fopen(path_comida, "w+b");
+	recurso.basura         = fopen(path_basura, "w+b");
+	directorio.superbloque = fopen(path_superbloque, "w+b");
+	directorio.blocks      = fdopen(filedescriptor_blocks, "w+b");
 
 	iniciar_archivo_recurso(path_oxigeno, 0, 0, NULL);
 	iniciar_archivo_recurso(path_comida, 0, 0, NULL);
@@ -118,23 +118,21 @@ void asignar_nuevo_bloque(char* path) {
 
 	//Si había un bloque libre
 	if (bit_libre == 1) {
-		log_trace(logger_mongo, "Habemus bloque libre");
+		log_trace(logger_mongo, "Habemus bloque libre, el bit libre es = %i", pos_libre);
 		//Marco el bit como ocupado
 		bitarray_set_bit(bitmap, pos_libre);
 
-		log_error(logger_mongo, "El bit libre es = %i", pos_libre);
-
 		if (es_recurso(path)){
-			log_trace(logger_mongo, "es recurso");
+			log_trace(logger_mongo, "Asignemos un bloque a un recurso");
 			asignar_bloque_recurso(path, pos_libre);
 		}
 		else {
-			log_trace(logger_mongo, "no es recurso");
+			log_trace(logger_mongo, "Asignemos un bloque a un tripuulante");
 			asignar_bloque_tripulante(path, pos_libre);
 		}
 
 		list_add(lista_bloques_ocupados, &pos_libre);
-		actualizar_bitmap(lista_bloques_ocupados);
+		actualizar_bitmap(lista_bloques_ocupados); // TODO rompe
 
 	}
 	else{
@@ -142,14 +140,14 @@ void asignar_nuevo_bloque(char* path) {
 	}
 
 	log_trace(logger_mongo, "fin asignar_nuevo_bloque");
+	imprimir_bitmap();
 	bitarray_destroy(bitmap);
 }
 
 int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo, char* path) {
 
-	log_trace(logger_mongo, "0 asignar_primer_bloque");
+	log_trace(logger_mongo, "0 asignar_primer_bloque, cant bloques %i", list_size(lista_bloques));
 	int cantidad_alcanzada = 0;
-	log_error(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
 	if(list_is_empty(lista_bloques)){
 		log_trace(logger_mongo, "la lista ta vacia");
@@ -183,13 +181,13 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 			}
 		}
 	}
-	log_trace(logger_mongo, "retorno offset");
+
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
 int quitar_ultimo_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo) {
 	// TODO REFACTOREAR EN BASE ARRIBA
-	log_trace(logger_mongo, "0 quitar_ultimo_bloque");
+	log_trace(logger_mongo, "INICIO quitar_ultimo_bloque");
 	int cantidad_alcanzada = 0;
 
 	for(int j = cant_bloques; j < 0; j--) {
@@ -210,7 +208,7 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, uint32_t cant_bloques, int
 }
 
 void alterar(int codigo_archivo, int cantidad) {  
-	log_trace(logger_mongo, "0 alterar, codigo = %i cantidad = %i", codigo_archivo, cantidad);
+	log_trace(logger_mongo, "INICIO alterar, codigo = %i cantidad = %i", codigo_archivo, cantidad);
 
 	if (cantidad >= 0){
 		agregar(codigo_archivo, cantidad);
