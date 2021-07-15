@@ -141,7 +141,11 @@ void asignar_nuevo_bloque(char* path) {
 
 	log_trace(logger_mongo, "fin asignar_nuevo_bloque");
 	imprimir_bitmap();
+	log_trace(logger_mongo, "pre bitmap destroy");
+
 	bitarray_destroy(bitmap);
+	log_trace(logger_mongo, "post");
+
 }
 
 int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo, char* path) {
@@ -459,6 +463,7 @@ t_list* obtener_lista_bloques(char* path){
 	log_trace(logger_mongo, "INICIO obtener_lista_bloques");
 
 	t_config* config = config_create(path);
+	log_trace(logger_mongo, "creada la config");
 
 	if(!config_has_property(config, "BLOCK_COUNT")){
 
@@ -477,9 +482,9 @@ t_list* obtener_lista_bloques(char* path){
 		return lista_bloques;
 	}
 
-	uint32_t cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
+	log_trace(logger_mongo, "Tengo block caunt, o sea que soy un recurso");
 
-	log_trace(logger_mongo, "0 obtener_lista_bloques");
+	uint32_t cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 
 	char** bloques = config_get_array_value(config, "BLOCKS");
 
@@ -516,6 +521,7 @@ void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloq
 
 	log_trace(logger_mongo, "0 escribir_archivo_tripulante");
 	set_tam(path, tamanio);
+
 	set_bloq(path, list_bloques);
 
 	log_trace(logger_mongo, "FIN escribir_archivo_tripulante");
@@ -599,7 +605,7 @@ void set_tam(char* path, int tamanio){
 }
 
 void set_bloq(char* path, t_list* lista){
-
+	log_trace(logger_mongo, "INICIO SET BLOQ");
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 
@@ -673,9 +679,19 @@ void set_bloq(char* path, t_list* lista){
 	config_set_value(config, "BLOCKS", lista_bloques);
 	log_debug(logger_mongo, "la lista de bloques queda %s", config_get_string_value(config, "BLOCKS"));
 
+	log_trace(logger_mongo, "pre-destruir");
+	// list_destroy_and_destroy_elements(list_aux, free); // esta no va, no estoy seguro por que
+	list_destroy(list_aux);
+
+	log_trace(logger_mongo, "post-destruir");
+
+	log_trace(logger_mongo, "pre-destruir cadena");
+	// free(lista_bloques); // TODO DESCOMENTAR
+	log_trace(logger_mongo, "post-destruir cadena");
+
 	config_save(config);
 	config_destroy(config);
-	free(lista_bloques);
+
 
 }
 
