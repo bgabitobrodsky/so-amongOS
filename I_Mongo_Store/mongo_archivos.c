@@ -130,14 +130,15 @@ void limpiar_cuerpos() {
 }
 
 void asignar_nuevo_bloque(char* path, int size_agregado) {
+	log_warning(logger_mongo, "sincronizar inicio");
+	lockearEscritura(path_superbloque); //Esta feo pero sino me rompía
+	lockearEscritura(path_blocks);
 	log_trace(logger_mongo, "0 asignar_nuevo_bloque");
 
 	t_bitarray* bitmap = obtener_bitmap();
 
 	int bit_libre = 0;
 	int pos_libre;
-
-	log_warning(logger_mongo, "sincronizar inicio");
 
 	//Recorro todas las posiciones del bitarray
 	for (uint32_t i = 0; i < CANTIDAD_BLOQUES; i++){
@@ -148,7 +149,6 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 			break;
 		}
 	}
-
 
 	//Si había un bloque libre
 	if (bit_libre == 1) {
@@ -172,9 +172,9 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 	else{
 		log_info(logger_mongo, "No hay bloques disponibles en este momento");
 	}
-
+	unlockear(path_superbloque);
+	unlockear(path_blocks);
 	log_warning(logger_mongo, "sincronizar fin");
-
 
 	/*
 	log_trace(logger_mongo, "fin asignar_nuevo_bloque");
@@ -292,14 +292,11 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 	log_trace(logger_mongo, "2 agregar");
 
-	log_warning(logger_mongo, "lockear inicio"); // Lockear antes dado que lee para despues escribir
-
 	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	lista_bloques = obtener_lista_bloques(path);
-	iniciar_archivo_recurso(path, tam_archivo + cantidad, cant_bloques, lista_bloques);
 
-	log_warning(logger_mongo, "lockear final");
+	iniciar_archivo_recurso(path, tam_archivo + cantidad, cant_bloques, lista_bloques);
 
 	log_trace(logger_mongo, "FIN agregar");
 
@@ -308,10 +305,8 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 void quitar(int codigo_archivo, int cantidad) {
 	log_trace(logger_mongo, "INICIO quitar");
-
-	log_warning(logger_mongo, "lockear inicio"); // Lockear antes dado que lee para despues escribir
-
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
+
 	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = obtener_lista_bloques(path);
@@ -319,10 +314,9 @@ void quitar(int codigo_archivo, int cantidad) {
 
 	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
 
-	log_warning(logger_mongo, "lockear final");
-
 	// TODO: ver como quitar los bloques que se eliminan al quitar
 	iniciar_archivo_recurso(path, tam_archivo - cantidad, cant_bloques, lista_bloques);
+
 
 	log_trace(logger_mongo, "FIN quitar");
     // pthread_mutex_unlock(&mutex_blocks);
@@ -459,17 +453,30 @@ int min (int a, int b) {
 
 
 uint32_t tamanio_archivo(char* path) {
+	if(es_recurso(path)) {
+		log_trace(logger_mongo, "lockear tamaño");
+		lockearLectura(path);
+	}
 	t_config* config = config_create(path);
 	int tam_archivo = config_get_int_value(config, "SIZE");
 	config_destroy(config);
+	if(es_recurso(path)) {
+		log_trace(logger_mongo, "unlockear tamaño");
+		unlockear(path);
+	}
 	return tam_archivo;
 }
 
 uint32_t cantidad_bloques_recurso(char* path) {
+	log_trace(logger_mongo, "lockear cantidad bloques");
+	lockearLectura(path);
 
 	t_config* config = config_create(path);
 	int cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 	config_destroy(config);
+
+	log_trace(logger_mongo, "unlockear cantidad bloques");
+	unlockear(path);
 
 	return cant_bloques;
 }
@@ -492,6 +499,9 @@ char caracter_llenado_archivo(char* path) {
 }
 
 char* md5_archivo(char* path) {
+//	log_trace(logger_mongo, "lockear md5");
+//	lockearLectura(path);
+
 	int n;
 	int largo = strlen(path);
 	MD5_CTX c;
@@ -515,6 +525,9 @@ char* md5_archivo(char* path) {
 	for (n = 0; n < 16; ++n) {
 		snprintf(&(out[n*2]), 16*2, "%02x", (unsigned int)digest[n]);
 	}
+
+//	log_trace(logger_mongo, "unlockear md5");
+//	unlockear(path);
 
 	return out;
 }
@@ -557,10 +570,14 @@ t_list* obtener_lista_bloques(char* path){
 		}
 
 		log_trace(logger_mongo, "Returneo tripulante");
+
 		return lista_bloques;
 	}
 
 	log_trace(logger_mongo, "Tengo block caunt, o sea que soy un recurso");
+
+	log_trace(logger_mongo, "lockear bloques inicio");
+	lockearLectura(path);
 
 	uint32_t cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 
@@ -579,10 +596,15 @@ t_list* obtener_lista_bloques(char* path){
 		list_add(lista_bloques, aux);
 	}
 
+	log_trace(logger_mongo, "unlockear bloques inicio");
+	unlockear(path);
+
 	return lista_bloques;
 }
 
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
+	log_trace(logger_mongo, "lockear escritura recurso");
+	lockearEscritura(path);
 
 	log_trace(logger_mongo, "0 iniciar_archivo_recurso");
 	set_tam(path, tamanio);
@@ -593,6 +615,9 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	char* md5 = md5_archivo(path);
 	set_md5(path, md5);
 	log_trace(logger_mongo, "FIN iniciar_archivo_recurso");
+
+	log_trace(logger_mongo, "unlockear escritura recurso");
+	unlockear(path);
 }
 
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloques) {
@@ -623,8 +648,6 @@ int es_recurso(char* path) {
 
 void asignar_bloque_recurso(char* path, int pos_libre) {
 
-	log_warning(logger_mongo, "lockear inicio");
-
 	uint32_t tamanio = tamanio_archivo(path);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(path);
 	log_trace(logger_mongo, "cantidad de bloques: %i, sera aumentada", cantidad_bloques);
@@ -642,9 +665,6 @@ void asignar_bloque_recurso(char* path, int pos_libre) {
 	*/
 
 	iniciar_archivo_recurso(path, tamanio, cantidad_bloques + 1, lista_bloques);
-
-	log_warning(logger_mongo, "lockear final");
-
 }
 
 void asignar_bloque_tripulante(char* path, int pos_libre, int size_agregado) {
@@ -682,9 +702,7 @@ char* crear_puntero_a_bitmap(){
 }
 
 void limpiar_metadata(char* path) {
-	log_warning(logger_mongo, "lockear inicio");
 	iniciar_archivo_recurso(path, 0, NULL, NULL); // Ver si NULL explotan todo
-	log_warning(logger_mongo, "lockear final");
 }
 
 void liberar_bloques(char* path) {
@@ -698,9 +716,6 @@ void liberar_bloques(char* path) {
 }
 
 void liberar_bloque(char* path, uint32_t nro_bloque) {
-
-	log_warning(logger_mongo, "lockear inicio");
-
 	t_list* bloques = obtener_lista_bloques(path);
 	uint32_t nro_bloque_aux;
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
@@ -724,9 +739,6 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 			set_cant_bloques(path, cantidad_bloques_recurso(path) - 1);
 		}
 	}
-
-	log_warning(logger_mongo, "lockear final");
-
 }
 
 void set_tam(char* path, int tamanio){
