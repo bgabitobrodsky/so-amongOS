@@ -16,5 +16,10 @@ void recorrer_bitacoras(t_list* lista_bloques_ocupados);
 void sortear(t_list* lista_bloques_ocupados);
 int bloques_ocupados_difieren(t_list* lista_bloques_ocupados);
 char* rompio(int codigo);
+int md5_no_concuerda();
+int tamanio_correcto();
+int bloques_sin_sentido();
+int bitmap_no_concuerda();
+void restaurar_blocks();
 
 #endif

@@ -148,35 +148,95 @@ int verificar_block_counts(t_TCB* tripulante) {
 	}
 	return corrompido;
 }
-
 int verificar_blocks() {
-    // TODO
-	//Por cada archivo de recurso:
-	//Concatenar los bloques de la lista de bloques
-	//Hashear lo concatenado (Osea si la lista es [1,4,2], debo hashear a MD5 la cadena 142)
-	//Comparar lo hasheado con el hash del archivo. Si son iguales no hay sabotaje. Si difieren está saboteado el archivo
-	//¿Cómo reparar el archivo?
-	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
-	//Supongo que el último bloque debería completarlo de basura.
 
-	int lbs_basura  = lista_blocks_saboteada(recurso.basura);
-	int lbs_comida  = lista_blocks_saboteada(recurso.comida);
-	int lbs_oxigeno = lista_blocks_saboteada(recurso.oxigeno);
-	int flag = 0;
+	if (md5_no_concuerda() || !tamanio_correcto() || bloques_sin_sentido() || bitmap_no_concuerda()) {
+		restaurar_blocks();
+		return 5;
+	}
 
-	if (lbs_basura) {
-		reparar(recurso.basura);
-		flag = 5;
+	return 0;
+}
+
+int md5_no_concuerda() { // Puede explotar
+	t_config* config_basura = config_create(path_basura);
+	t_config* config_oxigeno = config_create(path_oxigeno);
+	t_config* config_comida = config_create(path_comida);
+
+	char* bloques_basura = config_get_string_value(config_basura, "BLOCKS");
+	char* bloques_oxigeno = config_get_string_value(config_oxigeno, "BLOCKS");
+	char* bloques_comida = config_get_string_value(config_comida, "BLOCKS");
+
+	char* nuevo_md5_basura = md5_archivo(bloques_basura);
+	char* nuevo_md5_oxigeno = md5_archivo(bloques_oxigeno);
+	char* nuevo_md5_comida = md5_archivo(bloques_comida);
+
+	char* md5_basura = config_get_string_value(config_basura, "MD5");
+	char* md5_oxigeno = config_get_string_value(config_oxigeno, "MD5");
+	char* md5_comida = config_get_string_value(config_comida, "MD5");
+
+	config_destroy(config_basura);
+	config_destroy(config_oxigeno);
+	config_destroy(config_comida);
+
+	if (!strcmp(nuevo_md5_basura, md5_basura) || !strcmp(nuevo_md5_oxigeno, md5_oxigeno) || !strcmp(nuevo_md5_comida, md5_comida)) {
+		return 1;
 	}
-	if (lbs_comida) {
-		reparar(recurso.comida);
-		flag = 5;
+
+	return 0;
+}
+
+int tamanio_correcto() {
+	uint32_t cant_bloques = obtener_cantidad_bloques_superbloque();
+	uint32_t tamanio_bloque = obtener_tamanio_bloque_superbloque();
+
+	return (cant_bloques * tamanio_bloque) == strlen(directorio.mapa_blocks); // Revisar logica
+}
+
+int bloques_sin_sentido() {
+	t_list* bloques_basura = obtener_lista_bloques(path_basura);
+	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
+	t_list* bloques_comida = obtener_lista_bloques(path_comida);
+	uint32_t nro_bloque;
+
+	for(int i = 0; i < list_size(bloques_basura) ; i++) {
+		nro_bloque = list_get(bloques_basura, i);
+		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+			return 1;
 	}
-	if (lbs_oxigeno) {
-		reparar(recurso.oxigeno);
-		flag = 5;
+
+	for(int i = 0; i < list_size(bloques_oxigeno) ; i++) {
+		nro_bloque = list_get(bloques_oxigeno, i);
+		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+			return 1;
 	}
-	return flag;
+
+	for(int i = 0; i < list_size(bloques_comida) ; i++) {
+		nro_bloque = list_get(bloques_comida, i);
+		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+			return 1;
+	}
+
+	return 0;
+}
+
+int bitmap_no_concuerda() {
+	t_bitarray* bitmap = obtener_bitmap();
+	t_list* bloques_basura = obtener_lista_bloques(path_basura);
+	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
+	t_list* bloques_comida = obtener_lista_bloques(path_comida);
+	uint32_t nro_bloque;
+
+	list_add_all(bloques_basura, bloques_oxigeno);
+	list_add_all(bloques_basura, bloques_oxigeno);
+
+	for(int i = 0; i < list_size(bloques_basura) ; i++){
+		nro_bloque = list_get(bloques_basura, i);
+		if (!bitarray_test_bit(bitmap, nro_bloque)) // Funciona con uint?
+			return 1;
+	}
+
+	return 0;
 }
 
 int lista_blocks_saboteada(FILE* archivo) {
@@ -201,10 +261,22 @@ int lista_blocks_saboteada(FILE* archivo) {
 	return 0;
 }
 
-void reparar_blocks() {
-	//TODO
-	//Reescribir tantos caracteres de llenado como hagan falta hasta llenar el size del archivo
-	//Supongo que el último bloque debería completarlo de basura. Basura en nuestro caso es \t
+void restaurar_blocks() {
+	uint32_t tamanio_archivo_basura = tamanio_archivo(path_basura);
+	uint32_t tamanio_archivo_oxigeno = tamanio_archivo(path_oxigeno);
+	uint32_t tamanio_archivo_comida = tamanio_archivo(path_comida);
+
+	liberar_bloques(path_basura);
+	liberar_bloques(path_oxigeno);
+	liberar_bloques(path_comida);
+
+	limpiar_metadata(path_basura);
+	limpiar_metadata(path_oxigeno);
+	limpiar_metadata(path_comida);
+
+	agregar("BASURA", (int) tamanio_archivo_basura);
+	agregar("OXIGENO", (int) tamanio_archivo_oxigeno);
+	agregar("COMIDA", (int) tamanio_archivo_comida);
 }
 
 void recorrer_recursos(t_list* lista_bloques_ocupados) {

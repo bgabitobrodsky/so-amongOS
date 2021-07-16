@@ -662,6 +662,46 @@ char* crear_puntero_a_bitmap(){
 	return puntero_a_bitmap;
 }
 
+void limpiar_metadata(char* path) {
+	iniciar_archivo_recurso(path, 0, NULL, NULL); // Ver si NULL explotan todo
+}
+
+void liberar_bloques(char* path) {
+	t_list* bloques = obtener_lista_bloques(path);
+	uint32_t nro_bloque;
+
+	for(int i = 0; i < list_size(bloques) ; i++) {
+		nro_bloque = list_get(bloques, i);
+		liberar_bloque(path, nro_bloque);
+	}
+}
+
+void liberar_bloque(char* path, uint32_t nro_bloque) {
+	t_list* bloques = obtener_lista_bloques(path);
+	uint32_t nro_bloque_aux;
+	t_bitarray* nuevo_bitmap = obtener_bitmap();
+	int indice;
+
+	for(int i = 0; i < list_size(bloques) ; i++) {
+		nro_bloque = list_get(bloques, i);
+		if (nro_bloque == nro_bloque_aux) {
+			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
+			reescribir_superbloque(obtener_tamanio_bloque_superbloque(), obtener_cantidad_bloques_superbloque(), nuevo_bitmap);
+
+			for(int i = 0; i < list_size(bloques) ; i++) {
+				nro_bloque_aux = list_get(bloques, i);
+				if (nro_bloque == nro_bloque_aux)
+					indice = i;
+			}
+
+			list_remove(bloques, indice);
+
+			set_bloq(path, bloques);
+			set_cant_bloques(path, cantidad_bloques_recurso(path) - 1);
+		}
+	}
+}
+
 void set_tam(char* path, int tamanio){
 
 	t_config* config = config_create(path);
