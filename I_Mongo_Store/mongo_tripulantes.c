@@ -77,7 +77,7 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 
 	list_add(bitacoras, nueva_bitacora);
 
-	asignar_nuevo_bloque(nueva_bitacora->path);
+	asignar_nuevo_bloque(nueva_bitacora->path, 0);
     log_trace(logger_mongo, "Acomodada bitacora");
 }
 
@@ -171,9 +171,9 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	log_trace(logger_mongo, "ta vacia? %i", list_is_empty(lista_bloques));
 	log_trace(logger_mongo, "tamanio? %i", list_size(lista_bloques));
 
-	// lo meti con mucho suenio, calculo que ta bien
 	if(list_is_empty(lista_bloques)){
-		asignar_nuevo_bloque(bitacora->path);
+		log_trace(logger_mongo, "La lista de bloques esta vacia, proceso a signar nuevo bloque");
+		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
 		lista_bloques = obtener_lista_bloques(bitacora->path);
 	}
 
@@ -182,6 +182,8 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	log_trace(logger_mongo, "2 escribir_bitacora, el ultimo bloque es: %i", *ultimo_bloque);
 
 	escribir_bloque_bitacora(*ultimo_bloque, mensaje, bitacora);
+
+	// escribir_archivo_tripulante(); //
 
 	list_destroy_and_destroy_elements(lista_bloques, free);
 }
@@ -195,7 +197,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 
 	int* aux = malloc(sizeof(int));
 
-	for(int i = 0; i < list_size(lista_bloques) - 1; i++){
+	for(int i = 0; i < list_size(lista_bloques); i++){
 
 		aux = list_get(lista_bloques, i);
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
@@ -219,7 +221,8 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	if (cantidad_alcanzada != strlen(mensaje)) {
 		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
 		log_debug(logger_mongo, "Alcance %i bytes de %i bytes, ", cantidad_alcanzada, strlen(mensaje));
-		asignar_nuevo_bloque(bitacora->path);
+		// el size lo podria dejar aca, y no pasar por param
+		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
 		char* resto_mensaje = malloc(strlen(mensaje + cantidad_alcanzada) + 1);
 		log_debug(logger_mongo, "Me falta copiar: %s", mensaje + cantidad_alcanzada);
 		log_debug(logger_mongo, "De longitud:", strlen(mensaje + cantidad_alcanzada));
