@@ -33,7 +33,7 @@ void compactacion(){
             for(int z = i + 1; z < size; z++){
                 segmento* segmento_ocupado = list_get(segmentos, z);
                 if(!segmento_ocupado->libre){
-                    //TODO ir sumando el desplazamiento de todos los segmentos libres
+                    
                     // Tengo que acomodar los fuckings punteros a memoria de las estructuras
                     if(segmento_ocupado->tipo == S_PCB){
                         // en caso de ser un seg. de pcb tengo que actualizar el puntero a pcb de sus tcb

@@ -20,7 +20,7 @@ typedef struct pagina {
     bool modificada;
     int tamano_ocupado;
     marco* puntero_marco;
-    //bool usado // para clock
+    bool usado // para clock
     //bool bloqueada?
 } pagina;
 t_list* paginas;
@@ -35,6 +35,7 @@ typedef struct tabla_paginas {
 } tabla_paginas;
 
 int intento_asignar_marco;
+int marco_clock;
 
 
 void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid);
@@ -56,11 +57,13 @@ void liberar_lista_tcbs_paginacion(t_list* lista);
 int escribir_en_marco(marco* marco, void* data, int offset, int tam);
 void matar_tabla_paginas(int pid);
 pagina* get_lru();
+pagina* get_clock();
 int swap_in(pagina* pagina);
 void swap_out(pagina* pagina);
 int algoritmo_de_reemplazo();
 void page_fault(pagina* pag, int pid, int num);
 uint64_t unix_epoch();
+pagina* get_pagina_from_marco(marco* marco);
 
 #endif /* PAGINACION_H_ */
 

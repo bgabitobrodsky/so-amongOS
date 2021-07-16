@@ -16,7 +16,9 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 			page_fault(pagina, pid, numero_pagina + 1);
 		}else{
 			pagina->ultimo_uso = unix_epoch();
+			pagina->usado = true;
 		}
+		pagina->modificada = true;
 		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
@@ -27,12 +29,13 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 			page_fault(pagina, pid, numero_pagina + 1);
 		}else{
 			pagina->ultimo_uso = unix_epoch();
+			pagina->usado = true;
 		}
+		pagina->modificada = true;
 		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
 		numero_pagina++;
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 	}
-	pagina->modificada = true;
 }
 
 int escribir_en_marco(marco* marco, void* data, int offset, int tam){
@@ -61,6 +64,7 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 			page_fault(pagina, pid, numero_pagina + 1);
 		}else{
 			pagina->ultimo_uso =  unix_epoch();
+			pagina->usado = true;
 		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
 		numero_pagina++;
@@ -73,6 +77,7 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 			page_fault(pagina, pid, numero_pagina + 1);
 		}else{
 			pagina->ultimo_uso =  unix_epoch();
+			pagina->usado = true;
 		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
 		numero_pagina++;
@@ -125,6 +130,7 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 		offset = ultima_pagina->tamano_ocupado;
 		numero_pagina = list_size(tabla->paginas) - 1;
 		ultima_pagina->ultimo_uso =  unix_epoch();
+		ultima_pagina->usado = true;
 		// TODO: PAGINA UPDATE LRU/CLOCK
 		progreso += completar_pagina(ultima_pagina, data, tam);
 		//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
@@ -165,6 +171,7 @@ int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid){
 	pag->disk_index = -1; // todavia no está en disco
 	pag->modificada = true;
 	pag->ultimo_uso =  unix_epoch();
+	pag->usado = true;
 	pag->en_memoria = true;
 
 	list_add(tabla->paginas,pag);
@@ -228,11 +235,12 @@ marco* asignar_marco(){
 }
 
 int algoritmo_de_reemplazo(){
+	//devuelve 1 si fue exito
 	pagina* pagina;
 	if(strcmp(ALGORITMO_REEMPLAZO,"LRU")==0){
 		pagina = get_lru();
 	}else if(strcmp(ALGORITMO_REEMPLAZO,"CLOCK")==0){
-		
+		pagina = get_clock();
 	}else{
 		log_error(logger,"Algoritmo de reemplazo desconocido");
 		exit(EXIT_FAILURE);
@@ -295,6 +303,7 @@ void page_fault(pagina* pag, int pid, int num){
 	pag->en_memoria = true;
 	pag->modificada = false;
 	pag->ultimo_uso =  unix_epoch();
+	pag->usado = true;
 	pthread_mutex_unlock(&m_swap);
 }
 
@@ -428,6 +437,38 @@ pagina* get_lru(){
 
 	dictionary_iterator(tablas, table_iterator);
     return lru_p;
+}
+
+pagina* get_clock(){
+	log_info(logger, "Ejecuto un swap por CLOCK");
+    pagina* clock_p;
+	int cantidad_marcos = list_size(marcos);
+	marco* marco_actual;
+	while(1){
+		marco_actual = list_get(marcos, marco_clock);
+		pagina* pag = get_pagina_from_marco(marco_actual);
+		if(marco_clock < cantidad_marcos-1){
+			marco_clock++;
+		}else{
+			marco_clock = 0;
+		}
+		//log_info(logger, "Puntero clock: %d", marco_clock);
+		if(!pag->usado){
+			clock_p = pag;
+			break;
+		}else{
+			pag->usado = false;
+		}
+	}
+    return clock_p;
+}
+
+pagina* get_pagina_from_marco(marco* marco){
+	int pid = marco->pid;
+	int num_pagina = marco->num_pagina;
+
+	tabla_paginas* tabla = buscar_tabla(pid);
+	return list_get(tabla->paginas, num_pagina-1);
 }
 
 void dump_paginacion(){

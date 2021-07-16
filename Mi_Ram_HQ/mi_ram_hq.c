@@ -1,10 +1,3 @@
-/*
- * mi_ram_hq.c
- *
- *  Created on: 9 may. 2021
- *      Author: utnso
- */
-
 #include "mi_ram_hq.h"
 
 #define	IP config_get_string_value(config, "IP")
@@ -238,7 +231,7 @@ void iniciar_memoria(){
 		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
 		marcos = list_create();
 		paginas = list_create();
-
+		marco_clock = 0;
 		int cantidad_marcos = TAMANIO_MEMORIA/TAMANIO_PAGINA;
 		
 		for(int i=0; i < cantidad_marcos ; i++) {
