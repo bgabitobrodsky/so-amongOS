@@ -25,40 +25,43 @@ void enviar_posicion_sabotaje(int socket_discordiador) {
 
 }
 
-char* reparar() {
-	// TODO: mejorable
-	char* roto = string_new();
+void reparar() {
+
     int reparado = 0;
     
     reparado = verificar_cant_bloques();
 
-    if (reparado == 1)
-    	string_append(&roto, "\n\t-la cantidad de bloques del superbloque");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara la cantidad de bloques del superbloque");
+    }
 
     reparado = verificar_bitmap();
 
-    if (reparado == 2)
-    	string_append(&roto, "\n\t-el bitmap del superbloque");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara el bitmap del superbloque");
+    }
 
     reparado = verificar_sizes();
 
-    if (reparado == 3)
-    	string_append(&roto, "\n\t-los tamanios de los archivos");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara el tamanios de los archivos");
+    }
 
     reparado = verificar_block_counts();
 
-    if (reparado == 4)
-    	string_append(&roto, "\n\t-la cantidad de bloques de los recursos");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
+    }
 
     reparado = verificar_blocks();
 
-    if (reparado == 5)
-    	string_append(&roto, "\n\t-la lista de bloques de los recursos");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara la lista de bloques de los recursos");
+    }
 
-    if (reparado == 0)
-    	string_append(&roto, "\n\t-nada");
-
-    return roto;
+    if (!reparado){
+    	log_warning(logger_mongo, "Estamos joya");
+    }
 }
 
 int verificar_cant_bloques() {
@@ -73,6 +76,7 @@ int verificar_cant_bloques() {
     if (cant_bloques != cantidad_real) {
         t_bitarray* bitmap = obtener_bitmap();
         reescribir_superbloque(TAMANIO_BLOQUE, cantidad_real, bitmap);
+        bitarray_destroy(bitmap);
         return 1;
     }
     else{
@@ -81,18 +85,19 @@ int verificar_cant_bloques() {
 }
 
 int verificar_bitmap() {
-	//Creo la lista // TODO de donde saco la lista?
+	//Creo la lista
 	t_list* lista_bloques_ocupados = list_create();
 
-	//Agrego los bloques usados en la lista, con en el indice = n° bloque
     recorrer_recursos(lista_bloques_ocupados);
     recorrer_bitacoras(lista_bloques_ocupados);
 
     sortear(lista_bloques_ocupados);
 
+    // TODO seba: verificar la lista a ver si todo sale bien
+
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
         actualizar_bitmap(lista_bloques_ocupados);
-        return 2;
+        return 1;
     }
     else
         return 0;
@@ -111,15 +116,15 @@ int verificar_sizes() {
 
 	if(tamanio_real_B != tamanio_archivo(path_basura)) {
 		set_tam(path_basura, tamanio_real_B);
-		corrompido = 3;
+		corrompido = 1;
 	}
 	if(tamanio_real_C != tamanio_archivo(path_comida)) {
 		set_tam(path_comida, tamanio_real_C);
-		corrompido = 3;
+		corrompido = 1;
 	}
 	if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
 		set_tam(path_oxigeno, tamanio_real_O);
-		corrompido = 3;
+		corrompido = 1;
 	}
 
 	return corrompido;
@@ -136,23 +141,24 @@ int verificar_block_counts(t_TCB* tripulante) {
 
 	if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
 		set_tam(path_oxigeno, cantidad_real_oxigeno);
-		corrompido = 4;
+		corrompido = 1;
 	}
 	if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
 		set_tam(path_comida, cantidad_real_comida);
-		corrompido = 4;
+		corrompido = 1;
 	}
 	if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
 		set_tam(path_basura, cantidad_real_basura);
-		corrompido = 4;
+		corrompido = 1;
 	}
+
 	return corrompido;
 }
 int verificar_blocks() {
 
 	if (md5_no_concuerda() || !tamanio_correcto() || bloques_sin_sentido() || bitmap_no_concuerda()) {
 		restaurar_blocks();
-		return 5;
+		return 1;
 	}
 
 	return 0;
@@ -197,26 +203,39 @@ int bloques_sin_sentido() {
 	t_list* bloques_basura = obtener_lista_bloques(path_basura);
 	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
 	t_list* bloques_comida = obtener_lista_bloques(path_comida);
-	uint32_t nro_bloque;
+	int* nro_bloque = malloc(sizeof(int));
 
 	for(int i = 0; i < list_size(bloques_basura) ; i++) {
 		nro_bloque = list_get(bloques_basura, i);
-		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
+			free(nro_bloque);
+			//liberar listas
 			return 1;
+		}
+
+
 	}
 
 	for(int i = 0; i < list_size(bloques_oxigeno) ; i++) {
 		nro_bloque = list_get(bloques_oxigeno, i);
-		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
+			free(nro_bloque);
+			//liberar listas
 			return 1;
+		}
 	}
 
 	for(int i = 0; i < list_size(bloques_comida) ; i++) {
 		nro_bloque = list_get(bloques_comida, i);
-		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
+			//liberar listas
+			free(nro_bloque);
 			return 1;
+		}
 	}
+	//liberar listas
 
+	free(nro_bloque);
 	return 0;
 }
 
@@ -225,17 +244,24 @@ int bitmap_no_concuerda() {
 	t_list* bloques_basura = obtener_lista_bloques(path_basura);
 	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
 	t_list* bloques_comida = obtener_lista_bloques(path_comida);
-	uint32_t nro_bloque;
+
+	int* nro_bloque = malloc(sizeof(int));
 
 	list_add_all(bloques_basura, bloques_oxigeno);
-	list_add_all(bloques_basura, bloques_oxigeno);
+	list_add_all(bloques_basura, bloques_comida);
 
 	for(int i = 0; i < list_size(bloques_basura) ; i++){
 		nro_bloque = list_get(bloques_basura, i);
-		if (!bitarray_test_bit(bitmap, nro_bloque)) // Funciona con uint?
+		if (!bitarray_test_bit(bitmap, *nro_bloque)){
+			free(nro_bloque);
+			//liberar listas
 			return 1;
+		}
+
 	}
 
+	free(nro_bloque);
+	// liberar listas
 	return 0;
 }
 
@@ -274,85 +300,78 @@ void restaurar_blocks() {
 	limpiar_metadata(path_oxigeno);
 	limpiar_metadata(path_comida);
 
-	agregar("BASURA", (int) tamanio_archivo_basura);
-	agregar("OXIGENO", (int) tamanio_archivo_oxigeno);
-	agregar("COMIDA", (int) tamanio_archivo_comida);
+	agregar(BASURA, (int) tamanio_archivo_basura);
+	agregar(OXIGENO, (int) tamanio_archivo_oxigeno);
+	agregar(COMIDA, (int) tamanio_archivo_comida);
 }
 
-void recorrer_recursos(t_list* lista_bloques_ocupados) {
+void recorrer_recursos(t_list* bloques_ocupados) {
     // Recorre las listas de las metadatas de los recursos y va anotando en la lista que bloques estan ocupados
-	int i = 0;
 
 	//BASURA
-	uint32_t cantidad_bloques_basura = cantidad_bloques_recurso(path_basura);
 	t_list* lista_bloques_basura = obtener_lista_bloques(path_basura);
+	int* aux = malloc(sizeof(int));
 
-	for(uint32_t j = 0; j < cantidad_bloques_basura; j++) {
-		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_basura, j)); // lista_bloques_ocupados[i] =lista_bloques_basura[j]
-		i++;
+	for(int i = 0; i < list_size(lista_bloques_basura); i++) {
+		aux = list_get(lista_bloques_basura, i);
+		list_add(bloques_ocupados, aux);
 	}
 
 	//COMIDA
-	uint32_t cantidad_bloques_comida = cantidad_bloques_recurso(path_comida);
 	t_list* lista_bloques_comida = obtener_lista_bloques(path_comida);
 
-	for(uint32_t j = 0; j < cantidad_bloques_comida; j++) {
-		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_comida, j));
-		i++;
+	for(int i = 0; i < list_size(lista_bloques_comida); i++) {
+		aux = list_get(lista_bloques_comida, i);
+		list_add(bloques_ocupados, aux);
 
 	}
 
 	//OXIGENO
-	uint32_t cantidad_bloques_oxigeno = cantidad_bloques_recurso(path_oxigeno);
 	t_list* lista_bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
 
-	for(uint32_t j = 0; j < cantidad_bloques_oxigeno; j++) {
-		reemplazar(lista_bloques_ocupados, i, list_get(lista_bloques_oxigeno, j));
-		i++;
+	for(int i = 0; i < list_size(lista_bloques_oxigeno); i++) {
+		aux = list_get(lista_bloques_oxigeno, i);
+		list_add(bloques_ocupados, aux);
 	}
 
-	free(lista_bloques_basura);
-	free(lista_bloques_comida);
-	free(lista_bloques_oxigeno);
+	// liberar listas
+	log_trace(logger_mongo, "Liberando listas auxiliares");
+	free(aux);
+	liberar_lista(lista_bloques_basura);
+	liberar_lista(lista_bloques_comida);
+	liberar_lista(lista_bloques_oxigeno);
 }
 
-void recorrer_bitacoras(t_list* lista_bloques_ocupados) {
-	// TODO: revisar
+void recorrer_bitacoras(t_list* bloques_ocupados) {
 	// Recorre las listas de las metadatas de las bitacoras y va anotando en la lista que bloques estan ocupados
 
-	//Obtengo la cantidad de bloques de lista_bloques_ocupados y la cantidad de bitacoras
-	int i = list_size(lista_bloques_ocupados);
-	int cant_bitacoras = list_size(bitacoras);
+	t_bitacora* bitacora_aux;
+	int* aux = malloc(sizeof(int));
 
 	//Itero por todas las bitacoras
-	for(int j = 0; j < cant_bitacoras; j++) {
-		t_bitacora* bitacora = list_get(bitacoras, i);
-		int cant_bloques_bitacora = list_size(bitacora->bloques);
-		//Le asigno a lista_bloques_ocupados el bloque n°k de la bitacora n°j
-		for(int k = 0; k < cant_bloques_bitacora; k++){
-			reemplazar(lista_bloques_ocupados, i, list_get(bitacora->bloques, k));
+	for(int i = 0; i < list_size(bitacoras); i++) {
+		bitacora_aux = list_get(bitacoras, i);
+		for(int j = 0; j < list_size(bitacora_aux->bloques); j++){
+			aux = list_get(bitacora_aux->bloques, j);
+			list_add(bloques_ocupados, aux);
 		}
 	}
+	free(aux);
 }
 
-void sortear(t_list* lista_bloques_ocupados) {
-	//Obtengo la cantidad de bloques de lista_bloques_ocupados
-	int n = list_size(lista_bloques_ocupados);
-
-    int i, j;
-    for (i = 0; i < n-1; i++) {
-        for (j = 0; j < n-i-1; j++) {
-            if (list_get(lista_bloques_ocupados, j) > list_get(lista_bloques_ocupados, j+1)) {
-                int temp = (int) list_get(lista_bloques_ocupados, j);
-    			reemplazar(lista_bloques_ocupados, j, list_get(lista_bloques_ocupados, j+1));
-    			reemplazar(lista_bloques_ocupados, j+1, (void*) temp);
-            }
-        }
-    }
+void sortear(t_list* bloques_ocupados) {
+	// Ordeno de menor a mayor
+	void* es_menor(void* elemento, void* otro_elemento){
+		if(*((int*) elemento) > *((int*) otro_elemento)){
+			return otro_elemento;
+		} else{
+			return elemento;
+		}
+	}
+	list_sort(bloques_ocupados, es_menor);
 }
 
-int bloques_ocupados_difieren(t_list* lista_bloques_ocupados) {
-	// TODO: revisar BIEN el for
+int bloques_ocupados_difieren(t_list* bloques_ocupados) {
     // Compara lista contra el bitmap, apenas difieren devuelve 1 (como true), sino 0
 	int no_difieren;
 
@@ -361,16 +380,20 @@ int bloques_ocupados_difieren(t_list* lista_bloques_ocupados) {
 	for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
 
 		//Si el bit es 1, la lista debe contener el bloque n° i
-		if(bitarray_test_bit(bitmap, i))
-			no_difieren = esta_en_lista(lista_bloques_ocupados, i);
+		if(bitarray_test_bit(bitmap, i)){
+			no_difieren = esta_en_lista(bloques_ocupados, i);
+		}
 
 		//Si el bit es 0, la lista no debe contener el bloque n° i
-		else
-			no_difieren = ! esta_en_lista(lista_bloques_ocupados, i);
+		else{
+			no_difieren = !esta_en_lista(bloques_ocupados, i);
+		}
 
 		//Si el flag es 0, los bloques difieren
-		if(! no_difieren)
+		if(!no_difieren){
 			return 1;
+		}
+
 	}
 	return 0;
 }

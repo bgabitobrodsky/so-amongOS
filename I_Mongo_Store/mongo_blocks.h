@@ -109,4 +109,12 @@ void imprimir_bitmap(); // TESTEADO
 int max(int a, int b);
 int min(int a, int b);
 
+// Locks
+void crearDiccionarioLocks();
+void lockearLectura(char*);
+void lockearEscritura(char*);
+void unlockear(char*);
+void  verificarExistencia(char*);
+void liberar_lista(t_list* lista);
+
 #endif

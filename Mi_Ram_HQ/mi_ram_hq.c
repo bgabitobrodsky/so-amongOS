@@ -180,7 +180,7 @@ void atender_clientes(void* param) {
 
 				t_list* tcbs_de_esta_patota = buscar_tcbs_por_pid(mensaje_recibido->pid);
 				if(tcbs_de_esta_patota != NULL){
-					for(int i = 0; i < list_size(tcbs_de_esta_patota) - 1; i++){
+					for(int i = 0; i < list_size(tcbs_de_esta_patota); i++){
 						t_TCB* aux = list_get(tcbs_de_esta_patota, i);
 						t_buffer* buffer = serializar_tcb(*aux);
 						empaquetar_y_enviar(buffer, RECIBIR_TCB, parametros->socket);

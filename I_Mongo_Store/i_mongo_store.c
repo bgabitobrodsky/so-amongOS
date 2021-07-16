@@ -37,7 +37,6 @@ int main(int argc, char** argv){
 	// Se settea el FileSystem
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
-	imprimir_bitmap();
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
@@ -129,10 +128,9 @@ void sabotaje(int n) {
 		enviar_posicion_sabotaje(socket_discordiador);
 
 		// Se activaria el protocolo fcsk
-		// char* rotura = reparar();
+		reparar();
 
 		log_error(logger_mongo, "Se reparo el sabotaje.\n");
-		// log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
 
 	}
 
@@ -207,4 +205,12 @@ void imprimir_bitmap(){
 		log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(mapilla, i), bitarray_test_bit(mapilla, i+1), bitarray_test_bit(mapilla, i+2), bitarray_test_bit(mapilla, i+3), bitarray_test_bit(mapilla, i+4), bitarray_test_bit(mapilla, i+5), bitarray_test_bit(mapilla, i+6), bitarray_test_bit(mapilla, i+7));
 	}
 	bitarray_destroy(mapilla);
+}
+
+void liberar_lista(t_list* lista){
+	if(list_is_empty(lista)){
+		list_destroy_and_destroy_elements(lista, free);
+	}else{
+		list_destroy(lista);
+	}
 }
