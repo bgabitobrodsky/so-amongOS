@@ -100,6 +100,7 @@ void iniciar_semaforos();
 void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket);
 void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
 void enviar_pid_a_ram(uint32_t pid, int socket);
+int esta_pid_en_lista(t_list* lista, int elemento);
 
 // SABOTAJES
 void peligro(t_posicion* pos_sabotaje, int socket_ram);

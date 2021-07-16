@@ -725,12 +725,12 @@ void listar_tripulantes() {
 
     int i,j;
 
-    for(i = 0; i < list_size(lista_patotas)-1; i++){
+    for(i = 0; i < list_size(lista_patotas); i++){
         aux_p = list_get(lista_patotas, i);
 
         lista_tripulantes_de_una_patota = lista_tripulantes_patota(aux_p->PID);
 
-        for(j = 0; j < list_size(lista_tripulantes_de_una_patota) - 1; j++){
+        for(j = 0; j < list_size(lista_tripulantes_de_una_patota); j++){
             aux_t = list_get(lista_tripulantes_de_una_patota, j);
             printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
             // TODO: dejarlo como logger
