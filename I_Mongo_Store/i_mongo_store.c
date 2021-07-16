@@ -206,3 +206,11 @@ void imprimir_bitmap(){
 	}
 	bitarray_destroy(mapilla);
 }
+
+void liberar_lista(t_list* lista){
+	if(list_is_empty(lista)){
+		list_destroy_and_destroy_elements(lista, free);
+	}else{
+		list_destroy(lista);
+	}
+}

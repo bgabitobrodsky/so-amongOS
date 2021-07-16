@@ -190,7 +190,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	// escribir_archivo_tripulante(); //
 
-	list_destroy_and_destroy_elements(lista_bloques, free);
+	liberar_lista(lista_bloques);
 }
 
 // TODO: bruh no se usa bloque

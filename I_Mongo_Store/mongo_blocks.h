@@ -115,5 +115,6 @@ void lockearLectura(char*);
 void lockearEscritura(char*);
 void unlockear(char*);
 void  verificarExistencia(char*);
+void liberar_lista(t_list* lista);
 
 #endif

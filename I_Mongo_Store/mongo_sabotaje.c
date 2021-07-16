@@ -335,40 +335,31 @@ void recorrer_recursos(t_list* bloques_ocupados) {
 
 	// liberar listas
 	log_trace(logger_mongo, "Liberando listas auxiliares");
-	if(list_is_empty(lista_bloques_basura)){
-		list_destroy_and_destroy_elements(lista_bloques_basura, free);
-	}else{
-		list_destroy(lista_bloques_basura);
-	}
-	if(list_is_empty(lista_bloques_comida)){
-		list_destroy_and_destroy_elements(lista_bloques_comida, free);
-	}else{
-		list_destroy(lista_bloques_basura);
-	}
-	if(list_is_empty(lista_bloques_oxigeno)){
-		list_destroy_and_destroy_elements(lista_bloques_oxigeno, free);
-	}else{
-		list_destroy(lista_bloques_basura);
-	}
+	free(aux);
+	liberar_lista(lista_bloques_basura);
+	liberar_lista(lista_bloques_comida);
+	liberar_lista(lista_bloques_oxigeno);
 }
 
 void recorrer_bitacoras(t_list* bloques_ocupados) {
-	// TODO: revisar
 	// Recorre las listas de las metadatas de las bitacoras y va anotando en la lista que bloques estan ocupados
 
 	//Obtengo la cantidad de bloques de lista_bloques_ocupados y la cantidad de bitacoras
-	int i = list_size(bloques_ocupados);
-	int cant_bitacoras = list_size(bitacoras);
+	int cantidad_bloques_ocupados = list_size(bloques_ocupados);
+
+	t_bitacora* bitacora_aux;
+	int cant_bloques_bitacora;
+	int* aux = malloc(sizeof(int));
 
 	//Itero por todas las bitacoras
-	for(int j = 0; j < cant_bitacoras; j++) {
-		t_bitacora* bitacora = list_get(bitacoras, i);
-		int cant_bloques_bitacora = list_size(bitacora->bloques);
-		//Le asigno a lista_bloques_ocupados el bloque n°k de la bitacora n°j
-		for(int k = 0; k < cant_bloques_bitacora; k++){
-			reemplazar(bloques_ocupados, i, list_get(bitacora->bloques, k));
+	for(int i = 0; i < list_size(bitacoras); i++) {
+		bitacora_aux = list_get(bitacoras, i);
+		for(int j = 0; j < list_size(bitacora_aux->bloques); j++){
+			aux = list_get(bitacora_aux->bloques, j);
+			list_add(bloques_ocupados, aux);
 		}
 	}
+	free(aux);
 }
 
 void sortear(t_list* bloques_ocupados) {
