@@ -26,6 +26,9 @@ int main(int argc, char** argv){
 	// Se crea la lista de bitacoras para los tripulantes, lista actua de registro para saber que tripulantes poseen bitacora en Mongo
 	bitacoras = list_create();
 
+	//Creo el diccionario de los locks
+	crearDiccionarioLocks();
+
 	// Se establecen estructuras para el setteo del server en escuchar_mongo
 	int socket_oyente = crear_socket_oyente(IP_MONGO_STORE, PUERTO_MONGO_STORE);
 	args_escuchar args_escuchar;
