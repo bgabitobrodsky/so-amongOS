@@ -200,8 +200,10 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	int cantidad_alcanzada = 0;
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
 
+	log_debug(logger_mongo, "Pre asignar memoria al aux, escribir_bloque_bitacora");
 	int* aux = malloc(sizeof(int));
 
+	log_debug(logger_mongo, "Pre-for escribir_bloque_bitacora");
 	for(int i = 0; i < list_size(lista_bloques); i++){
 
 		aux = list_get(lista_bloques, i);

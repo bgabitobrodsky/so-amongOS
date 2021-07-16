@@ -128,10 +128,9 @@ void sabotaje(int n) {
 		enviar_posicion_sabotaje(socket_discordiador);
 
 		// Se activaria el protocolo fcsk
-		// char* rotura = reparar();
+		reparar();
 
 		log_error(logger_mongo, "Se reparo el sabotaje.\n");
-		// log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
 
 	}
 
