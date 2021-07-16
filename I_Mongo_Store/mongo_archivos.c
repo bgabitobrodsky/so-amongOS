@@ -654,6 +654,7 @@ void asignar_bloque_recurso(char* path, int pos_libre) {
 	t_list* lista_bloques = obtener_lista_bloques(path);
 
 	list_add(lista_bloques, &pos_libre);
+
 	/*// PRINTEO DE TESTEO
 	int* aux;
 	log_trace(logger_mongo, "Recurso: %s", path);
@@ -738,7 +739,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 			set_cant_bloques(path, cantidad_bloques_recurso(path) - 1);
 		}
 	}
-
+	// liberar lista
 	free(nro_bloque_aux);
 }
 
