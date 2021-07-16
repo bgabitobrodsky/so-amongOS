@@ -119,32 +119,18 @@ void escuchar_mongo(void* args) {
 
 void sabotaje(int n) {
 
-	// Se espera que set reciva la signal correspondiente
+	// Se espera que set reciba la signal correspondiente
 	if (n == SIGUSR1) {
 		log_info(logger_mongo, "Se detecto un sabotaje.\n");
 		// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
-		enviar_codigo(SABOTAJE, socket_discordiador);
+		enviar_posicion_sabotaje(socket_discordiador);
 
-		t_estructura* listo = recepcion_y_deserializacion(socket_discordiador);
+		// Se activaria el protocolo fcsk
+		// char* rotura = reparar();
 
-		if (listo->codigo_operacion == LISTO) {
+		log_info(logger_mongo, "Se reparo el sabotaje.\n");
+		// log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
 
-			// Se envian la primera posicion no enviada hasta el momento
-			enviar_posicion_sabotaje(socket_discordiador);
-
-			// Se espera a que Discordiador envie un designado para reparar
-			t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
-
-			// Se activaria el protocolo fcsk
-			char* rotura = reparar();
-
-			log_info(logger_mongo, "Se reparo el sabotaje.\n");
-			log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
-			// Se avisa fin de sabotaje al Discordiador para que continue sus operaciones
-			enviar_codigo(LISTO, socket_discordiador);
-
-			free(mensaje);
-		}
 	}
 
 }

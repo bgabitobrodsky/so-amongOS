@@ -11,7 +11,7 @@ void enviar_posicion_sabotaje(int socket_discordiador) {
 		posicion.coord_x = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][0] - 48; // EQUIVALENCIA ASCII NUMERO
 		posicion.coord_y = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][2] - 48; // EQUIVALENCIA ASCII NUMERO
 
-		empaquetar_y_enviar(serializar_posicion(posicion), POSICION, socket_discordiador);
+		empaquetar_y_enviar(serializar_posicion(posicion), SABOTAJE, socket_discordiador);
 
 		pos_actual_sabotaje++;
 	}
