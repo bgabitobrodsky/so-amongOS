@@ -479,7 +479,7 @@ char caracter_llenado_archivo(char* path) {
 
 char* md5_archivo(char* path) {
 	int n;
-	int largo = sizeof(path)/sizeof(char);
+	int largo = strlen(path);
 	MD5_CTX c;
 	unsigned char digest[16];
 	char *out = (char*)malloc(33);
