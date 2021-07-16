@@ -137,6 +137,8 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 	int bit_libre = 0;
 	int pos_libre;
 
+	log_warning(logger_mongo, "sincronizar inicio");
+
 	//Recorro todas las posiciones del bitarray
 	for (uint32_t i = 0; i < CANTIDAD_BLOQUES; i++){
 		//Entra si el bit del bitmap está en 0
@@ -146,6 +148,7 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 			break;
 		}
 	}
+
 
 	//Si había un bloque libre
 	if (bit_libre == 1) {
@@ -169,6 +172,9 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 	else{
 		log_info(logger_mongo, "No hay bloques disponibles en este momento");
 	}
+
+	log_warning(logger_mongo, "sincronizar fin");
+
 
 	/*
 	log_trace(logger_mongo, "fin asignar_nuevo_bloque");
@@ -286,10 +292,14 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 	log_trace(logger_mongo, "2 agregar");
 
+	log_warning(logger_mongo, "lockear inicio"); // Lockear antes dado que lee para despues escribir
+
 	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	lista_bloques = obtener_lista_bloques(path);
 	iniciar_archivo_recurso(path, tam_archivo + cantidad, cant_bloques, lista_bloques);
+
+	log_warning(logger_mongo, "lockear final");
 
 	log_trace(logger_mongo, "FIN agregar");
 
@@ -299,6 +309,8 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 void quitar(int codigo_archivo, int cantidad) {
 	log_trace(logger_mongo, "INICIO quitar");
 
+	log_warning(logger_mongo, "lockear inicio"); // Lockear antes dado que lee para despues escribir
+
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
 	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
@@ -306,6 +318,8 @@ void quitar(int codigo_archivo, int cantidad) {
 	char tipo = caracter_llenado_archivo(path);
 
 	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
+
+	log_warning(logger_mongo, "lockear final");
 
 	// TODO: ver como quitar los bloques que se eliminan al quitar
 	iniciar_archivo_recurso(path, tam_archivo - cantidad, cant_bloques, lista_bloques);
@@ -609,6 +623,8 @@ int es_recurso(char* path) {
 
 void asignar_bloque_recurso(char* path, int pos_libre) {
 
+	log_warning(logger_mongo, "lockear inicio");
+
 	uint32_t tamanio = tamanio_archivo(path);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(path);
 	log_trace(logger_mongo, "cantidad de bloques: %i, sera aumentada", cantidad_bloques);
@@ -626,6 +642,9 @@ void asignar_bloque_recurso(char* path, int pos_libre) {
 	*/
 
 	iniciar_archivo_recurso(path, tamanio, cantidad_bloques + 1, lista_bloques);
+
+	log_warning(logger_mongo, "lockear final");
+
 }
 
 void asignar_bloque_tripulante(char* path, int pos_libre, int size_agregado) {
@@ -663,7 +682,9 @@ char* crear_puntero_a_bitmap(){
 }
 
 void limpiar_metadata(char* path) {
+	log_warning(logger_mongo, "lockear inicio");
 	iniciar_archivo_recurso(path, 0, NULL, NULL); // Ver si NULL explotan todo
+	log_warning(logger_mongo, "lockear final");
 }
 
 void liberar_bloques(char* path) {
@@ -677,6 +698,9 @@ void liberar_bloques(char* path) {
 }
 
 void liberar_bloque(char* path, uint32_t nro_bloque) {
+
+	log_warning(logger_mongo, "lockear inicio");
+
 	t_list* bloques = obtener_lista_bloques(path);
 	uint32_t nro_bloque_aux;
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
@@ -700,6 +724,9 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 			set_cant_bloques(path, cantidad_bloques_recurso(path) - 1);
 		}
 	}
+
+	log_warning(logger_mongo, "lockear final");
+
 }
 
 void set_tam(char* path, int tamanio){

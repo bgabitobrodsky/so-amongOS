@@ -181,7 +181,12 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	log_trace(logger_mongo, "1 escribir_bitacora");
 	log_trace(logger_mongo, "2 escribir_bitacora, el ultimo bloque es: %i", *ultimo_bloque);
 
+	log_warning(logger_mongo, "lockear inicio");
+
 	escribir_bloque_bitacora(*ultimo_bloque, mensaje, bitacora);
+
+	log_warning(logger_mongo, "lockear final");
+
 
 	// escribir_archivo_tripulante(); //
 
