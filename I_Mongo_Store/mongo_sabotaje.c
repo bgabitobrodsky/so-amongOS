@@ -88,11 +88,12 @@ int verificar_bitmap() {
 	//Creo la lista
 	t_list* lista_bloques_ocupados = list_create();
 
-	//Agrego los bloques usados en la lista, con en el indice = n° bloque
     recorrer_recursos(lista_bloques_ocupados);
     recorrer_bitacoras(lista_bloques_ocupados);
 
     sortear(lista_bloques_ocupados);
+
+    // TODO seba: verificar la lista a ver si todo sale bien
 
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
         actualizar_bitmap(lista_bloques_ocupados);
@@ -344,11 +345,7 @@ void recorrer_recursos(t_list* bloques_ocupados) {
 void recorrer_bitacoras(t_list* bloques_ocupados) {
 	// Recorre las listas de las metadatas de las bitacoras y va anotando en la lista que bloques estan ocupados
 
-	//Obtengo la cantidad de bloques de lista_bloques_ocupados y la cantidad de bitacoras
-	int cantidad_bloques_ocupados = list_size(bloques_ocupados);
-
 	t_bitacora* bitacora_aux;
-	int cant_bloques_bitacora;
 	int* aux = malloc(sizeof(int));
 
 	//Itero por todas las bitacoras
@@ -363,23 +360,18 @@ void recorrer_bitacoras(t_list* bloques_ocupados) {
 }
 
 void sortear(t_list* bloques_ocupados) {
-	//Obtengo la cantidad de bloques de lista_bloques_ocupados
-	int n = list_size(bloques_ocupados);
-
-    int i, j;
-    for (i = 0; i < n-1; i++) {
-        for (j = 0; j < n-i-1; j++) {
-            if (list_get(bloques_ocupados, j) > list_get(bloques_ocupados, j+1)) {
-                int temp = (int) list_get(lista_bloques_ocupados, j);
-    			reemplazar(bloques_ocupados, j, list_get(bloques_ocupados, j+1));
-    			reemplazar(bloques_ocupados, j+1, (void*) temp);
-            }
-        }
-    }
+	// Ordeno de menor a mayor
+	void* es_menor(void* elemento, void* otro_elemento){
+		if(*((int*) elemento) > *((int*) otro_elemento)){
+			return otro_elemento;
+		} else{
+			return elemento;
+		}
+	}
+	list_sort(bloques_ocupados, es_menor);
 }
 
 int bloques_ocupados_difieren(t_list* bloques_ocupados) {
-	// TODO: revisar BIEN el for
     // Compara lista contra el bitmap, apenas difieren devuelve 1 (como true), sino 0
 	int no_difieren;
 
@@ -388,16 +380,20 @@ int bloques_ocupados_difieren(t_list* bloques_ocupados) {
 	for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
 
 		//Si el bit es 1, la lista debe contener el bloque n° i
-		if(bitarray_test_bit(bitmap, i))
+		if(bitarray_test_bit(bitmap, i)){
 			no_difieren = esta_en_lista(bloques_ocupados, i);
+		}
 
 		//Si el bit es 0, la lista no debe contener el bloque n° i
-		else
-			no_difieren = ! esta_en_lista(bloques_ocupados, i);
+		else{
+			no_difieren = !esta_en_lista(bloques_ocupados, i);
+		}
 
 		//Si el flag es 0, los bloques difieren
-		if(! no_difieren)
+		if(!no_difieren){
 			return 1;
+		}
+
 	}
 	return 0;
 }
