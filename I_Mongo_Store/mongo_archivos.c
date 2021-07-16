@@ -412,15 +412,6 @@ int min (int a, int b) {
 	}
 }
 
-void crear_md5(char *str, unsigned char digest[16]) {
-	log_trace(logger_mongo, "0 md5, TODO"); // TODO
-	/*
-    MD5_CTX ctx;
-    MD5_Init(&ctx);
-    MD5_Update(&ctx, str, strlen(str));
-    MD5_Final(digest, &ctx);
-    */
-}
 
 uint32_t tamanio_archivo(char* path) {
 	t_config* config = config_create(path);
@@ -456,10 +447,31 @@ char caracter_llenado_archivo(char* path) {
 }
 
 char* md5_archivo(char* path) {
-	// TODO calcular md5
-	char* md5;
+	int n;
+	int largo = sizeof(path)/sizeof(char);
+	MD5_CTX c;
+	unsigned char digest[16];
+	char *out = (char*)malloc(33);
 
-	return "INSERTAR MD5";
+	MD5_Init(&c);
+
+	while (largo > 0) {
+		if (largo > 512) {
+			MD5_Update(&c, path, 512);
+	    } else {
+	    	MD5_Update(&c, path, largo);
+	    }
+		largo -= 512;
+	    path += 512;
+	}
+
+	MD5_Final(digest, &c);
+
+	for (n = 0; n < 16; ++n) {
+		snprintf(&(out[n*2]), 16*2, "%02x", (unsigned int)digest[n]);
+	}
+
+	return out;
 }
 
 uint32_t obtener_cantidad_bloques(char* path){
@@ -754,4 +766,6 @@ void set_md5(char* path, char* md5){
 	config_destroy(config);
 
 }
+
+
 

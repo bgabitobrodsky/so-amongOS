@@ -19,7 +19,6 @@ FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo_recurso(int codigo);
 char* conseguir_path_recurso_codigo(int codigo_archivo);
 char* conseguir_path_recurso_archivo(FILE* archivo);
-void crear_md5(char *str, unsigned char digest[16]);
 int es_recurso(char* path);
 void asignar_bloque_recurso(char* archivo, int bit_libre);
 void asignar_bloque_tripulante(char* archivo, int bit_libre);

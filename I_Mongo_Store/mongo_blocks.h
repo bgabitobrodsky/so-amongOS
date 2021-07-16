@@ -24,7 +24,14 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
-#include <openssl/md5.h>
+
+#if defined(__APPLE__)
+#  define COMMON_DIGEST_FOR_OPENSSL
+#  include <CommonCrypto/CommonDigest.h>
+#  define SHA1 CC_SHA1
+#else
+#  include <openssl/md5.h>
+#endif
 
 // #define TAMANIO_BLOQUE obtener_tamanio_bloque()
 // #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
