@@ -702,43 +702,44 @@ char* crear_puntero_a_bitmap(){
 }
 
 void limpiar_metadata(char* path) {
-	iniciar_archivo_recurso(path, 0, NULL, NULL); // Ver si NULL explotan todo
+	iniciar_archivo_recurso(path, 0, 0, NULL);
 }
 
 void liberar_bloques(char* path) {
 	t_list* bloques = obtener_lista_bloques(path);
-	uint32_t nro_bloque;
+	uint32_t* nro_bloque = malloc(sizeof(uint32_t));
 
 	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
-		liberar_bloque(path, nro_bloque);
+		liberar_bloque(path, *nro_bloque);
 	}
 }
 
 void liberar_bloque(char* path, uint32_t nro_bloque) {
 	t_list* bloques = obtener_lista_bloques(path);
-	uint32_t nro_bloque_aux;
+
+	uint32_t* nro_bloque_aux = malloc(sizeof(uint32_t));
+
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
-	int indice;
 
 	for(int i = 0; i < list_size(bloques) ; i++) {
-		nro_bloque = list_get(bloques, i);
-		if (nro_bloque == nro_bloque_aux) {
+		nro_bloque_aux = list_get(bloques, i);
+		if (nro_bloque == *nro_bloque_aux) {
 			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
-			reescribir_superbloque(obtener_tamanio_bloque_superbloque(), obtener_cantidad_bloques_superbloque(), nuevo_bitmap);
+			reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, nuevo_bitmap);
 
-			for(int i = 0; i < list_size(bloques) ; i++) {
-				nro_bloque_aux = list_get(bloques, i);
-				if (nro_bloque == nro_bloque_aux)
-					indice = i;
+			bool quitar_bloque(void* elemento1){
+				return (nro_bloque == *((int*) elemento1));
 			}
 
-			list_remove(bloques, indice);
+			list_remove_by_condition(bloques, quitar_bloque);
 
 			set_bloq(path, bloques);
 			set_cant_bloques(path, cantidad_bloques_recurso(path) - 1);
 		}
 	}
+
+	free(nro_bloque_aux);
 }
 
 void set_tam(char* path, int tamanio){

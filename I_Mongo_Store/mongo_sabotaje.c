@@ -197,26 +197,39 @@ int bloques_sin_sentido() {
 	t_list* bloques_basura = obtener_lista_bloques(path_basura);
 	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
 	t_list* bloques_comida = obtener_lista_bloques(path_comida);
-	uint32_t nro_bloque;
+	int* nro_bloque = malloc(sizeof(int));
 
 	for(int i = 0; i < list_size(bloques_basura) ; i++) {
 		nro_bloque = list_get(bloques_basura, i);
-		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
+			free(nro_bloque);
+			//liberar listas
 			return 1;
+		}
+
+
 	}
 
 	for(int i = 0; i < list_size(bloques_oxigeno) ; i++) {
 		nro_bloque = list_get(bloques_oxigeno, i);
-		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
+			free(nro_bloque);
+			//liberar listas
 			return 1;
+		}
 	}
 
 	for(int i = 0; i < list_size(bloques_comida) ; i++) {
 		nro_bloque = list_get(bloques_comida, i);
-		if (nro_bloque > obtener_cantidad_bloques_superbloque() || nro_bloque < 0)
+		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
+			//liberar listas
+			free(nro_bloque);
 			return 1;
+		}
 	}
+	//liberar listas
 
+	free(nro_bloque);
 	return 0;
 }
 
@@ -225,17 +238,24 @@ int bitmap_no_concuerda() {
 	t_list* bloques_basura = obtener_lista_bloques(path_basura);
 	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
 	t_list* bloques_comida = obtener_lista_bloques(path_comida);
-	uint32_t nro_bloque;
+
+	int* nro_bloque = malloc(sizeof(int));
 
 	list_add_all(bloques_basura, bloques_oxigeno);
-	list_add_all(bloques_basura, bloques_oxigeno);
+	list_add_all(bloques_basura, bloques_comida);
 
 	for(int i = 0; i < list_size(bloques_basura) ; i++){
 		nro_bloque = list_get(bloques_basura, i);
-		if (!bitarray_test_bit(bitmap, nro_bloque)) // Funciona con uint?
+		if (!bitarray_test_bit(bitmap, *nro_bloque)){
+			free(nro_bloque);
+			//liberar listas
 			return 1;
+		}
+
 	}
 
+	free(nro_bloque);
+	// liberar listas
 	return 0;
 }
 
@@ -274,9 +294,9 @@ void restaurar_blocks() {
 	limpiar_metadata(path_oxigeno);
 	limpiar_metadata(path_comida);
 
-	agregar("BASURA", (int) tamanio_archivo_basura);
-	agregar("OXIGENO", (int) tamanio_archivo_oxigeno);
-	agregar("COMIDA", (int) tamanio_archivo_comida);
+	agregar(BASURA, (int) tamanio_archivo_basura);
+	agregar(OXIGENO, (int) tamanio_archivo_oxigeno);
+	agregar(COMIDA, (int) tamanio_archivo_comida);
 }
 
 void recorrer_recursos(t_list* lista_bloques_ocupados) {
