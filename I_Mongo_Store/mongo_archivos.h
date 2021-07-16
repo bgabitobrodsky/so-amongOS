@@ -23,6 +23,7 @@ int es_recurso(char* path);
 void asignar_bloque_recurso(char* archivo, int bit_libre);
 void asignar_bloque_tripulante(char* archivo, int bit_libre);
 FILE* conseguir_archivo(char* path);
+void limpiar_cuerpos();
 
 // devuelven la metadata del archivo
 t_list* obtener_lista_bloques(char* path); // TESTEADA

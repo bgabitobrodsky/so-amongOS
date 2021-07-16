@@ -92,10 +92,41 @@ void inicializar_archivos_preexistentes() {
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
     cargar_bitmap(); // cargando la lista de bloqueados
-    // limpiar_cuerpos(); // TODO codear
+    limpiar_cuerpos(); // TODO codear
     // rename("/home/utnso/polus/Files/Bitacoras/Tripulante10001.ims", "/home/utnso/polus/Files/Bitacoras/OldTripulante10001.ims");
 
 	log_error(logger_mongo, "3 inicializar_archivos_preexistentes");
+}
+
+void limpiar_cuerpos() {
+	/*
+	path_bitacoras = malloc((strlen(path_files)+1) + strlen("/Bitacoras"));
+	sprintf(path_bitacoras, "%s/Bitacoras", path_files);
+	char * const * lista_path = {path_bitacoras};
+
+	FTS *ftsp;
+	FTSENT *p, *chp;
+	int fts_options = FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR;
+	int rval = 0;
+
+	fts_open(lista_path, fts_options, NULL);
+	chp = fts_children(ftsp, 0);
+
+	if (chp == NULL) {
+		return;
+	}
+
+	while ((p = fts_read(ftsp)) != NULL) {
+		switch (p->fts_info) {
+	    	case FTS_F:
+	    		*(p->fts_name) = strcat(*(p->fts_name), "RIP");
+	    		break;
+	    	default:
+	    		break;
+	    	}
+		}
+	fts_close(ftsp);
+	return; */
 }
 
 void asignar_nuevo_bloque(char* path) {

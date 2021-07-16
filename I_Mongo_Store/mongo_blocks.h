@@ -24,6 +24,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
+#include <fts.h>
 
 #if defined(__APPLE__)
 #  define COMMON_DIGEST_FOR_OPENSSL
