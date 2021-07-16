@@ -15,6 +15,7 @@
 #include <comms/estructuras.h>
 #include <comms/paquetes.h>
 #include <comms/socketes.h>
+#include <comms/generales.h>
 #include <pthread.h>
 #include <readline/readline.h>
 #include <sys/types.h>
@@ -23,47 +24,53 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <time.h>
-#include <openssl/md5.h>
+#include <fts.h>
 
-#define TAMANIO_BLOQUE obtener_tamanio_bloque()
-#define CANTIDAD_BLOQUES obtener_cantidad_bloques()
+#if defined(__APPLE__)
+#  define COMMON_DIGEST_FOR_OPENSSL
+#  include <CommonCrypto/CommonDigest.h>
+#  define SHA1 CC_SHA1
+#else
+#  include <openssl/md5.h>
+#endif
+
+// #define TAMANIO_BLOQUE obtener_tamanio_bloque()
+// #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
+
+#define TAMANIO_BLOQUE 64
+#define CANTIDAD_BLOQUES 1024
 #define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
+#define POSICIONES_SABOTAJE config_get_array_value(config_mongo, "POSICIONES_SABOTAJE")
+#define TIEMPO_SINCRONIZACION config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION")
+#define	IP_MONGO_STORE config_get_string_value(config_mongo, "IP")
+#define PUERTO_MONGO_STORE config_get_string_value(config_mongo, "PUERTO")
+#define LIMIT_CONNECTIONS 10
 
 /* ESTRUCTURAS PROPIAS */
 
-typedef struct{
-
-    char* punto_montaje;
-    int puerto;
-    int tiempo_sincronizacion;
-    char** posiciones_sabotaje;
-
-} config_mongo_t;
-
 typedef struct {
 
-    int socket_oyente;
-
-} args_escuchar_mongo;
-
-typedef struct {
     FILE* superbloque;
     FILE* blocks;
     char* mapa_blocks;
+
 } t_directorio;
 
 typedef struct {
+
     FILE* oxigeno;
     FILE* comida;
     FILE* basura;
+
 } t_recurso;
 
 typedef struct {
 
     t_TCB* tripulante;
     FILE* bitacora_asociada;
-    int tamanio;
-    int* bloques;
+    uint32_t tamanio;
+    t_list* bloques;
+    char* path;
 
 } t_bitacora;
 
@@ -77,15 +84,29 @@ pthread_mutex_t mutex_blocks;
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_list* bitacoras;
+extern t_list* lista_bloques_ocupados;
+extern char* mapa;
 
-void iniciar_superbloque(FILE* archivo);
-void iniciar_blocks(int filedescriptor_blocks);
-void inicializar_mapa();
-uint32_t obtener_tamanio_bloque();
-uint32_t obtener_cantidad_bloques();
-t_bitarray* obtener_bitmap();
-void reescribir_superbloque(int tamanio, int cantidad, t_bitarray* bitmap);
-t_bitarray* actualizar_bitmap(int* lista_bloques_ocupados);
-int contiene_generico(int* lista, int valor);
+void iniciar_superbloque(FILE* archivo); // testeado
+void iniciar_blocks(int filedescriptor_blocks); // testeado
+void inicializar_mapa(); // testeado
+uint32_t obtener_tamanio_bloque_superbloque(); // testeado
+uint32_t obtener_cantidad_bloques_superbloque(); // testeado
+t_bitarray* obtener_bitmap(); // TESTEADO
+char* crear_puntero_a_bitmap(); // TESTEADO
+void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // TESTEADO
+void actualizar_bitmap(t_list* lista_bloques_ocupados); // TESTEADO
+void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
+
+void set_bloq(char* path, t_list* lista); // TESTEADO
+void set_tam(char* path, int tamanio); // TESTEADO
+void set_md5(char* path, char* md5); // TESTEADO
+void set_caracter_llenado(char* path, char caracter); // TESTEADO
+void set_cant_bloques(char* path, int cant); // TESTEADO
+void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques); // TESTEADO
+void cargar_bitmap();
+void imprimir_bitmap(); // TESTEADO
+int max(int a, int b);
+int min(int a, int b);
 
 #endif

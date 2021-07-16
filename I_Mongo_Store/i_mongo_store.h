@@ -10,11 +10,6 @@
 
 #include "mongo_sabotaje.h"
 
-typedef struct {
-	int socket;
-	void (*atender)(char*);
-} hilo_discordiador;
-
 extern t_log* logger_mongo;
 extern t_directorio directorio;
 extern t_recurso recurso;
@@ -30,10 +25,8 @@ char* path_basura;
 char* path_superbloque;
 char* path_blocks;
 
-
 void escuchar_mongo(void* args);
-//void escuchar_mongo(int args);
-void sabotaje(int socket_discordiador);
+void sabotaje(int n);
 void iniciar_file_system();
 void sincronizar_blocks();
 void cerrar_archivos();

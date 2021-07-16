@@ -246,10 +246,20 @@ int nuevo_pid(){
 
     int id_patota = 1;
     while(1){
-        if(!esta_en_lista(lista_pids, id_patota)){
+        if(!esta_pid_en_lista(lista_pids, id_patota)){
             list_add(lista_pids, (void*) id_patota);
             return id_patota;
         }
         id_patota++;
     }
+}
+
+int esta_pid_en_lista(t_list* lista, int elemento){
+
+    bool contiene(void* elemento1){
+        return sonIguales(elemento, (int) elemento1);
+    }
+    int a = list_any_satisfy(lista, contiene);
+    return a;
+
 }

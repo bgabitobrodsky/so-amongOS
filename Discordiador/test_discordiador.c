@@ -54,11 +54,14 @@ void test_listar_tripulantes(){
 
 void test_nuevo_pid(){
     int i = 0;
-    list_add(lista_pids, (void*) 1);
-    list_add(lista_pids, (void*) 3);
+    int o = 1;
+    int u = 3;
+
+    list_add(lista_pids, (void*) o);
+    list_add(lista_pids, (void*) u);
 
     while (i<10){
-        printf("%d", nuevo_pid());
+    	log_info(logger, "%d", nuevo_pid());
         i++;
     }
 

@@ -176,7 +176,7 @@ char* fecha_y_hora() {
 int esta_en_lista(t_list* lista, int elemento){
 
     bool contiene(void* elemento1){
-    return sonIguales(elemento, (int) elemento1);
+    	return sonIguales(elemento, *((int*) elemento1));
     }
     int a = list_any_satisfy(lista, contiene);
     return a;

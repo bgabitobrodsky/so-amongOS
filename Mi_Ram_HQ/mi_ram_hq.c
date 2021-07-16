@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", 1, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
-	signal(SIGUSR2,dump);
+	signal(SIGUSR2, dump);
 
 	pthread_mutex_init(&m_compactacion,NULL);
 	pthread_mutex_init(&m_swap,NULL);
@@ -142,11 +142,11 @@ void atender_clientes(void* param) {
 				if(una_tarea != NULL){
 					t_buffer* buffer_tarea = serializar_tarea(*una_tarea);
 					empaquetar_y_enviar(buffer_tarea, TAREA, parametros->socket);
+					free(una_tarea);
 				}else{
 					// esto puede ser por algun fallo o porque ya no queden tareas
 					enviar_codigo(FALLO, parametros->socket);
 				}
-				free(una_tarea);
 
 				break;
 
@@ -187,7 +187,7 @@ void atender_clientes(void* param) {
 
 				t_list* tcbs_de_esta_patota = buscar_tcbs_por_pid(mensaje_recibido->pid);
 				if(tcbs_de_esta_patota != NULL){
-					for(int i = 0; i < list_size(tcbs_de_esta_patota); i++){
+					for(int i = 0; i < list_size(tcbs_de_esta_patota) - 1; i++){
 						t_TCB* aux = list_get(tcbs_de_esta_patota, i);
 						t_buffer* buffer = serializar_tcb(*aux);
 						empaquetar_y_enviar(buffer, RECIBIR_TCB, parametros->socket);

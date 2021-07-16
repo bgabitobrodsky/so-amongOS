@@ -7,9 +7,9 @@
 
 void inicializar_archivos();
 void inicializar_archivos_preexistentes();
-void asignar_nuevo_bloque(FILE* archivo);
-int asignar_primer_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
-int quitar_ultimo_bloque_libre(uint32_t* lista_bloques, uint32_t cant_bloques, int cantidad_deseada, char tipo);
+void asignar_nuevo_bloque(char* path, int size_agregado);
+int asignar_primer_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo,  char* path);
+int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(int codigo_archivo, int cantidad);
 void quitar(int codigo_archivo, int cantidad);
@@ -19,24 +19,24 @@ FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo_recurso(int codigo);
 char* conseguir_path_recurso_codigo(int codigo_archivo);
 char* conseguir_path_recurso_archivo(FILE* archivo);
-void crear_md5(char *str, unsigned char digest[16]);
-int max(int a, int b);
-int es_recurso(FILE* archivo);
-void asignar_bloque_recurso(FILE* archivo, int bit_libre);
-void asignar_bloque_tripulante(FILE* archivo, int bit_libre);
+int es_recurso(char* path);
+void asignar_bloque_recurso(char* archivo, int bit_libre);
+void asignar_bloque_tripulante(char* archivo, int bit_libre, int size_agregado);
+FILE* conseguir_archivo(char* path);
+void limpiar_cuerpos();
+void limpiar_metadata(char* path);
+void liberar_bloques(char* path);
+void liberar_bloque(char* path, uint32_t nro_bloque);
 
 // devuelven la metadata del archivo
-uint32_t tamanio_archivo(FILE* archivo);
-uint32_t cantidad_bloques_recurso(FILE* archivo);
-uint32_t* lista_bloques_recurso(FILE* archivo);
-char caracter_llenado_archivo(FILE* archivo);
-char* md5_archivo(FILE* archivo);
-uint32_t cantidad_bloques_tripulante(FILE* archivo);
-uint32_t* lista_bloques_tripulante(FILE* archivo);
-void escribir_archivo_recurso(FILE* archivo, uint32_t tamanio, uint32_t cantidad_bloques, uint32_t* list_bloques);
-void escribir_archivo_tripulante(FILE* archivo, uint32_t tamanio, uint32_t* lista_bloques);
-void escribir_tamanio(FILE* archivo, uint32_t tamanio);
-int bloques_contar(char caracter);
+t_list* obtener_lista_bloques(char* path); // TESTEADA
+uint32_t tamanio_archivo(char* path);
+uint32_t cantidad_bloques_recurso(char* path);
+char caracter_llenado_archivo(char* path);
+char* md5_archivo(char* path);
+uint32_t cantidad_bloques_tripulante(char* path);
+void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* lista_bloques);
+uint32_t bloques_contar(char caracter);
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
