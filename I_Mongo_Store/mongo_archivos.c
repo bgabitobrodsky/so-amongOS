@@ -195,7 +195,7 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 	int* aux = malloc(sizeof(int));
 
 	log_trace(logger_mongo, "Entrando al for de agregar");
-	for(int i = 0; i < list_size(lista_bloques); i++){
+	for(int i = 0; i < list_size(lista_bloques) - 1; i++){
 		aux = list_get(lista_bloques, i);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
@@ -414,7 +414,7 @@ FILE* conseguir_archivo(char* path) {
 
 	else{
 		t_bitacora* aux;
-		for(int i = 0; i < list_size(bitacoras); i++){
+		for(int i = 0; i < list_size(bitacoras) - 1; i++){
 			aux = list_get(bitacoras, i);
 			if(comparar_strings(aux->path, path)){
 				return aux->bitacora_asociada;
@@ -537,6 +537,9 @@ t_list* obtener_lista_bloques(char* path){
 			*aux = atoi(bloques[i]);
 			list_add(lista_bloques, aux);
 		}
+		if(lista_bloques == NULL){
+			log_error(logger_mongo, "LA LISTA ES NULA N00");
+		}
 		log_trace(logger_mongo, "Returneo tripulante");
 		return lista_bloques;
 	}
@@ -613,7 +616,7 @@ void asignar_bloque_recurso(char* path, int pos_libre) {
 	/*// PRINTEO DE TESTEO
 	int* aux;
 	log_trace(logger_mongo, "Recurso: %s", path);
-	for(int i = 0; i< list_size(lista_bloques); i++){
+	for(int i = 0; i< list_size(lista_bloques) - 1; i++){
 		aux = malloc(sizeof(int));
 		aux = list_get(lista_bloques, i);
 		log_trace(logger_mongo, "EL recurso tiene asignado : %i", *aux);
@@ -697,7 +700,7 @@ void set_bloq(char* path, t_list* lista){
 		}
 
 		// log_error(logger_mongo, "printeando valores viejos");
-		// for(int i = 0; i < list_size(list_aux); i++){
+		// for(int i = 0; i < list_size(list_aux) - 1; i++){
 			// aux = list_get(list_aux, i);
 			// log_error(logger_mongo, "valor %i, %i", i, *aux);
 		// }
@@ -726,12 +729,12 @@ void set_bloq(char* path, t_list* lista){
 		strcpy(lista_bloques, "[");
 
 		// log_error(logger_mongo, "printeando lista");
-		// for(int i = 0; i < list_size(list_aux); i++){
+		// for(int i = 0; i < list_size(list_aux) - 1; i++){
 			// aux = list_get(list_aux, i);
 			// log_error(logger_mongo, "valor %i, %i", i, *aux);
 		// }
 
-		for(int i = 0; i < list_size(list_aux); i++){
+		for(int i = 0; i < list_size(list_aux) - 1; i++){
 			aux = list_get(list_aux, i);
 			strcat(lista_bloques, string_itoa(*aux));
 

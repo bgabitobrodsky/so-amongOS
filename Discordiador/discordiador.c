@@ -725,12 +725,12 @@ void listar_tripulantes() {
 
     int i,j;
 
-    for(i = 0; i < list_size(lista_patotas); i++){
+    for(i = 0; i < list_size(lista_patotas)-1; i++){
         aux_p = list_get(lista_patotas, i);
 
         lista_tripulantes_de_una_patota = lista_tripulantes_patota(aux_p->PID);
 
-        for(j = 0; j < list_size(lista_tripulantes_de_una_patota); j++){
+        for(j = 0; j < list_size(lista_tripulantes_de_una_patota) - 1; j++){
             aux_t = list_get(lista_tripulantes_de_una_patota, j);
             printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
             // TODO: dejarlo como logger
@@ -738,6 +738,7 @@ void listar_tripulantes() {
         }
     }
     // TODO: revisar esto de abajo, tira segmentation fault en ciertos casos:
+    // EDIT: CREO QUE YA LO ARREGLE, POR EL -1 DE los FOR, REVISAR
     // iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
     // iniciar_planificacion();
     // esṕerar a que termine

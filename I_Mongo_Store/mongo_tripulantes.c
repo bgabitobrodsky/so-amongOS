@@ -167,7 +167,15 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
 
-	log_trace(logger_mongo, "Conseguimos la listita de bloques");
+	log_trace(logger_mongo, "Es null? %i", lista_bloques == NULL);
+	log_trace(logger_mongo, "ta vacia? %i", list_is_empty(lista_bloques));
+	log_trace(logger_mongo, "tamanio? %i", list_size(lista_bloques));
+
+	// lo meti con mucho suenio, calculo que ta bien
+	if(list_is_empty(lista_bloques)){
+		asignar_nuevo_bloque(bitacora->path);
+		lista_bloques = obtener_lista_bloques(bitacora->path);
+	}
 
 	int* ultimo_bloque = list_get(lista_bloques, list_size(lista_bloques) - 1);
 	log_trace(logger_mongo, "1 escribir_bitacora");
@@ -187,7 +195,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 
 	int* aux = malloc(sizeof(int));
 
-	for(int i = 0; i<list_size(lista_bloques); i++){
+	for(int i = 0; i < list_size(lista_bloques) - 1; i++){
 
 		aux = list_get(lista_bloques, i);
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
