@@ -121,7 +121,7 @@ int main() {
     // iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
-    iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
     // iniciar_planificacion();
 
     // sleep(1);
@@ -1067,12 +1067,17 @@ void guardian_sabotaje(){
 	log_info(logger, "Vigilando en caso de sabotajes");
 	while(1){
 		t_estructura* mensaje_peligro = recepcion_y_deserializacion(socket_a_mongo_store);
+		log_info(logger, "llega mensaje");
+
 		if (mensaje_peligro->codigo_operacion == SABOTAJE){
+			log_info(logger, "Sabotaje a la vista");
 			peligro(mensaje_peligro->posicion, socket_a_mi_ram_hq);
 		}
 		else{
-			log_info(logger, "Codigo = %i", mensaje_peligro->codigo_operacion);
 			log_info(logger, "No hay sabotajes a la vista");
+			log_info(logger, "Codigo = %i", mensaje_peligro->codigo_operacion);
+			log_info(logger, "Alto bug");
+			pthread_exit(0);
 		}
 	}
 }

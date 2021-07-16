@@ -121,14 +121,14 @@ void sabotaje(int n) {
 
 	// Se espera que set reciba la signal correspondiente
 	if (n == SIGUSR1) {
-		log_info(logger_mongo, "Se detecto un sabotaje.\n");
+		log_error(logger_mongo, "Se detecto un sabotaje.\n");
 		// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
 		enviar_posicion_sabotaje(socket_discordiador);
 
 		// Se activaria el protocolo fcsk
 		// char* rotura = reparar();
 
-		log_info(logger_mongo, "Se reparo el sabotaje.\n");
+		log_error(logger_mongo, "Se reparo el sabotaje.\n");
 		// log_info(logger_mongo, "Se habia saboteado %s.\n", rotura);
 
 	}

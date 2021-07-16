@@ -4,14 +4,17 @@ extern char** posiciones_sabotajes;
 int pos_actual_sabotaje = 0;
 
 void enviar_posicion_sabotaje(int socket_discordiador) {
+	log_warning(logger_mongo, "INICIO enviar_posicion_sabotaje");
 
 	if (pos_actual_sabotaje != contar_palabras(posiciones_sabotajes)) {
+		log_warning(logger_mongo, "dentro del if");
 		t_posicion posicion;
 
 		posicion.coord_x = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][0] - 48; // EQUIVALENCIA ASCII NUMERO
 		posicion.coord_y = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][2] - 48; // EQUIVALENCIA ASCII NUMERO
-
+		log_warning(logger_mongo, "antes de enviar");
 		empaquetar_y_enviar(serializar_posicion(posicion), SABOTAJE, socket_discordiador);
+		log_warning(logger_mongo, "enviada");
 
 		pos_actual_sabotaje++;
 	}

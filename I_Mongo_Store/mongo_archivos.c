@@ -521,11 +521,8 @@ t_list* obtener_lista_bloques(char* path){
 	// ESTA FUNCION DEBE LIBERAR EL RETORNO
 
 	log_trace(logger_mongo, "INICIO obtener_lista_bloques");
-
-	log_trace(logger_mongo, "pre-crear");
 	log_trace(logger_mongo, "path config: %s", path);
 	t_config* config = config_create(path);
-	log_trace(logger_mongo, "creada la config");
 
 	if(!config_has_property(config, "BLOCK_COUNT")){
 
@@ -540,6 +537,7 @@ t_list* obtener_lista_bloques(char* path){
 			*aux = atoi(bloques[i]);
 			list_add(lista_bloques, aux);
 		}
+		log_trace(logger_mongo, "Returneo tripulante");
 		return lista_bloques;
 	}
 

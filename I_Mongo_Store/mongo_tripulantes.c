@@ -178,22 +178,18 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	list_destroy_and_destroy_elements(lista_bloques, free);
 }
 
+// TODO: bruh no se usa bloque
 void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 	log_trace(logger_mongo, "INICIO escribir_bloque_bitacora");
 
 	int cantidad_alcanzada = 0;
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
 
-	// Dos lineas para testeo
-	int* aux_print = list_get(lista_bloques, 0);
-	log_trace(logger_mongo, "Lista bloque primer elemento %i", *aux_print);
-
 	int* aux = malloc(sizeof(int));
 
 	for(int i = 0; i<list_size(lista_bloques); i++){
-		log_trace(logger_mongo, "for");
-		aux = list_get(lista_bloques, i);
 
+		aux = list_get(lista_bloques, i);
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
 
 			if (cantidad_alcanzada == strlen(mensaje)) {
