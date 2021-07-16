@@ -25,40 +25,43 @@ void enviar_posicion_sabotaje(int socket_discordiador) {
 
 }
 
-char* reparar() {
-	// TODO: mejorable
-	char* roto = string_new();
+void reparar() {
+
     int reparado = 0;
     
     reparado = verificar_cant_bloques();
 
-    if (reparado == 1)
-    	string_append(&roto, "\n\t-la cantidad de bloques del superbloque");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara la cantidad de bloques del superbloque");
+    }
 
     reparado = verificar_bitmap();
 
-    if (reparado == 2)
-    	string_append(&roto, "\n\t-el bitmap del superbloque");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara el bitmap del superbloque");
+    }
 
     reparado = verificar_sizes();
 
-    if (reparado == 3)
-    	string_append(&roto, "\n\t-los tamanios de los archivos");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara el tamanios de los archivos");
+    }
 
     reparado = verificar_block_counts();
 
-    if (reparado == 4)
-    	string_append(&roto, "\n\t-la cantidad de bloques de los recursos");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
+    }
 
     reparado = verificar_blocks();
 
-    if (reparado == 5)
-    	string_append(&roto, "\n\t-la lista de bloques de los recursos");
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara la lista de bloques de los recursos");
+    }
 
-    if (reparado == 0)
-    	string_append(&roto, "\n\t-nada");
-
-    return roto;
+    if (!reparado){
+    	log_warning(logger_mongo, "Estamos joya");
+    }
 }
 
 int verificar_cant_bloques() {
@@ -92,7 +95,7 @@ int verificar_bitmap() {
 
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
         actualizar_bitmap(lista_bloques_ocupados);
-        return 2;
+        return 1;
     }
     else
         return 0;
@@ -111,15 +114,15 @@ int verificar_sizes() {
 
 	if(tamanio_real_B != tamanio_archivo(path_basura)) {
 		set_tam(path_basura, tamanio_real_B);
-		corrompido = 3;
+		corrompido = 1;
 	}
 	if(tamanio_real_C != tamanio_archivo(path_comida)) {
 		set_tam(path_comida, tamanio_real_C);
-		corrompido = 3;
+		corrompido = 1;
 	}
 	if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
 		set_tam(path_oxigeno, tamanio_real_O);
-		corrompido = 3;
+		corrompido = 1;
 	}
 
 	return corrompido;
@@ -136,23 +139,24 @@ int verificar_block_counts(t_TCB* tripulante) {
 
 	if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
 		set_tam(path_oxigeno, cantidad_real_oxigeno);
-		corrompido = 4;
+		corrompido = 1;
 	}
 	if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
 		set_tam(path_comida, cantidad_real_comida);
-		corrompido = 4;
+		corrompido = 1;
 	}
 	if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
 		set_tam(path_basura, cantidad_real_basura);
-		corrompido = 4;
+		corrompido = 1;
 	}
+
 	return corrompido;
 }
 int verificar_blocks() {
 
 	if (md5_no_concuerda() || !tamanio_correcto() || bloques_sin_sentido() || bitmap_no_concuerda()) {
 		restaurar_blocks();
-		return 5;
+		return 1;
 	}
 
 	return 0;
