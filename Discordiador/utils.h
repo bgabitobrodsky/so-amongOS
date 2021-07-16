@@ -102,10 +102,10 @@ void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
 void enviar_pid_a_ram(uint32_t pid, int socket);
 
 // SABOTAJES
-void peligro(char* pos_sabotaje, int socket_ram);
+void peligro(t_posicion* pos_sabotaje, int socket_ram);
 void resolver_sabotaje(t_tripulante* un_tripulante, int socket_ram, int socket_mongo);
-t_tripulante* tripulante_mas_cercano_a(char* posicion);
-void guardian_sabotaje(int socket_ram, int socket_mongo);
+t_tripulante* tripulante_mas_cercano_a(t_posicion* posicion);
+void guardian_sabotaje();
 
 // TRIPULANTES
 int esta_tripulante_en_lista(t_list* lista, int elemento);

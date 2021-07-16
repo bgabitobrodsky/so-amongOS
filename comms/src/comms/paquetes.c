@@ -226,7 +226,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     }
 
     // If que maneja llegada de codigos de operacion unicamente (TODO CODIGO UNICO DEBE ESTAR DESPUES DE SABOTAJE)
-    if (paquete->codigo_operacion >= SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash
+    if (paquete->codigo_operacion > SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash
         intermediario->codigo_operacion = paquete->codigo_operacion;
     	eliminar_paquete(paquete);
         return intermediario;
@@ -252,7 +252,6 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
         case TAREA:
             intermediario->codigo_operacion = TAREA;
-
             // asignar un malloc? tienes idea de lo loco que se oye eso?
             intermediario->tarea = deserializar_tarea(paquete->buffer);
             break;
@@ -281,7 +280,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
             intermediario->codigo_operacion = paquete->codigo_operacion;
             memcpy(&(intermediario->cantidad), paquete->buffer->estructura, sizeof(int));
             break;
-
+        case SABOTAJE:
         case POSICION:
             intermediario->codigo_operacion = paquete->codigo_operacion;
             intermediario->posicion = deserializar_posicion(paquete->buffer);

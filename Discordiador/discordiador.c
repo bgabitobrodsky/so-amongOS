@@ -56,6 +56,11 @@ int planificacion_activa = 0;
 int sistema_activo = 1;
 int testeo = DISCORDIADOR;
 
+typedef struct {
+	int socket_ram;
+	int socket_mongo;
+} args_sabotaje;
+
 void notificar_fin_de_tarea(t_tripulante* un_tripulante, int socket_mongo){
 	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
 	empaquetar_y_enviar(trip_buffer, FIN_TAREA, socket_mongo);
@@ -117,22 +122,22 @@ int main() {
     // iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
     iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims 1|1");
-    iniciar_planificacion();
+    // iniciar_planificacion();
 
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
 
-    if (socket_a_mi_ram_hq != -1 && socket_a_mongo_store != -1) {
+    pthread_t hiloConsola;
+	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
+	pthread_detach(hiloConsola);
 
-        pthread_t hiloConsola;
-        pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
-        pthread_detach(hiloConsola);
+    pthread_t sabotaje;
+    pthread_create(&sabotaje, NULL, (void*) guardian_sabotaje, NULL);
+    pthread_detach(sabotaje);
 
-    }
 
     while(sistema_activo){
     	sleep(1);
-    	// guardian_sabotaje(socket_a_mi_ram_hq, socket_a_mongo_store);
     }
 
     close(socket_a_mi_ram_hq);
@@ -915,7 +920,7 @@ void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket){
 }
 
 
-void peligro(char* posicion_sabotaje, int socket_ram){
+void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 	// PRIMERO los de EXEC, los de mayor TID primero
 	// despues lo de READY, los de mayor TID primero
 
@@ -977,8 +982,8 @@ void peligro(char* posicion_sabotaje, int socket_ram){
 
 	t_tarea contexto = t_aux->tarea;
 	t_tarea resolver_sabotaje;
-	resolver_sabotaje.coord_x = posicion_sabotaje[0] - 48;
-	resolver_sabotaje.coord_y = posicion_sabotaje[2] - 48;
+	resolver_sabotaje.coord_x = posicion_sabotaje->coord_x;
+	resolver_sabotaje.coord_y = posicion_sabotaje->coord_y;
 	resolver_sabotaje.duracion = DURACION_SABOTAJE;
 	t_aux->tarea = resolver_sabotaje;
 
@@ -1007,9 +1012,9 @@ void peligro(char* posicion_sabotaje, int socket_ram){
 
 }
 
-t_tripulante* tripulante_mas_cercano_a(char* posicion){
-	int x_sabotaje = posicion[0];
-	int y_sabotaje = posicion[2];
+t_tripulante* tripulante_mas_cercano_a(t_posicion* posicion){
+	int x_sabotaje = posicion->coord_x;
+	int y_sabotaje = posicion->coord_y;
 	t_tripulante* un_tripulante;
 
 	void* mas_cercano (void* un_trip, void* otro_trip){
@@ -1027,7 +1032,6 @@ t_tripulante* tripulante_mas_cercano_a(char* posicion){
 		else{
 			return otro_trip;
 		}
-
 	}
 
 	un_tripulante = list_get_minimum(cola_tripulantes_block_emergencia->elements, mas_cercano);
@@ -1059,24 +1063,24 @@ void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mong
 	atomic_no_me_despierten_estoy_trabajando(un_tripulante, st_ram, st_mongo);
 }
 
-void guardian_sabotaje(int st_ram, int st_mongo){ // TODO: Sinergia con el mongo
-
-	t_estructura* mensaje_peligro = recepcion_y_deserializacion(st_mongo);
-	if (mensaje_peligro->codigo_operacion == SABOTAJE){
-		// peligro(POS, st_ram);
+void guardian_sabotaje(){
+	log_info(logger, "Vigilando en caso de sabotajes");
+	while(1){
+		t_estructura* mensaje_peligro = recepcion_y_deserializacion(socket_a_mongo_store);
+		if (mensaje_peligro->codigo_operacion == SABOTAJE){
+			peligro(mensaje_peligro->posicion, socket_a_mi_ram_hq);
+		}
+		else{
+			log_info(logger, "Codigo = %i", mensaje_peligro->codigo_operacion);
+			log_info(logger, "No hay sabotajes a la vista");
+		}
 	}
-	else{
-		log_info(logger, "No hay sabotajes a la vista");
-	}
-
 }
 
 int es_mi_turno(t_tripulante* un_tripulante){
 	t_tripulante* titular = monitor_cola_pop_or_peek(sem_cola_block, (void*) queue_peek, cola_tripulantes_block);
 	return (titular == un_tripulante);
 }
-
-
 
 void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado){
     while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
