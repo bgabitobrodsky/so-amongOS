@@ -136,37 +136,41 @@ int verificar_sizes() {
 }
 
 int verificar_block_counts(t_TCB* tripulante) { 
-    // Compara block count vs el largo de la lista de cada archivo recurso. Devuelve 4 si algún recurso fue corrompido
+    // Compara block count vs el largo de la lista de cada archivo recurso.
 
-	uint32_t cantidad_real_basura = list_size(obtener_lista_bloques(path_basura));
-	uint32_t cantidad_real_comida = list_size(obtener_lista_bloques(path_comida));
-	uint32_t cantidad_real_oxigeno = list_size(obtener_lista_bloques(path_oxigeno));;
+	t_list* lista_bloques_basura = obtener_lista_bloques(path_basura);
+	t_list* lista_bloques_comida = obtener_lista_bloques(path_comida);
+	t_list* lista_bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
+
+	uint32_t cantidad_real_basura = list_size(lista_bloques_basura);
+	uint32_t cantidad_real_comida = list_size(lista_bloques_comida);
+	uint32_t cantidad_real_oxigeno = list_size(lista_bloques_oxigeno);
 
 	int corrompido = 0;
 
 	if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
-		set_tam(path_oxigeno, cantidad_real_oxigeno);
+		set_cant_bloques(path_oxigeno, cantidad_real_oxigeno);
 		corrompido = 1;
 	}
 	if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
-		set_tam(path_comida, cantidad_real_comida);
+		set_cant_bloques(path_comida, cantidad_real_comida);
 		corrompido = 1;
 	}
 	if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
-		set_tam(path_basura, cantidad_real_basura);
+		set_cant_bloques(path_basura, cantidad_real_basura);
 		corrompido = 1;
 	}
 
+	liberar_lista(lista_bloques_basura);
+	liberar_lista(lista_bloques_comida);
+	liberar_lista(lista_bloques_oxigeno);
+
 	return corrompido;
 }
+
 int verificar_blocks() {
 
-	// log_warning(logger_mongo, "%i", md5_no_concuerda());
-	// log_warning(logger_mongo, "%i", tamanio_correcto());
-	// log_warning(logger_mongo, "%i", bloques_sin_sentido());
-	// log_warning(logger_mongo, "%i", bitmap_no_concuerda());
-
-	if (md5_no_concuerda() || !tamanio_correcto() || bloques_sin_sentido() || bitmap_no_concuerda()) {
+	if (md5_no_concuerda() || bitmap_no_concuerda()) {
 		restaurar_blocks();
 		return 1;
 	}
@@ -195,7 +199,6 @@ int md5_no_concuerda() {
 	log_warning(logger_mongo, "nuevo_md5_basura : %s", nuevo_md5_basura);
 	log_warning(logger_mongo, "nuevo_md5_oxigeno: %s", nuevo_md5_oxigeno);
 	log_warning(logger_mongo, "nuevo_md5_comida: %s", nuevo_md5_comida);
-
 
 	char* md5_basura = config_get_string_value(config_basura, "MD5_ARCHIVO");
 	char* md5_oxigeno = config_get_string_value(config_oxigeno, "MD5_ARCHIVO");
@@ -227,20 +230,20 @@ int tamanio_correcto() {
 }
 
 int bloques_sin_sentido() {
+	log_warning(logger_mongo, "Bloques_sin_sentido");
 	t_list* bloques_basura = obtener_lista_bloques(path_basura);
 	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
 	t_list* bloques_comida = obtener_lista_bloques(path_comida);
+	log_warning(logger_mongo, "Conseguidas listas");
 	int* nro_bloque = malloc(sizeof(int));
 
-	for(int i = 0; i < list_size(bloques_basura) ; i++) {
+	for(int i = 0; i < list_size(bloques_basura); i++) {
 		nro_bloque = list_get(bloques_basura, i);
 		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
 			free(nro_bloque);
 			//liberar listas
 			return 1;
 		}
-
-
 	}
 
 	for(int i = 0; i < list_size(bloques_oxigeno) ; i++) {
@@ -319,11 +322,10 @@ void restaurar_blocks() {
 	uint32_t tamanio_archivo_basura = tamanio_archivo(path_basura);
 	uint32_t tamanio_archivo_oxigeno = tamanio_archivo(path_oxigeno);
 	uint32_t tamanio_archivo_comida = tamanio_archivo(path_comida);
-	log_warning(logger_mongo, "Tamanio BASURA: %i", tamanio_archivo_basura);
+
 	liberar_bloques(path_basura);
 	liberar_bloques(path_oxigeno);
 	liberar_bloques(path_comida);
-	log_warning(logger_mongo, "limpiados bloques");
 
 	limpiar_metadata(path_basura);
 	limpiar_metadata(path_oxigeno);
