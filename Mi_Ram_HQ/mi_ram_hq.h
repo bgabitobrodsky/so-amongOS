@@ -44,14 +44,14 @@ void proceso_handler(void* args);
  * MAPA
 **/
 
-NIVEL* nivel;
-int cols = 9, rows = 9;
-int err;
-char last_key = 0;
+// NIVEL* nivel;
+// int cols, rows;
+// int err;
+// char last_key = 0;
 
 t_dictionary* mapa_indices;
 
-void iniciar_mapa();
+// void iniciar_mapa();
 char mapa_iniciar_tcb(t_TCB* tcb);
 void matar_mapa();
 

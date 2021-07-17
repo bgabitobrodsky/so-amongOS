@@ -1,4 +1,5 @@
 #include "segmentacion.h"
+
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define CRITERIO_SELECCION config_get_string_value(config, "CRITERIO_SELECCION")
 

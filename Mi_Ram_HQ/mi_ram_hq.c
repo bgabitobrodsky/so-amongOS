@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 	pthread_mutex_init(&asignacion_marco,NULL);
 	pthread_mutex_init(&asignacion_segmento,NULL);
 	iniciar_memoria();
-	iniciar_mapa();
+	// iniciar_mapa();
 	//test_gestionar_tareas_paginacion();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
@@ -398,11 +398,11 @@ int gestionar_tcb(t_TCB* tcb){
 	}
 	//log_debug(logger,"Se termino la creación de TCB, TID: %d", tcb->TID);
 	
-	char mapa_tcb_key = mapa_iniciar_tcb(tcb);
+	/*har mapa_tcb_key = mapa_iniciar_tcb(tcb);
 	char stid[8];
 	sprintf(stid, "%d", tcb->TID);
 	dictionary_put(mapa_indices, stid, mapa_tcb_key);
-	
+	*/
 	return 1;
 }
 
@@ -603,8 +603,8 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		if(list_size(tabla->segmentos_tcb) == 1){
 			// Si era el ultimo tripulante: MUERTE A LA TABLA ENTERA
 			// mata todo
-			item_borrar(nivel, key);
-			nivel_gui_dibujar(nivel);
+			// item_borrar(nivel, key);
+			// nivel_gui_dibujar(nivel);
 			matar_tabla_segmentos(pid);
 			return 1;
 		}
@@ -634,16 +634,16 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		if(dictionary_size(tabla->dl_tcbs) == 1){
 			matar_tabla_paginas(pid);
 			pthread_mutex_unlock(&(tabla->mutex));
-			item_borrar(nivel, key);
-			nivel_gui_dibujar(nivel);
+			// item_borrar(nivel, key);
+			// nivel_gui_dibujar(nivel);
 			return 1;
 		}else{
 			int result = matar_paginas_tcb(tabla, tid);
 			if(result){
 				log_info(logger, "Se mató al TCB tid: %d", tid);
 				pthread_mutex_unlock(&(tabla->mutex));
-				item_borrar(nivel, key);
-				nivel_gui_dibujar(nivel);
+				// item_borrar(nivel, key);
+				// nivel_gui_dibujar(nivel);
 				return 1;
 			}else{
 				// error
@@ -661,8 +661,8 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 	
 	
 	//item_mover(nivel, key, 10,10);
-	item_borrar(nivel, key);
-	nivel_gui_dibujar(nivel);
+	// item_borrar(nivel, key);
+	// nivel_gui_dibujar(nivel);
 	
 }
 
@@ -704,9 +704,9 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		exit(EXIT_FAILURE);
 	}
 	
-	char key = (char) dictionary_get(mapa_indices,stid);
-	item_mover(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
-	nivel_gui_dibujar(nivel);
+	// char key = (char) dictionary_get(mapa_indices,stid);
+	// item_mover(nivel, key, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
+	// nivel_gui_dibujar(nivel);
 	
 	return 1;
 }
@@ -725,7 +725,7 @@ int tamanio_tarea(t_tarea* tarea){
 // ██║░╚═╝░██║██║░░██║██║░░░░░██║░░██║
 // ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝
 
-
+/*
 void iniciar_mapa(){
     nivel_gui_inicializar();
 	nivel_gui_get_area_nivel(&cols, &rows);
@@ -736,7 +736,7 @@ void iniciar_mapa(){
 
 char mapa_iniciar_tcb(t_TCB* tcb){
 	err = personaje_crear(nivel, last_key + 1, tcb->coord_x, tcb->coord_y);
-	ASSERT_CREATE(nivel, last_key, err);
+	//ASSERT_CREATE(nivel, last_key, err);
 	nivel_gui_dibujar(nivel);
 	last_key++;
 	return last_key;
@@ -747,5 +747,5 @@ void matar_mapa(){
 	nivel_destruir(nivel);
 	nivel_gui_terminar();
 }
-
+*/
 
