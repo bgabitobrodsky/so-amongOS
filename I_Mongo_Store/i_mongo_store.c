@@ -36,7 +36,13 @@ int main(int argc, char** argv){
 
 	// Se settea el FileSystem
 	iniciar_file_system();
+<<<<<<< HEAD
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.");
+=======
+	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
+
+	log_info(logger_mongo, "Verificar_block_counts");
+>>>>>>> 56041264754edd887d776a35b7f28d3de5b59808
 
 	/*
 	imprimir_bitmap();
