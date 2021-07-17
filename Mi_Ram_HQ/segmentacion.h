@@ -14,6 +14,7 @@ typedef struct segmento {
     int tam;
     bool libre;
     tipo_segmento tipo;
+    pthread_mutex_t mutex;
 } segmento;
 t_list* segmentos;
 

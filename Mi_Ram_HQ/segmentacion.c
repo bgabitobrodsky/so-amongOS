@@ -33,7 +33,7 @@ void compactacion(){
             for(int z = i + 1; z < size; z++){
                 segmento* segmento_ocupado = list_get(segmentos, z);
                 if(!segmento_ocupado->libre){
-                    
+                    pthread_mutex_lock(&(segmento_ocupado->mutex));
                     // Tengo que acomodar los fuckings punteros a memoria de las estructuras
                     if(segmento_ocupado->tipo == S_PCB){
                         // en caso de ser un seg. de pcb tengo que actualizar el puntero a pcb de sus tcb
@@ -79,10 +79,10 @@ void compactacion(){
                     // Despues acomodamos las estrucuras
                     segmento_ocupado->base = segmento_libre->base;
                     segmento_libre->base += segmento_ocupado->tam;
-
                     ordenar_segmentos();
                     unificar_segmentos_libres();
                     size = list_size(segmentos);
+                    pthread_mutex_unlock(&(segmento_ocupado->mutex));
                     break;
                 }else{
                     desplazamiento += segmento_ocupado->tam;
@@ -117,16 +117,20 @@ segmento* crear_segmento(int base, int tam, bool libre){
     nuevo_segmento->base = base;
     nuevo_segmento->tam = tam;
     nuevo_segmento->libre = libre;
+    pthread_mutex_init(&(nuevo_segmento->mutex),NULL);
 
     return nuevo_segmento;
 }
 
 segmento* buscar_segmento_libre(int tam){
+    //pthread_mutex_lock(&asignacion_marco);
 	if (strcmp(CRITERIO_SELECCION, "FF") == 0) {
         //log_info(logger, "Empieza busqueda FirstFit");
+        //pthread_mutex_unlock(&asignacion_marco);
         return first_fit(tam);
     } else if (strcmp(CRITERIO_SELECCION, "BF") == 0) {
         //log_info(logger, "Empieza busqueda BestFit");
+        //pthread_mutex_unlock(&asignacion_marco);
         return best_fit(tam);
     } else {
         log_error(logger, "Metodo de asignacion desconocido");
@@ -184,6 +188,7 @@ segmento* best_fit(int tam){
 }
 
 segmento* asignar_segmento(int tam){
+    //pthread_mutex_lock(&asignacion_marco);
 	segmento* segmento_libre = buscar_segmento_libre(tam);
 	if(segmento_libre != NULL){
         intento_asignar_segmento = 0;
@@ -191,6 +196,7 @@ segmento* asignar_segmento(int tam){
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
 			//log_info(logger,"Segmento asignado (base:%d)", segmento_libre->base);
+            //pthread_mutex_unlock(&asignacion_marco);
 			return segmento_libre;
 		}
 		//Si no tengo que dividir el segmento
@@ -202,16 +208,19 @@ segmento* asignar_segmento(int tam){
 			//log_info(logger,"Segmento asignado (base:%d)", nuevo_segmento->base);
 			//Ordeno los segmentos por base ascendente
 			ordenar_segmentos();
+            //pthread_mutex_unlock(&asignacion_marco);
 			return nuevo_segmento;
 		}
 	}else{
         if(intento_asignar_segmento == 1){
             intento_asignar_segmento = 0;
             log_error(logger,"No hay mas memoria bro");
+            //pthread_mutex_unlock(&asignacion_marco);
             return NULL;
         }
         intento_asignar_segmento = 1;
         compactacion();
+        //pthread_mutex_unlock(&asignacion_marco);
         return asignar_segmento(tam);
 	}
 }
@@ -678,7 +687,7 @@ void dump_segmentacion(){
     }
     list_sort(dump_segmentos,ordenador);
 
-    char* path = string_from_format("./dump/Dump_%d.dump", (int) time(NULL));
+    char* path = string_from_format("./dump/Dump_%d.dmp", (int) time(NULL));
     FILE* file = fopen(path,"w");
     free(path);
 
