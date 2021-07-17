@@ -118,9 +118,9 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    //iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
-//     iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
-//     iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
+    // iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
+    // iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
+    // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
     iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
     iniciar_planificacion();
 
@@ -632,8 +632,22 @@ void pausar_planificacion() {
 
 void obtener_bitacora(char* leido) {
 
-    printf("Obtener Bitacora\n");
+    printf("Obtener Bitacora");
+    char** palabras = string_split(leido, " ");
+    int tid_tripulante_a_buscar = atoi(palabras[1]);
 
+// t_buffer* b_tid = serializar_entero(tid_tripulante_a_buscar);
+// empaquetar_y_enviar(b_tid, BITACORA, socket_a_mongo_store);
+// t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mongo_store);
+//
+/*
+if(respuesta->codigo_operacion == BITACORA{
+log_info(logger, "Bitacora del tripulante: %s", respuesta->bitacora);
+} else{
+log_info(logger, "No se recibe la bitacora, f");
+}
+*/
+    liberar_puntero_doble(palabras);
 }
 
 void expulsar_tripulante(char* leido) {

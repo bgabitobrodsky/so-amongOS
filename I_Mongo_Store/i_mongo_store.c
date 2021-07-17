@@ -36,16 +36,32 @@ int main(int argc, char** argv){
 
 	// Se settea el FileSystem
 	iniciar_file_system();
-	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
-	log_info(logger_mongo, "Verificar_block_counts");
+	log_info(logger_mongo, "Se inicio el FileSystem correctamente.");
 
-    int reparado = verificar_block_counts();
+	/*
+	imprimir_bitmap();
+	log_info(logger_mongo, "Post primer bitmap");
 
-    if (reparado){
-    	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
+    void* puntero_a_bits = malloc(CANTIDAD_BLOQUES/8);
+    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, CANTIDAD_BLOQUES/8, LSB_FIRST);
+
+    for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
+ 	   bitarray_set_bit(bitmap, i);
     }
 
-    log_warning(logger_mongo, "lOGRADO");
+    reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
+
+	log_warning(logger_mongo, "Verifiquemos la cantidad de bloques");
+	imprimir_bitmap();
+
+	int reparado = verificar_bitmap();
+
+	if (reparado){
+		log_warning(logger_mongo, "Se repara el bitmap del superbloque");
+	}
+
+	imprimir_bitmap();
+	 */
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);

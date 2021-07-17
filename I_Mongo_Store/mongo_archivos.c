@@ -709,13 +709,14 @@ void limpiar_metadata(char* path) {
 	iniciar_archivo_recurso(path, 0, 0, NULL);
 }
 
-void liberar_bloques(char* path) { //TODO llenar bloque de 'c'
+void liberar_bloques(char* path) { //TODO llenar bloque de ','
 	t_list* bloques = obtener_lista_bloques(path);
 	uint32_t* nro_bloque = malloc(sizeof(uint32_t));
 
 	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
 		liberar_bloque(path, *nro_bloque);
+		rellenar_bloque();
 	}
 }
 

@@ -71,12 +71,17 @@ void reparar() {
 
 int verificar_cant_bloques() {
 
-	uint32_t cant_bloques = obtener_cantidad_bloques_superbloque();
+	// log_warning(logger_mongo, "Verificar cant bloques");
+	uint32_t cant_bloques = obtener_tamanio_bloque_superbloque();
+	// log_warning(logger_mongo, "Cant_bloques leida: %i", cant_bloques);
 
 	fseek(directorio.blocks, 0, SEEK_END);
 	int tamanio_en_bytes = ftell(directorio.blocks);
 	fseek(directorio.blocks, 0, SEEK_SET);
     int cantidad_real = tamanio_en_bytes / TAMANIO_BLOQUE;
+
+	// log_warning(logger_mongo, "1 Verificar_cant_bloques");
+	// log_warning(logger_mongo, "Cant_bloques %i", cant_bloques);
 
     if (cant_bloques != cantidad_real) {
         t_bitarray* bitmap = obtener_bitmap();
@@ -95,12 +100,10 @@ int verificar_bitmap() {
 
     recorrer_recursos(lista_bloques_ocupados);
     recorrer_bitacoras(lista_bloques_ocupados);
-
     sortear(lista_bloques_ocupados);
 
-    // TODO seba: verificar la lista a ver si todo sale bien
-
     if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
+    	log_warning(logger_mongo, "Entrando");
         actualizar_bitmap(lista_bloques_ocupados);
         return 1;
     }
@@ -408,7 +411,7 @@ void sortear(t_list* bloques_ocupados) {
 int bloques_ocupados_difieren(t_list* bloques_ocupados) {
     // Compara lista contra el bitmap, apenas difieren devuelve 1 (como true), sino 0
 	int no_difieren;
-
+	log_warning(logger_mongo, "bloques_ocupados_difieren");
 	t_bitarray* bitmap = obtener_bitmap();
 
 	for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
@@ -425,9 +428,11 @@ int bloques_ocupados_difieren(t_list* bloques_ocupados) {
 
 		//Si el flag es 0, los bloques difieren
 		if(!no_difieren){
+			log_warning(logger_mongo, "difieren");
 			return 1;
 		}
 
 	}
+	log_warning(logger_mongo, "no difieren");
 	return 0;
 }

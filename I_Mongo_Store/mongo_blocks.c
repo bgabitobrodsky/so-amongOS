@@ -124,7 +124,7 @@ void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bit
 }
 
 void actualizar_bitmap(t_list* lista_bloques_ocupados) {
-	// TODO seba: revisa esto
+
 	log_trace(logger_mongo, "0 actualizar bitmap");
     t_bitarray* bitmap = obtener_bitmap();
 /*
@@ -135,6 +135,8 @@ void actualizar_bitmap(t_list* lista_bloques_ocupados) {
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
     	if(esta_en_lista(lista_bloques_ocupados, i)){
     		bitarray_set_bit(bitmap, i);
+    	} else{
+    		bitarray_clean_bit(bitmap, i);
     	}
     }
     /*
