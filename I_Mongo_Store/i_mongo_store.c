@@ -16,6 +16,7 @@ int main(int argc, char** argv){
 	// Se crean estructuras de registro y configuracion
 	logger_mongo = log_create("mongo.log", "MONGO", 1, 0); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
+	config_superbloque = config_create("superbloque.config");
 	signal(SIGUSR1, sabotaje);
 	posiciones_sabotajes = POSICIONES_SABOTAJE;
 	lista_bloques_ocupados = list_create();
@@ -36,17 +37,7 @@ int main(int argc, char** argv){
 
 	// Se settea el FileSystem
 	iniciar_file_system();
-	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
-
-	log_info(logger_mongo, "Verificar_block_counts");
-
-    int reparado = verificar_block_counts();
-
-    if (reparado){
-    	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
-    }
-
-    log_warning(logger_mongo, "lOGRADO");
+	log_info(logger_mongo, "Se inicio el FileSystem correctamente.");
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
@@ -113,6 +104,10 @@ void escuchar_mongo(void* args) {
        		es_discordiador = 0; // Se cambia flujo para que los subsiguientes sean tripulantes
        		socket_discordiador = socket_especifico;
 
+       		pthread_t hilo_disc;
+       		pthread_create(&hilo_disc, NULL, (void*) manejo_bitacoras, NULL);
+       		pthread_detach(hilo_disc);
+
        	}
        	else { // Flujo para tripulantes
        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
@@ -126,6 +121,38 @@ void escuchar_mongo(void* args) {
 
 		// TODO: Ver si este close explota hilos
 		// close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
+	}
+}
+
+void manejo_bitacoras(){
+	t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
+
+	if(mensaje->codigo_operacion == PEDIR_BITACORA){
+		log_trace(logger_mongo, "Nos piden una bitacora");
+		t_bitacora* bitacora_tripulante = obtener_bitacora(mensaje->tid);
+		if(bitacora_tripulante  != NULL){
+			char* bitacora = rescatar_bitacora(bitacora_tripulante->path);
+			if(strlen(bitacora) == 0){
+				log_debug(logger_mongo, "El tripulante no tenia nada en la bitacora.");
+				enviar_codigo(FALLO, socket_discordiador);
+			} else{
+				log_debug(logger_mongo, "Conseguimos la bitacora.");
+				t_archivo_tareas texto_archivo;
+				texto_archivo.texto = malloc(strlen(bitacora) + 1);
+				strcpy(texto_archivo.texto, bitacora);
+				log_debug(logger_mongo, "La bitacora tiene: %s.", texto_archivo.texto);
+				texto_archivo.largo_texto = strlen(bitacora);
+
+				t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);
+				empaquetar_y_enviar(b_bitacora, BITACORA, socket_discordiador);
+				log_debug(logger_mongo, "Enviada bitacora del tripulante %i", mensaje->tid);
+			}
+		} else{
+			log_debug(logger_mongo, "El tripulante no tenia bitacora.");
+			enviar_codigo(FALLO, socket_discordiador);
+		}
+
+		free(mensaje);
 	}
 }
 

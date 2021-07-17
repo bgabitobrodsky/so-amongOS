@@ -48,6 +48,31 @@ void manejo_tripulante(void* socket) {
 	}
 }
 
+char* rescatar_bitacora(char* path){
+	log_trace(logger_mongo, "Rescatando bitacora");
+	t_list* lista_bloques_bitacora = obtener_lista_bloques(path);
+
+	int lectura = 0;
+	int size = tamanio_archivo(path);
+	char* string = malloc(size);
+	log_trace(logger_mongo, "Size es: %i", size);
+
+
+	for(int i = 0; i < list_size(lista_bloques_bitacora); i++){
+		for(int j = 0; j < TAMANIO_BLOQUE; j++){
+
+			string[lectura] = *(directorio.mapa_blocks + (TAMANIO_BLOQUE * i) + j);
+			lectura++;
+
+			if(lectura == size){
+				return string;
+			}
+		}
+	}
+
+	return string;
+}
+
 void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 	// Se obtiene el path particular del tripulante, identificado con su TID
     log_trace(logger_mongo, "INICIO crear_estructuras_tripulante");
@@ -84,7 +109,7 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	log_error(logger_mongo, "INICIO modificar_bitacora");
 
-	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb);
+	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb->TID);
 	char* pos_inicial = NULL;
 	char* pos_final = NULL;
 	char* nombre_tarea;
@@ -270,11 +295,11 @@ t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
 	return bitacora;
 }
 
-t_bitacora* obtener_bitacora(t_TCB* tcb) {
+t_bitacora* obtener_bitacora(int tid) {
 	log_trace(logger_mongo, "INICIO obtener_bitacora");
 
 	bool contains(void* bitacora) {
-		return (tcb->TID == ((t_bitacora*) bitacora)->tripulante->TID);
+		return (tid == ((t_bitacora*) bitacora)->tripulante->TID);
 	}
 
 	t_bitacora* bitacora = list_find(bitacoras, contains);

@@ -210,10 +210,6 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 			if (*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) == ',') {
 				*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) = tipo;
 
-				// TODO ver si se actualiza y quitar a futuro
-				memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
-				msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
-
 				cantidad_alcanzada++;
 				// log_trace(logger_mongo, "cantidad mas mas");
 			}
@@ -552,6 +548,7 @@ t_list* obtener_lista_bloques(char* path){
 	t_config* config = config_create(path);
 
 	if(!config_has_property(config, "BLOCK_COUNT")){
+		log_error(logger_mongo, "EL path no BC");
 
 		char** bloques = config_get_array_value(config, "BLOCKS");
 		t_list* lista_bloques = list_create();
@@ -707,13 +704,16 @@ void limpiar_metadata(char* path) {
 	iniciar_archivo_recurso(path, 0, 0, NULL);
 }
 
-void liberar_bloques(char* path) {
+
+void liberar_bloques(char* path) { //TODO llenar bloque de ','
+
 	t_list* bloques = obtener_lista_bloques(path);
 	uint32_t* nro_bloque = malloc(sizeof(uint32_t));
 
 	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
 		liberar_bloque(path, *nro_bloque);
+		// rellenar_bloque(); // TODO llenar de comas
 	}
 }
 

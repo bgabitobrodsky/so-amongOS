@@ -10,8 +10,8 @@
 #include <commons/collections/list.h>
 
 /* ENUMS */
-//                      DISCORDIADOR                          									                        COSAS FILESYSTEM            	ACCIONES BITACORA                                                     		CODIGOS UNICOS: MONGO           	                                     GENERALES
-enum codigo_operacion { RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, ACTUALIZAR,         OXIGENO, COMIDA, BASURA,        MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,         MENSAJE, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO, LISTO, REPARADO, POSICION, FIN_LISTA };
+//                      DISCORDIADOR                          									                        							COSAS FILESYSTEM            	ACCIONES BITACORA                                                     		CODIGOS UNICOS: MONGO           	                                     GENERALES
+enum codigo_operacion { RECIBIR_TCB, TAREA, ARCHIVO_TAREAS, T_SIGKILL, PEDIR_TAREA, LISTAR_POR_PID, ACTUALIZAR, PEDIR_BITACORA, BITACORA,         OXIGENO, COMIDA, BASURA,        MOVIMIENTO, INICIO_TAREA, FIN_TAREA, CORRE_SABOTAJE, RESUELVE_SABOTAJE,     SABOTAJE, PRIMERA_CONEXION,         MENSAJE, COD_TAREA,     RECEPCION, DESCONEXION, EXITO, FALLO, LISTO, REPARADO, POSICION, FIN_LISTA };
 
 /* ESTRUCTURAS */
 
