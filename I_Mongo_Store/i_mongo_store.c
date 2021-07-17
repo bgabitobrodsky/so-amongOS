@@ -37,6 +37,7 @@ int main(int argc, char** argv){
 	// Se settea el FileSystem
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.\n");
+
 	log_info(logger_mongo, "Verificar_block_counts");
 
     int reparado = verificar_block_counts();
