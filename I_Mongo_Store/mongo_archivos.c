@@ -547,16 +547,17 @@ uint32_t obtener_cantidad_bloques(char* path){
 t_list* obtener_lista_bloques(char* path){
 	// ESTA FUNCION DEBE LIBERAR EL RETORNO
 
-	log_trace(logger_mongo, "INICIO obtener_lista_bloques");
-	log_trace(logger_mongo, "path config: %s", path);
+	log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
 	t_config* config = config_create(path);
 
 	if(!config_has_property(config, "BLOCK_COUNT")){
 
-		log_trace(logger_mongo, "Soy un tripulante! %s", path);
-		t_list* lista_bloques = list_create();
-
 		char** bloques = config_get_array_value(config, "BLOCKS");
+		t_list* lista_bloques = list_create();
+		if(bloques[0] == NULL){
+			log_error(logger_mongo, "EL path no tiene bloques");
+			return lista_bloques;
+		}
 
 		int* aux;
 		for(int i = 0; i < contar_palabras(bloques); i++){
@@ -565,38 +566,32 @@ t_list* obtener_lista_bloques(char* path){
 			list_add(lista_bloques, aux);
 		}
 
-		if(lista_bloques == NULL){
-			log_error(logger_mongo, "LA LISTA ES NULA N00");
-		}
-
 		log_trace(logger_mongo, "Returneo tripulante");
 
 		return lista_bloques;
 	}
 
-	log_trace(logger_mongo, "Tengo block caunt, o sea que soy un recurso");
-
-	log_trace(logger_mongo, "lockear bloques inicio");
+	// log_trace(logger_mongo, "lockear bloques inicio");
 	lockearLectura(path);
 
 	uint32_t cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 
-	char** bloques = config_get_array_value(config, "BLOCKS");
-
-	log_trace(logger_mongo, "1 obtener_lista_bloques");
-
 	t_list* lista_bloques = list_create();
-
-	log_trace(logger_mongo, "2 obtener_lista_bloques");
+	char** bloques = config_get_array_value(config, "BLOCKS");
+	if(bloques[0] == NULL){
+		log_error(logger_mongo, "EL path no tiene bloques");
+		return lista_bloques;
+	}
 
 	int* aux;
+
 	for(int i = 0; i < cant_bloques; i++){
 		aux = malloc(sizeof(int));
 		*aux = atoi(bloques[i]);
 		list_add(lista_bloques, aux);
 	}
 
-	log_trace(logger_mongo, "unlockear bloques inicio");
+	// log_trace(logger_mongo, "unlockear bloques inicio");
 	unlockear(path);
 
 	return lista_bloques;
