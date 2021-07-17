@@ -40,14 +40,16 @@ int main(int argc, char** argv){
 
     // log_warning(logger_mongo, "Verifiquemos los blocks");
 	// reparar();
-/*
-    int reparado = verificar_blocks();
+	log_info(logger_mongo, "Verificar_block_counts");
 
-	if (reparado){
-		log_warning(logger_mongo, "Se repara la lista de bloques de los recursos");
-	}
+    int reparado = verificar_block_counts();
+
+    if (reparado){
+    	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
+    }
+
     log_warning(logger_mongo, "lOGRADO");
-*/
+
 
 	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
 	pthread_mutex_init(&mutex_oxigeno, NULL);
