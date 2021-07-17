@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", false, LOG_LEVEL_DEBUG);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", true, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR2, dump);
 
