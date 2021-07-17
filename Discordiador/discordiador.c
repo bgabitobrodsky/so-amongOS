@@ -118,10 +118,10 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-     iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
+    //iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
 //     iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
 //     iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
-//    iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
     iniciar_planificacion();
 
     // sleep(1);
@@ -1113,7 +1113,10 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 				}
             }
         }
-        verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
+        // if para no informar dos veces
+        if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+        	verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
+        }
     }
 }
 
@@ -1154,6 +1157,8 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
             }
         }
 
-    verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
+        if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+        	verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
+        }
     }
 }
