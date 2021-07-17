@@ -268,14 +268,16 @@ void planificador(){
 
             if(comparar_strings(ALGORITMO, "FIFO")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-                cambiar_estado(aux_tripulante, estado_tripulante[EXEC], socket_a_mi_ram_hq);
+            	quitar_tripulante_de_listas(aux_tripulante);
+            	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
 
             else if(comparar_strings(ALGORITMO, "RR")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-                cambiar_estado(aux_tripulante, estado_tripulante[EXEC], socket_a_mi_ram_hq);
+            	quitar_tripulante_de_listas(aux_tripulante);
+            	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 aux_tripulante->quantum_restante = QUANTUM;
                 monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
