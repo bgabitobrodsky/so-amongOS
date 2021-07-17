@@ -251,17 +251,17 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
             break;
 
         case TAREA:
-            intermediario->codigo_operacion = TAREA;
+            intermediario->codigo_operacion = paquete->codigo_operacion;
             // asignar un malloc? tienes idea de lo loco que se oye eso?
             intermediario->tarea = deserializar_tarea(paquete->buffer);
             break;
-
+        case BITACORA:
         case ARCHIVO_TAREAS:
-        	intermediario->codigo_operacion = ARCHIVO_TAREAS;
+        	intermediario->codigo_operacion = paquete->codigo_operacion;
         	intermediario->archivo_tareas = malloc(paquete->buffer->tamanio_estructura);
             intermediario->archivo_tareas = deserializar_archivo_tareas(paquete->buffer);
             break;
-
+        case PEDIR_BITACORA:
         case T_SIGKILL:
         case PEDIR_TAREA:
         	intermediario->codigo_operacion = paquete->codigo_operacion;
