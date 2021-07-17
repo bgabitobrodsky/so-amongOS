@@ -192,7 +192,7 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 	log_trace(logger_mongo, "0 asignar_primer_bloque, cant bloques %i", list_size(lista_bloques));
 	int cantidad_alcanzada = 0;
 
-	if(list_is_empty(lista_bloques)){
+	if(list_is_empty(lista_bloques) && cantidad_deseada != 0){
 		log_trace(logger_mongo, "la lista ta vacia");
 		asignar_nuevo_bloque(path, 0);
 		lista_bloques = obtener_lista_bloques(path);
