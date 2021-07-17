@@ -37,8 +37,8 @@
 // #define TAMANIO_BLOQUE obtener_tamanio_bloque()
 // #define CANTIDAD_BLOQUES obtener_cantidad_bloques()
 
-#define TAMANIO_BLOQUE 64
-#define CANTIDAD_BLOQUES 1024
+#define TAMANIO_BLOQUE config_get_int_value(config_superbloque, "TAMANIO_BLOQUE")
+#define CANTIDAD_BLOQUES config_get_int_value(config_superbloque, "CANTIDAD_BLOQUES")
 #define PUNTO_MONTAJE config_get_string_value(config_mongo, "PUNTO_MONTAJE");
 #define POSICIONES_SABOTAJE config_get_array_value(config_mongo, "POSICIONES_SABOTAJE")
 #define TIEMPO_SINCRONIZACION config_get_int_value(config_mongo, "TIEMPO_SINCRONIZACION")
@@ -83,6 +83,7 @@ pthread_mutex_t mutex_blocks;
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
+extern t_config* config_superbloque;
 extern t_list* bitacoras;
 extern t_list* lista_bloques_ocupados;
 extern char* mapa;

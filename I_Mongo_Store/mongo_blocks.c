@@ -5,6 +5,7 @@
 
 t_log* logger_mongo;
 t_config* config_mongo;
+t_config* config_superbloque;
 t_directorio directorio;
 t_recurso recurso;
 t_list* bitacoras;
