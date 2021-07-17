@@ -29,30 +29,35 @@ void reparar() {
 
     int reparado = 0;
     
+	log_warning(logger_mongo, "Verifiquemos la cantidad de bloques");
     reparado = verificar_cant_bloques();
 
     if (reparado){
     	log_warning(logger_mongo, "Se repara la cantidad de bloques del superbloque");
     }
 
+    log_warning(logger_mongo, "Verifiquemos el bitmap");
     reparado = verificar_bitmap();
 
     if (reparado){
     	log_warning(logger_mongo, "Se repara el bitmap del superbloque");
     }
 
+    log_warning(logger_mongo, "Verifiquemos el sizes");
     reparado = verificar_sizes();
 
     if (reparado){
     	log_warning(logger_mongo, "Se repara el tamanios de los archivos");
     }
 
+    log_warning(logger_mongo, "Verifiquemos el block counts");
     reparado = verificar_block_counts();
 
     if (reparado){
     	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
     }
 
+    log_warning(logger_mongo, "Verifiquemos los blocks");
     reparado = verificar_blocks();
 
     if (reparado){
@@ -156,6 +161,11 @@ int verificar_block_counts(t_TCB* tripulante) {
 }
 int verificar_blocks() {
 
+	// log_warning(logger_mongo, "%i", md5_no_concuerda());
+	// log_warning(logger_mongo, "%i", tamanio_correcto());
+	// log_warning(logger_mongo, "%i", bloques_sin_sentido());
+	// log_warning(logger_mongo, "%i", bitmap_no_concuerda());
+
 	if (md5_no_concuerda() || !tamanio_correcto() || bloques_sin_sentido() || bitmap_no_concuerda()) {
 		restaurar_blocks();
 		return 1;
@@ -164,7 +174,8 @@ int verificar_blocks() {
 	return 0;
 }
 
-int md5_no_concuerda() { // Puede explotar
+int md5_no_concuerda() {
+
 	t_config* config_basura = config_create(path_basura);
 	t_config* config_oxigeno = config_create(path_oxigeno);
 	t_config* config_comida = config_create(path_comida);
@@ -173,21 +184,37 @@ int md5_no_concuerda() { // Puede explotar
 	char* bloques_oxigeno = config_get_string_value(config_oxigeno, "BLOCKS");
 	char* bloques_comida = config_get_string_value(config_comida, "BLOCKS");
 
+	// log_warning(logger_mongo, "cadena bloque basura: %s", bloques_basura);
+	// log_warning(logger_mongo, "cadena bloque oxigeno: %s", bloques_oxigeno);
+	// log_warning(logger_mongo, "cadena bloque comida: %s", bloques_comida);
+
 	char* nuevo_md5_basura = md5_archivo(bloques_basura);
 	char* nuevo_md5_oxigeno = md5_archivo(bloques_oxigeno);
 	char* nuevo_md5_comida = md5_archivo(bloques_comida);
 
-	char* md5_basura = config_get_string_value(config_basura, "MD5");
-	char* md5_oxigeno = config_get_string_value(config_oxigeno, "MD5");
-	char* md5_comida = config_get_string_value(config_comida, "MD5");
+	log_warning(logger_mongo, "nuevo_md5_basura : %s", nuevo_md5_basura);
+	log_warning(logger_mongo, "nuevo_md5_oxigeno: %s", nuevo_md5_oxigeno);
+	log_warning(logger_mongo, "nuevo_md5_comida: %s", nuevo_md5_comida);
+
+
+	char* md5_basura = config_get_string_value(config_basura, "MD5_ARCHIVO");
+	char* md5_oxigeno = config_get_string_value(config_oxigeno, "MD5_ARCHIVO");
+	char* md5_comida = config_get_string_value(config_comida, "MD5_ARCHIVO");
+
+	log_warning(logger_mongo, "viejo md5_basura: %s", md5_basura);
+	log_warning(logger_mongo, "viejo md5_oxigeno: %s", md5_oxigeno);
+	log_warning(logger_mongo, "viejo md5_comida: %s", md5_comida);
+
+	if (strcmp(nuevo_md5_basura, md5_basura) || strcmp(nuevo_md5_oxigeno, md5_oxigeno) || strcmp(nuevo_md5_comida, md5_comida)) {
+		log_warning(logger_mongo, "md5 no concuerda");
+		return 1;
+	}
 
 	config_destroy(config_basura);
 	config_destroy(config_oxigeno);
 	config_destroy(config_comida);
 
-	if (!strcmp(nuevo_md5_basura, md5_basura) || !strcmp(nuevo_md5_oxigeno, md5_oxigeno) || !strcmp(nuevo_md5_comida, md5_comida)) {
-		return 1;
-	}
+	log_warning(logger_mongo, "md5 concuerda");
 
 	return 0;
 }
@@ -288,21 +315,26 @@ int lista_blocks_saboteada(FILE* archivo) {
 }
 
 void restaurar_blocks() {
+	log_warning(logger_mongo, "inicio restaurar blocks");
 	uint32_t tamanio_archivo_basura = tamanio_archivo(path_basura);
 	uint32_t tamanio_archivo_oxigeno = tamanio_archivo(path_oxigeno);
 	uint32_t tamanio_archivo_comida = tamanio_archivo(path_comida);
-
+	log_warning(logger_mongo, "Tamanio BASURA: %i", tamanio_archivo_basura);
 	liberar_bloques(path_basura);
 	liberar_bloques(path_oxigeno);
 	liberar_bloques(path_comida);
+	log_warning(logger_mongo, "limpiados bloques");
 
 	limpiar_metadata(path_basura);
 	limpiar_metadata(path_oxigeno);
 	limpiar_metadata(path_comida);
 
+	log_warning(logger_mongo, "Tamanio NUEVO BASURA debe ser 0 : %i", tamanio_archivo(path_basura));
+
 	agregar(BASURA, (int) tamanio_archivo_basura);
 	agregar(OXIGENO, (int) tamanio_archivo_oxigeno);
 	agregar(COMIDA, (int) tamanio_archivo_comida);
+	log_warning(logger_mongo, "Agregadas cosas locas");
 }
 
 void recorrer_recursos(t_list* bloques_ocupados) {
@@ -361,11 +393,11 @@ void recorrer_bitacoras(t_list* bloques_ocupados) {
 
 void sortear(t_list* bloques_ocupados) {
 	// Ordeno de menor a mayor
-	void* es_menor(void* elemento, void* otro_elemento){
+	bool es_menor(void* elemento, void* otro_elemento){
 		if(*((int*) elemento) > *((int*) otro_elemento)){
-			return otro_elemento;
+			return 0;
 		} else{
-			return elemento;
+			return 1;
 		}
 	}
 	list_sort(bloques_ocupados, es_menor);
