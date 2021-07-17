@@ -285,7 +285,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	log_trace(logger_mongo, "OFFSET: %i", offset);
 
 	if (offset < 0) { // Falto agregar cantidad, dada por offset
-		log_error(logger_mongo, "entro a luchar por el offset");
+		log_error(logger_mongo, "entro a luchar por el offset. Cantidad faltante: %i", offset);
 		asignar_nuevo_bloque(path, 0);
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
@@ -296,7 +296,8 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	lista_bloques = obtener_lista_bloques(path);
 
-	iniciar_archivo_recurso(path, tam_archivo + cantidad, cant_bloques, lista_bloques);
+	iniciar_archivo_recurso(path, tam_archivo + cantidad + offset, cant_bloques, lista_bloques);
+	log_error(logger_mongo, "Cantidad agregada: %i", cantidad);
 
 	log_trace(logger_mongo, "FIN agregar");
 
@@ -580,6 +581,7 @@ t_list* obtener_lista_bloques(char* path){
 	char** bloques = config_get_array_value(config, "BLOCKS");
 	if(bloques[0] == NULL){
 		log_error(logger_mongo, "EL path no tiene bloques");
+		unlockear(path);
 		return lista_bloques;
 	}
 
@@ -598,7 +600,7 @@ t_list* obtener_lista_bloques(char* path){
 }
 
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
-	log_trace(logger_mongo, "lockear escritura recurso");
+	log_info(logger_mongo, "lockear escritura recurso");
 	lockearEscritura(path);
 
 	log_trace(logger_mongo, "0 iniciar_archivo_recurso");
