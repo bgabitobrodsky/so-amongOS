@@ -59,6 +59,7 @@ int main(int argc, char** argv){
 	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.\n");
 	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
+	config_destroy(config_superbloque);
 	free(path_directorio);
 	free(path_superbloque);
 	free(path_blocks);
@@ -128,27 +129,27 @@ void manejo_bitacoras(){
 	t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
 
 	if(mensaje->codigo_operacion == PEDIR_BITACORA){
-		log_trace(logger_mongo, "Nos piden una bitacora");
+		//log_trace(logger_mongo, "Nos piden una bitacora");
 		t_bitacora* bitacora_tripulante = obtener_bitacora(mensaje->tid);
 		if(bitacora_tripulante  != NULL){
 			char* bitacora = rescatar_bitacora(bitacora_tripulante->path);
 			if(strlen(bitacora) == 0){
-				log_debug(logger_mongo, "El tripulante no tenia nada en la bitacora.");
+				//log_debug(logger_mongo, "El tripulante no tenia nada en la bitacora.");
 				enviar_codigo(FALLO, socket_discordiador);
 			} else{
-				log_debug(logger_mongo, "Conseguimos la bitacora.");
+				//log_debug(logger_mongo, "Conseguimos la bitacora.");
 				t_archivo_tareas texto_archivo;
 				texto_archivo.texto = malloc(strlen(bitacora) + 1);
 				strcpy(texto_archivo.texto, bitacora);
-				log_debug(logger_mongo, "La bitacora tiene: %s.", texto_archivo.texto);
+				//log_debug(logger_mongo, "La bitacora tiene: %s.", texto_archivo.texto);
 				texto_archivo.largo_texto = strlen(bitacora);
 
 				t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);
 				empaquetar_y_enviar(b_bitacora, BITACORA, socket_discordiador);
-				log_debug(logger_mongo, "Enviada bitacora del tripulante %i", mensaje->tid);
+				//log_debug(logger_mongo, "Enviada bitacora del tripulante %i", mensaje->tid);
 			}
 		} else{
-			log_debug(logger_mongo, "El tripulante no tenia bitacora.");
+			//log_debug(logger_mongo, "El tripulante no tenia bitacora.");
 			enviar_codigo(FALLO, socket_discordiador);
 		}
 
@@ -160,14 +161,14 @@ void sabotaje(int n) {
 
 	// Se espera que set reciba la signal correspondiente
 	if (n == SIGUSR1) {
-		log_error(logger_mongo, "Se detecto un sabotaje.\n");
+		//log_error(logger_mongo, "Se detecto un sabotaje.\n");
 		// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
 		enviar_posicion_sabotaje(socket_discordiador);
 
 		// Se activaria el protocolo fcsk
 		reparar();
 
-		log_error(logger_mongo, "Se reparo el sabotaje.\n");
+		//log_error(logger_mongo, "Se reparo el sabotaje.\n");
 
 	}
 
@@ -209,7 +210,7 @@ void iniciar_file_system() {
 	pthread_t un_hilo; // Estaria bueno crearlo en main
 	pthread_create(&un_hilo, NULL, (void*) sincronizar_blocks, NULL);
 	pthread_detach(un_hilo);
-	log_trace(logger_mongo, "FIN iniciar_file_system");
+	//log_trace(logger_mongo, "FIN iniciar_file_system");
 }
 
 void sincronizar_blocks() {
@@ -239,7 +240,7 @@ void imprimir_bitmap(){
 
 	for(int i = 0; i < bitarray_get_max_bit(mapilla); i+=8){
 		// El tocho es para que se vea cada byte en una linea.
-		log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(mapilla, i), bitarray_test_bit(mapilla, i+1), bitarray_test_bit(mapilla, i+2), bitarray_test_bit(mapilla, i+3), bitarray_test_bit(mapilla, i+4), bitarray_test_bit(mapilla, i+5), bitarray_test_bit(mapilla, i+6), bitarray_test_bit(mapilla, i+7));
+		//log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(mapilla, i), bitarray_test_bit(mapilla, i+1), bitarray_test_bit(mapilla, i+2), bitarray_test_bit(mapilla, i+3), bitarray_test_bit(mapilla, i+4), bitarray_test_bit(mapilla, i+5), bitarray_test_bit(mapilla, i+6), bitarray_test_bit(mapilla, i+7));
 	}
 	bitarray_destroy(mapilla);
 }
