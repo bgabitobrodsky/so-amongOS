@@ -8,15 +8,14 @@ void reparar();
 int verificar_cant_bloques();
 int verificar_bitmap();
 int verificar_sizes();
-int verificar_block_counts();
+int verificar_block_counts(); // TESTEADO
 int verificar_blocks();
 int lista_blocks_saboteada(FILE* archivo);
 void recorrer_recursos(t_list* lista_bloques_ocupados);
 void recorrer_bitacoras(t_list* lista_bloques_ocupados);
 void sortear(t_list* lista_bloques_ocupados);
 int bloques_ocupados_difieren(t_list* lista_bloques_ocupados);
-char* rompio(int codigo);
-int md5_no_concuerda();
+int md5_no_concuerda(); // TESTEADO
 int tamanio_correcto();
 int bloques_sin_sentido();
 int bitmap_no_concuerda();

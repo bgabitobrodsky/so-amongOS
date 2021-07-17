@@ -138,8 +138,6 @@ int verificar_sizes() {
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso.
 
-	log_warning(logger_mongo, "pre");
-
 	t_list* lista_bloques_basura = obtener_lista_bloques(path_basura);
 	t_list* lista_bloques_comida = obtener_lista_bloques(path_comida);
 	t_list* lista_bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
@@ -147,10 +145,6 @@ int verificar_block_counts(t_TCB* tripulante) {
 	uint32_t cantidad_real_basura = list_size(lista_bloques_basura);
 	uint32_t cantidad_real_comida = list_size(lista_bloques_comida);
 	uint32_t cantidad_real_oxigeno = list_size(lista_bloques_oxigeno);
-
-	log_warning(logger_mongo, "basura %i", cantidad_real_basura);
-	log_warning(logger_mongo, "comida %i", cantidad_real_comida);
-	log_warning(logger_mongo, "oxineo %i", cantidad_real_oxigeno);
 
 	int corrompido = 0;
 
@@ -205,7 +199,6 @@ int md5_no_concuerda() {
 	log_warning(logger_mongo, "nuevo_md5_basura : %s", nuevo_md5_basura);
 	log_warning(logger_mongo, "nuevo_md5_oxigeno: %s", nuevo_md5_oxigeno);
 	log_warning(logger_mongo, "nuevo_md5_comida: %s", nuevo_md5_comida);
-
 
 	char* md5_basura = config_get_string_value(config_basura, "MD5_ARCHIVO");
 	char* md5_oxigeno = config_get_string_value(config_oxigeno, "MD5_ARCHIVO");
@@ -329,11 +322,10 @@ void restaurar_blocks() {
 	uint32_t tamanio_archivo_basura = tamanio_archivo(path_basura);
 	uint32_t tamanio_archivo_oxigeno = tamanio_archivo(path_oxigeno);
 	uint32_t tamanio_archivo_comida = tamanio_archivo(path_comida);
-	log_warning(logger_mongo, "Tamanio BASURA: %i", tamanio_archivo_basura);
+
 	liberar_bloques(path_basura);
 	liberar_bloques(path_oxigeno);
 	liberar_bloques(path_comida);
-	log_warning(logger_mongo, "limpiados bloques");
 
 	limpiar_metadata(path_basura);
 	limpiar_metadata(path_oxigeno);
