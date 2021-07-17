@@ -583,6 +583,7 @@ t_list* obtener_lista_bloques(char* path){
 	char** bloques = config_get_array_value(config, "BLOCKS");
 	if(bloques[0] == NULL){
 		log_error(logger_mongo, "EL path no tiene bloques");
+		unlockear(path);
 		return lista_bloques;
 	}
 
@@ -601,7 +602,7 @@ t_list* obtener_lista_bloques(char* path){
 }
 
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
-	log_trace(logger_mongo, "lockear escritura recurso");
+	log_info(logger_mongo, "lockear escritura recurso");
 	lockearEscritura(path);
 
 	log_trace(logger_mongo, "0 iniciar_archivo_recurso");
