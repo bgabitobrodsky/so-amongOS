@@ -1,25 +1,18 @@
 #include "segmentacion.h"
-
+#define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define CRITERIO_SELECCION config_get_string_value(config, "CRITERIO_SELECCION")
 
 void ordenar_segmentos(){
     bool segmento_anterior(segmento* segmento_antes, segmento* segmento_despues) {
         return segmento_antes->base < segmento_despues->base;
     }
-	//log_info(logger,"Comienzo a ordenar los segmentos");
     list_sort(segmentos, (void*) segmento_anterior);
-	//log_info(logger,"Segmentos ordenados");
-    return;
 }
 
-void liberar_segmento(int base){
-    for(int i = 0; i<list_size(segmentos);i++){
-        segmento* x = list_get(segmentos, i);
-        if(x->base == base) {
-            x->libre = true;
-            //log_info(logger, "Se elimina el segmento con base %d", x->base);
-        }
-    }
+void liberar_segmento(segmento* segmento){
+    pthread_mutex_lock(&(segmento->mutex));
+    segmento->libre = true;
+    pthread_mutex_unlock(&(segmento->mutex));
     ordenar_segmentos();
 }
 
@@ -40,9 +33,20 @@ void compactacion(){
                         t_PCB* pcb = (t_PCB*) (memoria_principal + segmento_ocupado->base);
                         t_list* tcbs = buscar_tcbs_por_pid(pcb->PID);
 
+
+                        // Movemos primero la memoria real
+                        memcpy(memoria_principal + segmento_libre->base,
+                            memoria_principal + segmento_ocupado->base,
+                            segmento_ocupado->tam);
+
+                        // Despues acomodamos las estrucuras
+                        segmento_ocupado->base = segmento_libre->base;
+                        segmento_libre->base += segmento_ocupado->tam;
+
                         void updater_tcb_pcb(void* un_tcb){
                             t_TCB* tcb = (t_TCB*) un_tcb;
                             tcb->puntero_a_pcb -= desplazamiento;
+                            desbloquear_segmento_tcb(tcb->TID);
                         }
                         list_iterate(tcbs,updater_tcb_pcb);
                     }else if(segmento_ocupado->tipo == S_TAREAS){
@@ -50,6 +54,27 @@ void compactacion(){
                         // en caso de ser un seg. de tareas, tengo que actualizar el: pcb y los tcbs, pucha :(
                         tabla_segmentos* tabla;
                         int pid;
+
+                        t_PCB* pcb = (t_PCB*) (memoria_principal + (tabla->segmento_pcb->base));
+                        pcb->direccion_tareas -= desplazamiento;
+                        
+                        t_list* tcbs = buscar_tcbs_por_pid(pid);
+
+                        // Movemos primero la memoria real
+                        memcpy(memoria_principal + segmento_libre->base,
+                            memoria_principal + segmento_ocupado->base,
+                            segmento_ocupado->tam);
+
+                        // Despues acomodamos las estrucuras
+                        segmento_ocupado->base = segmento_libre->base;
+                        segmento_libre->base += segmento_ocupado->tam;
+                        
+                        void updater_tcb_tareas(void* un_tcb){
+                            t_TCB* tcb = (t_TCB*) un_tcb;
+                            tcb->siguiente_instruccion -= desplazamiento;
+                        }
+                        list_iterate(tcbs,updater_tcb_tareas);
+
                         void buscador_tabla_por_tareas(char* spid, void* una_tabla){
                             tabla_segmentos* t = (tabla_segmentos*) una_tabla;
                             if(t->segmento_tareas->base == segmento_ocupado->base){
@@ -57,31 +82,29 @@ void compactacion(){
                                 pid = atoi(spid);
                             }
                         }
-                        
                         dictionary_iterator(tablas, buscador_tabla_por_tareas);
 
-                        t_PCB* pcb = (t_PCB*) (memoria_principal + (tabla->segmento_pcb->base));
-                        pcb->direccion_tareas -= desplazamiento;
-                        t_list* tcbs = buscar_tcbs_por_pid(pid);
-                        void updater_tcb_tareas(void* un_tcb){
+
+                        void desbloqueador(void* un_tcb){
                             t_TCB* tcb = (t_TCB*) un_tcb;
-                            tcb->siguiente_instruccion -= desplazamiento;
+                            desbloquear_segmento_tcb(tcb->TID);
                         }
                         list_iterate(tcbs,updater_tcb_tareas);
+                    }else{
+                        //por suerte si se mueve un segmento de un tcb no tengo que hacer nada yeiii :D
+                        // Movemos primero la memoria real
+                        memcpy(memoria_principal + segmento_libre->base,
+                            memoria_principal + segmento_ocupado->base,
+                            segmento_ocupado->tam);
+
+                        // Despues acomodamos las estrucuras
+                        segmento_ocupado->base = segmento_libre->base;
+                        segmento_libre->base += segmento_ocupado->tam;
                     }
-                    //por suerte si se mueve un segmento de un tcb no tengo que hacer nada yeiii :D
 
-                    // Movemos primero la memoria real
-                    memcpy(memoria_principal + segmento_libre->base,
-                           memoria_principal + segmento_ocupado->base,
-                           segmento_ocupado->tam);
-
-                    // Despues acomodamos las estrucuras
-                    segmento_ocupado->base = segmento_libre->base;
-                    segmento_libre->base += segmento_ocupado->tam;
+                    
                     ordenar_segmentos();
                     unificar_segmentos_libres();
-                    size = list_size(segmentos);
                     pthread_mutex_unlock(&(segmento_ocupado->mutex));
                     break;
                 }else{
@@ -188,7 +211,7 @@ segmento* best_fit(int tam){
 }
 
 segmento* asignar_segmento(int tam){
-    //pthread_mutex_lock(&asignacion_marco);
+    pthread_mutex_lock(&asignacion_segmento);
 	segmento* segmento_libre = buscar_segmento_libre(tam);
 	if(segmento_libre != NULL){
         intento_asignar_segmento = 0;
@@ -196,7 +219,7 @@ segmento* asignar_segmento(int tam){
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
 			//log_info(logger,"Segmento asignado (base:%d)", segmento_libre->base);
-            //pthread_mutex_unlock(&asignacion_marco);
+            pthread_mutex_unlock(&asignacion_segmento);
 			return segmento_libre;
 		}
 		//Si no tengo que dividir el segmento
@@ -208,19 +231,19 @@ segmento* asignar_segmento(int tam){
 			//log_info(logger,"Segmento asignado (base:%d)", nuevo_segmento->base);
 			//Ordeno los segmentos por base ascendente
 			ordenar_segmentos();
-            //pthread_mutex_unlock(&asignacion_marco);
+            pthread_mutex_unlock(&asignacion_segmento);
 			return nuevo_segmento;
 		}
 	}else{
         if(intento_asignar_segmento == 1){
             intento_asignar_segmento = 0;
             log_error(logger,"No hay mas memoria bro");
-            //pthread_mutex_unlock(&asignacion_marco);
+            pthread_mutex_unlock(&asignacion_segmento);
             return NULL;
         }
         intento_asignar_segmento = 1;
         compactacion();
-        //pthread_mutex_unlock(&asignacion_marco);
+        pthread_mutex_unlock(&asignacion_segmento);
         return asignar_segmento(tam);
 	}
 }
@@ -263,6 +286,7 @@ void matar_tabla_segmentos(int pid){
             void tcb_destroyer(void* un_segmento){
                 segmento* seg = (segmento*) un_segmento;
                 seg->libre = true;
+                pthread_mutex_unlock(&(seg->mutex));
             }
             list_destroy_and_destroy_elements(tabla->segmentos_tcb,tcb_destroyer);
         }else{
@@ -274,20 +298,26 @@ void matar_tabla_segmentos(int pid){
     dictionary_remove_and_destroy(tablas,spid,table_destroyer);
 }
 
+void desbloquear_segmento_tcb(int tid){
+    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+        int pid = tid / 10000;
+        tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+        if(tabla == NULL){
+            return;
+        }
 
-void test_segmentos(){
-	segmento* seg = asignar_segmento(sizeof(char[2]));
-	segmento* seg2 = asignar_segmento(sizeof(char));
-	segmento* seg3 = asignar_segmento(sizeof(char));
-	liberar_segmento(0);
-	liberar_segmento(3);
-	compactacion();
-	segmento* seg4 = asignar_segmento(sizeof(char));
-	print_segmentos_info();
-    free(seg);
-    free(seg2);
-    free(seg3);
-    free(seg4);
+        bool buscador(void* un_segmento){
+            segmento* seg_tcb = (segmento*) un_segmento;
+            t_TCB* tcb = memoria_principal + seg_tcb->base;
+            return tcb->TID == tid;
+        }
+        segmento* segmento_tcb = list_find(tabla->segmentos_tcb, buscador);
+        if(segmento_tcb == NULL){
+            //log_warning(logger,"TCB con TID: %d no encontrado", tid);
+            return;
+        }
+        pthread_mutex_unlock(&(segmento_tcb->mutex));
+    }
 }
 
 void test_tabla_segmentos(){

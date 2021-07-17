@@ -141,10 +141,10 @@ int recibir_mensaje(int socket, void* buffer, int largo) {
 
 	switch (bytes_recibidos) {
 	case (-1):
-		printf("Error al recibir mensaje\n"); // Pudo no recibirse nada
+		//printf("Error al recibir mensaje\n"); // Pudo no recibirse nada
 		break;
 	case 0:
-		printf("El remoto ha cerrado la conexion\n"); // Pudo haberse cerrado el socket opuesto, forma de saberlo
+		//printf("El remoto ha cerrado la conexion\n"); // Pudo haberse cerrado el socket opuesto, forma de saberlo
 		break;
 	}
 

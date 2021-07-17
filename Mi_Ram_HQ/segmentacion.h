@@ -38,9 +38,10 @@ segmento* buscar_segmento_libre(int tam);
 segmento* best_fit(int tam);
 segmento* first_fit(int tam);
 segmento* crear_segmento(int base,int tam,bool libre);
-void liberar_segmento(int base);
+void liberar_segmento(segmento*);
 void unificar_segmentos_libres();
 void matar_tabla_segmentos(int pid);
+void desbloquear_segmento_tcb(int tid);
 
 void dump_segmentacion();
 
