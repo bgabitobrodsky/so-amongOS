@@ -157,7 +157,7 @@ void atender_clientes(void* param) {
 				if(actualizar_tcb(mensaje_recibido->tcb)){
 					log_info(logger, "Actualizado el TCB %i.", mensaje_recibido->tcb->TID);
 				} else{
-					log_error(logger, "No se pudo actualizar el TCB %i.", mensaje_recibido->tid);
+					log_error(logger, "No se pudo actualizar el TCB %i.", mensaje_recibido->tcb->TID);
 				}
 				break;
 
@@ -588,6 +588,13 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
 
+		if(list_size(tabla->segmentos_tcb) == 1){
+			// Si era el ultimo tripulante: MUERTE A LA TABLA ENTERA
+			// mata todo
+			matar_tabla_segmentos(pid);
+			return 1;
+		}
+
 		bool buscador(void* un_segmento){
 			segmento* seg_tcb = (segmento*) un_segmento;
 			t_TCB* tcb = memoria_principal + seg_tcb->base;
@@ -603,30 +610,32 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		list_remove_by_condition(tabla->segmentos_tcb, buscador);
 		//log_debug(logger,"TID: %d ahora descansa con Odín", tid);
 
-		if(list_size(tabla->segmentos_tcb) < 1){
-			// Si era el ultimo tripulante: MUERTE A LA TABLA ENTERA
-			matar_tabla_segmentos(pid);
-		}
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
-		if(dictionary_size(tabla->dl_tcbs) <= 1){
+		pthread_mutex_lock(&(tabla->mutex));
+		if(dictionary_size(tabla->dl_tcbs) == 1){
 			matar_tabla_paginas(pid);
+			pthread_mutex_unlock(&(tabla->mutex));
 			return 1;
 		}else{
 			int result = matar_paginas_tcb(tabla, tid);
 			if(result){
 				log_info(logger, "Se mató al TCB tid: %d", tid);
+				pthread_mutex_unlock(&(tabla->mutex));
 				return 1;
 			}else{
 				// error
+				pthread_mutex_unlock(&(tabla->mutex));
 				return 0;
 			}
+			pthread_mutex_unlock(&(tabla->mutex));
 			return 0;
 		}
+		pthread_mutex_unlock(&(tabla->mutex));
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -648,6 +657,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 	sprintf(stid, "%d", nuevo_tcb->TID);
 	
 	if(nuevo_tcb->estado_tripulante == 'F'){
+		log_info(logger, "Tripulante en estado exit");
 		eliminar_tcb(nuevo_tcb->TID);
 		return 1;
 	}
@@ -660,7 +670,6 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		tcb->coord_x = nuevo_tcb->coord_x;
 		tcb->coord_y = nuevo_tcb->coord_y;
 		tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
-		log_debug(logger,"Actualizado TCB TID: %d", tcb->TID);
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){

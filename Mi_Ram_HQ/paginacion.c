@@ -12,13 +12,13 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 	int offset = dl % TAMANIO_PAGINA;
 	if(offset > 0){
 		pagina = list_get(tabla->paginas, numero_pagina);
-		pthread_mutex_lock(&(pagina->mutex));
 		if(!pagina->en_memoria){
 			page_fault(pagina, pid, numero_pagina + 1);
 		}else{
 			pagina->ultimo_uso = unix_epoch();
 			pagina->usado = true;
 		}
+		pthread_mutex_lock(&(pagina->mutex));
 		pagina->modificada = true;
 		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
 		numero_pagina++;
@@ -27,13 +27,13 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 	}
 	while(progreso < tam){
 		pagina = list_get(tabla->paginas, numero_pagina);
-		pthread_mutex_lock(&(pagina->mutex));
 		if(!pagina->en_memoria){
 			page_fault(pagina, pid, numero_pagina + 1);
 		}else{
 			pagina->ultimo_uso = unix_epoch();
 			pagina->usado = true;
 		}
+		pthread_mutex_lock(&(pagina->mutex));
 		pagina->modificada = true;
 		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
 		numero_pagina++;
