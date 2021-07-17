@@ -68,7 +68,7 @@ t_config* config;
 
 pthread_mutex_t m_compactacion;
 pthread_mutex_t m_swap;
-pthread_mutex_t m_tablas;
+pthread_mutex_t asignacion_marco;
 //memo virtual
 FILE* disco;
 int marcos_disco_size;
@@ -80,7 +80,6 @@ int gestionar_tareas (t_archivo_tareas*);
 int gestionar_tcb(t_TCB*);
 
 void* buscar_tabla(int pid);
-t_TCB* buscar_tcb(int tid);
 t_tarea* buscar_siguiente_tarea(int tid);
 t_list* buscar_tcbs_por_pid(int);
 t_TCB* buscar_tcb_por_tid(int);

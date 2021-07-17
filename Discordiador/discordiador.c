@@ -118,10 +118,10 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-     iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
-//     iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
-//     iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
-//    iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 Random.ims 2|2");
+    iniciar_patota("INICIAR_PATOTA 2 Random.ims 1|2");
+    //iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
+    //iniciar_patota("INICIAR_PATOTA 3 Oxigeno.ims 1|1");
     iniciar_planificacion();
 
     // sleep(1);

@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
 	pthread_mutex_init(&m_compactacion,NULL);
 	pthread_mutex_init(&m_swap,NULL);
-	pthread_mutex_init(&m_tablas,NULL);
+	pthread_mutex_init(&asignacion_marco,NULL);
 
 	iniciar_memoria();
 	//iniciar_mapa();
@@ -230,7 +230,6 @@ void iniciar_memoria(){
 		
 		log_info(logger,"Se inicia memoria con esquema de PAGINACION");
 		marcos = list_create();
-		paginas = list_create();
 		marco_clock = 0;
 		int cantidad_marcos = TAMANIO_MEMORIA/TAMANIO_PAGINA;
 		
@@ -614,20 +613,20 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		if(tabla == NULL){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
-		int result = matar_paginas_tcb(tabla, tid);
-		if(result){
-			log_info(logger, "Se mató al TCB tid: %d", tid);
-			pthread_mutex_lock(&(tabla->mutex));
-			if(dictionary_size(tabla->dl_tcbs) == 0){
-				matar_tabla_paginas(pid);
-			}
-			pthread_mutex_unlock(&(tabla->mutex));
+		if(dictionary_size(tabla->dl_tcbs) <= 1){
+			matar_tabla_paginas(pid);
 			return 1;
 		}else{
-			// error
+			int result = matar_paginas_tcb(tabla, tid);
+			if(result){
+				log_info(logger, "Se mató al TCB tid: %d", tid);
+				return 1;
+			}else{
+				// error
+				return 0;
+			}
 			return 0;
 		}
-		return 0;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);

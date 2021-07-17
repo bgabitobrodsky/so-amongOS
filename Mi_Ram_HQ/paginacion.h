@@ -20,10 +20,9 @@ typedef struct pagina {
     bool modificada;
     int tamano_ocupado;
     marco* puntero_marco;
-    bool usado // para clock
-    //bool bloqueada?
+    bool usado; // para clock
+    pthread_mutex_t mutex;
 } pagina;
-t_list* paginas;
 
 
 typedef struct tabla_paginas {
