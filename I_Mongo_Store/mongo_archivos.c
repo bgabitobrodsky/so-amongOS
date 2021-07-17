@@ -612,8 +612,13 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	set_bloq(path, lista_bloques);
 	char caracter = caracter_llenado_archivo(path);
 	set_caracter_llenado(path, caracter);
-	char* md5 = md5_archivo(path);
+
+	t_config* config = config_create(path);
+	char* cadena_blocks = config_get_string_value(config, "BLOCKS");
+	char* md5 = md5_archivo(cadena_blocks);
 	set_md5(path, md5);
+	config_destroy(config);
+
 	log_trace(logger_mongo, "FIN iniciar_archivo_recurso");
 
 	log_trace(logger_mongo, "unlockear escritura recurso");
@@ -621,8 +626,7 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 }
 
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloques) {
-	// TODO: hacer que actualice el size
-	log_trace(logger_mongo, "0 escribir_archivo_tripulante");
+	log_trace(logger_mongo, "INICIO escribir_archivo_tripulante");
 
 	set_tam(path, tamanio);
 	set_bloq(path, list_bloques);
@@ -673,11 +677,11 @@ void asignar_bloque_tripulante(char* path, int pos_libre, int size_agregado) {
 	uint32_t tamanio = tamanio_archivo(path);
 	t_list* lista_bloques = obtener_lista_bloques(path);
 
-	log_debug(logger_mongo, "Tamanio de la lista: %i", list_size(lista_bloques));
+	// log_debug(logger_mongo, "Tamanio de la lista: %i", list_size(lista_bloques));
 
 	list_add(lista_bloques, &pos_libre);
 
-	log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
+	// log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
 
 	escribir_archivo_tripulante (path, tamanio + size_agregado, lista_bloques);
 	log_debug(logger_mongo, "fin asignar_bloque_tripulante");
@@ -754,7 +758,7 @@ void set_tam(char* path, int tamanio){
 }
 
 void set_bloq(char* path, t_list* lista){
-	log_trace(logger_mongo, "INICIO SET BLOQ");
+
 	t_config* config = config_create(path);
 
 	log_debug(logger_mongo, "la lista de bloques es %s", config_get_string_value(config, "BLOCKS"));
@@ -795,16 +799,15 @@ void set_bloq(char* path, t_list* lista){
 	}*/
 
 	if(list_aux == NULL || list_is_empty(list_aux)){
-	    log_trace(logger_mongo, "empty");
+	    // log_trace(logger_mongo, "empty");
 
 		lista_bloques = malloc(2 + 1);
 		strcpy(lista_bloques, "[]");
 
 	} else {
 
-		log_trace(logger_mongo, "Not empty %i", list_is_empty(list_aux));
+		// log_trace(logger_mongo, "Not empty %i", list_is_empty(list_aux));
 		int comas = max(list_size(list_aux)-1, 0);
-		log_trace(logger_mongo, "Comas: %i", comas);
 		int cant_numeros = 0;
 
 		for(int i = 0; i < list_size(list_aux); i++){
@@ -812,9 +815,6 @@ void set_bloq(char* path, t_list* lista){
 			cant_numeros += strlen(string_itoa(*aux));
 		}
 
-		log_trace(logger_mongo, "cant numeros: %i", cant_numeros);
-
-		log_trace(logger_mongo, "le asigno %i", 2 + cant_numeros + comas);
 		lista_bloques = malloc(2 + cant_numeros + comas + 1);
 		strcpy(lista_bloques, "[");
 
@@ -837,16 +837,12 @@ void set_bloq(char* path, t_list* lista){
 	}
 
 	config_set_value(config, "BLOCKS", lista_bloques);
-	log_debug(logger_mongo, "la lista de bloques queda %s", config_get_string_value(config, "BLOCKS"));
+	// log_debug(logger_mongo, "la lista de bloques queda %s", config_get_string_value(config, "BLOCKS"));
 
-	// config_save(config);
 	config_save_in_file(config, path);
 	config_destroy(config);
 
-	log_trace(logger_mongo, "pre-destruir lista");
-	// list_destroy_and_destroy_elements(list_aux, liberar); // esta no va, no estoy seguro por que
-	list_destroy(list_aux);
-	log_trace(logger_mongo, "post-destruir lista");
+	liberar_lista(list_aux);
 
 	free(lista_bloques);
 
