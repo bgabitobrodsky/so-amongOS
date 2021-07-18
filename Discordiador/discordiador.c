@@ -263,6 +263,8 @@ void iniciar_planificacion() {
 
 void planificador(){
     log_info(logger, "Planificando");
+    log_info(logger, "Algoritmo %i", ALGORITMO);
+
     while(planificacion_activa){
     	sleep(1);
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
@@ -302,10 +304,8 @@ void tripulante(t_tripulante* un_tripulante){
     estado_guardado = un_tripulante->estado_tripulante; // READY
 
     if(comparar_strings(ALGORITMO, "FIFO")){
-        log_info(logger, "ALGORITMO FIFO\n");
         ciclo_de_vida_fifo(un_tripulante, st_ram, st_mongo, &estado_guardado);
     } else if (comparar_strings(ALGORITMO, "RR")){
-        log_info(logger, "ALGORITMO RR\n");
         ciclo_de_vida_rr(un_tripulante, st_ram, st_mongo, &estado_guardado);
     }
 
@@ -328,14 +328,16 @@ int conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket_ram, int s
     }
     else if(tarea->codigo_operacion == FALLO){
     	log_error(logger, "%i pasamo a exit", un_tripulante->TID);
-    	cambiar_estado(un_tripulante, estado_tripulante[EXIT], socket_ram);
+    	quitar_tripulante_de_listas(un_tripulante);
+    	un_tripulante->estado_tripulante = estado_tripulante[EXIT];
+		t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
+		empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket_ram);
     }
     return 0;
 }
 
 void morir(t_tripulante* un_tripulante){
-    // YA ESTA ACTUALIZADO EN RAM, ASI QUE NO HACE FALTA ACTUALIZAR AHI
-    
+
     quitar_tripulante_de_listas(un_tripulante);
 
     if(esta_tripulante_en_lista(lista_tripulantes, un_tripulante->TID)){
@@ -348,7 +350,7 @@ void morir(t_tripulante* un_tripulante){
         log_trace(logger, "Muere el ultimo de la patota %i", un_tripulante->TID/10000);
     }
 
-    free(un_tripulante); // error de doble free en algun lado
+    free(un_tripulante);
     pthread_exit(NULL);
 }
 
@@ -366,7 +368,7 @@ void iniciar_tripulante(t_tripulante* un_tripulante, int socket){
         enlistarse(un_tripulante, socket);
     }
     else {
-        log_error(logger, "\nPor un motivo desconocido, el tripulante se ha creado en un estado distinto a NEW. \n");
+        log_error(logger, "Por un motivo desconocido, el tripulante se ha creado en un estado distinto a NEW.");
     }
 }
 
@@ -380,10 +382,10 @@ void enlistarse(t_tripulante* un_tripulante, int socket){
         un_tripulante->tarea = *(respuesta->tarea);
     }
     else if (respuesta->codigo_operacion == FALLO){
-        log_error(logger, "No se recibio ninguna tarea.\n Codigo de error: FALLO\n");
+        log_error(logger, "No se recibio ninguna tarea.\n Codigo de error: FALLO");
     }
     else{
-        log_error(logger, "No se recibio ninguna tarea.\n Error desconocido\n");
+        log_error(logger, "No se recibio ninguna tarea.\n Error desconocido");
     }
 	cambiar_estado(un_tripulante, estado_tripulante[READY], socket);
     monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
@@ -626,7 +628,7 @@ void leer_consola() {
 
 void pausar_planificacion() {
 
-    printf("Pausar Planificacion\n");
+	log_info(logger, "Pausar Planificacion");
     planificacion_activa = 0;
 
 }
@@ -679,20 +681,20 @@ void expulsar_tripulante(char* leido) {
 
             t_tripulante* t_aux = list_find(lista_tripulantes, obtener_tripulante);
 
-            log_info(logger, "Tripulante expulsado, TID: %d\n", tid_tripulante_a_expulsar);
-            log_info(logger, "Lugar del deceso: %i|%i\n", t_aux->coord_x, t_aux->coord_y);
+            log_info(logger, "Tripulante expulsado, TID: %d", tid_tripulante_a_expulsar);
+            log_info(logger, "Lugar del deceso: %i|%i", t_aux->coord_x, t_aux->coord_y);
         	quitar_tripulante_de_listas(t_aux);
         	t_aux->estado_tripulante = estado_tripulante[EXIT];
         }
         else{
-            log_info(logger, "Dicho tripulante no existe en Discordiador.\n");
+            log_info(logger, "Dicho tripulante no existe en Discordiador.");
         }
     }
     else if (respuesta->codigo_operacion == FALLO){
-        log_info(logger, "No existe el tripulante. TID: %d\n", tid_tripulante_a_expulsar);
+        log_info(logger, "No existe el tripulante. TID: %d", tid_tripulante_a_expulsar);
     }
     else{
-        log_info(logger, "Error desconocido.\n");
+        log_info(logger, "Error desconocido.");
     }
 
     liberar_puntero_doble(palabras);
@@ -742,24 +744,21 @@ void listar_tripulantes() {
 
     char* fechaHora = fecha_y_hora();
 
-    printf(">>> Estado de la nave: %s\n\n", fechaHora);
+    log_info(logger, "Estado de la nave: %s\n", fechaHora);
 
     t_patota* aux_p;
     t_tripulante* aux_t;
     t_list* lista_tripulantes_de_una_patota;
 
-    int i,j;
-
-    for(i = 0; i < list_size(lista_patotas); i++){
+    for(int i = 0; i < list_size(lista_patotas); i++){
         aux_p = list_get(lista_patotas, i);
 
         lista_tripulantes_de_una_patota = lista_tripulantes_patota(aux_p->PID);
 
-        for(j = 0; j < list_size(lista_tripulantes_de_una_patota); j++){
+        for(int j = 0; j < list_size(lista_tripulantes_de_una_patota); j++){
             aux_t = list_get(lista_tripulantes_de_una_patota, j);
-            printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
-            // TODO: dejarlo como logger
-            // log_info(logger, "    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
+            // printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
+            log_info(logger, "TID: %d  PID: %d Status: %c", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
         }
     }
     // TODO: revisar esto de abajo, tira segmentation fault en ciertos casos:
@@ -768,13 +767,15 @@ void listar_tripulantes() {
     // esṕerar a que termine
     // listar tripulantes
     // segmentation fault
-    /*
 
+/*
     void liberar(void* elemento){
     	free(elemento);
     }
+    list_destroy_and_destroy_elements(lista_tripulantes_de_una_patota, liberar);
+*/
+    // liberar_lista(lista_tripulantes_de_una_patota);
 
-    list_destroy_and_destroy_elements(lista_tripulantes_de_una_patota, liberar);*/
 }
 
 t_list* lista_tripulantes_patota(uint32_t pid){
@@ -918,10 +919,10 @@ void verificar_cambio_estado(char* estado_guardado, t_tripulante* un_tripulante,
 }
 
 void actualizar_tripulante(t_tripulante* un_tripulante, int socket){
-
-	t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
-	empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
-
+	if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+		t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
+		empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket);
+	}
 }
 
 int verificacion_tcb(int socket){
@@ -1154,9 +1155,7 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
             }
         }
         // if para no informar dos veces
-        if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
-        	verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
-        }
+		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
     }
 }
 
@@ -1197,9 +1196,7 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
             }
         }
 
-        if(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
-        	verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
-        }
+		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
     }
 }
 
