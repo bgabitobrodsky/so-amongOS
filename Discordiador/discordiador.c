@@ -133,7 +133,7 @@ int main() {
     // cambia la lista?
 
 	log_info(logger, "el tid del tripu luego de igualar: %i");
-
+/*
     t_tripulante* t_aux1 = crear_puntero_tripulante(10001, "111");
     t_tripulante* t_aux2 = crear_puntero_tripulante(10002, "221");
     t_tripulante* t_aux3 = crear_puntero_tripulante(10003, "331");
@@ -142,14 +142,12 @@ int main() {
     t_tripulante* prueba = list_get(lista_tripulantes, 0);
     log_info(logger, "el tid del tripu: %i", prueba->TID);
 
-    // t_aux1 = t_aux2;
-    log_info(logger, "size lsita %i", list_size(lista_tripulantes));
-    free(t_aux1);
+    t_aux1->TID = 1010;
     t_aux1 = crear_puntero_tripulante(10015, "201");
     t_aux3 = list_get(lista_tripulantes, 0);
     log_info(logger, "size lsita %i", list_size(lista_tripulantes));
-	log_info(logger, "el tid del tripu luego de igualar: %i", t_aux3->TID);
-	free(t_aux3);
+	log_info(logger, "el tid del tripu luego de igualar: %i", t_aux1->TID);
+*/
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
@@ -190,15 +188,14 @@ int correr_tests(int enumerado) {
     }
     return 1;
 }
-/*
+
 int iniciar_patota(char* leido){
 
     char** palabras = string_split(leido, " ");
     int cantidadTripulantes = atoi(palabras[1]);
     char* path = palabras[2];
-    log_info("PATOTA: cantidad de tripulantes %d, url: %s.", cantidadTripulantes, path);
+    log_info("PATOTA: cantidad de tripulantes %d, url: %s", cantidadTripulantes, path);
 
-    // liberar archivo_tareas
     char* archivo_tareas = leer_archivo_entero(path);
 
     t_patota* patota = malloc(sizeof(t_patota));
@@ -207,7 +204,14 @@ int iniciar_patota(char* leido){
 
     if (archivo_tareas != NULL){
         enviar_archivo_tareas(archivo_tareas, patota->PID, socket_a_mi_ram_hq);
+        free(archivo_tareas);
+    } else {
+        eliminar_patota_de_lista(lista_patotas, patota->PID);
+        liberar_puntero_doble(palabras);
+        free(archivo_tareas);
+    	return 0;
     }
+
     t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
 
     if(respuesta->codigo_operacion == EXITO){
@@ -216,8 +220,6 @@ int iniciar_patota(char* leido){
     } else{
         log_warning(logger, "No hay memoria para el archivo");
         eliminar_patota_de_lista(lista_patotas, patota->PID);
-        free(archivo_tareas);
-        free(patota);
         free(respuesta);
         liberar_puntero_doble(palabras);
         return 0;
@@ -237,26 +239,23 @@ int iniciar_patota(char* leido){
         enviar_tripulante_a_ram(*t_aux, socket_a_mi_ram_hq);
         if(!verificacion_tcb(socket_a_mi_ram_hq)){
             eliminar_patota_de_lista(lista_patotas, patota->PID);
-            free(archivo_tareas);
-            free(patota);
             liberar_puntero_doble(palabras);
         	return 0;
         }
     }
 
-
     for(int i = 0; i < list_size(l_aux); i++){
-
+    	t_aux = list_get(l_aux, i);
+    	monitor_lista(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
+    	monitor_lista(sem_lista_tripulantes, (void*) list_add, lista_tripulantes, t_aux);
+    	crear_hilo_tripulante(t_aux);
     }
-	list_add(lista_tripulantes, t_aux);
-	monitor_lista(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
-	crear_hilo_tripulante(t_aux);
 
+    liberar_puntero_doble(palabras);
     return 1;
 }
 
-*/
-
+/*
 int iniciar_patota(char* leido) {
 
     char** palabras = string_split(leido, " ");
@@ -275,7 +274,10 @@ int iniciar_patota(char* leido) {
 
     if (archivo_tareas != NULL){
         enviar_archivo_tareas(archivo_tareas, patota->PID, socket_a_mi_ram_hq);
+    } else {
+    	return 0;
     }
+
     t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
 
     if(respuesta->codigo_operacion == EXITO){
@@ -331,7 +333,7 @@ int iniciar_patota(char* leido) {
     liberar_puntero_doble(palabras);
 
     return 1;
-}
+}*/
 
 
 void iniciar_planificacion() {
