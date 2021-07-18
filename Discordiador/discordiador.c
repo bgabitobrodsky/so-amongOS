@@ -286,6 +286,10 @@ void planificador(){
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
         }
+
+        if(!sistema_activo){
+        	planificacion_activa = 0;
+        }
     }
 }
 
@@ -319,11 +323,15 @@ void tripulante(t_tripulante* un_tripulante){
 int conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mongo){
     pedir_tarea_a_mi_ram_hq(un_tripulante->TID, socket_ram);
     t_estructura* tarea = recepcion_y_deserializacion(socket_ram);
+
     if(tarea->codigo_operacion == TAREA){
-        un_tripulante->tarea = *tarea->tarea;
+    	free(un_tripulante->tarea.nombre);
+        un_tripulante->tarea = *(tarea->tarea);
         if(llegue(un_tripulante)){
         	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
         }
+        free(tarea->tarea);
+        free(tarea);
         return 1;
     }
     else if(tarea->codigo_operacion == FALLO){
@@ -332,6 +340,7 @@ int conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket_ram, int s
     	un_tripulante->estado_tripulante = estado_tripulante[EXIT];
 		t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
 		empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket_ram);
+		free(tarea);
     }
     return 0;
 }
@@ -350,6 +359,7 @@ void morir(t_tripulante* un_tripulante){
         log_trace(logger, "Muere el ultimo de la patota %i", un_tripulante->TID/10000);
     }
 
+    free(un_tripulante->tarea.nombre);
     free(un_tripulante);
     pthread_exit(NULL);
 }
@@ -380,13 +390,17 @@ void enlistarse(t_tripulante* un_tripulante, int socket){
 
     if(respuesta->codigo_operacion == TAREA){
         un_tripulante->tarea = *(respuesta->tarea);
+        free(respuesta->tarea);
     }
     else if (respuesta->codigo_operacion == FALLO){
         log_error(logger, "No se recibio ninguna tarea.\n Codigo de error: FALLO");
     }
     else{
-        log_error(logger, "No se recibio ninguna tarea.\n Error desconocido");
+        log_error(logger, "No se recibio ninguna tarea.\n Error desconocido.");
     }
+
+    free(respuesta);
+
 	cambiar_estado(un_tripulante, estado_tripulante[READY], socket);
     monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
     log_debug(logger, "Estado cambiado a READY");
@@ -663,7 +677,7 @@ void obtener_bitacora(char* leido) {
 
 void expulsar_tripulante(char* leido) {
 
-    printf("Expulsar Tripulante\n");
+	log_info(logger, "Expulsar Tripulante");
     char** palabras = string_split(leido, " ");
     int tid_tripulante_a_expulsar = atoi(palabras[1]);
 
@@ -696,6 +710,8 @@ void expulsar_tripulante(char* leido) {
     else{
         log_info(logger, "Error desconocido.");
     }
+
+    free(respuesta);
 
     liberar_puntero_doble(palabras);
 
@@ -789,13 +805,15 @@ t_list* lista_tripulantes_patota(uint32_t pid){
     while(respuesta->codigo_operacion != EXITO){
         list_add(lista_tripulantes_patota, respuesta->tcb);
         //free(respuesta->tcb);
-        //free(respuesta);
+        free(respuesta);
         respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
     }
     if(respuesta->codigo_operacion == FALLO){
         log_info(logger, "Error al pedir los tripulantes para listar.\n");
         log_info(logger, "Codigo de error: FALLO\n");
     }
+
+    free(respuesta);
 
     bool ordenar_por_tid(void* un_elemento, void* otro_elemento){
          return ((((t_tripulante*) un_elemento)->TID) < (((t_tripulante*) otro_elemento)->TID));
