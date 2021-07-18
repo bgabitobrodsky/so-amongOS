@@ -20,6 +20,7 @@
 #define QUANTUM config_get_int_value(config, "QUANTUM")
 #define RETARDO_CICLO_CPU config_get_int_value(config, "RETARDO_CICLO_CPU")
 #define DURACION_SABOTAJE config_get_int_value(config, "DURACION_SABOTAJE")
+#define DIR_TAREAS "tareas/"
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -120,7 +121,7 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    // iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
+    iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
     // iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
@@ -173,10 +174,14 @@ int iniciar_patota(char* leido){
 
     char** palabras = string_split(leido, " ");
     int cantidad_tripulantes = atoi(palabras[1]);
-    char* path = palabras[2];
+    char* path = malloc(strlen(DIR_TAREAS) + strlen(palabras[2]) + 1);
+    strcpy(path, DIR_TAREAS);
+    strcat(path, palabras[2]);
+
     log_info(logger, "PATOTA: cantidad de tripulantes %d, url: %s", cantidad_tripulantes, path);
 
     char* archivo_tareas = leer_archivo_entero(path);
+    free(path);
 
     t_patota* patota = malloc(sizeof(t_patota));
     patota->PID = nuevo_pid();
