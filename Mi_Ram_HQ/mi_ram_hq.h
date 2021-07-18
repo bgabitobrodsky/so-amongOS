@@ -31,61 +31,84 @@
 #include "segmentacion.h"
 #include "paginacion.h"
 
-
-/**
- * FUNCIONES PRINCIPALES
-**/
-
-void atender_clientes(void*);
-void proceso_handler(void* args);
-
-
-/**
- * MAPA
-**/
-
-// NIVEL* nivel;
-// int cols, rows;
-// int err;
-// char last_key = 0;
-
-t_dictionary* mapa_indices;
-
-// void iniciar_mapa();
-char mapa_iniciar_tcb(t_TCB* tcb);
-void matar_mapa();
-
-/**
- * MANEJO DE MEMORIA
-**/
-
-
-void* memoria_principal;
-
-t_dictionary* tablas;
+/*
+    NECESARIOS
+*/
 t_log* logger;
 t_config* config;
 
-pthread_mutex_t m_compactacion;
+/*
+    MAPA
+*/
+NIVEL* nivel;
+int cols, rows;
+int err;
+char ultima_clave_mapa = 0;
+t_dictionary* mapa_indices;
+pthread_mutex_t m_mapa;
+
+/*
+    MANEJO DE MEMORIA
+*/
+void* memoria_principal;
+t_dictionary* tablas;
+
+/*
+    SEMAFOROS GENERALES
+*/
+pthread_mutex_t m_tablas;
+
+/*
+    SEMÁFOROS SEGMENTACIÓN
+*/
+pthread_mutex_t asignacion_segmento;
+pthread_mutex_t lista_segmentos;
+
+/*
+    SEMÁFOROS PAGINACIÓN
+*/
 pthread_mutex_t m_swap;
 pthread_mutex_t asignacion_marco;
-pthread_mutex_t asignacion_segmento;
-//memo virtual
+
+/*
+    MEMORIA VIRTUAL
+*/
 FILE* disco;
 int marcos_disco_size;
 bool* bitmap_disco;
+
+/*
+    FUNCIONES PRINCIPALES
+*/
+void atender_clientes(void*);
+void proceso_handler(void* args);
 
 void iniciar_memoria();
 void iniciar_mapa();
 int gestionar_tareas (t_archivo_tareas*);
 int gestionar_tcb(t_TCB*);
-
 void* buscar_tabla(int pid);
 t_tarea* buscar_siguiente_tarea(int tid);
 t_list* buscar_tcbs_por_pid(int);
 t_TCB* buscar_tcb_por_tid(int);
 int actualizar_tcb(t_TCB*);
-int eliminar_tcb(int tid); // devuelve 1 si todo ok, 0 si falló algo
+int eliminar_tcb(int tid);
+void dump();
+
+/*
+    FUNCIONES PARA EL MAPA
+*/
+void iniciar_mapa();
+void mapa_iniciar_tcb(t_TCB* tcb);
+void matar_mapa();
+
+/*
+    FUNCIONES AUXILIARES
+*/
 int tamanio_tarea(t_tarea* tarea);
+void bloquear_tabla(void* una_tabla);
+void desbloquear_tabla(void* una_tabla);
+void bloquear_lista_tablas();
+void desbloquear_lista_tablas();
 
 #endif /* MI_RAM_HQ_H_ */
