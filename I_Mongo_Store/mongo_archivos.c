@@ -129,7 +129,7 @@ void limpiar_cuerpos() {
 	return; */
 }
 
-void asignar_nuevo_bloque(char* path, int size_agregado) {
+void asignar_nuevo_bloque(char* path, int size_agregado) { //TODO sincronizar
 	log_warning(logger_mongo, "sincronizar inicio");
 	lockearEscritura(path_superbloque); //Esta feo pero sino me rompía
 	lockearEscritura(path_blocks);

@@ -116,6 +116,7 @@ t_tripulante* crear_tripulante(int tid, int x, int y, char estado);
 t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion);
 int soy_el_ultimo_de_mi_especie(int tid);
 int verificacion_tcb(int socket);
+int verificacion_archivo_tareas(int socket);
 void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket_ram);
 void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mongo);
 int es_mi_turno(t_tripulante* un_tripulante);
