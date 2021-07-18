@@ -121,7 +121,7 @@ void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket) {
 
 	t_archivo_tareas cont_arc;
 	cont_arc.texto = archivo_tareas;
-	cont_arc.largo_texto = strlen(archivo_tareas) + 1;
+	cont_arc.largo_texto = strlen(archivo_tareas);
 	cont_arc.pid = pid;
 	t_buffer* contenido_archivo = serializar_archivo_tareas(cont_arc);
 	empaquetar_y_enviar(contenido_archivo, ARCHIVO_TAREAS, socket);

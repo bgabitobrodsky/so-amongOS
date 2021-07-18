@@ -8,8 +8,7 @@
  ============================================================================
  */
 
-// TODO: Destruir listas
-// TODO: Revisar como actualiza rr en ram
+// TODO: ver tema de superposicion sabotaje y bitacora
 
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
@@ -344,7 +343,8 @@ void morir(t_tripulante* un_tripulante){
     }
 
     if(soy_el_ultimo_de_mi_especie(un_tripulante->TID)){
-        eliminar_patota_de_lista(lista_patotas, un_tripulante->TID/10000);
+        t_patota* patota_aux = eliminar_patota_de_lista(lista_patotas, un_tripulante->TID/10000);
+        free(patota_aux);
         log_trace(logger, "Muere el ultimo de la patota %i", un_tripulante->TID/10000);
     }
 
@@ -763,13 +763,13 @@ void listar_tripulantes() {
         }
     }
     // TODO: revisar esto de abajo, tira segmentation fault en ciertos casos:
-    // EDIT: CREO QUE YA LO ARREGLE, POR EL -1 DE los FOR, REVISAR
     // iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
     // iniciar_planificacion();
     // esṕerar a que termine
     // listar tripulantes
     // segmentation fault
     /*
+
     void liberar(void* elemento){
     	free(elemento);
     }
