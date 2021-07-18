@@ -201,8 +201,8 @@ void atender_clientes(void* param) {
 				break;
 
 			default:
-				log_info(logger, "Se recibio un codigo invalido.\n");
-				//printf("El codigo es %d\n", mensaje_recibido->codigo_operacion);
+				log_info(logger, "Se recibio un codigo invalido.");
+				log_info(logger, "El codigo es %d", mensaje_recibido->codigo_operacion);
 				break;
 		}
 		// free(mensaje_recibido);

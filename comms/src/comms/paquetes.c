@@ -56,8 +56,6 @@ t_buffer* serializar_tarea(t_tarea tarea) {
 
     buffer->estructura = estructura;
 
-    //free(tarea.nombre); // TODO testeo: hacer este free en main
-
     return buffer;
 }
 
@@ -140,8 +138,6 @@ t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
     memcpy(estructura + desplazamiento, &texto_archivo.pid, sizeof(uint32_t));
 
     buffer->estructura = estructura;
-
-    free(texto_archivo.texto);
 
     return buffer;
 }
