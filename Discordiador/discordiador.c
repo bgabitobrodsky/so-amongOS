@@ -127,14 +127,38 @@ int main() {
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
 
+
+    // meto trip en lista, con un t_aux
+    // cambio un t_aux
+    // cambia la lista?
+
+	log_info(logger, "el tid del tripu luego de igualar: %i");
+
+    t_tripulante* t_aux1 = crear_puntero_tripulante(10001, "111");
+    t_tripulante* t_aux2 = crear_puntero_tripulante(10002, "221");
+    t_tripulante* t_aux3 = crear_puntero_tripulante(10003, "331");
+
+    list_add(lista_tripulantes, t_aux1);
+    t_tripulante* prueba = list_get(lista_tripulantes, 0);
+    log_info(logger, "el tid del tripu: %i", prueba->TID);
+
+    // t_aux1 = t_aux2;
+    log_info(logger, "size lsita %i", list_size(lista_tripulantes));
+    free(t_aux1);
+    t_aux1 = crear_puntero_tripulante(10015, "201");
+    t_aux3 = list_get(lista_tripulantes, 0);
+    log_info(logger, "size lsita %i", list_size(lista_tripulantes));
+	log_info(logger, "el tid del tripu luego de igualar: %i", t_aux3->TID);
+	free(t_aux3);
+
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 	pthread_detach(hiloConsola);
-
+/*
     pthread_t sabotaje;
     pthread_create(&sabotaje, NULL, (void*) guardian_sabotaje, NULL);
     pthread_detach(sabotaje);
-
+*/
 
     while(sistema_activo){
     	sleep(1);
@@ -166,6 +190,72 @@ int correr_tests(int enumerado) {
     }
     return 1;
 }
+/*
+int iniciar_patota(char* leido){
+
+    char** palabras = string_split(leido, " ");
+    int cantidadTripulantes = atoi(palabras[1]);
+    char* path = palabras[2];
+    log_info("PATOTA: cantidad de tripulantes %d, url: %s.", cantidadTripulantes, path);
+
+    // liberar archivo_tareas
+    char* archivo_tareas = leer_archivo_entero(path);
+
+    t_patota* patota = malloc(sizeof(t_patota));
+    patota->PID = nuevo_pid();
+    list_add(lista_patotas, patota);
+
+    if (archivo_tareas != NULL){
+        enviar_archivo_tareas(archivo_tareas, patota->PID, socket_a_mi_ram_hq);
+    }
+    t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
+
+    if(respuesta->codigo_operacion == EXITO){
+        log_info(logger, "Cargado el archivo en memmoria ");
+        free(respuesta);
+    } else{
+        log_warning(logger, "No hay memoria para el archivo");
+        eliminar_patota_de_lista(lista_patotas, patota->PID);
+        free(archivo_tareas);
+        free(patota);
+        free(respuesta);
+        liberar_puntero_doble(palabras);
+        return 0;
+    }
+
+    t_list* l_aux = list_create();
+    t_tripulante* t_aux;
+
+    for(int i = 0; i < cantidadTripulantes; i++){
+    	if(i < contar_palabras(palabras) - 3){
+    		t_aux = crear_puntero_tripulante((patota->PID)*10000 + i + 1, palabras[i+3]);
+    	} else{
+    		t_aux = crear_puntero_tripulante((patota->PID)*10000 + i + 1, "0|0");
+    	}
+    	list_add(l_aux, t_aux);
+
+        enviar_tripulante_a_ram(*t_aux, socket_a_mi_ram_hq);
+        if(!verificacion_tcb(socket_a_mi_ram_hq)){
+            eliminar_patota_de_lista(lista_patotas, patota->PID);
+            free(archivo_tareas);
+            free(patota);
+            liberar_puntero_doble(palabras);
+        	return 0;
+        }
+    }
+
+
+    for(int i = 0; i < list_size(l_aux); i++){
+
+    }
+	list_add(lista_tripulantes, t_aux);
+	monitor_lista(sem_lista_new, (void*) list_add, lista_tripulantes_new, t_aux);
+	crear_hilo_tripulante(t_aux);
+
+    return 1;
+}
+
+*/
 
 int iniciar_patota(char* leido) {
 
