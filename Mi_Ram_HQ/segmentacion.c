@@ -3,6 +3,23 @@
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define CRITERIO_SELECCION config_get_string_value(config, "CRITERIO_SELECCION")
 
+// FFFFFFFFFFFFFFFFFFFFFFUUUUUUUU     UUUUUUUUNNNNNNNN        NNNNNNNN        CCCCCCCCCCCCCIIIIIIIIII     OOOOOOOOO     NNNNNNNN        NNNNNNNNEEEEEEEEEEEEEEEEEEEEEE   SSSSSSSSSSSSSSS 
+// F::::::::::::::::::::FU::::::U     U::::::UN:::::::N       N::::::N     CCC::::::::::::CI::::::::I   OO:::::::::OO   N:::::::N       N::::::NE::::::::::::::::::::E SS:::::::::::::::S
+// F::::::::::::::::::::FU::::::U     U::::::UN::::::::N      N::::::N   CC:::::::::::::::CI::::::::I OO:::::::::::::OO N::::::::N      N::::::NE::::::::::::::::::::ES:::::SSSSSS::::::S
+// FF::::::FFFFFFFFF::::FUU:::::U     U:::::UUN:::::::::N     N::::::N  C:::::CCCCCCCC::::CII::::::IIO:::::::OOO:::::::ON:::::::::N     N::::::NEE::::::EEEEEEEEE::::ES:::::S     SSSSSSS
+//   F:::::F       FFFFFF U:::::U     U:::::U N::::::::::N    N::::::N C:::::C       CCCCCC  I::::I  O::::::O   O::::::ON::::::::::N    N::::::N  E:::::E       EEEEEES:::::S            
+//   F:::::F              U:::::D     D:::::U N:::::::::::N   N::::::NC:::::C                I::::I  O:::::O     O:::::ON:::::::::::N   N::::::N  E:::::E             S:::::S            
+//   F::::::FFFFFFFFFF    U:::::D     D:::::U N:::::::N::::N  N::::::NC:::::C                I::::I  O:::::O     O:::::ON:::::::N::::N  N::::::N  E::::::EEEEEEEEEE    S::::SSSS         
+//   F:::::::::::::::F    U:::::D     D:::::U N::::::N N::::N N::::::NC:::::C                I::::I  O:::::O     O:::::ON::::::N N::::N N::::::N  E:::::::::::::::E     SS::::::SSSSS    
+//   F:::::::::::::::F    U:::::D     D:::::U N::::::N  N::::N:::::::NC:::::C                I::::I  O:::::O     O:::::ON::::::N  N::::N:::::::N  E:::::::::::::::E       SSS::::::::SS  
+//   F::::::FFFFFFFFFF    U:::::D     D:::::U N::::::N   N:::::::::::NC:::::C                I::::I  O:::::O     O:::::ON::::::N   N:::::::::::N  E::::::EEEEEEEEEE          SSSSSS::::S 
+//   F:::::F              U:::::D     D:::::U N::::::N    N::::::::::NC:::::C                I::::I  O:::::O     O:::::ON::::::N    N::::::::::N  E:::::E                         S:::::S
+//   F:::::F              U::::::U   U::::::U N::::::N     N:::::::::N C:::::C       CCCCCC  I::::I  O::::::O   O::::::ON::::::N     N:::::::::N  E:::::E       EEEEEE            S:::::S
+// FF:::::::FF            U:::::::UUU:::::::U N::::::N      N::::::::N  C:::::CCCCCCCC::::CII::::::IIO:::::::OOO:::::::ON::::::N      N::::::::NEE::::::EEEEEEEE:::::ESSSSSSS     S:::::S
+// F::::::::FF             UU:::::::::::::UU  N::::::N       N:::::::N   CC:::::::::::::::CI::::::::I OO:::::::::::::OO N::::::N       N:::::::NE::::::::::::::::::::ES::::::SSSSSS:::::S
+// F::::::::FF               UU:::::::::UU    N::::::N        N::::::N     CCC::::::::::::CI::::::::I   OO:::::::::OO   N::::::N        N::::::NE::::::::::::::::::::ES:::::::::::::::SS 
+// FFFFFFFFFFF                 UUUUUUUUU      NNNNNNNN         NNNNNNN        CCCCCCCCCCCCCIIIIIIIIII     OOOOOOOOO     NNNNNNNN         NNNNNNNEEEEEEEEEEEEEEEEEEEEEE SSSSSSSSSSSSSSS
+
 void ordenar_segmentos(){
     bool segmento_anterior(segmento* segmento_antes, segmento* segmento_despues) {
         return segmento_antes->base < segmento_despues->base;
@@ -10,62 +27,6 @@ void ordenar_segmentos(){
     bloquear_lista_segmentos();
     list_sort(segmentos, (void*) segmento_anterior);
     desbloquear_lista_segmentos();
-}
-
-void bloquear_lista_segmentos(){
-    pthread_mutex_lock(&lista_segmentos);
-}
-
-void desbloquear_lista_segmentos(){
-    pthread_mutex_unlock(&lista_segmentos);
-}
-
-void liberar_segmento(segmento* segmento){
-    bloquear_segmento(segmento);
-    segmento->libre = true;
-    desbloquear_segmento(segmento);
-    ordenar_segmentos();
-}
-
-segmento* buscar_segmento_por_tid(int tid){
-    int pid = tid / 10000;
-    tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
-    if(tabla == NULL)
-        return;
-    bool buscador(void* un_segmento){
-        segmento* seg_tcb = (segmento*) un_segmento;
-        t_TCB* tcb = memoria_principal + seg_tcb->base;
-        return tcb->TID == tid;
-    }
-    return list_find(tabla->segmentos_tcb, buscador);
-}
-
-void bloquear_segmento(segmento* segmento){
-    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0)
-        pthread_mutex_lock(&(segmento->mutex));
-}
-
-void desbloquear_segmento(segmento* segmento){
-    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0)
-        pthread_mutex_unlock(&(segmento->mutex));
-}
-
-void bloquear_segmento_por_tid(int tid){
-    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-        segmento* segmento_tcb = buscar_segmento_por_tid(tid);
-        if(segmento_tcb != NULL){
-            bloquear_segmento(segmento_tcb);
-        }
-    }
-}
-
-void desbloquear_segmento_por_tid(int tid){
-    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-        segmento* segmento_tcb = buscar_segmento_por_tid(tid);
-        if(segmento_tcb != NULL){
-            desbloquear_segmento(segmento_tcb);
-        }
-    }
 }
 
 void compactacion(){
@@ -193,6 +154,7 @@ segmento* crear_segmento(int base, int tam, bool libre){
 segmento* buscar_segmento_libre(int tam){
     segmento* segmento;
     bloquear_lista_segmentos();
+    log_info(logger,"Buscando segmento libre");
 	if (strcmp(CRITERIO_SELECCION, "FF") == 0) {
         segmento = first_fit(tam);
     } else if (strcmp(CRITERIO_SELECCION, "BF") == 0) {
@@ -253,38 +215,35 @@ segmento* best_fit(int tam){
 
 segmento* asignar_segmento(int tam){
 
-    pthread_mutex_lock(&asignacion_segmento);
+    //pthread_mutex_lock(&asignacion_segmento);
 	log_info(logger, "Asignando segmento");
     segmento* segmento_libre = buscar_segmento_libre(tam);
 	if(segmento_libre != NULL){
         intento_asignar_segmento = 0;
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
-            pthread_mutex_unlock(&asignacion_segmento);
+            //pthread_mutex_unlock(&asignacion_segmento);
 			return segmento_libre;
-		}
+		}else{
 		//Si no tengo que dividir el segmento
-		else{
 			segmento* nuevo_segmento = crear_segmento(segmento_libre->base,tam,false);
 			list_add(segmentos,nuevo_segmento);
 			segmento_libre->base += tam;
 			segmento_libre->tam -= tam;
-			//log_info(logger,"Segmento asignado (base:%d)", nuevo_segmento->base);
-			//Ordeno los segmentos por base ascendente
 			ordenar_segmentos();
-            pthread_mutex_unlock(&asignacion_segmento);
+            //pthread_mutex_unlock(&asignacion_segmento);
 			return nuevo_segmento;
 		}
 	}else{
         if(intento_asignar_segmento == 1){
             intento_asignar_segmento = 0;
             log_error(logger,"No hay mas memoria bro");
-            pthread_mutex_unlock(&asignacion_segmento);
+            //pthread_mutex_unlock(&asignacion_segmento);
             return NULL;
         }
         intento_asignar_segmento = 1;
         compactacion();
-        pthread_mutex_unlock(&asignacion_segmento);
+        //pthread_mutex_unlock(&asignacion_segmento);
         return asignar_segmento(tam);
 	}
 }
@@ -305,6 +264,7 @@ tabla_segmentos* crear_tabla_segmentos(int pid){
         return nueva_tabla;
     }else{
         log_error(logger, "Ya hay una tabla creada con PID: %d", pid);
+        return buscar_tabla(pid);
     }
 }
 
@@ -339,6 +299,83 @@ void matar_tabla_segmentos(int pid){
     bloquear_lista_tablas();
     dictionary_remove_and_destroy(tablas,spid,table_destroyer);
     desbloquear_lista_tablas();
+}
+
+//   SSSSSSSSSSSSSSS EEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMM               AAA               FFFFFFFFFFFFFFFFFFFFFF     OOOOOOOOO     RRRRRRRRRRRRRRRRR        OOOOOOOOO        SSSSSSSSSSSSSSS 
+//  SS:::::::::::::::SE::::::::::::::::::::EM:::::::M             M:::::::M              A:::A              F::::::::::::::::::::F   OO:::::::::OO   R::::::::::::::::R     OO:::::::::OO    SS:::::::::::::::S
+// S:::::SSSSSS::::::SE::::::::::::::::::::EM::::::::M           M::::::::M             A:::::A             F::::::::::::::::::::F OO:::::::::::::OO R::::::RRRRRR:::::R  OO:::::::::::::OO S:::::SSSSSS::::::S
+// S:::::S     SSSSSSSEE::::::EEEEEEEEE::::EM:::::::::M         M:::::::::M            A:::::::A            FF::::::FFFFFFFFF::::FO:::::::OOO:::::::ORR:::::R     R:::::RO:::::::OOO:::::::OS:::::S     SSSSSSS
+// S:::::S              E:::::E       EEEEEEM::::::::::M       M::::::::::M           A:::::::::A             F:::::F       FFFFFFO::::::O   O::::::O  R::::R     R:::::RO::::::O   O::::::OS:::::S            
+// S:::::S              E:::::E             M:::::::::::M     M:::::::::::M          A:::::A:::::A            F:::::F             O:::::O     O:::::O  R::::R     R:::::RO:::::O     O:::::OS:::::S            
+//  S::::SSSS           E::::::EEEEEEEEEE   M:::::::M::::M   M::::M:::::::M         A:::::A A:::::A           F::::::FFFFFFFFFF   O:::::O     O:::::O  R::::RRRRRR:::::R O:::::O     O:::::O S::::SSSS         
+//   SS::::::SSSSS      E:::::::::::::::E   M::::::M M::::M M::::M M::::::M        A:::::A   A:::::A          F:::::::::::::::F   O:::::O     O:::::O  R:::::::::::::RR  O:::::O     O:::::O  SS::::::SSSSS    
+//     SSS::::::::SS    E:::::::::::::::E   M::::::M  M::::M::::M  M::::::M       A:::::A     A:::::A         F:::::::::::::::F   O:::::O     O:::::O  R::::RRRRRR:::::R O:::::O     O:::::O    SSS::::::::SS  
+//        SSSSSS::::S   E::::::EEEEEEEEEE   M::::::M   M:::::::M   M::::::M      A:::::AAAAAAAAA:::::A        F::::::FFFFFFFFFF   O:::::O     O:::::O  R::::R     R:::::RO:::::O     O:::::O       SSSSSS::::S 
+//             S:::::S  E:::::E             M::::::M    M:::::M    M::::::M     A:::::::::::::::::::::A       F:::::F             O:::::O     O:::::O  R::::R     R:::::RO:::::O     O:::::O            S:::::S
+//             S:::::S  E:::::E       EEEEEEM::::::M     MMMMM     M::::::M    A:::::AAAAAAAAAAAAA:::::A      F:::::F             O::::::O   O::::::O  R::::R     R:::::RO::::::O   O::::::O            S:::::S
+// SSSSSSS     S:::::SEE::::::EEEEEEEE:::::EM::::::M               M::::::M   A:::::A             A:::::A   FF:::::::FF           O:::::::OOO:::::::ORR:::::R     R:::::RO:::::::OOO:::::::OSSSSSSS     S:::::S
+// S::::::SSSSSS:::::SE::::::::::::::::::::EM::::::M               M::::::M  A:::::A               A:::::A  F::::::::FF            OO:::::::::::::OO R::::::R     R:::::R OO:::::::::::::OO S::::::SSSSSS:::::S
+// S:::::::::::::::SS E::::::::::::::::::::EM::::::M               M::::::M A:::::A                 A:::::A F::::::::FF              OO:::::::::OO   R::::::R     R:::::R   OO:::::::::OO   S:::::::::::::::SS 
+//  SSSSSSSSSSSSSSS   EEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMMAAAAAAA                   AAAAAAAFFFFFFFFFFF                OOOOOOOOO     RRRRRRRR     RRRRRRR     OOOOOOOOO      SSSSSSSSSSSSSSS   
+
+void bloquear_lista_segmentos(){
+    pthread_mutex_lock(&lista_segmentos);
+    log_trace(logger,"Bloqueo lista de segmentos");
+}
+
+void desbloquear_lista_segmentos(){
+    pthread_mutex_unlock(&lista_segmentos);
+    log_trace(logger,"Desloqueo lista de segmentos");
+}
+
+void liberar_segmento(segmento* segmento){
+    bloquear_segmento(segmento);
+    segmento->libre = true;
+    desbloquear_segmento(segmento);
+    ordenar_segmentos();
+}
+
+segmento* buscar_segmento_por_tid(int tid){
+    int pid = tid / 10000;
+    tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+    if(tabla == NULL)
+        return NULL;
+    bool buscador(void* un_segmento){
+        segmento* seg_tcb = (segmento*) un_segmento;
+        t_TCB* tcb = memoria_principal + seg_tcb->base;
+        return tcb->TID == tid;
+    }
+    return list_find(tabla->segmentos_tcb, buscador);
+}
+
+void bloquear_segmento(segmento* segmento){
+    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0)
+        pthread_mutex_lock(&(segmento->mutex));
+    log_trace(logger,"Bloqueo segmento base: %d",segmento->base);
+}
+
+void desbloquear_segmento(segmento* segmento){
+    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0)
+        pthread_mutex_unlock(&(segmento->mutex));
+    log_trace(logger,"Desloqueo segmento base: %d",segmento->base);
+}
+
+void bloquear_segmento_por_tid(int tid){
+    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+        segmento* segmento_tcb = buscar_segmento_por_tid(tid);
+        if(segmento_tcb != NULL){
+            bloquear_segmento(segmento_tcb);
+        }
+    }
+}
+
+void desbloquear_segmento_por_tid(int tid){
+    if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+        segmento* segmento_tcb = buscar_segmento_por_tid(tid);
+        if(segmento_tcb != NULL){
+            desbloquear_segmento(segmento_tcb);
+        }
+    }
 }
 
 /*

@@ -42,14 +42,15 @@ int intento_asignar_segmento;
 /*
     FUNCIONES DE SEGMENTACION
 */
-tabla_segmentos* crear_tabla_segmentos(int pid);
-segmento* asignar_segmento(int tam);
-segmento* buscar_segmento_libre(int tam);
-segmento* best_fit(int tam);
-segmento* first_fit(int tam);
-segmento* crear_segmento(int base,int tam,bool libre);
-void liberar_segmento(segmento*);
+void ordenar_segmentos();
+void compactacion();
 void unificar_segmentos_libres();
+segmento* crear_segmento(int base, int tam, bool libre);
+segmento* buscar_segmento_libre(int tam);
+segmento* first_fit(int tam);
+segmento* best_fit(int tam);
+segmento* asignar_segmento(int tam);
+tabla_segmentos* crear_tabla_segmentos(int pid);
 void matar_tabla_segmentos(int pid);
 void dump_segmentacion();
 

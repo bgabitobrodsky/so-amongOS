@@ -16,7 +16,7 @@
         return EXIT_FAILURE;                                                            \
     }
 
-
+bool mapa_on = false;
 
 int main(int argc, char** argv) {
 	
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", false, LOG_LEVEL_DEBUG);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_TRACE);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR2, dump);
 
@@ -253,7 +253,7 @@ void* buscar_tabla(int pid){
 	char spid[4];
 	sprintf(spid, "%d", pid);
 	void* tabla = dictionary_get(tablas,spid);
-	bloquear_lista_tablas();
+	desbloquear_lista_tablas();
 	return tabla;
 }
 
@@ -262,10 +262,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 	int tamanio_tareas = archivo->largo_texto * sizeof(char);
 
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid_patota);
-		if(tabla == NULL){ 
-			tabla = crear_tabla_segmentos(pid_patota);
-		}
+		tabla_segmentos* tabla = crear_tabla_segmentos(pid_patota);
 		bloquear_tabla(tabla);
 		//Creamos segmento para tareas y lo guardamos en la tabla de la patota
 		log_info(logger, "Creando segmento de tareas, PID: %d", pid_patota);
@@ -274,7 +271,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 			matar_tabla_segmentos(pid_patota);
 			return 0;
 		}
-
 		bloquear_segmento(segmento_tareas);
 		segmento_tareas->tipo = S_TAREAS;
 		void* puntero_a_tareas = memoria_principal + segmento_tareas->base;
@@ -358,9 +354,9 @@ int gestionar_tcb(t_TCB* tcb){
 		memcpy(memoria_principal + segmento_tcb->base, tcb, sizeof(t_TCB));
 		desbloquear_segmento(segmento_tcb);
 
-		bloquear_tabla(tabla);
+		
 		list_add(tabla->segmentos_tcb, segmento_tcb);
-		desbloquear_tabla(tabla);
+		
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){ 
@@ -483,6 +479,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
 		if(tcb == NULL){
 			// tcb no encontrado, no debería pasar pero por las dudas viste
+			desbloquear_segmento(tabla->segmento_tareas);
 			return NULL;
 		}
 		char* puntero_a_tareas = (char*) tcb->siguiente_instruccion;
@@ -490,6 +487,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		if(puntero_a_tareas == NULL){
 			// Ya no quedan tareas
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
+			desbloquear_segmento(tabla->segmento_tareas);
 			return NULL;
 		}
 		char** palabras = string_split(puntero_a_tareas, "\n");
@@ -550,7 +548,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		sprintf(stid, "%d", tid);
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		log_info(logger,"Actualizando TCB");
-		int result = sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
+		sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
 
 		liberar_puntero_doble(palabras);
 		free(tareas_restantes);
@@ -567,25 +565,12 @@ t_tarea* buscar_siguiente_tarea(int tid){
 int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 	log_info(logger,"Eliminando TCB TID: %d", tid);
 	int pid = tid / 10000;
-	char stid[8];
-	sprintf(stid, "%d",tid);
-	char clave_mapa = (char) dictionary_get(mapa_indices,stid);
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
 		if(tabla == NULL){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
 		bloquear_tabla(tabla);
-		if(list_size(tabla->segmentos_tcb) == 1){
-			// Si es el ultimo tripulante: matar a la tabla entera
-			item_borrar(nivel, clave_mapa);
-			nivel_gui_dibujar(nivel);
-			bloquear_mapa();
-			dictionary_remove(mapa_indices,clave_mapa);
-			desbloquear_mapa();
-			matar_tabla_segmentos(pid);
-			return 1;
-		}
 
 		bool buscador(void* un_segmento){
 			segmento* seg_tcb = (segmento*) un_segmento;
@@ -595,17 +580,18 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		segmento* segmento_tcb = list_find(tabla->segmentos_tcb, buscador);
 		if(segmento_tcb == NULL){
 			log_error(logger, "TCB no encontrado TID: %d",tid);
+			desbloquear_tabla(tabla);
 			return 0;
 		}
-		liberar_segmento(segmento_tcb);
+		segmento_tcb->libre = true;
 
 		list_remove_by_condition(tabla->segmentos_tcb, buscador);
 		log_debug(logger,"TCB eliminado TID: %d", tid);
-		item_borrar(nivel, clave_mapa);
-		nivel_gui_dibujar(nivel);
-		bloquear_mapa();
-		dictionary_remove(mapa_indices,clave_mapa);
-		desbloquear_mapa();
+		matar_tcb_en_mapa(tid);
+		
+		if(list_size(tabla->segmentos_tcb) < 1){
+			matar_tabla_segmentos(pid);
+		}
 		desbloquear_tabla(tabla);
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
@@ -615,28 +601,21 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		}
 		bloquear_tabla(tabla);
 		if(dictionary_size(tabla->dl_tcbs) == 1){
+			matar_tcb_en_mapa(tid);
 			matar_tabla_paginas(pid);
 			desbloquear_tabla(tabla);
-			item_borrar(nivel, clave_mapa);
-			nivel_gui_dibujar(nivel);
-			bloquear_mapa();
-			dictionary_remove(mapa_indices,clave_mapa);
-			desbloquear_mapa();
 			return 1;
 		}else{
 			int result = matar_paginas_tcb(tabla, tid);
 			if(result){
 				log_info(logger, "Se mató al TCB tid: %d", tid);
+				matar_tcb_en_mapa(tid);
 				desbloquear_tabla(tabla);
-				item_borrar(nivel, clave_mapa);
-				nivel_gui_dibujar(nivel);
-				bloquear_mapa();
-				dictionary_remove(mapa_indices,clave_mapa);
-				desbloquear_mapa();
 				return 1;
 			}else{
 				// error
 				desbloquear_tabla(tabla);
+
 				return 0;
 			}
 			desbloquear_tabla(tabla);
@@ -651,11 +630,9 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 
 int actualizar_tcb(t_TCB* nuevo_tcb){
 	log_debug(logger,"Actualizando TCB TID: %d", nuevo_tcb->TID);
-
 	int pid = nuevo_tcb->TID / 10000;
 	char stid[8];
-	sprintf(stid, "%d", nuevo_tcb->TID);
-	
+	sprintf(stid, "%d",nuevo_tcb->TID);
 	if(nuevo_tcb->estado_tripulante == 'F'){
 		log_info(logger, "Tripulante en estado exit");
 		eliminar_tcb(nuevo_tcb->TID);
@@ -686,10 +663,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
-	
-	char clave_mapa = (char) dictionary_get(mapa_indices,stid);
-	item_mover(nivel, clave_mapa, nuevo_tcb->coord_x, nuevo_tcb->coord_y);
-	nivel_gui_dibujar(nivel);
+	actualizar_tcb_en_mapa(nuevo_tcb);
 	
 	return 1;
 }
@@ -728,30 +702,82 @@ void dump(int n){
 
 
 void iniciar_mapa(){
-    nivel_gui_inicializar();
-	nivel_gui_get_area_nivel(&cols, &rows);
-    nivel = nivel_crear("AmongOS - NO MATAR A REY DE FUEGO");
-	nivel_gui_dibujar(nivel);
-	mapa_indices = dictionary_create();
+	if(mapa_on){
+		nivel_gui_inicializar();
+		nivel_gui_get_area_nivel(&cols, &rows);
+		nivel = nivel_crear("AmongOS - NO MATAR A REY DE FUEGO");
+		nivel_gui_dibujar(nivel);
+		mapa_indices = dictionary_create();
+		ultima_clave_mapa = 0;
+	}
 }
 
 void mapa_iniciar_tcb(t_TCB* tcb){
-	err = personaje_crear(nivel, ultima_clave_mapa + 1, tcb->coord_x, tcb->coord_y);
-	ASSERT_CREATE(nivel, ultima_clave_mapa, err);
-	nivel_gui_dibujar(nivel);
+	if(mapa_on){
+		bloquear_mapa();
+		err = personaje_crear(nivel, ultima_clave_mapa + 1, tcb->coord_x, tcb->coord_y);
+		nivel_gui_dibujar(nivel);
 
-	char stid[8];
-	sprintf(stid, "%d", tcb->TID);
-	bloquear_mapa();
-	dictionary_put(mapa_indices, stid, ultima_clave_mapa);
-	desbloquear_mapa();
+		char stid[8];
+		sprintf(stid, "%d", tcb->TID);
 
-	ultima_clave_mapa++;
+		char* clave = malloc(sizeof(char));
+		memcpy(clave, &ultima_clave_mapa, sizeof(char));
+		dictionary_put(mapa_indices, stid, (void*) clave);
+
+		ultima_clave_mapa++;
+		desbloquear_mapa();
+	}
+}
+
+char* get_clave_mapa_por_tid(int tid){
+	if(mapa_on){
+		char stid[8];
+		sprintf(stid, "%d",tid);
+		char* clave_mapa = (char*) dictionary_get(mapa_indices,stid);
+		if(clave_mapa == NULL){
+			log_error(logger,"Error: clave en mapa no encontrada");
+		}
+		log_trace(logger,"Encontre la clave %c", clave_mapa[0]);
+		return clave_mapa;
+	}
+	return NULL;
+}
+
+void matar_tcb_en_mapa(int tid){
+	if(mapa_on){
+		char stid[8];
+		sprintf(stid, "%d",tid);
+		char* clave_mapa = get_clave_mapa_por_tid(tid);
+		void clave_destroyer(void* una_clave){
+			free(una_clave);
+		}
+		if(clave_mapa != NULL){
+			item_borrar(nivel, clave_mapa[0]);
+			nivel_gui_dibujar(nivel);
+			bloquear_mapa();
+			dictionary_remove_and_destroy(mapa_indices, stid, clave_destroyer);
+			desbloquear_mapa();
+		}
+	}
+}
+
+void actualizar_tcb_en_mapa(t_TCB* tcb){
+	if(mapa_on){
+		char clave_mapa = get_clave_mapa_por_tid(tcb->TID)[0];
+		bloquear_mapa();
+		log_trace(logger, "Muevo el TCB TID: %d,\t clave en mapa: %c, \t nueva pos: %d|%d",tcb->TID,clave_mapa,tcb->coord_x,tcb->coord_y);
+		item_mover(nivel, clave_mapa, tcb->coord_x, tcb->coord_y);
+		nivel_gui_dibujar(nivel);
+		desbloquear_mapa();
+	}
 }
 
 void matar_mapa(){
-	nivel_destruir(nivel);
-	nivel_gui_terminar();
+	if(mapa_on){
+		nivel_destruir(nivel);
+		nivel_gui_terminar();
+	}
 }
                                      
 //                AAA               UUUUUUUU     UUUUUUUUXXXXXXX       XXXXXXX
@@ -785,6 +811,7 @@ void bloquear_tabla(void* una_tabla){
 		tabla_paginas* tabla = (tabla_paginas*) una_tabla;
 		pthread_mutex_lock(&(tabla->mutex));
 	}
+	log_trace(logger,"Bloqueo tabla");
 }
 
 void desbloquear_tabla(void* una_tabla){
@@ -795,20 +822,25 @@ void desbloquear_tabla(void* una_tabla){
 		tabla_paginas* tabla = (tabla_paginas*) una_tabla;
 		pthread_mutex_unlock(&(tabla->mutex));
 	}
+	log_trace(logger,"Desbloqueo tabla");
 }
 
 void bloquear_lista_tablas(){
 	pthread_mutex_lock(&m_tablas);
+	log_trace(logger,"Bloqueo lista de tablas");
 }
 
 void desbloquear_lista_tablas(){
 	pthread_mutex_unlock(&m_tablas);
+	log_trace(logger,"Desloqueo lista de tablas");
 }
 
 void bloquear_mapa(){
 	pthread_mutex_lock(&m_mapa);
+	log_trace(logger,"Bloqueo mapa");
 }
 
 void desbloquear_mapa(){
 	pthread_mutex_unlock(&m_mapa);
+	log_trace(logger,"Desloqueo mapa");
 }

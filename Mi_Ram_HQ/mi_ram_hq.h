@@ -43,7 +43,7 @@ t_config* config;
 NIVEL* nivel;
 int cols, rows;
 int err;
-char ultima_clave_mapa = 0;
+char ultima_clave_mapa;
 t_dictionary* mapa_indices;
 pthread_mutex_t m_mapa;
 
@@ -80,19 +80,18 @@ bool* bitmap_disco;
 /*
     FUNCIONES PRINCIPALES
 */
-void atender_clientes(void*);
 void proceso_handler(void* args);
+void atender_clientes(void*);
 
 void iniciar_memoria();
-void iniciar_mapa();
+void* buscar_tabla(int pid);
 int gestionar_tareas (t_archivo_tareas*);
 int gestionar_tcb(t_TCB*);
-void* buscar_tabla(int pid);
-t_tarea* buscar_siguiente_tarea(int tid);
-t_list* buscar_tcbs_por_pid(int);
 t_TCB* buscar_tcb_por_tid(int);
-int actualizar_tcb(t_TCB*);
+t_list* buscar_tcbs_por_pid(int);
+t_tarea* buscar_siguiente_tarea(int tid);
 int eliminar_tcb(int tid);
+int actualizar_tcb(t_TCB*);
 void dump();
 
 /*
@@ -100,7 +99,12 @@ void dump();
 */
 void iniciar_mapa();
 void mapa_iniciar_tcb(t_TCB* tcb);
+char* get_clave_mapa_por_tid(int tid);
+void matar_tcb_en_mapa(int tid);
+void actualizar_tcb_en_mapa(t_TCB* tcb);
 void matar_mapa();
+void bloquear_mapa();
+void desbloquear_mapa();
 
 /*
     FUNCIONES AUXILIARES
