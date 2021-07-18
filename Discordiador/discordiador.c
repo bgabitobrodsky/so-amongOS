@@ -673,8 +673,8 @@ void expulsar_tripulante(char* leido) {
 
             log_info(logger, "Tripulante expulsado, TID: %d\n", tid_tripulante_a_expulsar);
             log_info(logger, "Lugar del deceso: %i|%i\n", t_aux->coord_x, t_aux->coord_y);
-        	cambiar_estado(t_aux, estado_tripulante[EXIT], socket_a_mi_ram_hq);
-            // t_aux->estado_tripulante = estado_tripulante[EXIT];
+        	quitar_tripulante_de_listas(t_aux);
+        	t_aux->estado_tripulante = estado_tripulante[EXIT];
         }
         else{
             log_info(logger, "Dicho tripulante no existe en Discordiador.\n");
