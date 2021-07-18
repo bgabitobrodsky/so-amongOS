@@ -50,8 +50,6 @@ pthread_mutex_t sem_lista_exec;
 pthread_mutex_t sem_cola_block;
 pthread_mutex_t sem_cola_block_emergencia;
 
-void liberar_lista(t_list* lista);
-
 // Variables de discordiador
 char estado_tripulante[6] = {'N', 'R', 'E', 'B', 'F', 'V'};
 int estamos_en_peligro = 0; // variable de sabotaje
@@ -121,6 +119,9 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
+    char a = '\0';
+	log_debug(logger, "A VER: %i %i %i", sizeof(a), sizeof('\0'),  sizeof(char));
+
     iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
@@ -142,6 +143,13 @@ int main() {
     while(sistema_activo){
     	sleep(1);
     }
+
+    liberar_tripulantes();
+    log_warning(logger, "Apagando sistema, espere por favor.");
+    sleep(5);
+    liberar_listas();
+    liberar_colas();
+    liberar_semaforos();
 
     close(socket_a_mi_ram_hq);
     close(socket_a_mongo_store);
@@ -339,7 +347,6 @@ void morir(t_tripulante* un_tripulante){
         eliminar_patota_de_lista(lista_patotas, un_tripulante->TID/10000);
         log_trace(logger, "Muere el ultimo de la patota %i", un_tripulante->TID/10000);
     }
-
 
     free(un_tripulante); // error de doble free en algun lado
     pthread_exit(NULL);
@@ -600,7 +607,8 @@ void leer_consola() {
 
                 case APAGAR_SISTEMA:
                     sistema_activo = 0;
-                    exit(1);
+                    free(leido);
+                    pthread_exit(NULL);
                     break;
 
                 case NO_CONOCIDO:
@@ -608,7 +616,7 @@ void leer_consola() {
             }
         }
 
-        //free(leido);
+        free(leido);
 
     } while (comando != EXIT);
 
@@ -1200,8 +1208,19 @@ void liberar_lista(t_list* lista){
 	if(lista == NULL){
 		// No hacer nada, aunque no se deberia cometer este error
 	} else if (list_is_empty(lista)){
-		list_destroy_and_destroy_elements(lista, free);
-	} else {
 		list_destroy(lista);
+	} else {
+		list_destroy_and_destroy_elements(lista, free);
+	}
+}
+
+
+void liberar_cola(t_queue* cola){
+	if(cola == NULL){
+		// No hacer nada, aunque no se deberia cometer este error
+	} else if (queue_is_empty(cola)){
+		queue_destroy_and_destroy_elements(cola, free);
+	} else {
+		queue_destroy(cola);
 	}
 }

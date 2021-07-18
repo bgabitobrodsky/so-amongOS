@@ -196,6 +196,42 @@ void iniciar_semaforos(){
 
 }
 
+void liberar_listas() {
+
+	liberar_lista(lista_tripulantes);
+	list_destroy(lista_tripulantes_new);
+	list_destroy(lista_tripulantes_exec);
+	list_destroy(lista_pids);
+	liberar_lista(lista_patotas);
+
+}
+
+void liberar_colas() {
+
+	queue_destroy(cola_tripulantes_ready);
+	queue_destroy(cola_tripulantes_block);
+	queue_destroy(cola_tripulantes_block_emergencia);
+
+}
+
+void liberar_semaforos(){
+
+	pthread_mutex_destroy(&sem_lista_tripulantes);
+	pthread_mutex_destroy(&sem_lista_exec);
+	pthread_mutex_destroy(&sem_lista_new);
+	pthread_mutex_destroy(&sem_cola_ready);
+	pthread_mutex_destroy(&sem_cola_block);
+	pthread_mutex_destroy(&sem_cola_block_emergencia);
+
+}
+
+void liberar_tripulantes(){
+
+	void terminar(void* un_tripulante){
+		((t_tripulante*) un_tripulante)->estado_tripulante = 'F';
+	}
+	list_iterate(lista_tripulantes, terminar);
+}
 
 void liberar_puntero_doble(char** palabras){
 	int contador = 0;

@@ -101,6 +101,12 @@ void enviar_archivo_tareas(char* archivo_tareas, int pid, int socket);
 void pedir_tarea_a_mi_ram_hq(uint32_t tid, int socket);
 void enviar_pid_a_ram(uint32_t pid, int socket);
 int esta_pid_en_lista(t_list* lista, int elemento);
+void liberar_lista(t_list* lista);
+void liberar_cola(t_queue* cola);
+void liberar_listas();
+void liberar_colas();
+void liberar_semaforos();
+void liberar_tripulantes();
 
 // SABOTAJES
 void peligro(t_posicion* pos_sabotaje, int socket_ram);
@@ -122,5 +128,6 @@ void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mong
 int es_mi_turno(t_tripulante* un_tripulante);
 void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado);
 void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado);
+void morir(t_tripulante* un_tripulante);
 
 #endif /* DISCORDIADOR_UTILS_H_ */
