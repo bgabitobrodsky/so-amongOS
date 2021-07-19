@@ -125,7 +125,7 @@ t_buffer* serializar_tripulante(t_tripulante tripulante) {
 
 t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
 
-    t_buffer* buffer = malloc(sizeof(t_buffer));
+    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1);
     buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;
 
     void* estructura = malloc(buffer->tamanio_estructura);
@@ -217,14 +217,16 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 
     if(conexion_cerrada == 0){
     	intermediario->codigo_operacion = DESCONEXION;
-    	eliminar_paquete(paquete);
-		return intermediario;
+    	free(paquete->buffer);
+    	free(paquete);
+    	return intermediario;
     }
 
     // If que maneja llegada de codigos de operacion unicamente (TODO CODIGO UNICO DEBE ESTAR DESPUES DE SABOTAJE)
     if (paquete->codigo_operacion > SABOTAJE && paquete->codigo_operacion >= 0) { // Lo del mayor a cero por si llega trash
         intermediario->codigo_operacion = paquete->codigo_operacion;
-    	eliminar_paquete(paquete);
+    	free(paquete->buffer);
+    	free(paquete);
         return intermediario;
     }
 
@@ -242,19 +244,16 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
     	case ACTUALIZAR:
         case RECIBIR_TCB:
         	intermediario->codigo_operacion = paquete->codigo_operacion;
-        	intermediario->tcb = malloc(sizeof(uint32_t)*5 + sizeof(char));
             intermediario->tcb = deserializar_tcb(paquete->buffer);
             break;
 
         case TAREA:
             intermediario->codigo_operacion = paquete->codigo_operacion;
-            // asignar un malloc? tienes idea de lo loco que se oye eso?
             intermediario->tarea = deserializar_tarea(paquete->buffer);
             break;
         case BITACORA:
         case ARCHIVO_TAREAS:
         	intermediario->codigo_operacion = paquete->codigo_operacion;
-        	intermediario->archivo_tareas = malloc(paquete->buffer->tamanio_estructura);
             intermediario->archivo_tareas = deserializar_archivo_tareas(paquete->buffer);
             break;
         case PEDIR_BITACORA:
@@ -377,7 +376,7 @@ t_tripulante* deserializar_tripulante(t_buffer* buffer) {
 }
 
 void eliminar_paquete(t_paquete* paquete) {
-	//free(paquete->buffer->estructura); // TODO: Ver si se puede descomentar
+	free(paquete->buffer->estructura);
 	free(paquete->buffer);
 	free(paquete);
 }

@@ -148,7 +148,9 @@ void atender_clientes(void* param) {
 
 			case ACTUALIZAR:
 				if(actualizar_tcb(mensaje_recibido->tcb)){
-					log_info(logger, "Actualizado el TCB %i.", mensaje_recibido->tcb->TID);
+					if(mensaje_recibido->tcb->estado_tripulante != 'F'){
+						log_info(logger, "Actualizado el TCB %i.", mensaje_recibido->tcb->TID);
+					}
 				} else{
 					log_error(logger, "No se pudo actualizar el TCB %i.", mensaje_recibido->tcb->TID);
 				}
