@@ -24,8 +24,9 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_TRACE);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
+	signal(SIGUSR1, signal_compactacion);
 	signal(SIGUSR2, dump);
 
 	pthread_mutex_init(&m_swap,NULL);
@@ -491,7 +492,9 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			desbloquear_segmento(tabla->segmento_tareas);
 			return NULL;
 		}
+		log_info(logger, "Antes del split");
 		char** palabras = string_split(puntero_a_tareas, "\n");
+		log_info(logger, "Despues del split y antes del str_tarea");
 
 		char* str_tarea = palabras[0];
 		log_info(logger, "Tarea: %s", str_tarea);
@@ -585,6 +588,7 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 			return 0;
 		}
 		segmento_tcb->libre = true;
+		desbloquear_segmento(segmento_tcb);
 
 		list_remove_by_condition(tabla->segmentos_tcb, buscador);
 		log_debug(logger,"TCB eliminado TID: %d", tid);
@@ -667,6 +671,17 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 	actualizar_tcb_en_mapa(nuevo_tcb);
 	
 	return 1;
+}
+
+void signal_compactacion(int n){
+	if(n == SIGUSR1){
+		if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+			dump(SIGUSR2);
+			compactacion();
+			sleep(1);
+			dump(SIGUSR2);
+		}
+	}
 }
 
 void dump(int n){

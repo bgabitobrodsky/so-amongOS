@@ -45,6 +45,7 @@ int intento_asignar_segmento;
 void ordenar_segmentos();
 void compactacion();
 void unificar_segmentos_libres();
+void unificar_dos_segmentos_libres(int i, int z);
 segmento* crear_segmento(int base, int tam, bool libre);
 segmento* buscar_segmento_libre(int tam);
 segmento* first_fit(int tam);

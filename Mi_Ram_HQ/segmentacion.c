@@ -21,41 +21,58 @@
 // FFFFFFFFFFF                 UUUUUUUUU      NNNNNNNN         NNNNNNN        CCCCCCCCCCCCCIIIIIIIIII     OOOOOOOOO     NNNNNNNN         NNNNNNNEEEEEEEEEEEEEEEEEEEEEE SSSSSSSSSSSSSSS
 
 void ordenar_segmentos(){
-    bool segmento_anterior(segmento* segmento_antes, segmento* segmento_despues) {
+    log_info(logger, "Ordenar segmentos");
+    bool segmento_anterior(segmento* segmento_antes, segmento* segmento_despues){
         return segmento_antes->base < segmento_despues->base;
     }
-    bloquear_lista_segmentos();
     list_sort(segmentos, (void*) segmento_anterior);
-    desbloquear_lista_segmentos();
 }
 
 void compactacion(){
-    log_debug(logger, "Se comienza la compactacion");
+    log_debug(logger, "[COMP]: Se comienza la compactacion");
     bloquear_lista_segmentos();
+    unificar_segmentos_libres();
     int size = list_size(segmentos);
-    for(int i=0; i<size;i++){
+    for(int i = 0; i < size; i++){
+        size = list_size(segmentos);
         segmento* segmento_libre = list_get(segmentos, i);
         if(segmento_libre->libre){
-            int desplazamiento = segmento_libre->tam;
+            log_trace(logger, "[COMP]: Encontre un segmento libre, base: %d, tam: %d", segmento_libre->base, segmento_libre->tam);
             for(int z = i + 1; z < size; z++){
                 segmento* segmento_ocupado = list_get(segmentos, z);
+                if(segmento_ocupado == NULL){
+                    log_error(logger, "Segmento nulo");
+                    break;
+                }
                 if(!segmento_ocupado->libre){
-
+                    log_trace(logger, "[COMP]: Encontre un segmento ocupado, base: %d", segmento_ocupado->base);
                     bloquear_segmento(segmento_ocupado);
                     // Tengo que acomodar los fuckings punteros a memoria de las estructuras
                     if(segmento_ocupado->tipo == S_PCB){
+                        log_trace(logger, "[COMP]: Es un segmento de PCB");
                         // en caso de ser un seg. de pcb tengo que actualizar el puntero a pcb de sus tcb
                         t_PCB* pcb = (t_PCB*) (memoria_principal + segmento_ocupado->base);
                         t_list* tcbs = buscar_tcbs_por_pid(pcb->PID);
 
+                        // Movemos primero la memoria real
+                        memcpy(memoria_principal + segmento_libre->base,
+                            memoria_principal + segmento_ocupado->base,
+                            segmento_ocupado->tam);
+
+                        // Despues acomodamos las estrucuras
+                        segmento_ocupado->base = segmento_libre->base;
+                        segmento_libre->base += segmento_ocupado->tam;
+
                         void updater_tcb_pcb(void* un_tcb){
                             t_TCB* tcb = (t_TCB*) un_tcb;
-                            tcb->puntero_a_pcb -= desplazamiento;
+                            log_trace(logger, "[COMP]: Muevo el puntero a PCB de TID: %d, -%dbytes", tcb->TID, segmento_libre->tam);
+                            tcb->puntero_a_pcb -= segmento_libre->tam;
                             desbloquear_segmento_por_tid(tcb->TID);
                         }
                         list_iterate(tcbs,updater_tcb_pcb);
 
                     }else if(segmento_ocupado->tipo == S_TAREAS){
+                        log_trace(logger, "[COMP]: Es un segmento de tareas");
                         // en caso de ser un seg. de tareas, tengo que actualizar el: pcb y los tcbs, pucha :(
                         tabla_segmentos* tabla;
                         int pid;
@@ -70,33 +87,9 @@ void compactacion(){
                         dictionary_iterator(tablas, buscador_tabla_por_tareas);
 
                         t_PCB* pcb = (t_PCB*) (memoria_principal + (tabla->segmento_pcb->base));
-                        pcb->direccion_tareas -= desplazamiento;
+                        log_trace(logger, "[COMP]: Muevo el puntero a tareas de PID: %d, -%dbytes", pcb->PID, segmento_libre->tam);
+                        pcb->direccion_tareas -= segmento_libre->tam;
                         
-                        t_list* tcbs = buscar_tcbs_por_pid(pid);
-                        
-                        void updater_tcb_tareas(void* un_tcb){
-                            t_TCB* tcb = (t_TCB*) un_tcb;
-                            tcb->siguiente_instruccion -= desplazamiento;
-                        }
-                        list_iterate(tcbs,updater_tcb_tareas);
-
-                            // Movemos primero la memoria real
-                        memcpy(memoria_principal + segmento_libre->base,
-                            memoria_principal + segmento_ocupado->base,
-                            segmento_ocupado->tam);
-
-                        // Despues acomodamos las estrucuras
-                        segmento_ocupado->base = segmento_libre->base;
-                        segmento_libre->base += segmento_ocupado->tam;
-
-                        void desbloqueador_de_tcb(void* un_tcb){
-                            t_TCB* tcb = (t_TCB*) un_tcb;
-                            desbloquear_segmento_por_tid(tcb->TID);
-                        }
-                        list_iterate(tcbs,desbloqueador_de_tcb);
-
-                    }else if(segmento_ocupado->tipo == S_TCB){
-                        //por suerte si se mueve un segmento de un tcb no tengo que hacer nada yeiii :D
                         // Movemos primero la memoria real
                         memcpy(memoria_principal + segmento_libre->base,
                             memoria_principal + segmento_ocupado->base,
@@ -106,40 +99,83 @@ void compactacion(){
                         segmento_ocupado->base = segmento_libre->base;
                         segmento_libre->base += segmento_ocupado->tam;
 
+                        t_list* tcbs = buscar_tcbs_por_pid(pid);
+                        
+                        void updater_tcb_tareas(void* un_tcb){
+                            t_TCB* tcb = (t_TCB*) un_tcb;
+                            log_trace(logger, "[COMP]: Muevo el puntero a tareas de TID: %d, -%dbytes", tcb->TID, segmento_libre->tam);
+                            if((void*)tcb->siguiente_instruccion != NULL){
+                                tcb->siguiente_instruccion -= segmento_libre->tam;
+                            }
+                            desbloquear_segmento_por_tid(tcb->TID);
+                        }
+                        list_iterate(tcbs,updater_tcb_tareas);
+
+                        void desbloqueador_de_tcb(void* un_tcb){
+                            t_TCB* tcb = (t_TCB*) un_tcb;
+                            desbloquear_segmento_por_tid(tcb->TID);
+                        }
+                        list_iterate(tcbs,desbloqueador_de_tcb);
+
+                    }else if(segmento_ocupado->tipo == S_TCB){
+                        log_trace(logger, "[COMP]: Es un segmento de TCB");
+                        //por suerte si se mueve un segmento de un tcb no tengo que hacer nada yeiii :D
+                        // Movemos primero la memoria real
+                        memcpy(memoria_principal + segmento_libre->base,
+                            memoria_principal + segmento_ocupado->base,
+                            segmento_ocupado->tam);
+
+                        segmento_ocupado->base = segmento_libre->base;
+                        segmento_libre->base += segmento_ocupado->tam;
+
                     }
                     desbloquear_segmento(segmento_ocupado);
-                    
                     ordenar_segmentos();
                     unificar_segmentos_libres();
                     break;
                 }else{
-                    desplazamiento += segmento_ocupado->tam;
+                    log_trace(logger, "[COMP]: No encontre segmento ocupado");
                 }
             }
         }
     }
+    //ordenar_segmentos();
+    //unificar_segmentos_libres();
     desbloquear_lista_segmentos();
+    log_debug(logger, "[COMP]: Compactación terminada");
     return;
 }
 
 // Recorro la tabla, si encuentro dos segmentos libres consecutivos los uno
 void unificar_segmentos_libres(){
+    log_info(logger, "Unifico segmentos libres");
     int size = list_size(segmentos);
-    for(int i=0; i<size-1; i++){
-
-        segmento* una_segmento = list_get(segmentos, i);
-        segmento* siguiente_segmento = list_get(segmentos, i + 1);
-
-        if (una_segmento->libre && siguiente_segmento->libre){
-            una_segmento->tam += siguiente_segmento->tam;
-            list_remove(segmentos, i+1);
-            free(siguiente_segmento);
+    for(int i = 0; i < size-1; i++){
+        segmento* seg1 = list_get(segmentos, i);
+        segmento* seg2 = list_get(segmentos, i + 1);
+        if (seg1->libre && seg2->libre){
+            seg1->tam += seg2->tam;
+            list_remove(segmentos, i + 1);
+            free(seg2);
             size = list_size(segmentos);
-            i = 0;
+            i--;
         }
     }
-    return;
 }
+
+void unificar_dos_segmentos_libres(int i,int z){
+    int size = list_size(segmentos);
+    if(i + 1 < size){
+        log_trace(logger, "[COMP]: Unifico 2 segmentos libres");
+        segmento* seg1 = list_get(segmentos, i);
+        segmento* seg2 = list_get(segmentos, z);
+        seg1->tam += seg2->tam;
+        list_remove(segmentos, z);
+        desbloquear_segmento(seg2);
+        free(seg2);
+    }
+}
+
 
 segmento* crear_segmento(int base, int tam, bool libre){
     segmento* nuevo_segmento = malloc(sizeof(segmento));
@@ -351,13 +387,13 @@ segmento* buscar_segmento_por_tid(int tid){
 void bloquear_segmento(segmento* segmento){
     if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0)
         pthread_mutex_lock(&(segmento->mutex));
-    log_trace(logger,"Bloqueo segmento base: %d",segmento->base);
+    log_trace(logger,"[SEM]: Bloqueo segmento base: %d",segmento->base);
 }
 
 void desbloquear_segmento(segmento* segmento){
     if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0)
         pthread_mutex_unlock(&(segmento->mutex));
-    log_trace(logger,"Desloqueo segmento base: %d",segmento->base);
+    log_trace(logger,"[SEM]: Desbloqueo segmento base: %d",segmento->base);
 }
 
 void bloquear_segmento_por_tid(int tid){
@@ -766,6 +802,8 @@ void dump_segmentacion(){
         }
 
     }
+    bloquear_lista_tablas();
+    bloquear_lista_segmentos();
 
     dictionary_iterator(tablas,cargar_tabla_al_dump);
 
@@ -782,7 +820,8 @@ void dump_segmentacion(){
 
     void impresor_dump(void* un_segmento){
         segmento_dump_wrapper* seg = (segmento_dump_wrapper*) un_segmento;
-        char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: 0x%.4x\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
+        //char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: 0x%.4x\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
+        char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: %d\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
         txt_write_in_file(file, dump_row);
         free(dump_row);
     }
@@ -796,4 +835,7 @@ void dump_segmentacion(){
         free(seg);
     }
     list_destroy_and_destroy_elements(dump_segmentos,destructor);
+
+    desbloquear_lista_segmentos();
+    desbloquear_lista_tablas();
 }

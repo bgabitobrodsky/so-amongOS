@@ -92,7 +92,8 @@ t_list* buscar_tcbs_por_pid(int);
 t_tarea* buscar_siguiente_tarea(int tid);
 int eliminar_tcb(int tid);
 int actualizar_tcb(t_TCB*);
-void dump();
+void dump(int n);
+void signal_compactacion(int n);
 
 /*
     FUNCIONES PARA EL MAPA
