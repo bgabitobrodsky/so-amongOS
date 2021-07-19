@@ -118,10 +118,9 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    char a = '\0';
-	log_debug(logger, "A VER: %i %i %i", sizeof(a), sizeof('\0'),  sizeof(char));
+    // iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
+    // iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
 
-    iniciar_patota("INICIAR_PATOTA 2 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 1 Random.ims 9|9");
     // iniciar_patota("INICIAR_PATOTA 3 Prueba.ims 1|1");
     // iniciar_patota("INICIAR_PATOTA 1 Oxigeno.ims 1|1");
@@ -263,7 +262,7 @@ void iniciar_planificacion() {
 
 void planificador(){
     log_info(logger, "Planificando");
-    log_info(logger, "Algoritmo %i", ALGORITMO);
+    log_info(logger, "Algoritmo %s", ALGORITMO);
 
     while(planificacion_activa){
     	sleep(1);
@@ -557,9 +556,6 @@ void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante, int s
             log_info(logger, "Tarea finalizada: %s\n", un_tripulante->tarea.nombre);
             notificar_fin_de_tarea(un_tripulante, socket_mongo);
 
-    		cambiar_estado(un_tripulante, estado_tripulante[READY], socket_ram);
-    		monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
-
             if(conseguir_siguiente_tarea(un_tripulante, socket_ram, socket_mongo)){
             	log_trace(logger, "%i nueva tarea!: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
             }
@@ -776,21 +772,9 @@ void listar_tripulantes() {
             // printf("    Tripulante: %d \t   Patota: %d \t Status: %c\n", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
             log_info(logger, "TID: %d  PID: %d Status: %c", aux_t->TID, aux_t->TID/10000, aux_t->estado_tripulante);
         }
-    }
-    // TODO: revisar esto de abajo, tira segmentation fault en ciertos casos:
-    // iniciar_patota("INICIAR_PATOTA 5 Random.ims 1|1 3|4");
-    // iniciar_planificacion();
-    // esṕerar a que termine
-    // listar tripulantes
-    // segmentation fault
 
-/*
-    void liberar(void* elemento){
-    	free(elemento);
+        liberar_lista(lista_tripulantes_de_una_patota);
     }
-    list_destroy_and_destroy_elements(lista_tripulantes_de_una_patota, liberar);
-*/
-    // liberar_lista(lista_tripulantes_de_una_patota);
 
 }
 
@@ -804,12 +788,11 @@ t_list* lista_tripulantes_patota(uint32_t pid){
 
     while(respuesta->codigo_operacion != EXITO){
         list_add(lista_tripulantes_patota, respuesta->tcb);
-        //free(respuesta->tcb);
         free(respuesta);
         respuesta = recepcion_y_deserializacion(socket_a_mi_ram_hq);
     }
     if(respuesta->codigo_operacion == FALLO){
-        log_info(logger, "Error al pedir los tripulantes para listar.\n");
+        log_info(logger, "Error al pedir los tripulantes para listar.");
         log_info(logger, "Codigo de error: FALLO\n");
     }
 
