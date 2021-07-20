@@ -222,7 +222,7 @@ void iniciar_memoria(){
 	tablas = dictionary_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
-		log_debug(logger,"Se inicia memoria con esquema se SEGMENTACION");
+		log_debug(logger,"[SEG]: Se inicia memoria con esquema se SEGMENTACION");
 		segmentos = list_create();
 		segmento* segmento_principal = crear_segmento(0,TAMANIO_MEMORIA,true);
 		list_add(segmentos,segmento_principal);
@@ -240,7 +240,8 @@ void iniciar_memoria(){
 			list_add(marcos,marco);
 		}
 
-		disco = fopen(PATH_SWAP, "w+b");
+		//disco = fopen(PATH_SWAP, "w+b");
+		disco = fopen("swapFile.bin", "w+b");
 		marcos_disco_size = TAMANIO_SWAP / TAMANIO_PAGINA;
 		bitmap_disco = malloc(sizeof(bool) * marcos_disco_size);
 		for(int i = 0; i < marcos_disco_size; i++){
@@ -262,17 +263,17 @@ void* buscar_tabla(int pid){
 }
 
 int gestionar_tareas(t_archivo_tareas* archivo){
-	int pid_patota = archivo->pid;
+	int pid = archivo->pid;
 	int tamanio_tareas = archivo->largo_texto * sizeof(char);
 
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-		tabla_segmentos* tabla = crear_tabla_segmentos(pid_patota);
+		tabla_segmentos* tabla = crear_tabla_segmentos(pid);
 		bloquear_tabla(tabla);
 		//Creamos segmento para tareas y lo guardamos en la tabla de la patota
-		log_info(logger, "Creando segmento de tareas, PID: %d", pid_patota);
+		log_info(logger, "[SEG]: Creando segmento de tareas, PID: %d", pid);
 		segmento* segmento_tareas = asignar_segmento(tamanio_tareas);
 		if(segmento_tareas == NULL){
-			matar_tabla_segmentos(pid_patota);
+			matar_tabla_segmentos(pid);
 			return 0;
 		}
 		bloquear_segmento(segmento_tareas);
@@ -284,13 +285,13 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 
 		//Creamos el PCB y un segmento para guardarlo
 		t_PCB* pcb = malloc(sizeof(t_PCB));
-		pcb->PID = pid_patota;
+		pcb->PID = pid;
 		pcb->direccion_tareas = (uint32_t) puntero_a_tareas;
 
-		log_info(logger, "Creando segmento para el PCB con PID: %d", pid_patota);
+		log_info(logger, "[SEG]: Creando segmento para el PCB con PID: %d", pid);
 		segmento* segmento_pcb = asignar_segmento(sizeof(t_PCB));
 		if(segmento_pcb == NULL){
-			matar_tabla_segmentos(pid_patota);
+			matar_tabla_segmentos(pid);
 			return 0;
 		}
 		
@@ -303,22 +304,30 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		free(pcb);
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid_patota);
+		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){ 
-			tabla = crear_tabla_paginas(pid_patota);
+			tabla = crear_tabla_paginas(pid);
 		}
-		log_info(logger, "Guardando tareas con PID: %d", pid_patota);
-		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid_patota);
+		log_info(logger, "Guardando tareas con PID: %d", pid);
+		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid);
+		if(dl_tareas == 99999){
+			matar_tabla_paginas(pid);
+			return 0;
+		}
 		tabla->dl_tareas = dl_tareas;
-		log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid_patota, dl_tareas);
+		log_info(logger, "Se terminó de guardar las tareas de pid: %d, dirección lógica: %d", pid, dl_tareas);
 
-		log_info(logger, "Guardando PCB con PID: %d", pid_patota);
+		log_info(logger, "Guardando PCB con PID: %d", pid);
 		t_PCB* pcb = malloc(sizeof(t_PCB));
-		pcb->PID = pid_patota;
+		pcb->PID = pid;
 		pcb->direccion_tareas = dl_tareas;
-		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB), pid_patota);
+		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB), pid);
+		if(dl_pcb == 99999){
+			matar_tabla_paginas(pid);
+			return 0;
+		}
 		tabla->dl_pcb = dl_pcb;
-		log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid_patota, dl_pcb);
+		log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid, dl_pcb);
 		
 		free(pcb);
 
@@ -332,7 +341,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 int gestionar_tcb(t_TCB* tcb){
 	int pid = tcb->TID / 10000;
 	size_t tamanio_tcb = sizeof(t_TCB);
-	log_debug(logger, "Guardando TCB, TID: %d", tcb->TID);
 
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
@@ -341,6 +349,7 @@ int gestionar_tcb(t_TCB* tcb){
 		}
 		
 		//Creamos segmento para el tcb y lo guardamos en la tabla de la patota
+		log_info(logger, "[SEG]: Creando segmento para TCB TID: %d", tcb->TID);
 		segmento* segmento_tcb = asignar_segmento(tamanio_tcb);
 		if(segmento_tcb == NULL){
 			// si no hay mas memoria se mata toda la patota
@@ -369,11 +378,11 @@ int gestionar_tcb(t_TCB* tcb){
 			return 0;
 		}
 
-		log_info(logger, "Guardando TCB TID: %d", tcb->TID);
+		log_info(logger, "[PAG]: Guardando TCB TID: %d", tcb->TID);
 		tcb->siguiente_instruccion = 0;
 		tcb->puntero_a_pcb = tabla->dl_pcb;
 		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB), pid);
-		if(dl_tcb == NULL){
+		if(dl_tcb == 99999){
 			matar_tabla_paginas(pid);
 			return 0;
 		}
@@ -494,10 +503,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			desbloquear_segmento(tabla->segmento_tareas);
 			return NULL;
 		}
-		log_info(logger, "Antes del split");
 		char** palabras = string_split(puntero_a_tareas, "\n");
-		log_info(logger, "Despues del split y antes del str_tarea");
-
 		char* str_tarea = palabras[0];
 		log_info(logger, "Tarea: %s", str_tarea);
 
@@ -661,7 +667,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
 		// no me traigo el tcb actual sino sobreescribo directamente sus paginas
-		int dl_tcb = dictionary_get(tabla->dl_tcbs, stid);
+		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char), pid);
 		if(!result){
 			return 0;
@@ -678,10 +684,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 void signal_compactacion(int n){
 	if(n == SIGUSR1){
 		if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-			dump(SIGUSR2);
 			compactacion();
-			sleep(1);
-			dump(SIGUSR2);
 		}
 	}
 }
@@ -829,7 +832,7 @@ void bloquear_tabla(void* una_tabla){
 		tabla_paginas* tabla = (tabla_paginas*) una_tabla;
 		pthread_mutex_lock(&(tabla->mutex));
 	}
-	log_trace(logger,"Bloqueo tabla");
+	log_trace(logger,"[SEM]: Bloqueo tabla");
 }
 
 void desbloquear_tabla(void* una_tabla){
@@ -840,25 +843,25 @@ void desbloquear_tabla(void* una_tabla){
 		tabla_paginas* tabla = (tabla_paginas*) una_tabla;
 		pthread_mutex_unlock(&(tabla->mutex));
 	}
-	log_trace(logger,"Desbloqueo tabla");
+	log_trace(logger,"[SEM]: Desbloqueo tabla");
 }
 
 void bloquear_lista_tablas(){
 	pthread_mutex_lock(&m_tablas);
-	log_trace(logger,"Bloqueo lista de tablas");
+	log_trace(logger,"[SEM]: Bloqueo lista de tablas");
 }
 
 void desbloquear_lista_tablas(){
 	pthread_mutex_unlock(&m_tablas);
-	log_trace(logger,"Desloqueo lista de tablas");
+	log_trace(logger,"[SEM]: Desloqueo lista de tablas");
 }
 
 void bloquear_mapa(){
 	pthread_mutex_lock(&m_mapa);
-	log_trace(logger,"Bloqueo mapa");
+	log_trace(logger,"[SEM]: Bloqueo mapa");
 }
 
 void desbloquear_mapa(){
 	pthread_mutex_unlock(&m_mapa);
-	log_trace(logger,"Desloqueo mapa");
+	log_trace(logger,"[SEM]: Desloqueo mapa");
 }

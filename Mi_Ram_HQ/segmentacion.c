@@ -356,12 +356,12 @@ void matar_tabla_segmentos(int pid){
 
 void bloquear_lista_segmentos(){
     pthread_mutex_lock(&lista_segmentos);
-    log_trace(logger,"Bloqueo lista de segmentos");
+    log_trace(logger,"[SEM]: Bloqueo lista de segmentos");
 }
 
 void desbloquear_lista_segmentos(){
     pthread_mutex_unlock(&lista_segmentos);
-    log_trace(logger,"Desloqueo lista de segmentos");
+    log_trace(logger,"[SEM]: Desloqueo lista de segmentos");
 }
 
 void liberar_segmento(segmento* segmento){
@@ -820,8 +820,8 @@ void dump_segmentacion(){
 
     void impresor_dump(void* un_segmento){
         segmento_dump_wrapper* seg = (segmento_dump_wrapper*) un_segmento;
-        //char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: 0x%.4x\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
-        char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: %d\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
+        char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: 0x%.4x\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
+        //char* dump_row = string_from_format("Proceso: %d\tSegmento: %d\tInicio: %d\tTam: %db\n", seg->pid, seg->num, seg->segmento->base, seg->segmento->tam);
         txt_write_in_file(file, dump_row);
         free(dump_row);
     }

@@ -5,6 +5,143 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
+// MMMMMMMM               MMMMMMMMEEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMM     OOOOOOOOO     RRRRRRRRRRRRRRRRR   IIIIIIIIII               AAA               
+// M:::::::M             M:::::::ME::::::::::::::::::::EM:::::::M             M:::::::M   OO:::::::::OO   R::::::::::::::::R  I::::::::I              A:::A              
+// M::::::::M           M::::::::ME::::::::::::::::::::EM::::::::M           M::::::::M OO:::::::::::::OO R::::::RRRRRR:::::R I::::::::I             A:::::A             
+// M:::::::::M         M:::::::::MEE::::::EEEEEEEEE::::EM:::::::::M         M:::::::::MO:::::::OOO:::::::ORR:::::R     R:::::RII::::::II            A:::::::A            
+// M::::::::::M       M::::::::::M  E:::::E       EEEEEEM::::::::::M       M::::::::::MO::::::O   O::::::O  R::::R     R:::::R  I::::I             A:::::::::A           
+// M:::::::::::M     M:::::::::::M  E:::::E             M:::::::::::M     M:::::::::::MO:::::O     O:::::O  R::::R     R:::::R  I::::I            A:::::A:::::A          
+// M:::::::M::::M   M::::M:::::::M  E::::::EEEEEEEEEE   M:::::::M::::M   M::::M:::::::MO:::::O     O:::::O  R::::RRRRRR:::::R   I::::I           A:::::A A:::::A         
+// M::::::M M::::M M::::M M::::::M  E:::::::::::::::E   M::::::M M::::M M::::M M::::::MO:::::O     O:::::O  R:::::::::::::RR    I::::I          A:::::A   A:::::A        
+// M::::::M  M::::M::::M  M::::::M  E:::::::::::::::E   M::::::M  M::::M::::M  M::::::MO:::::O     O:::::O  R::::RRRRRR:::::R   I::::I         A:::::A     A:::::A       
+// M::::::M   M:::::::M   M::::::M  E::::::EEEEEEEEEE   M::::::M   M:::::::M   M::::::MO:::::O     O:::::O  R::::R     R:::::R  I::::I        A:::::AAAAAAAAA:::::A      
+// M::::::M    M:::::M    M::::::M  E:::::E             M::::::M    M:::::M    M::::::MO:::::O     O:::::O  R::::R     R:::::R  I::::I       A:::::::::::::::::::::A     
+// M::::::M     MMMMM     M::::::M  E:::::E       EEEEEEM::::::M     MMMMM     M::::::MO::::::O   O::::::O  R::::R     R:::::R  I::::I      A:::::AAAAAAAAAAAAA:::::A    
+// M::::::M               M::::::MEE::::::EEEEEEEE:::::EM::::::M               M::::::MO:::::::OOO:::::::ORR:::::R     R:::::RII::::::II   A:::::A             A:::::A   
+// M::::::M               M::::::ME::::::::::::::::::::EM::::::M               M::::::M OO:::::::::::::OO R::::::R     R:::::RI::::::::I  A:::::A               A:::::A  
+// M::::::M               M::::::ME::::::::::::::::::::EM::::::M               M::::::M   OO:::::::::OO   R::::::R     R:::::RI::::::::I A:::::A                 A:::::A 
+// MMMMMMMM               MMMMMMMMEEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMM     OOOOOOOOO     RRRRRRRR     RRRRRRRIIIIIIIIIIAAAAAAA                   AAAAAAA
+
+tabla_paginas* crear_tabla_paginas(uint32_t pid){
+	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
+    log_info(logger,"se creo tabla de paginas de pid %d", pid);
+	nueva_tabla->paginas = list_create();
+	nueva_tabla->dl_tcbs = dictionary_create();
+	pthread_mutex_init(&(nueva_tabla->mutex), NULL);
+	char spid[4];
+	sprintf(spid, "%d", pid);
+    dictionary_put(tablas,spid,nueva_tabla);
+    log_debug(logger,"Tabla de pid: %d creada",pid);
+	return nueva_tabla;
+}
+
+int liberar_pagina(pagina* pagina, int offset, int faltante){
+	// retorna lo que logró liberar
+	if(offset + faltante <= TAMANIO_PAGINA){
+		//log_info(logger, "Se resta el tamaño: %d", faltante);
+		pagina->tamano_ocupado -= faltante;
+		//log_info(logger, "La pagina quedó con: %d bytes", pagina->tamano_ocupado);
+		return faltante; // pude liberar todo el tamaño
+	}
+	if(pagina->tamano_ocupado + offset <= TAMANIO_PAGINA){
+		pagina->tamano_ocupado = 0;
+		return TAMANIO_PAGINA - offset;
+	}
+	pagina->tamano_ocupado = offset;
+	return TAMANIO_PAGINA - offset; // pude liberar hasta el fin de la página 
+}
+
+void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
+	int faltante = tam;
+	int numero_pagina = dl / TAMANIO_PAGINA;
+	int offset = dl % TAMANIO_PAGINA;
+	pagina* pag;
+	t_list* paginas_a_remover = list_create();
+	if(offset > 0){
+		//log_info(logger, "Se empieza a liberar en la pagina %d con offset %d", numero_pagina, offset);
+		pag = list_get(tabla->paginas, numero_pagina);
+		faltante -= liberar_pagina(pag, offset, faltante);
+		if(pag->tamano_ocupado <= 0){
+			list_add(paginas_a_remover, (void*) numero_pagina);
+		}
+		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
+		numero_pagina++;
+	}
+	while(faltante > 0){
+		//log_info(logger, "Se empieza a liberar en la pagina %d con offset %d", numero_pagina, 0);
+		pag = list_get(tabla->paginas, numero_pagina);
+		faltante -= liberar_pagina(pag, 0, faltante);
+		if(pag->tamano_ocupado <= 0){
+			list_add(paginas_a_remover, (void*) numero_pagina);
+		}
+		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
+		numero_pagina++;
+	}
+
+	bool page_orderer(void* un_int, void* otro_int){
+		int num = (int) un_int;
+		int num2 = (int) otro_int;
+		return num > num2;
+	}
+	list_sort(paginas_a_remover, page_orderer);
+
+	void page_remover(void* un_int){
+		int num = (int) un_int;
+		//log_info(logger, "borrando pag: %d", num);
+		pagina* pag2 = list_get(tabla->paginas, num);
+		if(pag2->en_memoria){
+			pag2->puntero_marco->libre = true;
+		}
+		bitmap_disco[pag2->disk_index] = false;
+		list_remove(tabla->paginas, num);
+		free(pag2);
+	}
+
+	list_iterate(paginas_a_remover, page_remover);
+	
+}
+
+int matar_paginas_tcb(tabla_paginas* tabla, int tid){
+	log_info(logger, "Eliminando TCB tid: %d", tid);
+	char stid[8];
+	sprintf(stid, "%d", tid);
+	int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
+	if(dl_tcb == (int) NULL){
+		return 0;
+	}
+	liberar_paginas(tabla, dl_tcb, sizeof(t_TCB));
+	dictionary_remove(tabla->dl_tcbs, stid);
+	log_info(logger, "Se termino de matar las paginas del TCB tid: %d", tid);
+	return 1;
+}
+
+void matar_tabla_paginas(int pid){
+	log_debug(logger, "Matando patota PID: %d", pid);
+    
+    void table_destroyer(void* una_tabla){
+        tabla_paginas* tabla = (tabla_paginas*) una_tabla;
+
+		void page_destroyer(void* una_pagina){
+			pagina* pag = (pagina*) una_pagina;
+			if(pag->en_memoria){
+				pag->puntero_marco->libre = true;
+			}
+			bitmap_disco[pag->disk_index] = false;
+			free(pag);
+		}
+
+		list_destroy_and_destroy_elements(tabla->paginas, page_destroyer);
+
+		dictionary_destroy(tabla->dl_tcbs);
+
+		free(tabla);
+    }
+
+    char spid[4];
+    sprintf(spid, "%d", pid);
+    dictionary_remove_and_destroy(tablas,spid,table_destroyer);
+}
+
 int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int pid){
 	pagina* pagina;
 	int progreso = 0;
@@ -157,7 +294,7 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 			//log_info(logger, "Progreso: %d / %d bytes", progreso, tam);
 		}else{
 			// no hubo mas progreso, por ende no hay mas memoria
-			return NULL;
+			return 99999;
 		}
 	}
 	pthread_mutex_unlock(&(tabla->mutex));
@@ -196,7 +333,6 @@ int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid){
 		return TAMANIO_PAGINA;
 	}
 }
-
 
 pagina* pagina_incompleta(tabla_paginas* tabla){
 	int size = list_size(tabla->paginas);
@@ -252,6 +388,23 @@ marco* asignar_marco(){
 	//pthread_mutex_unlock(&asignacion_marco);
 	return asignar_marco();
 }
+
+// VVVVVVVV           VVVVVVVVIIIIIIIIIIRRRRRRRRRRRRRRRRR   TTTTTTTTTTTTTTTTTTTTTTTUUUUUUUU     UUUUUUUU           AAA               LLLLLLLLLLL             
+// V::::::V           V::::::VI::::::::IR::::::::::::::::R  T:::::::::::::::::::::TU::::::U     U::::::U          A:::A              L:::::::::L             
+// V::::::V           V::::::VI::::::::IR::::::RRRRRR:::::R T:::::::::::::::::::::TU::::::U     U::::::U         A:::::A             L:::::::::L             
+// V::::::V           V::::::VII::::::IIRR:::::R     R:::::RT:::::TT:::::::TT:::::TUU:::::U     U:::::UU        A:::::::A            LL:::::::LL             
+//  V:::::V           V:::::V   I::::I    R::::R     R:::::RTTTTTT  T:::::T  TTTTTT U:::::U     U:::::U        A:::::::::A             L:::::L               
+//   V:::::V         V:::::V    I::::I    R::::R     R:::::R        T:::::T         U:::::D     D:::::U       A:::::A:::::A            L:::::L               
+//    V:::::V       V:::::V     I::::I    R::::RRRRRR:::::R         T:::::T         U:::::D     D:::::U      A:::::A A:::::A           L:::::L               
+//     V:::::V     V:::::V      I::::I    R:::::::::::::RR          T:::::T         U:::::D     D:::::U     A:::::A   A:::::A          L:::::L               
+//      V:::::V   V:::::V       I::::I    R::::RRRRRR:::::R         T:::::T         U:::::D     D:::::U    A:::::A     A:::::A         L:::::L               
+//       V:::::V V:::::V        I::::I    R::::R     R:::::R        T:::::T         U:::::D     D:::::U   A:::::AAAAAAAAA:::::A        L:::::L               
+//        V:::::V:::::V         I::::I    R::::R     R:::::R        T:::::T         U:::::D     D:::::U  A:::::::::::::::::::::A       L:::::L               
+//         V:::::::::V          I::::I    R::::R     R:::::R        T:::::T         U::::::U   U::::::U A:::::AAAAAAAAAAAAA:::::A      L:::::L         LLLLLL
+//          V:::::::V         II::::::IIRR:::::R     R:::::R      TT:::::::TT       U:::::::UUU:::::::UA:::::A             A:::::A   LL:::::::LLLLLLLLL:::::L
+//           V:::::V          I::::::::IR::::::R     R:::::R      T:::::::::T        UU:::::::::::::UUA:::::A               A:::::A  L::::::::::::::::::::::L
+//            V:::V           I::::::::IR::::::R     R:::::R      T:::::::::T          UU:::::::::UU A:::::A                 A:::::A L::::::::::::::::::::::L
+//             VVV            IIIIIIIIIIRRRRRRRR     RRRRRRR      TTTTTTTTTTT            UUUUUUUUU  AAAAAAA                   AAAAAAALLLLLLLLLLLLLLLLLLLLLLLL
 
 int algoritmo_de_reemplazo(){
 	//devuelve 1 si fue exito
@@ -328,113 +481,7 @@ void page_fault(pagina* pag, int pid, int num){
 	pthread_mutex_unlock(&m_swap);
 }
 
-int liberar_pagina(pagina* pagina, int offset, int faltante){
-	// retorna lo que logró liberar
-	if(offset + faltante <= TAMANIO_PAGINA){
-		//log_info(logger, "Se resta el tamaño: %d", faltante);
-		pagina->tamano_ocupado -= faltante;
-		//log_info(logger, "La pagina quedó con: %d bytes", pagina->tamano_ocupado);
-		return faltante; // pude liberar todo el tamaño
-	}
-	if(pagina->tamano_ocupado + offset <= TAMANIO_PAGINA){
-		pagina->tamano_ocupado = 0;
-		return TAMANIO_PAGINA - offset;
-	}
-	pagina->tamano_ocupado = offset;
-	return TAMANIO_PAGINA - offset; // pude liberar hasta el fin de la página 
-}
 
-void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
-	int faltante = tam;
-	int numero_pagina = dl / TAMANIO_PAGINA;
-	int offset = dl % TAMANIO_PAGINA;
-	pagina* pag;
-	t_list* paginas_a_remover = list_create();
-	if(offset > 0){
-		//log_info(logger, "Se empieza a liberar en la pagina %d con offset %d", numero_pagina, offset);
-		pag = list_get(tabla->paginas, numero_pagina);
-		faltante -= liberar_pagina(pag, offset, faltante);
-		if(pag->tamano_ocupado <= 0){
-			list_add(paginas_a_remover, (void*) numero_pagina);
-		}
-		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
-		numero_pagina++;
-	}
-	while(faltante > 0){
-		//log_info(logger, "Se empieza a liberar en la pagina %d con offset %d", numero_pagina, 0);
-		pag = list_get(tabla->paginas, numero_pagina);
-		faltante -= liberar_pagina(pag, 0, faltante);
-		if(pag->tamano_ocupado <= 0){
-			list_add(paginas_a_remover, (void*) numero_pagina);
-		}
-		//log_info(logger, "Progreso: %d / %d bytes", tam-faltante, tam);
-		numero_pagina++;
-	}
-
-	bool page_orderer(void* un_int, void* otro_int){
-		int num = (int) un_int;
-		int num2 = (int) otro_int;
-		return num > num2;
-	}
-	list_sort(paginas_a_remover, page_orderer);
-
-	void page_remover(void* un_int){
-		int num = (int) un_int;
-		//log_info(logger, "borrando pag: %d", num);
-		pagina* pag2 = list_get(tabla->paginas, num);
-		if(pag2->en_memoria){
-			pag2->puntero_marco->libre = true;
-		}
-		bitmap_disco[pag2->disk_index] = false;
-		list_remove(tabla->paginas, num);
-		free(pag2);
-	}
-
-	list_iterate(paginas_a_remover, page_remover);
-	
-}
-
-int matar_paginas_tcb(tabla_paginas* tabla, int tid){
-	log_info(logger, "Eliminando TCB tid: %d", tid);
-	char stid[8];
-	sprintf(stid, "%d", tid);
-	int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
-	if(dl_tcb == (int) NULL){
-		return 0;
-	}
-	liberar_paginas(tabla, dl_tcb, sizeof(t_TCB));
-	dictionary_remove(tabla->dl_tcbs, stid);
-	log_info(logger, "Se termino de matar las paginas del TCB tid: %d", tid);
-	return 1;
-}
-
-void matar_tabla_paginas(int pid){
-	log_debug(logger, "Matando patota PID: %d", pid);
-    
-    void table_destroyer(void* una_tabla){
-        tabla_paginas* tabla = (tabla_paginas*) una_tabla;
-
-		void page_destroyer(void* una_pagina){
-			pagina* pag = (pagina*) una_pagina;
-			if(pag->en_memoria){
-				pag->puntero_marco->libre = true;
-			}
-			bitmap_disco[pag->disk_index] = false;
-			free(pag);
-		}
-
-		list_destroy_and_destroy_elements(tabla->paginas, page_destroyer);
-
-		dictionary_destroy(tabla->dl_tcbs);
-
-		free(tabla);
-    }
-
-    char spid[4];
-    sprintf(spid, "%d", pid);
-    dictionary_remove_and_destroy(tablas,spid,table_destroyer);
-	//log_debug(logger, "Se completó la nismación de la tabla PID: %d", pid);
-}
 
 pagina* get_lru(){
 	log_info(logger, "Ejecuto un swap por LRU");
@@ -492,6 +539,23 @@ pagina* get_pagina_from_marco(marco* marco){
 	return list_get(tabla->paginas, num_pagina-1);
 }
 
+marco* crear_marco(int base, bool libre){
+    marco* nuevo_marco = malloc(sizeof(marco));
+    nuevo_marco->base = base;
+    nuevo_marco->libre = libre;
+
+    return nuevo_marco;
+}
+
+void liberar_lista_tcbs_paginacion(t_list* lista){
+	if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
+		void free_tcb(void* un_tcb){
+			free(un_tcb);
+		}
+		list_destroy_and_destroy_elements(lista, free_tcb);
+	}
+}
+
 void dump_paginacion(){
 	char* path = string_from_format("./dump/Dump_%d.dmp",  time(NULL));
     FILE* file = fopen(path,"w");
@@ -515,150 +579,39 @@ void dump_paginacion(){
     txt_close_file(file);
 }
 
-marco* crear_marco(int base, bool libre){
-    marco* nuevo_marco = malloc(sizeof(marco));
-    nuevo_marco->base = base;
-    nuevo_marco->libre = libre;
+//   SSSSSSSSSSSSSSS EEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMM               AAA               FFFFFFFFFFFFFFFFFFFFFF     OOOOOOOOO     RRRRRRRRRRRRRRRRR        OOOOOOOOO        SSSSSSSSSSSSSSS 
+//  SS:::::::::::::::SE::::::::::::::::::::EM:::::::M             M:::::::M              A:::A              F::::::::::::::::::::F   OO:::::::::OO   R::::::::::::::::R     OO:::::::::OO    SS:::::::::::::::S
+// S:::::SSSSSS::::::SE::::::::::::::::::::EM::::::::M           M::::::::M             A:::::A             F::::::::::::::::::::F OO:::::::::::::OO R::::::RRRRRR:::::R  OO:::::::::::::OO S:::::SSSSSS::::::S
+// S:::::S     SSSSSSSEE::::::EEEEEEEEE::::EM:::::::::M         M:::::::::M            A:::::::A            FF::::::FFFFFFFFF::::FO:::::::OOO:::::::ORR:::::R     R:::::RO:::::::OOO:::::::OS:::::S     SSSSSSS
+// S:::::S              E:::::E       EEEEEEM::::::::::M       M::::::::::M           A:::::::::A             F:::::F       FFFFFFO::::::O   O::::::O  R::::R     R:::::RO::::::O   O::::::OS:::::S            
+// S:::::S              E:::::E             M:::::::::::M     M:::::::::::M          A:::::A:::::A            F:::::F             O:::::O     O:::::O  R::::R     R:::::RO:::::O     O:::::OS:::::S            
+//  S::::SSSS           E::::::EEEEEEEEEE   M:::::::M::::M   M::::M:::::::M         A:::::A A:::::A           F::::::FFFFFFFFFF   O:::::O     O:::::O  R::::RRRRRR:::::R O:::::O     O:::::O S::::SSSS         
+//   SS::::::SSSSS      E:::::::::::::::E   M::::::M M::::M M::::M M::::::M        A:::::A   A:::::A          F:::::::::::::::F   O:::::O     O:::::O  R:::::::::::::RR  O:::::O     O:::::O  SS::::::SSSSS    
+//     SSS::::::::SS    E:::::::::::::::E   M::::::M  M::::M::::M  M::::::M       A:::::A     A:::::A         F:::::::::::::::F   O:::::O     O:::::O  R::::RRRRRR:::::R O:::::O     O:::::O    SSS::::::::SS  
+//        SSSSSS::::S   E::::::EEEEEEEEEE   M::::::M   M:::::::M   M::::::M      A:::::AAAAAAAAA:::::A        F::::::FFFFFFFFFF   O:::::O     O:::::O  R::::R     R:::::RO:::::O     O:::::O       SSSSSS::::S 
+//             S:::::S  E:::::E             M::::::M    M:::::M    M::::::M     A:::::::::::::::::::::A       F:::::F             O:::::O     O:::::O  R::::R     R:::::RO:::::O     O:::::O            S:::::S
+//             S:::::S  E:::::E       EEEEEEM::::::M     MMMMM     M::::::M    A:::::AAAAAAAAAAAAA:::::A      F:::::F             O::::::O   O::::::O  R::::R     R:::::RO::::::O   O::::::O            S:::::S
+// SSSSSSS     S:::::SEE::::::EEEEEEEE:::::EM::::::M               M::::::M   A:::::A             A:::::A   FF:::::::FF           O:::::::OOO:::::::ORR:::::R     R:::::RO:::::::OOO:::::::OSSSSSSS     S:::::S
+// S::::::SSSSSS:::::SE::::::::::::::::::::EM::::::M               M::::::M  A:::::A               A:::::A  F::::::::FF            OO:::::::::::::OO R::::::R     R:::::R OO:::::::::::::OO S::::::SSSSSS:::::S
+// S:::::::::::::::SS E::::::::::::::::::::EM::::::M               M::::::M A:::::A                 A:::::A F::::::::FF              OO:::::::::OO   R::::::R     R:::::R   OO:::::::::OO   S:::::::::::::::SS 
+//  SSSSSSSSSSSSSSS   EEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMMAAAAAAA                   AAAAAAAFFFFFFFFFFF                OOOOOOOOO     RRRRRRRR     RRRRRRR     OOOOOOOOO      SSSSSSSSSSSSSSS   
 
-    return nuevo_marco;
+void bloquear_pagina(pagina* pagina){
+	pthread_mutex_lock(&(pagina->mutex));
+	log_trace(logger,"[SEM]: Bloqueo pagina");
 }
 
-void liberar_lista_tcbs_paginacion(t_list* lista){
-	if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		void free_tcb(void* un_tcb){
-			free(un_tcb);
-		}
-		list_destroy_and_destroy_elements(lista, free_tcb);
-	}
+void desbloquear_pagina(pagina* pagina){
+	pthread_mutex_unlock(&(pagina->mutex));
+	log_trace(logger,"[SEM]: Desbloqueo pagina");
 }
 
-tabla_paginas* crear_tabla_paginas(uint32_t pid){
-	tabla_paginas* nueva_tabla = malloc(sizeof(tabla_paginas));
-    log_info(logger,"se creo tabla de paginas de pid %d", pid);
-	nueva_tabla->paginas = list_create();
-	nueva_tabla->dl_tcbs = dictionary_create();
-	pthread_mutex_init(&(nueva_tabla->mutex), NULL);
-	char spid[4];
-	sprintf(spid, "%d", pid);
-    dictionary_put(tablas,spid,nueva_tabla);
-    log_debug(logger,"Tabla de pid: %d creada",pid);
-	return nueva_tabla;
+void bloquear_lista_marcos(){
+	pthread_mutex_lock(&lista_marcos);
+	log_trace(logger,"[SEM]: Bloqueo lista marcos");
 }
 
-// ████████╗███████╗░██████╗████████╗
-// ╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝
-// ░░░██║░░░█████╗░░╚█████╗░░░░██║░░░
-// ░░░██║░░░██╔══╝░░░╚═══██╗░░░██║░░░
-// ░░░██║░░░███████╗██████╔╝░░░██║░░░
-// ░░░╚═╝░░░╚══════╝╚═════╝░░░░╚═╝░░░
-
-void imprimir_paginas(int pid){
-    tabla_paginas* tabla = buscar_tabla(pid);
-	if(tabla == NULL)
-		return;
-	int size = list_size(tabla->paginas);
-
-    printf("\n<------ PAGINAS de tabla %d -----------\n", pid);
-    for(int i = 0; i < size; i++) {
-        pagina* s = list_get(tabla->paginas, i);
-        printf("pagina %d, ocu: %d, en memoria: %s, disco: %d \n", i+1, s->tamano_ocupado, s->en_memoria?"Si":"No",s->disk_index);
-    }
-    printf("------------------->\n");
-
-}
-
-void imprimir_marcos(){
-	int size = list_size(marcos);
-
-    printf("\n<------ MARCOS -----------\n");
-    for(int i = 0; i < size; i++) {
-        marco* marco = list_get(marcos, i);
-		if(marco->libre){
-			printf("marco %d\tbase: %d\tlibre: true\t proceso: -\tpagina: -\n", i, marco->base);
-		}else{
-        	printf("marco %d\tbase: %d\tlibre: false\t proceso: %d\tpagina:%d\n", i, marco->base, marco->pid, marco->num_pagina);
-		}
-    }
-    printf("------------------->\n");
-}
-
-void test_gestionar_tareas_paginacion(){
-	t_archivo_tareas* arc = malloc(sizeof(t_archivo_tareas));
-	arc->texto = "GENERAR_OXIGENO 10;1;1;1";
-	arc->largo_texto = 25;
-	arc->pid = 1;
-	gestionar_tareas(arc);
-    free(arc);
-
-	tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(1);
-	
-	char* tareas = (char*) rescatar_de_paginas(tabla, 0, tabla->dl_pcb, 1);
-	log_info(logger,"Tareas: %s", tareas);
-	free(tareas);
-
-	t_TCB* tcb = malloc(sizeof(t_TCB));
-    tcb->TID = 10001;
-    tcb->coord_x = 1;
-    tcb->coord_y = 2;
-    tcb->estado_tripulante = 'N';
-    gestionar_tcb(tcb);
-    free(tcb);
-
-	t_TCB* tcb3 = malloc(sizeof(t_TCB));
-    tcb3->TID = 10002;
-    tcb3->coord_x = 10;
-    tcb3->coord_y = 100;
-    tcb3->estado_tripulante = 'N';
-    gestionar_tcb(tcb3);
-    free(tcb3);
-
-	t_archivo_tareas* arc2 = malloc(sizeof(t_archivo_tareas));
-	arc2->texto = "GiNiRiR_iXiGiNi 10;1;1;1\nGiNiRiR_iXiGiNi 10;1;1;1";
-	arc2->largo_texto = 50;
-	arc2->pid = 2;
-	gestionar_tareas(arc2);
-    free(arc2);
-
-	t_TCB* tcb2 = malloc(sizeof(t_TCB));
-    tcb2->TID = 20001;
-    tcb2->coord_x = 10;
-    tcb2->coord_y = 100;
-    tcb2->estado_tripulante = 'N';
-    gestionar_tcb(tcb2);
-    free(tcb2);
-
-	tabla = (tabla_paginas*) buscar_tabla(2);
-	char* tareas2 = (char*) rescatar_de_paginas(tabla, 0, tabla->dl_pcb, 2);
-	log_info(logger,"Tareas: %s", tareas2);
-	free(tareas2);
-
-	t_TCB* tcb_r = (t_TCB*) buscar_tcb_por_tid(20001);
-	log_debug(logger,"TID: %d, Coord_x: %d", tcb_r->TID, tcb_r->coord_x);
-	free(tcb_r);
-
-	imprimir_paginas(1);
-	imprimir_paginas(2);
-	imprimir_marcos();
-
-	eliminar_tcb(10001);
-	imprimir_paginas(1);
-	eliminar_tcb(10002);
-
-	imprimir_paginas(1);
-	imprimir_marcos();
-}
-
-uint64_t unix_epoch() {
-
-    long int ns;
-    uint64_t all;
-    time_t sec;
-    struct timespec spec;
-
-    clock_gettime(CLOCK_REALTIME, &spec);
-    sec = spec.tv_sec;
-    ns = spec.tv_nsec;
-
-    all = (uint64_t) sec * 1000000000 + (uint64_t) ns;
-    return all;
+void desbloquear_lista_marcos(){
+	pthread_mutex_unlock(&lista_marcos);
+	log_trace(logger,"[SEM]: Desbloqueo lista marcos");
 }
