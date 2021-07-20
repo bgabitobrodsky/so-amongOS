@@ -14,7 +14,7 @@ t_list* lista_bloques_ocupados;
 int main(int argc, char** argv){
 
 	// Se crean estructuras de registro y configuracion
-	logger_mongo = log_create("mongo.log", "MONGO", 1, 0); // Corregir nombres
+	logger_mongo = log_create("mongo.log", "i_mongo_store", 1, 0); // Corregir nombres
 	config_mongo = config_create("i_mongo_store.config");
 	config_superbloque = config_create("superbloque.config");
 	signal(SIGUSR1, sabotaje);

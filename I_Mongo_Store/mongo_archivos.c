@@ -138,23 +138,23 @@ void asignar_nuevo_bloque(char* path, int size_agregado) { //TODO sincronizar
 	t_bitarray* bitmap = obtener_bitmap();
 
 	int bit_libre = 0;
-	int pos_libre;
+	int* pos_libre = malloc(sizeof(int));
 
 	//Recorro todas las posiciones del bitarray
 	for (uint32_t i = 0; i < CANTIDAD_BLOQUES; i++){
 		//Entra si el bit del bitmap está en 0
 		if(!bitarray_test_bit(bitmap, i)){
 			bit_libre = 1;
-			pos_libre = i;
+			*pos_libre = i;
 			break;
 		}
 	}
 
 	//Si había un bloque libre
 	if (bit_libre == 1) {
-		log_trace(logger_mongo, "Habemus bloque libre, el bit libre es = %i", pos_libre);
+		log_trace(logger_mongo, "Habemus bloque libre, el bit libre es = %i", *pos_libre);
 		//Marco el bit como ocupado
-		bitarray_set_bit(bitmap, pos_libre);
+		bitarray_set_bit(bitmap, *pos_libre);
 
 		if (es_recurso(path)){
 			log_trace(logger_mongo, "Asignemos un bloque a un recurso");
@@ -165,7 +165,8 @@ void asignar_nuevo_bloque(char* path, int size_agregado) { //TODO sincronizar
 			asignar_bloque_tripulante(path, pos_libre, size_agregado);
 		}
 
-		list_add(lista_bloques_ocupados, &pos_libre);
+
+		list_add(lista_bloques_ocupados, pos_libre);
 		actualizar_bitmap(lista_bloques_ocupados);
 
 	}
@@ -644,14 +645,14 @@ int es_recurso(char* path) {
 
 }
 
-void asignar_bloque_recurso(char* path, int pos_libre) {
+void asignar_bloque_recurso(char* path, int* pos_libre) {
 
 	uint32_t tamanio = tamanio_archivo(path);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(path);
 	log_trace(logger_mongo, "cantidad de bloques: %i, sera aumentada", cantidad_bloques);
 	t_list* lista_bloques = obtener_lista_bloques(path);
 
-	list_add(lista_bloques, &pos_libre);
+	list_add(lista_bloques, pos_libre);
 
 	/*// PRINTEO DE TESTEO
 	int* aux;
@@ -666,15 +667,14 @@ void asignar_bloque_recurso(char* path, int pos_libre) {
 	iniciar_archivo_recurso(path, tamanio, cantidad_bloques + 1, lista_bloques);
 }
 
-void asignar_bloque_tripulante(char* path, int pos_libre, int size_agregado) {
+void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
 
 	uint32_t tamanio = tamanio_archivo(path);
 	t_list* lista_bloques = obtener_lista_bloques(path);
 
 	// log_debug(logger_mongo, "Tamanio de la lista: %i", list_size(lista_bloques));
 
-	list_add(lista_bloques, &pos_libre);
-
+	list_add(lista_bloques, pos_libre);
 	// log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
 
 	escribir_archivo_tripulante (path, tamanio + size_agregado, lista_bloques);

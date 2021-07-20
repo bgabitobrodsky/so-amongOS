@@ -38,6 +38,7 @@ void manejo_tripulante(void* socket) {
 
 		// Ultimo mensaje del tripulante, al morir o algo, sera la desconexion, lo cual borra la bitacora y libera los recursos
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
+			log_info(logger_mongo, "Se desconecto un tripulante.\n");
 			borrar_bitacora(mensaje->tcb);
 			log_info(logger_mongo, "Se desconecto un tripulante.\n");
 			free(mensaje);
@@ -196,7 +197,6 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	log_trace(logger_mongo, "INICIO escribir_bitacora, path: %s", bitacora->path);
 
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
-	int tamanio = tamanio_archivo(bitacora->path);
 
 	log_trace(logger_mongo, "Es null? %i", lista_bloques == NULL);
 	log_trace(logger_mongo, "ta vacia? %i", list_is_empty(lista_bloques));
@@ -212,8 +212,6 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	log_warning(logger_mongo, "lockear inicio");
 
 	escribir_bloque_bitacora(mensaje, bitacora);
-	tamanio = tamanio_archivo(bitacora->path);
-	escribir_archivo_tripulante(bitacora->path, tamanio + strlen(mensaje) + 1, lista_bloques);
 
 	log_warning(logger_mongo, "lockear final");
 
@@ -256,7 +254,7 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
 		log_debug(logger_mongo, "Alcance %i bytes de %i bytes, ", cantidad_alcanzada, strlen(mensaje));
 		// el size lo podria dejar aca, y no pasar por param
-		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
+		asignar_nuevo_bloque(bitacora->path, cantidad_alcanzada);
 		char* resto_mensaje = malloc(strlen(mensaje + cantidad_alcanzada) + 1);
 		log_debug(logger_mongo, "Me falta copiar: %s", mensaje + cantidad_alcanzada);
 		log_debug(logger_mongo, "De longitud:", strlen(mensaje + cantidad_alcanzada));
@@ -279,12 +277,23 @@ char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory lea
 }
 
 void borrar_bitacora(t_TCB* tcb) {
+	log_trace(logger_mongo, "1");
+
 	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
+	log_trace(logger_mongo, "2");
 
 	fclose(bitacora->bitacora_asociada);
+	log_trace(logger_mongo, "3");
+
 	free(bitacora->tripulante);
+	log_trace(logger_mongo, "4");
+
 	free(bitacora->path);
+	log_trace(logger_mongo, "5");
+
 	free(bitacora);
+	log_trace(logger_mongo, "6");
+
 }
 
 t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
