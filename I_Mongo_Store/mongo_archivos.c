@@ -161,7 +161,7 @@ void asignar_nuevo_bloque(char* path, int size_agregado) { //TODO sincronizar
 			asignar_bloque_recurso(path, pos_libre);
 		}
 		else {
-			log_trace(logger_mongo, "Asignemos un bloque a un tripuulante");
+			log_trace(logger_mongo, "Asignemos un bloque a un tripulante");
 			asignar_bloque_tripulante(path, pos_libre, size_agregado);
 		}
 
@@ -450,7 +450,7 @@ int min (int a, int b) {
 }
 
 
-uint32_t tamanio_archivo(char* path) {
+int tamanio_archivo(char* path) {
 	if(es_recurso(path)) {
 		log_trace(logger_mongo, "lockear tamaño");
 		lockearLectura(path);
@@ -549,7 +549,7 @@ t_list* obtener_lista_bloques(char* path){
 	t_config* config = config_create(path);
 
 	if(!config_has_property(config, "BLOCK_COUNT")){
-		log_warning(logger_mongo, "EL path no tiene BLOCK_COUNT");
+		log_warning(logger_mongo, "EL path no tiene BLOCK_COUNT, osea es un tripulante");
 
 		char** bloques = config_get_array_value(config, "BLOCKS");
 		t_list* lista_bloques = list_create();
@@ -623,8 +623,17 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloques) {
 	log_trace(logger_mongo, "INICIO escribir_archivo_tripulante");
 
+//	log_trace(logger_mongo, "tamanio antes de escribir archivo: %i", tamanio_archivo(path)); Rompe si se está creando el archivo
 	set_tam(path, tamanio);
+	log_trace(logger_mongo, "tamanio despues de escribir archivo: %i", tamanio_archivo(path));
+
+//	t_list* aux = obtener_lista_bloques(path);
+//	for(int i = 0; i < list_size(aux); i++)
+//	log_trace(logger_mongo, "bloques antes de escribir archivo: %i", (int) list_get(aux, i));
 	set_bloq(path, list_bloques);
+	t_list* aux = obtener_lista_bloques(path);
+	for(int i = 0; i < list_size(aux); i++)
+	log_trace(logger_mongo, "bloques antes de escribir archivo: %i", (int) list_get(aux, i));
 
 	log_trace(logger_mongo, "FIN escribir_archivo_tripulante");
 }
@@ -672,10 +681,10 @@ void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
 	uint32_t tamanio = tamanio_archivo(path);
 	t_list* lista_bloques = obtener_lista_bloques(path);
 
-	// log_debug(logger_mongo, "Tamanio de la lista: %i", list_size(lista_bloques));
+	log_debug(logger_mongo, "Tamanio de la lista antes de agregar: %i", list_size(lista_bloques));
 
 	list_add(lista_bloques, pos_libre);
-	// log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
+	log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
 
 	escribir_archivo_tripulante (path, tamanio + size_agregado, lista_bloques);
 	log_debug(logger_mongo, "fin asignar_bloque_tripulante");

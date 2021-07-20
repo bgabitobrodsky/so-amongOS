@@ -30,7 +30,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque);
 
 // devuelven la metadata del archivo
 t_list* obtener_lista_bloques(char* path); // TESTEADA
-uint32_t tamanio_archivo(char* path);
+int tamanio_archivo(char* path);
 uint32_t cantidad_bloques_recurso(char* path);
 char caracter_llenado_archivo(char* path);
 char* md5_archivo(char* path);

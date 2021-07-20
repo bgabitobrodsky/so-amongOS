@@ -15,6 +15,7 @@ void manejo_tripulante(void* socket) {
 		    log_info(logger_mongo, "Pedido de crear bitacora");
 		    log_trace(logger_mongo, "Creando bitacora para el tripulante %i.", mensaje->tcb->TID);
 		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
+		    log_info(logger_mongo, "La posicion inicial del tripulante es: %c%c%c", posicion_tripulante[0], posicion_tripulante[1], posicion_tripulante[2]);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_trace(logger_mongo, "Se creo la bitacora del tripulante %i.", mensaje->tcb->TID);
 			tripulante = mensaje->tcb;

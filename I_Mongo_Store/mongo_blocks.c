@@ -31,7 +31,7 @@ void iniciar_superbloque(FILE* archivo) {
     t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
 
     log_info(logger_mongo,"Cantidad de bloques: %i", CANTIDAD_BLOQUES);
-    log_info(logger_mongo,"size: %i", size);
+    log_info(logger_mongo,"size: %i", TAMANIO_BLOQUE);
     log_info(logger_mongo,"size bitmap: %i", bitmap->size);
 
     for(int i = 0; i < size; i++) {
