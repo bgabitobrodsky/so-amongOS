@@ -3,7 +3,7 @@
 void manejo_tripulante(void* socket) {
 	int socket_tripulante = ((hilo_tripulante*) socket)->socket;
 	char* posicion_tripulante;
-
+	t_TCB* tripulante;
 	while(1) {
 		// Se espera a ver que manda el tripulante
 		log_info(logger_mongo, "Esperando mensaje ");
@@ -17,6 +17,7 @@ void manejo_tripulante(void* socket) {
 		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_trace(logger_mongo, "Se creo la bitacora del tripulante %i.", mensaje->tcb->TID);
+			tripulante = mensaje->tcb;
 		}
 		// Si no lo es, puede ser o agregar/quitar recursos o cambiar informacion en la bitacora
 		else {
@@ -39,8 +40,7 @@ void manejo_tripulante(void* socket) {
 		// Ultimo mensaje del tripulante, al morir o algo, sera la desconexion, lo cual borra la bitacora y libera los recursos
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
 			log_info(logger_mongo, "Se desconecto un tripulante.\n");
-			borrar_bitacora(mensaje->tcb);
-			log_info(logger_mongo, "Se desconecto un tripulante.\n");
+			borrar_bitacora(tripulante);
 			free(mensaje);
 
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
@@ -103,7 +103,6 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->path = path_tripulante;
-	nueva_bitacora->tripulante = malloc(sizeof(t_TCB));
 	nueva_bitacora->tripulante = tcb;
 
 	list_add(bitacoras, nueva_bitacora);
@@ -266,33 +265,22 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 }
 
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks
-	char* posicion_formateada = malloc(sizeof(char) * 3); // Ejemplo: 1|2, 3 chars
+	char* posicion_formateada = malloc(sizeof(char) * 3);
 
 	strcpy(posicion_formateada, string_itoa(coord_x));
 	strcat(posicion_formateada, "|");
 	strcat(posicion_formateada, string_itoa(coord_y));
-	// log_debug(logger_mongo, "Posicion formateada: %s", posicion_formateada);
 
 	return posicion_formateada;
 }
 
 void borrar_bitacora(t_TCB* tcb) {
-	log_trace(logger_mongo, "1");
 
 	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
-	log_trace(logger_mongo, "2");
-
 	fclose(bitacora->bitacora_asociada);
-	log_trace(logger_mongo, "3");
-
 	free(bitacora->tripulante);
-	log_trace(logger_mongo, "4");
-
 	free(bitacora->path);
-	log_trace(logger_mongo, "5");
-
 	free(bitacora);
-	log_trace(logger_mongo, "6");
 
 }
 
