@@ -20,8 +20,8 @@ FILE* conseguir_archivo_recurso(int codigo);
 char* conseguir_path_recurso_codigo(int codigo_archivo);
 char* conseguir_path_recurso_archivo(FILE* archivo);
 int es_recurso(char* path);
-void asignar_bloque_recurso(char* archivo, int bit_libre);
-void asignar_bloque_tripulante(char* archivo, int bit_libre, int size_agregado);
+void asignar_bloque_recurso(char* archivo, int* bit_libre);
+void asignar_bloque_tripulante(char* archivo, int* bit_libre, int size_agregado);
 FILE* conseguir_archivo(char* path);
 void limpiar_cuerpos();
 void limpiar_metadata(char* path);
@@ -30,7 +30,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque);
 
 // devuelven la metadata del archivo
 t_list* obtener_lista_bloques(char* path); // TESTEADA
-uint32_t tamanio_archivo(char* path);
+int tamanio_archivo(char* path);
 uint32_t cantidad_bloques_recurso(char* path);
 char caracter_llenado_archivo(char* path);
 char* md5_archivo(char* path);

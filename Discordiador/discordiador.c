@@ -8,8 +8,6 @@
  ============================================================================
  */
 
-// TODO: ver tema de superposicion sabotaje y bitacora
-
 #define IP_MI_RAM_HQ config_get_string_value(config, "IP_MI_RAM_HQ")
 #define PUERTO_MI_RAM_HQ config_get_string_value(config, "PUERTO_MI_RAM_HQ")
 #define IP_I_MONGO_STORE config_get_string_value(config, "IP_I_MONGO_STORE")
@@ -137,14 +135,15 @@ int main() {
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
 
+    iniciar_patota("INICIAR_PATOTA 1 Random.ims");
+
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 	pthread_detach(hiloConsola);
-/*
+
     pthread_t sabotaje;
-    pthread_create(&sabotaje, NULL, (void*) guardian_sabotaje, NULL);
+    pthread_create(&sabotaje, NULL, (void*) guardian_mongo, NULL);
     pthread_detach(sabotaje);
-*/
 
     while(sistema_activo){
     	sleep(1);
@@ -321,7 +320,7 @@ void tripulante(t_tripulante* un_tripulante){
     }
 
     close(st_ram);
-    // close(st_mongo);
+    close(st_mongo);
 
     morir(un_tripulante);
 
@@ -379,6 +378,7 @@ void iniciar_tripulante(t_tripulante* un_tripulante, int socket){
         	sleep(1);
             // por si lo matan antes de iniciar la planificacion
             if(un_tripulante->estado_tripulante == estado_tripulante[EXIT]){
+            	un_tripulante->tarea.nombre = malloc(sizeof(char));
                 morir(un_tripulante);
             }
         }
@@ -638,9 +638,7 @@ void leer_consola() {
 
         free(leido);
 
-    } while (comando != EXIT);
-
-    sistema_activo = 0;
+    } while (comando != APAGAR_SISTEMA);
 
 }
 
@@ -659,22 +657,6 @@ void obtener_bitacora(char* leido) {
 
     t_buffer* b_tid = serializar_entero(tid_tripulante_a_buscar);
 	empaquetar_y_enviar(b_tid, PEDIR_BITACORA, socket_a_mongo_store);
-
-	t_estructura* respuesta = recepcion_y_deserializacion(socket_a_mongo_store);
-
-	if(respuesta->codigo_operacion == BITACORA){
-		log_info(logger, "Bitacora del tripulante:");
-		char** bitacora_ordenada = string_split(respuesta->archivo_tareas->texto, "\0");
-		// log_debug(logger, "Bitacora del tripulante: %s", respuesta->archivo_tareas->texto);
-		for(int i = 0; i < contar_palabras(bitacora_ordenada); i++){
-			log_debug(logger, "%s", bitacora_ordenada[i]);
-		}
-		liberar_puntero_doble(bitacora_ordenada);
-	} else if (respuesta->codigo_operacion == FALLO){
-		log_info(logger, "La bitacora del tripulante estaba vacia.");
-	} else{
-		log_error(logger, "Error desconocido, codigo de error: %i", respuesta->codigo_operacion);
-	}
 
     liberar_puntero_doble(palabras);
 }
@@ -1114,25 +1096,6 @@ void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mong
 	atomic_no_me_despierten_estoy_trabajando(un_tripulante, st_ram, st_mongo);
 }
 
-void guardian_sabotaje(){
-	log_info(logger, "Vigilando en caso de sabotajes");
-	while(1){
-		t_estructura* mensaje_peligro = recepcion_y_deserializacion(socket_a_mongo_store);
-		log_info(logger, "llega mensaje");
-
-		if (mensaje_peligro->codigo_operacion == SABOTAJE){
-			log_info(logger, "Sabotaje a la vista");
-			peligro(mensaje_peligro->posicion, socket_a_mi_ram_hq);
-		}
-		else{
-			log_info(logger, "No hay sabotajes a la vista");
-			log_info(logger, "Codigo = %i", mensaje_peligro->codigo_operacion);
-			log_info(logger, "Alto bug");
-			pthread_exit(0);
-		}
-	}
-}
-
 int es_mi_turno(t_tripulante* un_tripulante){
 	t_tripulante* titular = monitor_cola_pop_or_peek(sem_cola_block, (void*) queue_peek, cola_tripulantes_block);
 	return (titular == un_tripulante);
@@ -1228,5 +1191,44 @@ void liberar_cola(t_queue* cola){
 		queue_destroy_and_destroy_elements(cola, free);
 	} else {
 		queue_destroy(cola);
+	}
+}
+
+
+void guardian_mongo(){
+	log_info(logger, "Vigilando que no explote el Mongo");
+	int flag = 1;
+	t_estructura* mensaje;
+
+	while(flag){
+
+		mensaje = recepcion_y_deserializacion(socket_a_mongo_store);
+		log_debug(logger, "Llega mensaje de Mongo");
+
+		switch(mensaje->codigo_operacion){
+			case BITACORA:
+				log_info(logger, "Bitacora del tripulante:");
+				char** bitacora_ordenada = string_split(mensaje->archivo_tareas->texto, "\0");
+				for(int i = 0; i < contar_palabras(bitacora_ordenada); i++){
+					log_debug(logger, "%s", bitacora_ordenada[i]);
+				}
+				liberar_puntero_doble(bitacora_ordenada);
+				break;
+			case FALLO:
+				log_info(logger, "La bitacora del tripulante estaba vacia.");
+				break;
+			case SABOTAJE:
+				log_info(logger, "Sabotaje a la vista");
+				peligro(mensaje->posicion, socket_a_mi_ram_hq);
+				break;
+			case DESCONEXION:
+				log_error(logger, "Se desconecta el Mongo");
+				flag = 0;
+				break;
+			default:
+				log_info(logger, "Error desconocido");
+				log_error(logger, "Error desconocido, codigo de error: %i", mensaje->codigo_operacion);
+		}
+		free(mensaje);
 	}
 }

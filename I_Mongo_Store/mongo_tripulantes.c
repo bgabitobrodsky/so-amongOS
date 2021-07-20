@@ -3,7 +3,7 @@
 void manejo_tripulante(void* socket) {
 	int socket_tripulante = ((hilo_tripulante*) socket)->socket;
 	char* posicion_tripulante;
-
+	t_TCB* tripulante;
 	while(1) {
 		// Se espera a ver que manda el tripulante
 		log_info(logger_mongo, "Esperando mensaje ");
@@ -15,8 +15,10 @@ void manejo_tripulante(void* socket) {
 		    log_info(logger_mongo, "Pedido de crear bitacora");
 		    log_trace(logger_mongo, "Creando bitacora para el tripulante %i.", mensaje->tcb->TID);
 		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
+		    log_info(logger_mongo, "La posicion inicial del tripulante es: %c%c%c", posicion_tripulante[0], posicion_tripulante[1], posicion_tripulante[2]);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_trace(logger_mongo, "Se creo la bitacora del tripulante %i.", mensaje->tcb->TID);
+			tripulante = mensaje->tcb;
 		}
 		// Si no lo es, puede ser o agregar/quitar recursos o cambiar informacion en la bitacora
 		else {
@@ -38,8 +40,8 @@ void manejo_tripulante(void* socket) {
 
 		// Ultimo mensaje del tripulante, al morir o algo, sera la desconexion, lo cual borra la bitacora y libera los recursos
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
-			borrar_bitacora(mensaje->tcb);
 			log_info(logger_mongo, "Se desconecto un tripulante.\n");
+			borrar_bitacora(tripulante);
 			free(mensaje);
 
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
@@ -54,9 +56,13 @@ char* rescatar_bitacora(char* path){
 
 	int lectura = 0;
 	int size = tamanio_archivo(path);
+
+	if(size == 0){
+		return NULL;
+	}
+
 	char* string = malloc(size);
 	log_trace(logger_mongo, "Size es: %i", size);
-
 
 	for(int i = 0; i < list_size(lista_bloques_bitacora); i++){
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
@@ -67,6 +73,7 @@ char* rescatar_bitacora(char* path){
 			if(lectura == size){
 				return string;
 			}
+
 		}
 	}
 
@@ -97,7 +104,6 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->path = path_tripulante;
-	nueva_bitacora->tripulante = malloc(sizeof(t_TCB));
 	nueva_bitacora->tripulante = tcb;
 
 	list_add(bitacoras, nueva_bitacora);
@@ -202,24 +208,18 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 		lista_bloques = obtener_lista_bloques(bitacora->path);
 	}
 
-	int* ultimo_bloque = list_get(lista_bloques, list_size(lista_bloques) - 1);
-	log_trace(logger_mongo, "1 escribir_bitacora");
-	log_trace(logger_mongo, "2 escribir_bitacora, el ultimo bloque es: %i", *ultimo_bloque);
 
 	log_warning(logger_mongo, "lockear inicio");
 
-	escribir_bloque_bitacora(*ultimo_bloque, mensaje, bitacora);
+	escribir_bloque_bitacora(mensaje, bitacora);
 
 	log_warning(logger_mongo, "lockear final");
 
 
-	// escribir_archivo_tripulante(); //
-
 	liberar_lista(lista_bloques);
 }
 
-// TODO: bruh no se usa bloque
-void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
+void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 	log_trace(logger_mongo, "INICIO escribir_bloque_bitacora");
 
 	int cantidad_alcanzada = 0;
@@ -254,7 +254,7 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
 		log_debug(logger_mongo, "Alcance %i bytes de %i bytes, ", cantidad_alcanzada, strlen(mensaje));
 		// el size lo podria dejar aca, y no pasar por param
-		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
+		asignar_nuevo_bloque(bitacora->path, cantidad_alcanzada);
 		char* resto_mensaje = malloc(strlen(mensaje + cantidad_alcanzada) + 1);
 		log_debug(logger_mongo, "Me falta copiar: %s", mensaje + cantidad_alcanzada);
 		log_debug(logger_mongo, "De longitud:", strlen(mensaje + cantidad_alcanzada));
@@ -266,23 +266,23 @@ void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
 }
 
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks
-	char* posicion_formateada = malloc(sizeof(char) * 3); // Ejemplo: 1|2, 3 chars
+	char* posicion_formateada = malloc(sizeof(char) * 3);
 
 	strcpy(posicion_formateada, string_itoa(coord_x));
 	strcat(posicion_formateada, "|");
 	strcat(posicion_formateada, string_itoa(coord_y));
-	// log_debug(logger_mongo, "Posicion formateada: %s", posicion_formateada);
 
 	return posicion_formateada;
 }
 
 void borrar_bitacora(t_TCB* tcb) {
-	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
 
+	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
 	fclose(bitacora->bitacora_asociada);
 	free(bitacora->tripulante);
 	free(bitacora->path);
 	free(bitacora);
+
 }
 
 t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
