@@ -106,7 +106,7 @@ void escuchar_mongo(void* args) {
        		socket_discordiador = socket_especifico;
 
        		pthread_t hilo_disc;
-       		pthread_create(&hilo_disc, NULL, (void*) manejo_bitacoras, NULL);
+       		pthread_create(&hilo_disc, NULL, (void*) manejo_discordiador, NULL);
        		pthread_detach(hilo_disc);
 
        	}
@@ -125,50 +125,71 @@ void escuchar_mongo(void* args) {
 	}
 }
 
-void manejo_bitacoras(){
-	t_estructura* mensaje = recepcion_y_deserializacion(socket_discordiador);
+void manejo_discordiador(){
+	t_estructura* mensaje;
 
-	if(mensaje->codigo_operacion == PEDIR_BITACORA){
-		//log_trace(logger_mongo, "Nos piden una bitacora");
-		t_bitacora* bitacora_tripulante = obtener_bitacora(mensaje->tid);
-		if(bitacora_tripulante  != NULL){
-			char* bitacora = rescatar_bitacora(bitacora_tripulante->path);
-			if(strlen(bitacora) == 0){
-				//log_debug(logger_mongo, "El tripulante no tenia nada en la bitacora.");
-				enviar_codigo(FALLO, socket_discordiador);
-			} else{
-				//log_debug(logger_mongo, "Conseguimos la bitacora.");
-				t_archivo_tareas texto_archivo;
-				texto_archivo.texto = malloc(strlen(bitacora) + 1);
-				strcpy(texto_archivo.texto, bitacora);
-				//log_debug(logger_mongo, "La bitacora tiene: %s.", texto_archivo.texto);
-				texto_archivo.largo_texto = strlen(bitacora);
+	int flag = 1;
 
-				t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);
-				empaquetar_y_enviar(b_bitacora, BITACORA, socket_discordiador);
-				//log_debug(logger_mongo, "Enviada bitacora del tripulante %i", mensaje->tid);
-			}
-		} else{
-			//log_debug(logger_mongo, "El tripulante no tenia bitacora.");
-			enviar_codigo(FALLO, socket_discordiador);
+	while(flag) {
+		mensaje = recepcion_y_deserializacion(socket_discordiador);
+
+		switch(mensaje->codigo_operacion) {
+			case PEDIR_BITACORA:
+				log_trace(logger_mongo, "Nos piden una bitacora");
+				t_bitacora* bitacora_tripulante = obtener_bitacora(mensaje->tid);
+				if(bitacora_tripulante != NULL){
+					char* bitacora = rescatar_bitacora(bitacora_tripulante->path);
+					if(bitacora == NULL){
+						log_debug(logger_mongo, "El tripulante no tenia nada en la bitacora.");
+						enviar_codigo(FALLO, socket_discordiador);
+						log_debug(logger_mongo, "Envio un fallo.");
+
+					} else {
+						log_debug(logger_mongo, "Conseguimos la bitacora.");
+						t_archivo_tareas texto_archivo;
+						texto_archivo.texto = malloc(strlen(bitacora) + 1);
+						strcpy(texto_archivo.texto, bitacora);
+						log_debug(logger_mongo, "La bitacora tiene: %s.", texto_archivo.texto);
+						texto_archivo.largo_texto = strlen(bitacora);
+
+						t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);
+						empaquetar_y_enviar(b_bitacora, BITACORA, socket_discordiador);
+						log_debug(logger_mongo, "Enviada bitacora del tripulante %i", mensaje->tid);
+					}
+				} else {
+					log_debug(logger_mongo, "El tripulante no tenia bitacora.");
+					enviar_codigo(FALLO, socket_discordiador);
+				}
+				break;
+
+			case DESCONEXION:
+				log_info(logger_mongo, "Se desconecto un cliente.\n");
+				flag = 0;
+				// close(socket_discordiador);
+				break;
+
+			default:
+				log_info(logger_mongo, "Se recibio un codigo invalido.");
+				log_info(logger_mongo, "El codigo es %d", socket_discordiador);
+				break;
 		}
-
 		free(mensaje);
 	}
 }
+
 
 void sabotaje(int n) {
 
 	// Se espera que set reciba la signal correspondiente
 	if (n == SIGUSR1) {
-		//log_error(logger_mongo, "Se detecto un sabotaje.\n");
+		// log_error(logger_mongo, "Se detecto un sabotaje.\n");
 		// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
 		enviar_posicion_sabotaje(socket_discordiador);
 
 		// Se activaria el protocolo fcsk
 		reparar();
 
-		//log_error(logger_mongo, "Se reparo el sabotaje.\n");
+		log_warning(logger_mongo, "Se reparo el sabotaje.");
 
 	}
 

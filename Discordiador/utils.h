@@ -112,7 +112,7 @@ void liberar_tripulantes();
 void peligro(t_posicion* pos_sabotaje, int socket_ram);
 void resolver_sabotaje(t_tripulante* un_tripulante, int socket_ram, int socket_mongo);
 t_tripulante* tripulante_mas_cercano_a(t_posicion* posicion);
-void guardian_sabotaje();
+void guardian_mongo();
 
 // TRIPULANTES
 int esta_tripulante_en_lista(t_list* lista, int elemento);

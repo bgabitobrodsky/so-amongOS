@@ -548,7 +548,7 @@ t_list* obtener_lista_bloques(char* path){
 	t_config* config = config_create(path);
 
 	if(!config_has_property(config, "BLOCK_COUNT")){
-		log_error(logger_mongo, "EL path no BC");
+		log_warning(logger_mongo, "EL path no tiene BLOCK_COUNT");
 
 		char** bloques = config_get_array_value(config, "BLOCKS");
 		t_list* lista_bloques = list_create();
@@ -569,7 +569,7 @@ t_list* obtener_lista_bloques(char* path){
 		return lista_bloques;
 	}
 
-	// log_trace(logger_mongo, "lockear bloques inicio");
+	log_trace(logger_mongo, "lockear bloques inicio");
 	lockearLectura(path);
 
 	uint32_t cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
@@ -590,7 +590,7 @@ t_list* obtener_lista_bloques(char* path){
 		list_add(lista_bloques, aux);
 	}
 
-	// log_trace(logger_mongo, "unlockear bloques inicio");
+	log_trace(logger_mongo, "unlockear bloques inicio");
 	unlockear(path);
 
 	return lista_bloques;

@@ -54,9 +54,13 @@ char* rescatar_bitacora(char* path){
 
 	int lectura = 0;
 	int size = tamanio_archivo(path);
+
+	if(size == 0){
+		return NULL;
+	}
+
 	char* string = malloc(size);
 	log_trace(logger_mongo, "Size es: %i", size);
-
 
 	for(int i = 0; i < list_size(lista_bloques_bitacora); i++){
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
@@ -67,6 +71,7 @@ char* rescatar_bitacora(char* path){
 			if(lectura == size){
 				return string;
 			}
+
 		}
 	}
 
@@ -191,6 +196,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	log_trace(logger_mongo, "INICIO escribir_bitacora, path: %s", bitacora->path);
 
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
+	int tamanio = tamanio_archivo(bitacora->path);
 
 	log_trace(logger_mongo, "Es null? %i", lista_bloques == NULL);
 	log_trace(logger_mongo, "ta vacia? %i", list_is_empty(lista_bloques));
@@ -202,24 +208,20 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 		lista_bloques = obtener_lista_bloques(bitacora->path);
 	}
 
-	int* ultimo_bloque = list_get(lista_bloques, list_size(lista_bloques) - 1);
-	log_trace(logger_mongo, "1 escribir_bitacora");
-	log_trace(logger_mongo, "2 escribir_bitacora, el ultimo bloque es: %i", *ultimo_bloque);
 
 	log_warning(logger_mongo, "lockear inicio");
 
-	escribir_bloque_bitacora(*ultimo_bloque, mensaje, bitacora);
+	escribir_bloque_bitacora(mensaje, bitacora);
+	tamanio = tamanio_archivo(bitacora->path);
+	escribir_archivo_tripulante(bitacora->path, tamanio + strlen(mensaje) + 1, lista_bloques);
 
 	log_warning(logger_mongo, "lockear final");
 
 
-	// escribir_archivo_tripulante(); //
-
 	liberar_lista(lista_bloques);
 }
 
-// TODO: bruh no se usa bloque
-void escribir_bloque_bitacora(int bloque, char* mensaje, t_bitacora* bitacora) {
+void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 	log_trace(logger_mongo, "INICIO escribir_bloque_bitacora");
 
 	int cantidad_alcanzada = 0;
