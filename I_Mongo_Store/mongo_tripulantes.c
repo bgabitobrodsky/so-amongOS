@@ -27,6 +27,7 @@ void manejo_tripulante(void* socket) {
 				log_info(logger_mongo, "Pedido de modificar bitacora");
 				// log_trace(logger_mongo, "Modificando bitacora del tripulante %i", mensaje->tcb->TID); // eventualmente rompe, no perder el tiempo con esto
 				modificar_bitacora(mensaje, &posicion_tripulante, socket_tripulante);
+				log_info(logger_mongo, "fin de modificar bitacora");
 			}
 
 			// Si es otro codigo
@@ -120,6 +121,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	char* pos_final = NULL;
 	char* nombre_tarea;
 	char* cadenita;
+	int largo_cadenita;
 	t_estructura* mensaje_tarea;
 
 	switch (mensaje->codigo_operacion) {
@@ -135,7 +137,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			strcat(cadenita, pos_final);
 
 			escribir_bitacora(bitacora, cadenita); // Implementar en t_estructura y crear posicion
-
+			largo_cadenita = strlen(cadenita);
 			free(pos_inicial);
 			free(pos_final);
 			free(cadenita);
@@ -153,6 +155,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			strcat(cadenita, nombre_tarea);
 
 			escribir_bitacora(bitacora, cadenita);
+			largo_cadenita = strlen(cadenita);
 			free(cadenita);
 			free(nombre_tarea);
 			free(mensaje_tarea);
@@ -171,6 +174,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			strcat(cadenita, nombre_tarea);
 
 			escribir_bitacora(bitacora, cadenita);
+			largo_cadenita = strlen(cadenita);
 			free(cadenita);
 			free(nombre_tarea);
 			free(mensaje_tarea);
@@ -178,10 +182,14 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 		case CORRE_SABOTAJE:
 			log_debug(logger_mongo, "Corre hacia el sabotaje %i", mensaje->tcb->TID);
 			escribir_bitacora(bitacora, "se corre en panico a la ubicacion del sabotaje");
+			cadenita = "se corre en panico a la ubicacion del sabotaje";
+			largo_cadenita = strlen(cadenita);
 			break;
 		case RESUELVE_SABOTAJE:
 			log_debug(logger_mongo, "Resuelve sabotaje %i", mensaje->tcb->TID);
 			escribir_bitacora(bitacora, "se resuelve el sabotaje");
+			cadenita = "se resuelve el sabotaje";
+			largo_cadenita = strlen(cadenita);
 			break;
 	}
 
@@ -189,7 +197,8 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);
 	bitacora->bloques = lista_bloques;
-	bitacora->tamanio = tamanio;
+	bitacora->tamanio = tamanio; //+ largo_cadenita;
+	set_tam(bitacora->path, tamanio + largo_cadenita);
 }
 
 void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
@@ -208,12 +217,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 		lista_bloques = obtener_lista_bloques(bitacora->path);
 	}
 
-
-	log_warning(logger_mongo, "lockear inicio");
-
 	escribir_bloque_bitacora(mensaje, bitacora);
-
-	log_warning(logger_mongo, "lockear final");
 
 
 	liberar_lista(lista_bloques);

@@ -686,7 +686,10 @@ void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
 	list_add(lista_bloques, pos_libre);
 	log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
 
-	escribir_archivo_tripulante (path, tamanio + size_agregado, lista_bloques);
+//	escribir_archivo_tripulante (path, tamanio + size_agregado, lista_bloques);
+	escribir_archivo_tripulante (path, tamanio, lista_bloques);
+	log_info(logger_mongo, "Tamanio pre-agregar: %i", tamanio);
+	log_info(logger_mongo, "Tamanio agregado: %i", size_agregado);
 	log_debug(logger_mongo, "fin asignar_bloque_tripulante");
 }
 
@@ -755,12 +758,16 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 
 void set_tam(char* path, int tamanio){
 
+//	uint32_t tamanio_viejo = tamanio_archivo(path); rompe
+//	log_trace(logger_mongo, "Tamanio sin actualizar: %i", tamanio_viejo);
+
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 	config_set_value(config, "SIZE", string_itoa(tamanio));
 	config_save(config);
 	config_destroy(config);
 
+	log_trace(logger_mongo, "Tamanio actualizado: %i", tamanio);
 }
 
 void set_bloq(char* path, t_list* lista){
