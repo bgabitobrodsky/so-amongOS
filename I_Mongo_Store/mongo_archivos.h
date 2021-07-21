@@ -38,6 +38,12 @@ uint32_t cantidad_bloques_tripulante(char* path);
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* lista_bloques);
 uint32_t bloques_contar(char caracter);
 
+void set_tam(char* path, int tamanio);
+void set_bloq(char* path, t_list* lista);
+void set_cant_bloques(char* path, int cant);
+void set_caracter_llenado(char* path, char caracter);
+void set_md5(char* path, char* md5);
+
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
 extern t_directorio directorio;
