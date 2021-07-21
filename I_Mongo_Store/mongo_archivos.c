@@ -558,6 +558,9 @@ t_list* get_lista_bloques(char* path){
 	// ESTA FUNCION DEBE LIBERAR EL RETORNO
 
 	log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
+
+	lockearLectura(path);
+
 	t_config* config = config_create(path);
 
 	if(!config_has_property(config, "BLOCK_COUNT")){
@@ -566,6 +569,8 @@ t_list* get_lista_bloques(char* path){
 		t_list* lista_bloques = list_create();
 		if(bloques[0] == NULL){
 			log_error(logger_mongo, "EL path no tiene bloques");
+			config_destroy(config);
+			unlockear(path);
 			return lista_bloques;
 		}
 
@@ -576,14 +581,14 @@ t_list* get_lista_bloques(char* path){
 			*aux = atoi(bloques[i]);
 			list_add(lista_bloques, aux);
 		}
-
+		config_destroy(config);
+		unlockear(path);
 		log_trace(logger_mongo, "Returneo tripulante");
-
 		return lista_bloques;
 	}
 
 	log_trace(logger_mongo, "lockear bloques inicio get_lista_bloques");
-	lockearLectura(path);
+
 	/*
 	// TODO: Revisar por que a veces quedan en desynch el BC y el BLOCKS
 	uint32_t cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
@@ -602,6 +607,7 @@ t_list* get_lista_bloques(char* path){
 	if(bloques[0] == NULL){
 
 		log_error(logger_mongo, "EL path no tiene bloques");
+		config_destroy(config);
 		unlockear(path);
 		return lista_bloques;
 	}
@@ -616,6 +622,7 @@ t_list* get_lista_bloques(char* path){
 	}
 
 	log_trace(logger_mongo, "unlockear bloques");
+	config_destroy(config);
 	unlockear(path);
 
 	return lista_bloques;
