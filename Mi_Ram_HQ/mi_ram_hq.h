@@ -61,14 +61,13 @@ pthread_mutex_t m_tablas;
 /*
     SEMÁFOROS SEGMENTACIÓN
 */
-pthread_mutex_t asignacion_segmento;
-pthread_mutex_t lista_segmentos;
+pthread_mutex_t m_lista_segmentos;
 
 /*
     SEMÁFOROS PAGINACIÓN
 */
 pthread_mutex_t m_swap;
-pthread_mutex_t asignacion_marco;
+pthread_mutex_t m_lista_marcos;
 
 /*
     MEMORIA VIRTUAL

@@ -251,14 +251,12 @@ segmento* best_fit(int tam){
 
 segmento* asignar_segmento(int tam){
 
-    //pthread_mutex_lock(&asignacion_segmento);
 	log_info(logger, "Asignando segmento");
     segmento* segmento_libre = buscar_segmento_libre(tam);
 	if(segmento_libre != NULL){
         intento_asignar_segmento = 0;
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
-            //pthread_mutex_unlock(&asignacion_segmento);
 			return segmento_libre;
 		}else{
 		//Si no tengo que dividir el segmento
@@ -267,19 +265,16 @@ segmento* asignar_segmento(int tam){
 			segmento_libre->base += tam;
 			segmento_libre->tam -= tam;
 			ordenar_segmentos();
-            //pthread_mutex_unlock(&asignacion_segmento);
 			return nuevo_segmento;
 		}
 	}else{
         if(intento_asignar_segmento == 1){
             intento_asignar_segmento = 0;
             log_error(logger,"No hay mas memoria bro");
-            //pthread_mutex_unlock(&asignacion_segmento);
             return NULL;
         }
         intento_asignar_segmento = 1;
         compactacion();
-        //pthread_mutex_unlock(&asignacion_segmento);
         return asignar_segmento(tam);
 	}
 }
@@ -355,12 +350,12 @@ void matar_tabla_segmentos(int pid){
 //  SSSSSSSSSSSSSSS   EEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMMAAAAAAA                   AAAAAAAFFFFFFFFFFF                OOOOOOOOO     RRRRRRRR     RRRRRRR     OOOOOOOOO      SSSSSSSSSSSSSSS   
 
 void bloquear_lista_segmentos(){
-    pthread_mutex_lock(&lista_segmentos);
+    pthread_mutex_lock(&m_lista_segmentos);
     log_trace(logger,"[SEM]: Bloqueo lista de segmentos");
 }
 
 void desbloquear_lista_segmentos(){
-    pthread_mutex_unlock(&lista_segmentos);
+    pthread_mutex_unlock(&m_lista_segmentos);
     log_trace(logger,"[SEM]: Desloqueo lista de segmentos");
 }
 

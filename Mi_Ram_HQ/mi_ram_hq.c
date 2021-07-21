@@ -24,20 +24,18 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_DEBUG);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_TRACE);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR1, signal_compactacion);
 	signal(SIGUSR2, dump);
 
 	pthread_mutex_init(&m_swap,NULL);
-	pthread_mutex_init(&asignacion_marco,NULL);
-	pthread_mutex_init(&asignacion_segmento,NULL);
-	pthread_mutex_init(&lista_segmentos,NULL);
+	pthread_mutex_init(&m_lista_marcos,NULL);
+	pthread_mutex_init(&m_lista_segmentos,NULL);
 	pthread_mutex_init(&m_mapa,NULL);
 
 	iniciar_memoria();
 	iniciar_mapa();
-	//test_gestionar_tareas_paginacion();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     	args_escuchar args_miram;
@@ -505,13 +503,10 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		}
 		char** palabras = string_split(puntero_a_tareas, "\n");
 		char* str_tarea = palabras[0];
-		log_info(logger, "Tarea: %s", str_tarea);
+		log_info(logger, "Tarea para TID: %d encontrada: %s", tid, str_tarea);
 
 		//se crea la struct de tarea para devolver, despues hay que mandarle free
-		tarea = crear_tarea(str_tarea);
-		//me fijo si hay un \0 despues de la tarea, si no hay significa que esta era la ultima :'(
-		//log_error(logger,"Largo: %d", strlen(str_tarea));
-		
+		tarea = crear_tarea(str_tarea);		
 		if(palabras[1] == NULL){
 			// no hay proxima tarea
 			tcb->siguiente_instruccion = (uint32_t) NULL;
@@ -522,7 +517,6 @@ t_tarea* buscar_siguiente_tarea(int tid){
 
 		desbloquear_segmento_por_tid(tid);
 		desbloquear_segmento(tabla->segmento_tareas);
-		//log_debug(logger,"Se encontro la tarea para el tripulante %d",tid);
 		return tarea;
 			
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
@@ -542,11 +536,12 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
 			return NULL;
 		}
-		char* str_tareas = rescatar_de_paginas(tabla, tabla->dl_tareas, tabla->dl_pcb, pid);
+		char* str_tareas = rescatar_de_paginas(tabla, 0, tabla->dl_pcb, pid); // 0 porque las tareas siempre estan al inicio de todo
+		//log_info(logger, "Tareas %s", tid, str_tareas);
 		char* tareas_restantes = string_substring_from(str_tareas, dl_tarea_tcb);
 		char** palabras = string_split(tareas_restantes, "\n");
 		char* str_tarea = palabras[0];
-		log_info(logger, "Tarea: %s", str_tarea);
+		log_info(logger, "Tarea para TID: %d encontrada: %s", tid, str_tarea);
 		tarea = crear_tarea(str_tarea);
 
 		if(palabras[1] == NULL){
@@ -559,7 +554,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		char stid[8];
 		sprintf(stid, "%d", tid);
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
-		log_info(logger,"Actualizando TCB");
+		//log_info(logger,"Actualizando TCB");
 		sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
 
 		liberar_puntero_doble(palabras);

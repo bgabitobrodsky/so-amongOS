@@ -115,9 +115,14 @@ int main() {
 
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
+    
+    iniciar_patota("INICIAR_PATOTA 1 Prueba.ims");
+    //iniciar_patota("INICIAR_PATOTA 2 oxigeno.txt");
+    //iniciar_patota("INICIAR_PATOTA 12 espartana.txt");
+    //iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
+    iniciar_planificacion();
     /*
     iniciar_patota("INICIAR_PATOTA 5 Prueba.ims");
-    iniciar_patota("INICIAR_PATOTA 3 espartana.txt");
     iniciar_patota("INICIAR_PATOTA 4 oxigeno.txt");
     iniciar_patota("INICIAR_PATOTA 2 plantas.txt");
     expulsar_tripulante("EXPULSAR_TRIPULANTE 10001");
@@ -125,7 +130,6 @@ int main() {
     expulsar_tripulante("EXPULSAR_TRIPULANTE 10004");
     expulsar_tripulante("EXPULSAR_TRIPULANTE 20002");
     expulsar_tripulante("EXPULSAR_TRIPULANTE 30004");
-    iniciar_planificacion();
     sleep(5);
     iniciar_patota("INICIAR_PATOTA 2 plantas.txt");
     expulsar_tripulante("EXPULSAR_TRIPULANTE 30002");
@@ -135,7 +139,7 @@ int main() {
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
 
-    iniciar_patota("INICIAR_PATOTA 1 Random.ims");
+    //iniciar_patota("INICIAR_PATOTA 1 Random.ims");
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
