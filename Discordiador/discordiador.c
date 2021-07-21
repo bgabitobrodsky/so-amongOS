@@ -1137,7 +1137,6 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 				}
             }
         }
-        // if para no informar dos veces
 		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
     }
 }

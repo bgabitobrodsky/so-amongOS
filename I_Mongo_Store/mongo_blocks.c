@@ -113,65 +113,60 @@ t_bitarray* obtener_bitmap() {
 
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap) {
 
-	log_trace(logger_mongo, "0 reescribir_superbloque");
+	lockearEscritura(path_superbloque);
+
+	log_trace(logger_mongo, "Reescribiendo");
 
 	fseek(directorio.superbloque, 0, SEEK_SET);
     fwrite(&tamanio, sizeof(uint32_t), 1, directorio.superbloque);
     fwrite(&cantidad, sizeof(uint32_t), 1, directorio.superbloque);
     fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
-	log_trace(logger_mongo, "fflusheando_superbloque");
     fflush(directorio.superbloque);
+
+	unlockear(path_superbloque);
 
 }
 
-void actualizar_bitmap(t_list* lista_bloques_ocupados) {
+void actualizar_bitmap(t_list* bloques_ocupados) {
 
 	log_trace(logger_mongo, "0 actualizar bitmap");
     t_bitarray* bitmap = obtener_bitmap();
-
+/*
     log_trace(logger_mongo, "Bitmap viejo:");
     for(int i = 0; i < bitarray_get_max_bit(bitmap); i++){
     	if(bitarray_test_bit(bitmap, i)){
     		log_info(logger_mongo, "bit ocupado: %i", i);
     	}
 	}
-
+*/
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
     	bitarray_clean_bit(bitmap, i); // limpio el bitarray, total despues le meto los que tengo registrados que andan ocupados
     }
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-    	if(esta_en_lista(lista_bloques_ocupados, i)){
+    	if(esta_en_lista(bloques_ocupados, i)){
     		bitarray_set_bit(bitmap, i);
     	} else{
     		bitarray_clean_bit(bitmap, i);
     	}
     }
 
-
+/*
     log_trace(logger_mongo, "Bitmap nuevo:");
         for(int i = 0; i < bitarray_get_max_bit(bitmap); i++){
         	if(esta_en_lista(lista_bloques_ocupados, i)){
         		log_info(logger_mongo, "bit ocupado: %i", i);
         	}
     	}
+*/
 
-    /*
-    log_trace(logger_mongo, "Bitmap viejo:");
-    imprimir_bitmap();
-    log_trace(logger_mongo, "Bitmap a actualizar:");
-
-	for(int i = 0; i < bitarray_get_max_bit(bitmap); i+=8){
-		log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(bitmap, i), bitarray_test_bit(bitmap, i+1), bitarray_test_bit(bitmap, i+2), bitarray_test_bit(bitmap, i+3), bitarray_test_bit(bitmap, i+4), bitarray_test_bit(bitmap, i+5), bitarray_test_bit(bitmap, i+6), bitarray_test_bit(bitmap, i+7));
-	}
-     */
     reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
-
     bitarray_destroy(bitmap);
 }
 
 void reemplazar(t_list* lista, int index, void* elemento){
+
 	list_replace(lista, index, elemento);
 	/*
 	void liberar(void* un_elemento){
