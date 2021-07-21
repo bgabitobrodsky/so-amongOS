@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
 	pthread_mutex_init(&m_lista_marcos,NULL);
 	pthread_mutex_init(&m_lista_segmentos,NULL);
 	pthread_mutex_init(&m_mapa,NULL);
+	pthread_mutex_init(&m_disco,NULL);
 
 	iniciar_memoria();
 	iniciar_mapa();
@@ -262,7 +263,7 @@ void* buscar_tabla(int pid){
 
 int gestionar_tareas(t_archivo_tareas* archivo){
 	int pid = archivo->pid;
-	int tamanio_tareas = archivo->largo_texto * sizeof(char);
+	int tamanio_tareas = archivo->largo_texto * sizeof(char) + 1;
 
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = crear_tabla_segmentos(pid);

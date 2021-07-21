@@ -394,9 +394,11 @@ int swap_in(pagina* pag){
 	}
 	// escribo la página en disco, accediendo directamente con su indice
 	log_info(logger,"Pag modificada, mando a disco");
-	fseek(disco, TAMANIO_PAGINA * pag->disk_index, SEEK_SET);
 	void* data = memoria_principal + pag->puntero_marco->base;
+	bloquear_disco();
+	fseek(disco, TAMANIO_PAGINA * pag->disk_index, SEEK_SET);
 	fwrite(data, TAMANIO_PAGINA, 1, disco);
+	desbloquear_disco();
 	return 1;
 }
 
@@ -405,8 +407,10 @@ void swap_out(pagina* pagina){
 	log_info(logger, "[SWAP]: SWAP-OUT");
 	pagina->puntero_marco = asignar_marco(); // asignar marco me pone el marco en libre->false
 
+	bloquear_disco();
 	fseek(disco, pagina->disk_index * TAMANIO_PAGINA, SEEK_SET);
 	fread(memoria_principal + pagina->puntero_marco->base, TAMANIO_PAGINA, 1, disco);
+	desbloquear_disco();
 	desbloquear_swap();
 }
 
@@ -417,8 +421,6 @@ void page_fault(pagina* pag, int pid, int num){
 	pag->puntero_marco->num_pagina = num + 1;
 	pag->en_memoria = true;
 	pag->modificada = false;
-	pag->ultimo_uso =  get_timestamp();
-	pag->usado = true;
 }
 
 pagina* get_lru(){
@@ -556,6 +558,8 @@ pagina* get_pagina(t_list* paginas, int pid, int num_pagina){
 	if(!pagina->en_memoria){
 		page_fault(pagina, pid, num_pagina);
 	}
+	pag->ultimo_uso =  get_timestamp();
+	pag->usado = true;
 	return pagina;
 }
 
@@ -587,4 +591,14 @@ void bloquear_swap(){
 void desbloquear_swap(){
 	pthread_mutex_unlock(&m_swap);
 	log_trace(logger,"[SEM]: Desbloqueo SWAP");
+}
+
+void bloquear_disco(){
+	pthread_mutex_lock(&m_disco);
+	log_trace(logger,"[SEM]: Bloqueo disco");
+}
+
+void desbloquear_disco(){
+	pthread_mutex_unlock(&m_disco);
+	log_trace(logger,"[SEM]: Desbloqueo disco");
 }

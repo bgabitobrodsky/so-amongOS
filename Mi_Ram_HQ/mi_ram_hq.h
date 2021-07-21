@@ -68,6 +68,7 @@ pthread_mutex_t m_lista_segmentos;
 */
 pthread_mutex_t m_swap;
 pthread_mutex_t m_lista_marcos;
+pthread_mutex_t m_disco;
 
 /*
     MEMORIA VIRTUAL
