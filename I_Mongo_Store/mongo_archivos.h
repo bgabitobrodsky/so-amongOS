@@ -15,6 +15,7 @@ void agregar(int codigo_archivo, int cantidad);
 void quitar(int codigo_archivo, int cantidad);
 char* conseguir_tipo(char tipo);
 char conseguir_char(int codigo_archivo);
+char* tipo_a_path(char tipo);
 FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo_recurso(int codigo);
 char* conseguir_path_recurso_codigo(int codigo_archivo);
@@ -30,7 +31,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque);
 void blanquear_bloque(int bloque);
 
 // devuelven la metadata del archivo
-t_list* obtener_lista_bloques(char* path); // TESTEADA
+t_list* get_lista_bloques(char* path); // TESTEADA
 int tamanio_archivo(char* path);
 uint32_t cantidad_bloques_recurso(char* path);
 char caracter_llenado_archivo(char* path);

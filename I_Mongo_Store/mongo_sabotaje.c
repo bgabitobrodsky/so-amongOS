@@ -96,21 +96,21 @@ int verificar_cant_bloques() {
 
 int verificar_bitmap() {
 	//Creo la lista
-	t_list* lista_bloques_ocupados = list_create();
+	t_list* bloques_ocupados = list_create();
 
-    recorrer_recursos(lista_bloques_ocupados);
-    recorrer_bitacoras(lista_bloques_ocupados);
-    sortear(lista_bloques_ocupados);
+    recorrer_recursos(bloques_ocupados);
+    recorrer_bitacoras(bloques_ocupados);
+    sortear(bloques_ocupados);
 
-    if (bloques_ocupados_difieren(lista_bloques_ocupados)) {
+    if (bloques_ocupados_difieren(bloques_ocupados)) {
     	log_warning(logger_mongo, "Entrando");
-        actualizar_bitmap(lista_bloques_ocupados);
+        actualizar_bitmap(bloques_ocupados);
         return 1;
     }
     else
         return 0;
 
-    list_destroy(lista_bloques_ocupados);
+    list_destroy(bloques_ocupados);
 }
 
 int verificar_sizes() {
@@ -141,9 +141,9 @@ int verificar_sizes() {
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso.
 
-	t_list* lista_bloques_basura = obtener_lista_bloques(path_basura);
-	t_list* lista_bloques_comida = obtener_lista_bloques(path_comida);
-	t_list* lista_bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
+	t_list* lista_bloques_basura = get_lista_bloques(path_basura);
+	t_list* lista_bloques_comida = get_lista_bloques(path_comida);
+	t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
 
 	uint32_t cantidad_real_basura = list_size(lista_bloques_basura);
 	uint32_t cantidad_real_comida = list_size(lista_bloques_comida);
@@ -234,9 +234,9 @@ int tamanio_correcto() {
 
 int bloques_sin_sentido() {
 	log_warning(logger_mongo, "Bloques_sin_sentido");
-	t_list* bloques_basura = obtener_lista_bloques(path_basura);
-	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
-	t_list* bloques_comida = obtener_lista_bloques(path_comida);
+	t_list* bloques_basura = get_lista_bloques(path_basura);
+	t_list* bloques_oxigeno = get_lista_bloques(path_oxigeno);
+	t_list* bloques_comida = get_lista_bloques(path_comida);
 	log_warning(logger_mongo, "Conseguidas listas");
 	int* nro_bloque = malloc(sizeof(int));
 
@@ -274,9 +274,9 @@ int bloques_sin_sentido() {
 
 int bitmap_no_concuerda() {
 	t_bitarray* bitmap = obtener_bitmap();
-	t_list* bloques_basura = obtener_lista_bloques(path_basura);
-	t_list* bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
-	t_list* bloques_comida = obtener_lista_bloques(path_comida);
+	t_list* bloques_basura = get_lista_bloques(path_basura);
+	t_list* bloques_oxigeno = get_lista_bloques(path_oxigeno);
+	t_list* bloques_comida = get_lista_bloques(path_comida);
 
 	int* nro_bloque = malloc(sizeof(int));
 
@@ -302,7 +302,7 @@ int lista_blocks_saboteada(FILE* archivo) {
 /*
 	//Concatenar los bloques de la lista de bloques
 	char* nuevo_hash = string_new();
-	int* lista_bloques = (int*) obtener_lista_bloques(recurso.basura);
+	int* lista_bloques = (int*) get_lista_bloques(recurso.basura);
 	for(int i = 0; i < sizeof(lista_bloques) / sizeof(int); i++)
 		string_append(&nuevo_hash, string_itoa(lista_bloques[i]));
 
@@ -346,7 +346,7 @@ void recorrer_recursos(t_list* bloques_ocupados) {
     // Recorre las listas de las metadatas de los recursos y va anotando en la lista que bloques estan ocupados
 
 	//BASURA
-	t_list* lista_bloques_basura = obtener_lista_bloques(path_basura);
+	t_list* lista_bloques_basura = get_lista_bloques(path_basura);
 	int* aux = malloc(sizeof(int));
 
 	for(int i = 0; i < list_size(lista_bloques_basura); i++) {
@@ -355,7 +355,7 @@ void recorrer_recursos(t_list* bloques_ocupados) {
 	}
 
 	//COMIDA
-	t_list* lista_bloques_comida = obtener_lista_bloques(path_comida);
+	t_list* lista_bloques_comida = get_lista_bloques(path_comida);
 
 	for(int i = 0; i < list_size(lista_bloques_comida); i++) {
 		aux = list_get(lista_bloques_comida, i);
@@ -364,7 +364,7 @@ void recorrer_recursos(t_list* bloques_ocupados) {
 	}
 
 	//OXIGENO
-	t_list* lista_bloques_oxigeno = obtener_lista_bloques(path_oxigeno);
+	t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
 
 	for(int i = 0; i < list_size(lista_bloques_oxigeno); i++) {
 		aux = list_get(lista_bloques_oxigeno, i);

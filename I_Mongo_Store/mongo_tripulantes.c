@@ -53,7 +53,7 @@ void manejo_tripulante(void* socket) {
 
 char* rescatar_bitacora(char* path){
 	log_trace(logger_mongo, "Rescatando bitacora");
-	t_list* lista_bloques_bitacora = obtener_lista_bloques(path);
+	t_list* lista_bloques_bitacora = get_lista_bloques(path);
 
 	int lectura = 0;
 	int size = tamanio_archivo(path);
@@ -194,7 +194,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	}
 
 	//Actualizo struct bitacora
-	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
+	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio; //+ largo_cadenita;
@@ -205,7 +205,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	log_trace(logger_mongo, "INICIO escribir_bitacora, path: %s", bitacora->path);
 
-	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
+	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 
 	log_trace(logger_mongo, "Es null? %i", lista_bloques == NULL);
 	log_trace(logger_mongo, "ta vacia? %i", list_is_empty(lista_bloques));
@@ -214,7 +214,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 	if(list_is_empty(lista_bloques)){
 		log_trace(logger_mongo, "La lista de bloques esta vacia, proceso a signar nuevo bloque");
 		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
-		lista_bloques = obtener_lista_bloques(bitacora->path);
+		lista_bloques = get_lista_bloques(bitacora->path);
 	}
 
 	escribir_bloque_bitacora(mensaje, bitacora);
@@ -227,7 +227,7 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 	log_trace(logger_mongo, "INICIO escribir_bloque_bitacora");
 
 	int cantidad_alcanzada = 0;
-	t_list* lista_bloques = obtener_lista_bloques(bitacora->path);
+	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 
 	log_debug(logger_mongo, "Pre asignar memoria al aux, escribir_bloque_bitacora");
 	int* aux = malloc(sizeof(int));

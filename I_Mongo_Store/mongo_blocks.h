@@ -96,7 +96,7 @@ uint32_t obtener_cantidad_bloques_superbloque(); // testeado
 t_bitarray* obtener_bitmap(); // TESTEADO
 char* crear_puntero_a_bitmap(); // TESTEADO
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // TESTEADO
-void actualizar_bitmap(t_list* lista_bloques_ocupados); // TESTEADO
+void actualizar_bitmap(t_list* bloques_ocupados); // TESTEADO
 void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
 
 void set_bloq(char* path, t_list* lista); // TESTEADO
@@ -106,7 +106,6 @@ void set_caracter_llenado(char* path, char caracter); // TESTEADO
 void set_cant_bloques(char* path, int cant); // TESTEADO
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques); // TESTEADO
 void cargar_bitmap();
-void imprimir_bitmap(); // TESTEADO
 int max(int a, int b);
 int min(int a, int b);
 

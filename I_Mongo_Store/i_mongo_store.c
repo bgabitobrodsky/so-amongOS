@@ -119,9 +119,6 @@ void escuchar_mongo(void* args) {
        		//Falta cerrar sockets, hacerlo despues de juntar hilos
            	}
        	}
-
-		// TODO: Ver si este close explota hilos
-		// close(socket_especifico); // En hilo padre se cierra el socket hijo, total al arrancar el while se vuelve a settear, evita "port leaks" supongo
 	}
 }
 
@@ -252,18 +249,6 @@ void cerrar_mutexs() {
 	pthread_mutex_destroy(&mutex_oxigeno);
 	pthread_mutex_destroy(&mutex_comida);
 	pthread_mutex_destroy(&mutex_basura);
-}
-
-void imprimir_bitmap(){
-	t_bitarray* mapilla = obtener_bitmap();
-
-	log_info(logger_mongo, "Tamanio del bitmap %i", bitarray_get_max_bit(mapilla));
-
-	for(int i = 0; i < bitarray_get_max_bit(mapilla); i+=8){
-		// El tocho es para que se vea cada byte en una linea.
-		//log_debug(logger_mongo, "BYTE %i  %i%i%i%i%i%i%i%i", i/8,  bitarray_test_bit(mapilla, i), bitarray_test_bit(mapilla, i+1), bitarray_test_bit(mapilla, i+2), bitarray_test_bit(mapilla, i+3), bitarray_test_bit(mapilla, i+4), bitarray_test_bit(mapilla, i+5), bitarray_test_bit(mapilla, i+6), bitarray_test_bit(mapilla, i+7));
-	}
-	bitarray_destroy(mapilla);
 }
 
 void liberar_lista(t_list* lista){
