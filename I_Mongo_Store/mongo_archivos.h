@@ -27,6 +27,7 @@ void limpiar_cuerpos();
 void limpiar_metadata(char* path);
 void liberar_bloques(char* path);
 void liberar_bloque(char* path, uint32_t nro_bloque);
+void blanquear_bloque(int bloque);
 
 // devuelven la metadata del archivo
 t_list* obtener_lista_bloques(char* path); // TESTEADA

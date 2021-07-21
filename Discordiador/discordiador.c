@@ -116,7 +116,7 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     
-    iniciar_patota("INICIAR_PATOTA 1 Prueba.ims");
+    iniciar_patota("INICIAR_PATOTA 2 Oxigeno.ims");
     //iniciar_patota("INICIAR_PATOTA 2 oxigeno.txt");
     //iniciar_patota("INICIAR_PATOTA 12 espartana.txt");
     //iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
@@ -139,7 +139,7 @@ int main() {
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
 
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    // iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
@@ -1130,7 +1130,6 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 				}
             }
         }
-        // if para no informar dos veces
 		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
     }
 }

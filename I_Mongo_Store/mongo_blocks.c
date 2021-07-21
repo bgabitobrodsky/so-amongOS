@@ -113,6 +113,8 @@ t_bitarray* obtener_bitmap() {
 
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap) {
 
+	lockearEscritura(path_superbloque); // Esta feo pero sino me rompía
+
 	log_trace(logger_mongo, "0 reescribir_superbloque");
 
 	fseek(directorio.superbloque, 0, SEEK_SET);
@@ -121,6 +123,8 @@ void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bit
     fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
 	log_trace(logger_mongo, "fflusheando_superbloque");
     fflush(directorio.superbloque);
+
+	unlockear(path_superbloque);
 
 }
 
@@ -167,8 +171,9 @@ void actualizar_bitmap(t_list* lista_bloques_ocupados) {
 	}
      */
     reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
-
+	log_trace(logger_mongo, "pre destroy");
     bitarray_destroy(bitmap);
+    log_trace(logger_mongo, "post destroy");
 }
 
 void reemplazar(t_list* lista, int index, void* elemento){
