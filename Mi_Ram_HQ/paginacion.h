@@ -58,6 +58,7 @@ void liberar_marco(int num_marco);
 void liberar_lista_tcbs_paginacion(t_list* lista);
 void page_fault(pagina* pag, int pid, int num);
 uint64_t get_timestamp();
+int get_disk_index();
 void dump_paginacion();
 
 /*
@@ -70,6 +71,8 @@ void bloquear_lista_marcos();
 void desbloquear_lista_marcos();
 void bloquear_swap();
 void desbloquear_swap();
+void bloquear_disco();
+void desbloquear_disco();
 
 #endif /* PAGINACION_H_ */
 

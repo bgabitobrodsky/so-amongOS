@@ -116,21 +116,30 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     
-    iniciar_patota("INICIAR_PATOTA 1 Prueba.ims");
+    iniciar_patota("INICIAR_PATOTA 2 Prueba.ims 3|3 5|5");
     sleep(1);
-    iniciar_patota("INICIAR_PATOTA 2 oxigeno.txt");
-    sleep(1);
-    iniciar_patota("INICIAR_PATOTA 12 espartana.txt");
-    sleep(1);
-    iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
+    iniciar_planificacion();
+
+
+    /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
     sleep(1);
     iniciar_patota("INICIAR_PATOTA 5 Prueba.ims");
+    sleep(1);
+    expulsar_tripulante("EXPULSAR_TRIPULANTE 20001");
     sleep(1);
     iniciar_patota("INICIAR_PATOTA 4 oxigeno.txt");
     sleep(1);
     iniciar_patota("INICIAR_PATOTA 2 plantas.txt");
     sleep(1);
     iniciar_planificacion();
+    sleep(2);
+    expulsar_tripulante("EXPULSAR_TRIPULANTE 30003");
+    sleep(4);
+    expulsar_tripulante("EXPULSAR_TRIPULANTE 40003");
+    sleep(20);
+    pausar_planificacion();
+    listar_tripulantes();
+    */
     /*
     expulsar_tripulante("EXPULSAR_TRIPULANTE 10001");
     expulsar_tripulante("EXPULSAR_TRIPULANTE 10002");

@@ -16,7 +16,7 @@
         return EXIT_FAILURE;                                                            \
     }
 
-bool mapa_on = false;
+bool mapa_on = true;
 
 int main(int argc, char** argv) {
 	
@@ -309,6 +309,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		}
 		log_info(logger, "Guardando tareas con PID: %d", pid);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid);
+		//log_error(logger, "TAREAS: %s", archivo->texto);
 		if(dl_tareas == 99999){
 			matar_tabla_paginas(pid);
 			return 0;
@@ -534,13 +535,12 @@ t_tarea* buscar_siguiente_tarea(int tid){
 
 		if(dl_tarea_tcb == 999999){
 			// Ya no quedan tareas
-			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
+			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
 			return NULL;
 		}
-		char* str_tareas = rescatar_de_paginas(tabla, 0, tabla->dl_pcb, pid); // 0 porque las tareas siempre estan al inicio de todo
-		//log_info(logger, "Tareas %s", tid, str_tareas);
-		char* tareas_restantes = string_substring_from(str_tareas, dl_tarea_tcb);
-		char** palabras = string_split(tareas_restantes, "\n");
+		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tabla->dl_pcb - dl_tarea_tcb, pid); // 0 porque las tareas siempre estan al inicio de todo
+		//char* tareas_restantes = string_substring_from(str_tareas, dl_tarea_tcb);
+		char** palabras = string_split(str_tareas, "\n");
 		char* str_tarea = palabras[0];
 		log_info(logger, "Tarea para TID: %d encontrada: %s", tid, str_tarea);
 		tarea = crear_tarea(str_tarea);
@@ -559,7 +559,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
 
 		liberar_puntero_doble(palabras);
-		free(tareas_restantes);
+		//free(tareas_restantes);
 		free(str_tareas);
 		free(tcb);
 		return tarea;
@@ -612,7 +612,6 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 		if(dictionary_size(tabla->dl_tcbs) == 1){
 			matar_tcb_en_mapa(tid);
 			matar_tabla_paginas(pid);
-			desbloquear_tabla(tabla);
 			return 1;
 		}else{
 			int result = matar_paginas_tcb(tabla, tid);
