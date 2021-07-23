@@ -116,10 +116,12 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     
-    iniciar_patota("INICIAR_PATOTA 2 Prueba.ims 3|3 7|7");
+    // iniciar_patota("INICIAR_PATOTA 2 Prueba.ims 3|3 7|7");
     sleep(1);
-    iniciar_planificacion();
 
+    iniciar_patota("INICIAR_PATOTA 1 FS_PatotaA.txt");
+
+    iniciar_planificacion();
 
     /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
     sleep(1);
@@ -438,10 +440,9 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mong
 
     int codigo_tarea = identificar_tarea(un_tripulante->tarea.nombre);
     log_trace(logger, "%i mi tarea: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
+	// log_info(logger, "Codigo tarea: %i", codigo_tarea);
 
-    // si el estado es distinto a bloqueado por ES
     switch(codigo_tarea){
-
         case GENERAR_OXIGENO:
             if(!llegue(un_tripulante)){
                 atomic_llegar_a_destino(un_tripulante, socket_ram);
@@ -477,8 +478,8 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mong
             }else{
             	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
             	sleep(RETARDO_CICLO_CPU);
-            	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket_mongo);
+            	t_buffer* b_comida = serializar_cantidad(un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_comida, COMIDA ,socket_mongo);
             	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
             	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
@@ -491,8 +492,8 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mong
             }else{
             	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
             	sleep(RETARDO_CICLO_CPU);
-            	t_buffer* b_oxigeno = serializar_cantidad(-un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, COMIDA ,socket_mongo);
+            	t_buffer* b_comida = serializar_cantidad(-un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_comida, COMIDA ,socket_mongo);
             	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
             	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
@@ -505,8 +506,8 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mong
             }else{
             	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
             	sleep(RETARDO_CICLO_CPU);
-            	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
-            	empaquetar_y_enviar(b_oxigeno, BASURA ,socket_mongo);
+            	t_buffer* b_basura = serializar_cantidad(un_tripulante->tarea.parametro);
+            	empaquetar_y_enviar(b_basura, BASURA ,socket_mongo);
             	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
             	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
             }
@@ -581,8 +582,15 @@ void atomic_no_me_despierten_estoy_trabajando(t_tripulante* un_tripulante, int s
         un_tripulante->tarea.duracion--;
 
         if (un_tripulante->tarea.duracion == 0){
+
             log_info(logger, "Tarea finalizada: %s\n", un_tripulante->tarea.nombre);
             notificar_fin_de_tarea(un_tripulante, socket_mongo);
+
+            // 	Pequenio parche, implica DESBLOQUEAR
+        	if(un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
+        		cambiar_estado(un_tripulante, estado_tripulante[READY], socket_ram);
+        		monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
+        	}
 
             if(conseguir_siguiente_tarea(un_tripulante, socket_ram, socket_mongo)){
             	log_trace(logger, "%i nueva tarea!: %s", un_tripulante->TID, un_tripulante->tarea.nombre);
@@ -1129,20 +1137,20 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 				resolver_sabotaje(un_tripulante, st_ram, st_mongo);
 			}
             if(planificacion_activa == 0){
-            	sleep(1); // este espacio vacio es EXACTAMENTE lo que tiene que estar
+            	sleep(1); // Este espacio vacio es EXACTAMENTE lo que tiene que estar
             }
             else{
                 realizar_tarea(un_tripulante, st_ram, st_mongo);
             }
         } else if (un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
             if(planificacion_activa == 0){
-            	sleep(1); // este espacio vacio es EXACTAMENTE lo que tiene que estar
+            	sleep(1); // Este espacio vacio es EXACTAMENTE lo que tiene que estar
             } else{
             	if(es_mi_turno(un_tripulante)){
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
-					sleep(1); // espero hasta que la entrada deje de estar ocupada
+					sleep(1); // Espero hasta que la entrada deje de estar ocupada
 				}
             }
         }
