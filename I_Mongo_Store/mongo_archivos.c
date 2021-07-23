@@ -63,19 +63,35 @@ void inicializar_archivos_preexistentes() {
 	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
-	existe_oxigeno = 1;
-	existe_comida = 1;
-	existe_basura = 1;
-
-
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
 
-	recurso.oxigeno        = fopen(path_oxigeno, "r+b");
-	recurso.comida         = fopen(path_comida, "r+b");
-	recurso.basura         = fopen(path_basura, "r+b");
+	if((recurso.oxigeno = fopen(path_oxigeno, "r+b")) != NULL){
+		log_info(logger_mongo, "Existe oxigeno");
+		existe_oxigeno = 1;
+	} else{
+		log_info(logger_mongo, "No existe oxigeno");
+		existe_oxigeno = 0;
+	}
+
+	if((recurso.comida = fopen(path_comida, "r+b")) != NULL){
+		log_info(logger_mongo, "Existe comida");
+		existe_comida = 1;
+	} else{
+		log_info(logger_mongo, "No existe comida");
+		existe_comida = 0;
+	}
+
+	if((recurso.basura = fopen(path_basura, "r+b")) != NULL){
+		log_info(logger_mongo, "Existe basura");
+		existe_basura = 1;
+	} else{
+		log_info(logger_mongo, "No existe basura");
+		existe_basura = 0;
+	}
+
 	directorio.superbloque = fopen(path_superbloque, "r+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
 
@@ -246,7 +262,7 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 }
 
 int existe_archivo(int codigo_archivo) {
-	log_trace(logger_mongo, "entra al existe_arachivo");
+
 	switch(codigo_archivo) {
 		case OXIGENO:
 			return existe_oxigeno;
@@ -263,22 +279,22 @@ void alterar(int codigo_archivo, int cantidad) {
 
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
 	if (!existe_archivo(codigo_archivo)) {
-		log_error(logger_mongo, "Inicializando archivos recurso");
+		log_trace(logger_mongo, "Inicializando archivos recurso");
 		switch(codigo_archivo) {
 			case OXIGENO:
 				existe_oxigeno = 1;
 				recurso.oxigeno = fopen(path_oxigeno, "w+b");
-				log_error(logger_mongo, "Se creo el archivo de oxigeno");
+				log_trace(logger_mongo, "Se creo el archivo de oxigeno");
 				break;
 			case COMIDA:
 				existe_comida = 1;
 				recurso.comida  = fopen(path_comida, "w+b");
-				log_error(logger_mongo, "Se creo el archivo de comida");
+				log_trace(logger_mongo, "Se creo el archivo de comida");
 				break;
 			case BASURA:
 				existe_basura = 1;
 				recurso.basura  = fopen(path_basura, "w+b");
-				log_error(logger_mongo, "Se creo el archivo de basura");
+				log_trace(logger_mongo, "Se creo el archivo de basura");
 				break;
 		}
 		iniciar_archivo_recurso(path, 0, 0, NULL);
