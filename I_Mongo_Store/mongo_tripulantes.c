@@ -9,6 +9,7 @@ void manejo_tripulante(void* socket) {
 		log_info(logger_mongo, "Esperando mensaje ");
 
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
+		log_trace(logger_mongo, "El código recibido es: %i", mensaje->codigo_operacion);
 
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
 		if (mensaje->codigo_operacion == RECIBIR_TCB) {
@@ -31,7 +32,7 @@ void manejo_tripulante(void* socket) {
 			}
 
 			// Si es otro codigo
-			else if(mensaje->codigo_operacion > TAREA && mensaje->codigo_operacion < MOVIMIENTO){
+			else if(mensaje->codigo_operacion > BITACORA && mensaje->codigo_operacion < MOVIMIENTO){
 				log_info(logger_mongo, "Pedido de alterar cositas");
 				// log_trace(logger_mongo, "Recibo un pedido de alterar, tripulante %i", mensaje->tcb->TID); // eventualmente rompe, no perder el tiempo con esto
 				log_trace(logger_mongo, "Numero de codigo: %i", mensaje->codigo_operacion);

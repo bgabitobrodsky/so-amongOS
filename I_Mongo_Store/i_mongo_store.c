@@ -40,12 +40,6 @@ int main(int argc, char** argv){
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.");
 
-	// Se crean los mutexs de los distintos archivos que se alteran, bitacoras no necesitan por ser propias a cada tripulante (puede que se requiera un mutex para la lista)
-	pthread_mutex_init(&mutex_oxigeno, NULL);
-	pthread_mutex_init(&mutex_comida, NULL);
-	pthread_mutex_init(&mutex_basura, NULL);
-	// mutex_blocks
-
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
@@ -56,7 +50,6 @@ int main(int argc, char** argv){
 
 	// Se cierran vestigios del pasado
 	cerrar_archivos();
-	cerrar_mutexs();
 	close(socket_oyente);
 	list_destroy(bitacoras);
 	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.\n");
@@ -252,12 +245,6 @@ void cerrar_archivos() {
 	fclose(recurso.oxigeno);
 	fclose(recurso.comida);
 	fclose(recurso.basura);
-}
-
-void cerrar_mutexs() {
-	pthread_mutex_destroy(&mutex_oxigeno);
-	pthread_mutex_destroy(&mutex_comida);
-	pthread_mutex_destroy(&mutex_basura);
 }
 
 void liberar_lista(t_list* lista){

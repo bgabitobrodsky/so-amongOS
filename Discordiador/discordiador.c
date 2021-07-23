@@ -148,6 +148,8 @@ int main() {
     // peligro("9|9", socket_a_mi_ram_hq);
 
     //iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 3 FS_PatotaA.txt");
+    iniciar_planificacion();
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
