@@ -5,6 +5,9 @@
 t_log* logger_mongo;
 t_config* config_mongo;
 t_list* bitacoras;
+int existe_oxigeno = 0;
+int existe_comida = 0;
+int existe_basura = 0;
 
 void inicializar_archivos() {
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
@@ -33,15 +36,8 @@ void inicializar_archivos() {
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-    recurso.oxigeno        = fopen(path_oxigeno, "w+b");
-	recurso.comida         = fopen(path_comida, "w+b");
-	recurso.basura         = fopen(path_basura, "w+b");
 	directorio.superbloque = fopen(path_superbloque, "w+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "w+b");
-
-	iniciar_archivo_recurso(path_oxigeno, 0, 0, NULL);
-	iniciar_archivo_recurso(path_comida, 0, 0, NULL);
-	iniciar_archivo_recurso(path_basura, 0, 0, NULL);
 
 	log_trace(logger_mongo, "pre superbloque");
 	iniciar_superbloque(directorio.superbloque);
@@ -71,6 +67,11 @@ void inicializar_archivos_preexistentes() {
 	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
+	existe_oxigeno = 1;
+	existe_comida = 1;
+	existe_basura = 1;
+
+
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
@@ -88,37 +89,36 @@ void inicializar_archivos_preexistentes() {
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
     cargar_bitmap(); // cargando la lista de bloqueados
-    limpiar_cuerpos(); // TODO codear
+    limpiar_cuerpos();
     // rename("/home/utnso/polus/Files/Bitacoras/Tripulante10001.ims", "/home/utnso/polus/Files/Bitacoras/OldTripulante10001.ims");
+    //rename("/home/utnso/polus/Files/Bitacoras", "/home/utnso/polus/Files/ASID");
 
 	log_error(logger_mongo, "3 inicializar_archivos_preexistentes");
 }
 
 void limpiar_cuerpos() {
-	/*
 	path_bitacoras = malloc((strlen(path_files)+1) + strlen("/Bitacoras"));
 	sprintf(path_bitacoras, "%s/Bitacoras", path_files);
-	char * const * lista_path = {path_bitacoras};
-	FTS *ftsp;
-	FTSENT *p, *chp;
-	int fts_options = FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR;
-	int rval = 0;
-	fts_open(lista_path, fts_options, NULL);
-	chp = fts_children(ftsp, 0);
-	if (chp == NULL) {
-		return;
-	}
-	while ((p = fts_read(ftsp)) != NULL) {
-		switch (p->fts_info) {
-	    	case FTS_F:
-	    		*(p->fts_name) = strcat(*(p->fts_name), "RIP");
-	    		break;
-	    	default:
-	    		break;
-	    	}
+	log_info(logger_mongo, "Limpiando cuerpos");
+	log_info(logger_mongo, "Path bitácoras: %s", path_bitacoras);
+	int renombrado = 0;
+
+	for (int i = 0; renombrado == 0; i++) {
+		char* nuevo_directorio = malloc(strlen(path_bitacoras) + 1);
+		strcpy(nuevo_directorio, path_bitacoras);
+		strcat(nuevo_directorio, string_itoa(i));
+		DIR* dir = opendir(nuevo_directorio);
+
+		//Si el directorio no existe
+		if (!dir) {
+			rename(path_bitacoras, nuevo_directorio);
+
+			strncpy(path_bitacoras, path_files, strlen(path_files) + 1);
+			path_bitacoras = strcat(path_bitacoras, "/Bitacoras");
+			mkdir(path_bitacoras, (mode_t) 0777);
+			renombrado = 1;
 		}
-	fts_close(ftsp);
-	return; */
+	}
 }
 
 void asignar_nuevo_bloque(char* path, int size_agregado) {
@@ -249,8 +249,44 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
+int existe_archivo(int codigo_archivo) {
+	log_trace(logger_mongo, "entra al existe_arachivo");
+	switch(codigo_archivo) {
+		case OXIGENO:
+			return existe_oxigeno;
+		case COMIDA:
+			return existe_comida;
+		case BASURA:
+			return existe_basura;
+	}
+	return -1;
+}
+
 void alterar(int codigo_archivo, int cantidad) {  
 	log_trace(logger_mongo, "INICIO alterar, codigo = %i cantidad = %i", codigo_archivo, cantidad);
+
+	char* path = conseguir_path_recurso_codigo(codigo_archivo);
+	if (!existe_archivo(codigo_archivo)) {
+		log_error(logger_mongo, "Inicializando archivos recurso");
+		switch(codigo_archivo) {
+			case OXIGENO:
+				existe_oxigeno = 1;
+				recurso.oxigeno = fopen(path_oxigeno, "w+b");
+				log_error(logger_mongo, "Se creo el archivo de oxigeno");
+				break;
+			case COMIDA:
+				existe_comida = 1;
+				recurso.comida  = fopen(path_comida, "w+b");
+				log_error(logger_mongo, "Se creo el archivo de comida");
+				break;
+			case BASURA:
+				existe_basura = 1;
+				recurso.basura  = fopen(path_basura, "w+b");
+				log_error(logger_mongo, "Se creo el archivo de basura");
+				break;
+		}
+		iniciar_archivo_recurso(path, 0, 0, NULL);
+	}
 
 	if (cantidad >= 0){
 		agregar(codigo_archivo, cantidad);
