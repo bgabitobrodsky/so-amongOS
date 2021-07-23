@@ -9,7 +9,7 @@ void manejo_tripulante(void* socket) {
 		log_info(logger_mongo, "Esperando mensaje ");
 
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
-		log_trace(logger_mongo, "El código recibido es: %i", mensaje->codigo_operacion);
+		// log_trace(logger_mongo, "El código recibido es: %i", mensaje->codigo_operacion);
 
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
 		if (mensaje->codigo_operacion == RECIBIR_TCB) {
@@ -302,7 +302,6 @@ t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
 }
 
 t_bitacora* obtener_bitacora(int tid) {
-	log_trace(logger_mongo, "INICIO obtener_bitacora");
 
 	bool contains(void* bitacora) {
 		return (tid == ((t_bitacora*) bitacora)->tripulante->TID);

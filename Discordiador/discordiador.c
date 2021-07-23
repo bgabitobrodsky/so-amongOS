@@ -1061,6 +1061,7 @@ void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 		monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, t_aux);
 	}
 
+	enviar_codigo(REPARADO, socket_a_mongo_store);
 	iniciar_planificacion();
 
 }
@@ -1241,7 +1242,11 @@ void guardian_mongo(){
 			case SABOTAJE:
 				log_info(logger, "Sabotaje a la vista");
 				if(!planificacion_activa || (queue_is_empty(cola_tripulantes_ready) && list_is_empty(lista_tripulantes_exec))){
+					log_warning(logger, "planificacion_activa %i...", planificacion_activa);
+					log_warning(logger, "r  %i...", queue_is_empty(cola_tripulantes_ready));
+					log_warning(logger, "e %i...", list_is_empty(lista_tripulantes_exec));
 					log_warning(logger, "No estamos listos para defendernos del sabotaje...");
+					enviar_codigo(FALLO, socket_a_mongo_store);
 					log_info(logger, "Active la planificacion y asegurese de tener un tripulante en R o E.");
 				} else {
 					peligro(mensaje->posicion, socket_a_mi_ram_hq);
