@@ -116,7 +116,11 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     
-    iniciar_patota("INICIAR_PATOTA 2 Prueba.ims 3|3 7|7");
+    iniciar_patota("INICIAR_PATOTA 1 PAG_PatotaA.txt 1|1");
+    sleep(1);
+    iniciar_patota("INICIAR_PATOTA 1 PAG_PatotaB.txt 3|3");
+    sleep(1);
+    iniciar_patota("INICIAR_PATOTA 1 PAG_PatotaC.txt 5|5");
     sleep(1);
     iniciar_planificacion();
 

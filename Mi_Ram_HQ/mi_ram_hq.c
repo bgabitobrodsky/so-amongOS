@@ -16,7 +16,7 @@
         return EXIT_FAILURE;                                                            \
     }
 
-bool mapa_on = true;
+bool mapa_on = false;
 
 int main(int argc, char** argv) {
 	
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_TRACE);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR1, signal_compactacion);
 	signal(SIGUSR2, dump);
@@ -47,10 +47,12 @@ int main(int argc, char** argv) {
 
 	//pthread_detach(hilo_escucha);
 	pthread_join(hilo_escucha, NULL);
+
 	close(socket_oyente);
-	fclose(disco);
+	matar_mapa();
 	free(bitmap_disco);
-	//matar_mapa();
+	free(memoria_principal);
+	fclose(disco);
 	log_destroy(logger);
 	config_destroy(config);
 
@@ -78,6 +80,7 @@ void proceso_handler(void* args) {
 	log_debug(logger,"Se inicia el servidor multi-hilo");
 	args_escuchar* p = malloc(sizeof(args_escuchar));
 	p = args;
+	free(args);
 	int socket_escucha = p->socket_oyente;
 
 	int addrlen, socket_especifico;
@@ -121,6 +124,7 @@ void atender_clientes(void* param) {
 				} else{
 					enviar_codigo(FALLO, parametros->socket);
 				}
+				////free(mensaje_recibido);
 				break;
 
 			case PEDIR_TAREA:
@@ -129,12 +133,15 @@ void atender_clientes(void* param) {
 				if(una_tarea != NULL){
 					t_buffer* buffer_tarea = serializar_tarea(*una_tarea);
 					empaquetar_y_enviar(buffer_tarea, TAREA, parametros->socket);
+					free(una_tarea->nombre);
 					free(una_tarea);
+					free(buffer_tarea->estructura);
+					free(buffer_tarea);
 				}else{
 					// esto puede ser por algun fallo o porque ya no queden tareas
 					enviar_codigo(FALLO, parametros->socket);
 				}
-
+				//free(mensaje_recibido);
 				break;
 
 			case RECIBIR_TCB:
@@ -143,6 +150,7 @@ void atender_clientes(void* param) {
 				} else{
 					enviar_codigo(FALLO, parametros->socket);
 				}
+				//free(mensaje_recibido);
 				break;
 
 			case ACTUALIZAR:
@@ -153,6 +161,7 @@ void atender_clientes(void* param) {
 				} else{
 					log_error(logger, "No se pudo actualizar el TCB %i.", mensaje_recibido->tcb->TID);
 				}
+				//free(mensaje_recibido);
 				break;
 
 			case T_SIGKILL:
@@ -164,7 +173,7 @@ void atender_clientes(void* param) {
 					log_warning(logger, "No se pudo eliminar a %i", mensaje_recibido->tid);
 					enviar_codigo(FALLO, parametros->socket);
 				}
-
+				//free(mensaje_recibido);
 				break;
 
 			case LISTAR_POR_PID:
@@ -181,20 +190,37 @@ void atender_clientes(void* param) {
 				// PAGINACION: hay que liberar esta maldita lista (se chequea si es pag en la func.)
 				liberar_lista_tcbs_paginacion(tcbs_de_esta_patota);
 				enviar_codigo(EXITO, parametros->socket);
+				//free(mensaje_recibido);
 				break;
 
 			case DESCONEXION:
 				log_info(logger, "Se desconecto un cliente.\n");
 				flag = 0;
+				//free(mensaje_recibido);
 				// close(parametros->socket);
 				break;
 
 			default:
 				log_info(logger, "Se recibio un codigo invalido.");
 				log_info(logger, "El codigo es %d", mensaje_recibido->codigo_operacion);
+				//free(mensaje_recibido);
 				break;
 		}
-		// free(mensaje_recibido);
+		if(mensaje_recibido->tcb != NULL)
+			free(mensaje_recibido->tcb);
+		if(mensaje_recibido->pcb != NULL)
+			free(mensaje_recibido->pcb);
+		if(mensaje_recibido->archivo_tareas != NULL){
+			free(mensaje_recibido->archivo_tareas->texto);
+			free(mensaje_recibido->archivo_tareas);
+		}
+		if(mensaje_recibido->tid_condenado != NULL)
+			free(mensaje_recibido->tid_condenado);
+		if(mensaje_recibido->posicion != NULL)
+			free(mensaje_recibido->posicion);
+		if(mensaje_recibido->tarea != NULL)
+			free(mensaje_recibido->tarea);
+		free(mensaje_recibido);
 	}
 
 }

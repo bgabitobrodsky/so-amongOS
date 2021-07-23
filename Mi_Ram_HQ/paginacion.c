@@ -146,6 +146,7 @@ void matar_tabla_paginas(int pid){
     char spid[4];
     sprintf(spid, "%d", pid);
     dictionary_remove_and_destroy(tablas,spid,table_destroyer);
+	
 	desbloquear_lista_tablas();
 	log_info(logger, "Se mató la tabla de paginas");
 }
