@@ -291,7 +291,7 @@ t_estructura* recepcion_y_deserializacion(int socket_receptor) {
 // Se explica deserializacion en esta funcion
 t_TCB* deserializar_tcb(t_buffer* buffer) {
 
-	t_TCB* tcb = malloc(sizeof(uint32_t)*5 + sizeof(char)); // Se toma tamaño de lo que sabemos que viene
+	t_TCB* tcb = malloc(sizeof(t_TCB)); // Se toma tamaño de lo que sabemos que viene
     void* estructura = buffer->estructura; // Se inicializa intermediario 
 
     memcpy(&(tcb->TID), estructura, sizeof(uint32_t));

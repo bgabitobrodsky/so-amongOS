@@ -167,6 +167,7 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 	unlockear(path_blocks);
 	log_warning(logger_mongo, "sincronizar fin");
 
+	free(bitmap->bitarray);
 	bitarray_destroy(bitmap);
 
 }

@@ -162,6 +162,7 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
 */
 
     reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
+    free(bitmap->bitarray);
     bitarray_destroy(bitmap);
 }
 
