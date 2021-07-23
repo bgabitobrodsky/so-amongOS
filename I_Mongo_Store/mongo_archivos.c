@@ -91,7 +91,7 @@ void inicializar_archivos_preexistentes() {
     limpiar_cuerpos(); // TODO codear
     // rename("/home/utnso/polus/Files/Bitacoras/Tripulante10001.ims", "/home/utnso/polus/Files/Bitacoras/OldTripulante10001.ims");
 
-	log_error(logger_mongo, "3 inicializar_archivos_preexistentes");
+    log_info(logger_mongo, "Inicializados archivos pre existentes.");
 }
 
 void limpiar_cuerpos() {
@@ -267,7 +267,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
 
-	log_error(logger_mongo, "nuestro path es %s", path);
+	log_trace(logger_mongo, "nuestro path es %s", path);
 
 	t_list* lista_bloques = get_lista_bloques(path);
 	char tipo = caracter_llenado_archivo(path);
@@ -279,7 +279,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	log_trace(logger_mongo, "OFFSET: %i", offset);
 
 	if (offset < 0) { // Falto agregar cantidad, dada por offset
-		log_error(logger_mongo, "entro a luchar por el offset. Cantidad faltante: %i", offset);
+		log_trace(logger_mongo, "entro a luchar por el offset. Cantidad faltante: %i", offset);
 		asignar_nuevo_bloque(path, 0);
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
@@ -292,7 +292,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 	iniciar_archivo_recurso(path, tam_archivo + cantidad + offset, cant_bloques, lista_bloques);
 
-	log_error(logger_mongo, "Cantidad agregada: %i", cantidad);
+	log_trace(logger_mongo, "Cantidad agregada: %i", cantidad);
 
 	log_trace(logger_mongo, "FIN agregar");
 
@@ -857,27 +857,6 @@ void set_bloq(char* path, t_list* lista){
 
 	int* aux;
 	char* lista_bloques;
-
-	/*
-	if(config_has_property(config, "BLOCKS")){
-		char** valores_viejos = config_get_array_value(config, "BLOCKS");
-		if(valores_viejos != NULL){
-			// log_trace(logger_mongo, "valores viejos: %s", config_get_string_value(config, "BLOCKS"));
-			for(int i = 0; i < contar_palabras(valores_viejos); i++){
-				// log_trace(logger_mongo, "valores_viejos %s", valores_viejos[i]);
-				aux = malloc(sizeof(int));
-				*aux = atoi(valores_viejos[i]);
-				list_add(list_aux, aux);
-			}
-		} else{
-			// log_trace(logger_mongo, "no habian valores viejos");
-		}
-		// log_error(logger_mongo, "printeando valores viejos");
-		// for(int i = 0; i < list_size(list_aux); i++){
-			// aux = list_get(list_aux, i);
-			// log_error(logger_mongo, "valor %i, %i", i, *aux);
-		// }
-	}*/
 
 	if(list_aux == NULL || list_is_empty(list_aux)){
 	    // log_trace(logger_mongo, "empty");

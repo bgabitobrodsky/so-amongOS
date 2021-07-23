@@ -15,7 +15,7 @@ void manejo_tripulante(void* socket) {
 		    log_info(logger_mongo, "Pedido de crear bitacora");
 		    log_trace(logger_mongo, "Creando bitacora para el tripulante %i.", mensaje->tcb->TID);
 		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
-		    log_info(logger_mongo, "La posicion inicial del tripulante es: %c%c%c", posicion_tripulante[0], posicion_tripulante[1], posicion_tripulante[2]);
+		    log_info(logger_mongo, "La posicion inicial del tripulante es: %c|%c", posicion_tripulante[0], posicion_tripulante[2]);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
 			log_trace(logger_mongo, "Se creo la bitacora del tripulante %i.", mensaje->tcb->TID);
 			tripulante = mensaje->tcb;
@@ -64,11 +64,12 @@ char* rescatar_bitacora(char* path){
 
 	char* string = malloc(size);
 	log_trace(logger_mongo, "Size es: %i", size);
-
+	int* aux;
 	for(int i = 0; i < list_size(lista_bloques_bitacora); i++){
+		aux = list_get(lista_bloques_bitacora, i);
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
 
-			string[lectura] = *(directorio.mapa_blocks + (TAMANIO_BLOQUE * i) + j);
+			string[lectura] = *(directorio.mapa_blocks + (TAMANIO_BLOQUE * *aux) + j);
 			lectura++;
 
 			if(lectura == size){
@@ -130,17 +131,17 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			pos_inicial = malloc(sizeof(char)*3);
 			strcpy(pos_inicial, *posicion);
 			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
-			cadenita = malloc(strlen("se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1);
-			strcpy(cadenita, "se mueve de ");
+			cadenita = malloc(strlen("Se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1 + 1);
+			strcpy(cadenita, "Se mueve de ");
 			strcat(cadenita, pos_inicial);
 			strcat(cadenita, " a ");
 			strcat(cadenita, pos_final);
+			strcat(cadenita, ".");
 
-			escribir_bitacora(bitacora, cadenita); // Implementar en t_estructura y crear posicion
+			escribir_bitacora(bitacora, cadenita);
 			largo_cadenita = strlen(cadenita);
 			free(pos_inicial);
 			free(pos_final);
-			free(cadenita);
 			break;
 		case INICIO_TAREA:
 			log_debug(logger_mongo, "Inicio de tarea de %i", mensaje->tcb->TID);
@@ -150,13 +151,13 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			nombre_tarea = malloc(strlen(mensaje_tarea->tarea->nombre) + 1);
 			strcpy(nombre_tarea, mensaje_tarea->tarea->nombre);
 
-			cadenita = malloc(strlen("comienza ejecucion de tarea ") + strlen(nombre_tarea) + 1);
-			strcpy(cadenita, "comienza ejecucion de tarea ");
+			cadenita = malloc(strlen("Comienza ejecucion de tarea ") + strlen(nombre_tarea) + 1 + 1);
+			strcpy(cadenita, "Comienza ejecucion de tarea ");
 			strcat(cadenita, nombre_tarea);
+			strcat(cadenita, ".");
 
 			escribir_bitacora(bitacora, cadenita);
-			largo_cadenita = strlen(cadenita);
-			free(cadenita);
+			largo_cadenita = strlen(cadenita) + 1;
 			free(nombre_tarea);
 			free(mensaje_tarea);
 			break;
@@ -169,30 +170,32 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			nombre_tarea = malloc(strlen(mensaje_tarea->tarea->nombre) + 1);
 			strcpy(nombre_tarea, mensaje_tarea->tarea->nombre);
 
-			cadenita = malloc(strlen("se finaliza la tarea ") + strlen(nombre_tarea) + 1);
-			strcpy(cadenita, "se finaliza la tarea ");
+			cadenita = malloc(strlen("Se finaliza la tarea ") + strlen(nombre_tarea) + 1 + 1);
+			strcpy(cadenita, "Se finaliza la tarea ");
 			strcat(cadenita, nombre_tarea);
+			strcat(cadenita, ".");
 
 			escribir_bitacora(bitacora, cadenita);
-			largo_cadenita = strlen(cadenita);
-			free(cadenita);
+			largo_cadenita = strlen(cadenita) + 1;
 			free(nombre_tarea);
 			free(mensaje_tarea);
 			break;
 		case CORRE_SABOTAJE:
 			log_debug(logger_mongo, "Corre hacia el sabotaje %i", mensaje->tcb->TID);
-			escribir_bitacora(bitacora, "se corre en panico a la ubicacion del sabotaje");
-			cadenita = "se corre en panico a la ubicacion del sabotaje";
-			largo_cadenita = strlen(cadenita);
+			escribir_bitacora(bitacora, "Se corre en panico a la ubicacion del sabotaje.");
+			cadenita = malloc(strlen("Se corre en panico a la ubicacion del sabotaje." + 1));
+			strcpy(cadenita, "Se corre en panico a la ubicacion del sabotaje.");
+			largo_cadenita = strlen(cadenita) + 1;
 			break;
 		case RESUELVE_SABOTAJE:
 			log_debug(logger_mongo, "Resuelve sabotaje %i", mensaje->tcb->TID);
-			escribir_bitacora(bitacora, "se resuelve el sabotaje");
-			cadenita = "se resuelve el sabotaje";
-			largo_cadenita = strlen(cadenita);
+			escribir_bitacora(bitacora, "Se resuelve el sabotaje.");
+			cadenita = malloc(strlen("Se resuelve el sabotaje." + 1));
+			strcpy(cadenita, "Se resuelve el sabotaje.");
+			largo_cadenita = strlen(cadenita) + 1;
 			break;
 	}
-
+	free(cadenita);
 	//Actualizo struct bitacora
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);

@@ -1225,10 +1225,12 @@ void guardian_mongo(){
 		switch(mensaje->codigo_operacion){
 			case BITACORA:
 				log_info(logger, "Bitacora del tripulante:");
-				char** bitacora_ordenada = string_split(mensaje->archivo_tareas->texto, "\0");
-				for(int i = 0; i < contar_palabras(bitacora_ordenada); i++){
+				char** bitacora_ordenada = string_split(mensaje->archivo_tareas->texto, ".");
+
+				for(int i = 0; i < contar_palabras(bitacora_ordenada) ; i++){
 					log_debug(logger, "%s", bitacora_ordenada[i]);
 				}
+
 				liberar_puntero_doble(bitacora_ordenada);
 				break;
 			case FALLO:

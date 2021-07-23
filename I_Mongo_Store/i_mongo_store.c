@@ -164,14 +164,13 @@ void manejo_discordiador(){
 			case DESCONEXION:
 				log_info(logger_mongo, "Se desconecto un cliente.");
 				flag = 0;
-				log_error(logger_mongo, "Se desconecto un cliente.");
 				sistema_activo = 0;
 				// close(socket_discordiador);
 				break;
 
 			default:
 				log_info(logger_mongo, "Se recibio un codigo invalido.");
-				log_info(logger_mongo, "El codigo es %d", socket_discordiador);
+				log_info(logger_mongo, "El codigo es %d", mensaje->codigo_operacion);
 				break;
 		}
 		free(mensaje);
