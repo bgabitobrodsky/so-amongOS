@@ -132,16 +132,16 @@ void manejo_discordiador(){
 				if(bitacora_tripulante != NULL){
 					char* bitacora = rescatar_bitacora(bitacora_tripulante->path);
 					if(bitacora == NULL){
-						log_debug(logger_mongo, "El tripulante no tenia nada en la bitacora.");
+						log_info(logger_mongo, "El tripulante no tenia nada en la bitacora.");
 						enviar_codigo(FALLO, socket_discordiador);
 						log_debug(logger_mongo, "Envio un fallo.");
 
 					} else {
-						log_debug(logger_mongo, "Conseguimos la bitacora.");
+						log_info(logger_mongo, "Conseguimos la bitacora.");
 						t_archivo_tareas texto_archivo;
 						texto_archivo.texto = malloc(strlen(bitacora) + 1);
 						strcpy(texto_archivo.texto, bitacora);
-						log_debug(logger_mongo, "La bitacora tiene: %s.", texto_archivo.texto);
+						log_debug(logger_mongo, "La bitacora tiene: %s", texto_archivo.texto);
 						texto_archivo.largo_texto = strlen(bitacora);
 
 						t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);

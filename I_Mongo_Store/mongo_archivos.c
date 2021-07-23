@@ -30,8 +30,6 @@ void inicializar_archivos() {
 	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
-	log_trace(logger_mongo, "post printf");
-
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 	// Trunco los archivos o los creo en modo escritura y lectura
@@ -39,9 +37,7 @@ void inicializar_archivos() {
 	directorio.superbloque = fopen(path_superbloque, "w+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "w+b");
 
-	log_trace(logger_mongo, "pre superbloque");
 	iniciar_superbloque(directorio.superbloque);
-	log_trace(logger_mongo, "post_superbloque");
 	iniciar_blocks(filedescriptor_blocks);
 	inicializar_mapa();
 }
