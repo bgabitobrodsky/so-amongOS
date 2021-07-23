@@ -69,21 +69,21 @@ void reparar() {
 
 int verificar_cant_bloques() {
 
-	// log_warning(logger_mongo, "Verificar cant bloques");
-	uint32_t cant_bloques = obtener_tamanio_bloque_superbloque();
-	// log_warning(logger_mongo, "Cant_bloques leida: %i", cant_bloques);
+	log_warning(logger_mongo, "Verificando la cantidad de bloques del superbloque.");
+	uint32_t cant_bloques = obtener_cantidad_bloques_superbloque();
+	log_trace(logger_mongo, "Cantidad de bloques leida de SuperBloque.ims: %i", cant_bloques);
 
 	fseek(directorio.blocks, 0, SEEK_END);
 	int tamanio_en_bytes = ftell(directorio.blocks);
 	fseek(directorio.blocks, 0, SEEK_SET);
     int cantidad_real = tamanio_en_bytes / TAMANIO_BLOQUE;
 
-	// log_warning(logger_mongo, "1 Verificar_cant_bloques");
-	// log_warning(logger_mongo, "Cant_bloques %i", cant_bloques);
+    log_trace(logger_mongo, "Cantidad real: %i", cantidad_real);
 
     if (cant_bloques != cantidad_real) {
         t_bitarray* bitmap = obtener_bitmap();
         reescribir_superbloque(TAMANIO_BLOQUE, cantidad_real, bitmap);
+        free(bitmap->bitarray);
         bitarray_destroy(bitmap);
         return 1;
     }
@@ -95,11 +95,12 @@ int verificar_cant_bloques() {
 int verificar_bitmap() {
 	//Creo la lista
 	t_list* bloques_ocupados = list_create();
-
+	log_warning(logger_mongo, "0");
     recorrer_recursos(bloques_ocupados);
     recorrer_bitacoras(bloques_ocupados);
     sortear(bloques_ocupados);
 
+	log_warning(logger_mongo, "Pre if");
     if (bloques_ocupados_difieren(bloques_ocupados)) {
     	log_warning(logger_mongo, "Entrando");
         actualizar_bitmap(bloques_ocupados);

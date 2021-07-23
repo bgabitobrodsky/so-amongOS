@@ -87,9 +87,9 @@ uint32_t obtener_tamanio_bloque_superbloque() {
 }
 
 uint32_t obtener_cantidad_bloques_superbloque() {
-    obtener_tamanio_bloque_superbloque();
 
     uint32_t size;
+    fseek(directorio.superbloque, sizeof(uint32_t), SEEK_SET);
     fread(&size, sizeof(uint32_t), 1, directorio.superbloque);
 
     return size;
@@ -153,7 +153,11 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
     	}
 */
 
-    reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, bitmap);
+    // TODO: Delegar
+	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
+	fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
+	fflush(directorio.superbloque);
+
     free(bitmap->bitarray);
     bitarray_destroy(bitmap);
 }

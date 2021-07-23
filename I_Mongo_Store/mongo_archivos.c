@@ -795,7 +795,12 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 		nro_bloque_aux = list_get(bloques, i);
 		if (nro_bloque == *nro_bloque_aux) {
 			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
-			reescribir_superbloque(TAMANIO_BLOQUE, CANTIDAD_BLOQUES, nuevo_bitmap);
+
+			// TODO delegar
+			fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
+			fwrite(nuevo_bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
+			fflush(directorio.superbloque);
+
 
 			bool quitar_bloque(void* elemento1){
 				return (nro_bloque == *((int*) elemento1));
