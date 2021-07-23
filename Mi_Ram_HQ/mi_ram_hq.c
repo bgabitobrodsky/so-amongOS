@@ -591,12 +591,12 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 			desbloquear_tabla(tabla);
 			return 0;
 		}
+		matar_tcb_en_mapa(tid);
 		segmento_tcb->libre = true;
 		desbloquear_segmento(segmento_tcb);
 
 		list_remove_by_condition(tabla->segmentos_tcb, buscador);
 		log_debug(logger,"TCB eliminado TID: %d", tid);
-		matar_tcb_en_mapa(tid);
 		
 		if(list_size(tabla->segmentos_tcb) < 1){
 			matar_tabla_segmentos(pid);
@@ -724,22 +724,23 @@ void iniciar_mapa(){
 		nivel = nivel_crear("AmongOS - NO MATAR A REY DE FUEGO");
 		nivel_gui_dibujar(nivel);
 		mapa_indices = dictionary_create();
-		ultima_clave_mapa = 0;
+		ultima_clave_mapa = 1;
 	}
 }
 
 void mapa_iniciar_tcb(t_TCB* tcb){
 	if(mapa_on){
 		bloquear_mapa();
-		err = personaje_crear(nivel, ultima_clave_mapa + 1, tcb->coord_x, tcb->coord_y);
+		personaje_crear(nivel, ultima_clave_mapa, tcb->coord_x, tcb->coord_y);
 		nivel_gui_dibujar(nivel);
 
 		char stid[8];
 		sprintf(stid, "%d", tcb->TID);
 
-		char* clave = malloc(sizeof(char));
-		memcpy(clave, &ultima_clave_mapa, sizeof(char));
-		dictionary_put(mapa_indices, stid, (void*) clave);
+		//char* clave = malloc(sizeof(char));
+		//memcpy(clave, &ultima_clave_mapa, sizeof(char));
+		log_trace(logger,"[MAPA]: Guardo map_key de TCB TID: %d, map_key: %c", tcb->TID, ultima_clave_mapa);
+		dictionary_put(mapa_indices, stid, (void*) ultima_clave_mapa);
 
 		ultima_clave_mapa++;
 		desbloquear_mapa();
@@ -752,9 +753,9 @@ char* get_clave_mapa_por_tid(int tid){
 		sprintf(stid, "%d",tid);
 		char* clave_mapa = (char*) dictionary_get(mapa_indices,stid);
 		if(clave_mapa == NULL){
-			log_error(logger,"Error: clave en mapa no encontrada");
+			log_error(logger,"[MAPA]: Error: clave en mapa no encontrada");
 		}
-		log_trace(logger,"Encontre la clave %c", clave_mapa[0]);
+		log_trace(logger,"[MAPA]: Encontre la clave %c", clave_mapa);
 		return clave_mapa;
 	}
 	return NULL;
@@ -762,27 +763,25 @@ char* get_clave_mapa_por_tid(int tid){
 
 void matar_tcb_en_mapa(int tid){
 	if(mapa_on){
+		bloquear_mapa();
 		char stid[8];
 		sprintf(stid, "%d",tid);
-		char* clave_mapa = get_clave_mapa_por_tid(tid);
-		void clave_destroyer(void* una_clave){
-			free(una_clave);
-		}
+		char clave_mapa = get_clave_mapa_por_tid(tid);
 		if(clave_mapa != NULL){
-			item_borrar(nivel, clave_mapa[0]);
+			item_borrar(nivel, clave_mapa);
 			nivel_gui_dibujar(nivel);
-			bloquear_mapa();
-			dictionary_remove_and_destroy(mapa_indices, stid, clave_destroyer);
-			desbloquear_mapa();
+			log_trace(logger, "[MAPA]: Elimino TCB TID: %d", tid);
+			dictionary_remove(mapa_indices, stid);
 		}
+		desbloquear_mapa();
 	}
 }
 
 void actualizar_tcb_en_mapa(t_TCB* tcb){
 	if(mapa_on){
-		char clave_mapa = get_clave_mapa_por_tid(tcb->TID)[0];
 		bloquear_mapa();
-		log_trace(logger, "Muevo el TCB TID: %d,\t clave en mapa: %c, \t nueva pos: %d|%d",tcb->TID,clave_mapa,tcb->coord_x,tcb->coord_y);
+		char clave_mapa = get_clave_mapa_por_tid(tcb->TID);
+		log_trace(logger, "[MAPA]: Muevo el TCB TID: %d,\t clave en mapa: %c, \t nueva pos: %d|%d",tcb->TID,clave_mapa,tcb->coord_x,tcb->coord_y);
 		item_mover(nivel, clave_mapa, tcb->coord_x, tcb->coord_y);
 		nivel_gui_dibujar(nivel);
 		desbloquear_mapa();
