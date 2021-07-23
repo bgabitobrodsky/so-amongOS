@@ -54,10 +54,6 @@ int planificacion_activa = 0;
 int sistema_activo = 1;
 int testeo = DISCORDIADOR;
 
-typedef struct {
-	int socket_ram;
-	int socket_mongo;
-} args_sabotaje;
 
 void notificar_fin_de_tarea(t_tripulante* un_tripulante, int socket_mongo){
 	t_buffer* trip_buffer = serializar_tripulante(*un_tripulante);
@@ -116,17 +112,6 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
     
-
-    iniciar_patota("INICIAR_PATOTA 1 PAG_PatotaA.txt 1|1");
-    sleep(1);
-    iniciar_patota("INICIAR_PATOTA 1 PAG_PatotaB.txt 3|3");
-    sleep(1);
-    iniciar_patota("INICIAR_PATOTA 1 PAG_PatotaC.txt 5|5");
-    sleep(1);
-
-    iniciar_patota("INICIAR_PATOTA 1 FS_PatotaA.txt");
-
-    iniciar_planificacion();
 
     /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
     sleep(1);
@@ -1251,7 +1236,12 @@ void guardian_mongo(){
 				break;
 			case SABOTAJE:
 				log_info(logger, "Sabotaje a la vista");
-				peligro(mensaje->posicion, socket_a_mi_ram_hq);
+				if(!planificacion_activa || (queue_is_empty(cola_tripulantes_ready) && list_is_empty(lista_tripulantes_exec))){
+					log_warning(logger, "No estamos listos para defendernos del sabotaje...");
+					log_info(logger, "Active la planificacion y asegurese de tener un tripulante en R o E.");
+				} else {
+					peligro(mensaje->posicion, socket_a_mi_ram_hq);
+				}
 				break;
 			case DESCONEXION:
 				log_error(logger, "Se desconecta el Mongo");

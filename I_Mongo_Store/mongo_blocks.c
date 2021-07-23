@@ -188,4 +188,6 @@ void cargar_bitmap(){
 			list_add(lista_bloques_ocupados, aux);
 		}
 	}
+	free(bitmap->bitarray);
+	bitarray_destroy(bitmap);
 }

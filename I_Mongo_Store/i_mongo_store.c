@@ -10,6 +10,7 @@
 int socket_discordiador;
 char** posiciones_sabotajes;
 t_list* lista_bloques_ocupados;
+int sistema_activo = 1;
 
 int main(int argc, char** argv){
 
@@ -47,9 +48,11 @@ int main(int argc, char** argv){
 
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
-	// pthread_detach(hilo_escucha);
+	pthread_detach(hilo_escucha);
 
-	pthread_join(hilo_escucha, NULL);
+	while(sistema_activo){
+		sleep(1);
+	}
 
 	// Se cierran vestigios del pasado
 	cerrar_archivos();
@@ -60,7 +63,6 @@ int main(int argc, char** argv){
 	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
 	config_destroy(config_superbloque);
-	free(path_directorio);
 	free(path_superbloque);
 	free(path_blocks);
 	free(path_files);
@@ -71,8 +73,8 @@ int main(int argc, char** argv){
 }
 
 void escuchar_mongo(void* args) {
-    args_escuchar *p = malloc(sizeof(args_escuchar));
-    p = args;
+
+    args_escuchar* p = args;
     int socket_escucha = p->socket_oyente;
 
     int es_discordiador = 1;
@@ -160,8 +162,10 @@ void manejo_discordiador(){
 				break;
 
 			case DESCONEXION:
-				log_info(logger_mongo, "Se desconecto un cliente.\n");
+				log_info(logger_mongo, "Se desconecto un cliente.");
 				flag = 0;
+				log_error(logger_mongo, "Se desconecto un cliente.");
+				sistema_activo = 0;
 				// close(socket_discordiador);
 				break;
 
@@ -174,7 +178,7 @@ void manejo_discordiador(){
 	}
 }
 
-
+// TODO: Se ejecutaria aunque no haya un tripu disponible en discordiador
 void sabotaje(int n) {
 
 	// Se espera que set reciba la signal correspondiente
@@ -232,10 +236,16 @@ void iniciar_file_system() {
 }
 
 void sincronizar_blocks() {
+
 	while(1) {
 		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
 		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
-		sleep(TIEMPO_SINCRONIZACION);
+		for(int i = 0; i < TIEMPO_SINCRONIZACION; i++){
+			sleep(1);
+			if(!sistema_activo){
+				pthread_exit(NULL);
+			}
+		}
 	}
 }
 
