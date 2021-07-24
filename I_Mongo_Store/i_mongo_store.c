@@ -50,6 +50,8 @@ int main(int argc, char** argv){
 		sleep(1);
 	}
 
+	list_iterate(bitacoras, matar_bitacora);
+
 	matar_lista(lista_bloques_ocupados);
 	log_info(logger_mongo, "Apagando...");
 	sleep(1);
@@ -301,4 +303,12 @@ void matar_lista(t_list* lista){
 	}
 	log_info(logger_mongo, "matada lista");
 
+}
+
+void matar_bitacora(void* una_bitacora) {
+	t_bitacora* bitacora = (t_bitacora*) una_bitacora;
+	log_info(logger_mongo, "Obtenida bitacora. %s", bitacora->path);
+	liberar_bloques(bitacora->path);
+	liberar_lista(bitacora->bloques);
+	borrar_bitacora(bitacora->tripulante);
 }

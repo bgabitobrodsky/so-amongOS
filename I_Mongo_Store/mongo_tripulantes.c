@@ -42,12 +42,6 @@ void manejo_tripulante(void* socket) {
 		// Ultimo mensaje del tripulante, al morir o algo, sera la desconexion, lo cual borra la bitacora y libera los recursos
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
 			log_info(logger_mongo, "Se desconecto un tripulante.");
-			t_bitacora* bitacora = obtener_bitacora(tripulante->TID);
-			log_info(logger_mongo, "Obtenida bitacora.");
-			log_info(logger_mongo, "Obtenida bitacora. %s", bitacora->path);
-			liberar_bloques(bitacora->path);
-			liberar_lista(bitacora->bloques);
-			borrar_bitacora(tripulante);
 			free(posicion_tripulante);
 			free(mensaje);
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
