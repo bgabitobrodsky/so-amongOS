@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_DEBUG);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_TRACE);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR1, signal_compactacion);
 	signal(SIGUSR2, dump);
@@ -538,20 +538,22 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		if(tabla == NULL){
 			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
+		bloquear_tabla(tabla);
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
 		if(tcb == NULL){
 			//no deberia pasar pero por las dudas viste
 			log_error(logger, "No existe el trip en memoria TID: %d", tid);
+			desbloquear_tabla(tabla);
 			free(tcb);
 			return NULL;
 		}
-		
 		int dl_tarea_tcb = tcb->siguiente_instruccion;
 		log_info(logger, "DL de la siguiente instruccion: %d", dl_tarea_tcb);
 		if(dl_tarea_tcb == 999999){
 			// Ya no quedan tareas
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
 			free(tcb);
+			desbloquear_tabla(tabla);
 			return NULL;
 		}
 		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tabla->dl_pcb - dl_tarea_tcb, pid); // 0 porque las tareas siempre estan al inicio de todo
@@ -571,6 +573,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		sprintf(stid, "%d", tid);
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
+		desbloquear_tabla(tabla);
 
 		liberar_puntero_doble(palabras);
 		free(str_tareas);
@@ -622,27 +625,23 @@ int eliminar_tcb(int tid){ // devuelve 1 si ta ok, 0 si falló algo
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
 		bloquear_tabla(tabla);
-		if(dictionary_size(tabla->dl_tcbs) == 1){
+		int result = matar_paginas_tcb(tabla, tid);
+		if(result){
+			log_info(logger, "Se mató al TCB tid: %d", tid);
 			matar_tcb_en_mapa(tid);
-			matar_tabla_paginas(pid);
-			return 1;
 		}else{
-			int result = matar_paginas_tcb(tabla, tid);
-			if(result){
-				log_info(logger, "Se mató al TCB tid: %d", tid);
-				matar_tcb_en_mapa(tid);
-				desbloquear_tabla(tabla);
-				return 1;
-			}else{
-				// error
-				desbloquear_tabla(tabla);
-
-				return 0;
-			}
+			// error
 			desbloquear_tabla(tabla);
 			return 0;
 		}
+
+		if(dictionary_size(tabla->dl_tcbs) < 1){
+			matar_tabla_paginas(pid);
+			return 1;
+		}
+
 		desbloquear_tabla(tabla);
+		return 1;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -674,12 +673,15 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		if(tabla == NULL){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
+		bloquear_tabla(tabla);
 		// no me traigo el tcb actual sino sobreescribo directamente sus paginas
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char), pid);
 		if(!result){
+			desbloquear_tabla(tabla);
 			return 0;
 		}
+		desbloquear_tabla(tabla);
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);

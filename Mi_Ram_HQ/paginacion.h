@@ -73,7 +73,8 @@ void bloquear_swap();
 void desbloquear_swap();
 void bloquear_disco();
 void desbloquear_disco();
-
+void bloquear_paginas_en_memoria();
+void desbloquear_paginas_en_memoria();
 #endif /* PAGINACION_H_ */
 
 

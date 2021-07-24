@@ -49,6 +49,17 @@ int liberar_pagina(pagina* pagina, int offset, int faltante){
 	}
 	pagina->tamano_ocupado -= TAMANIO_PAGINA - offset;
 	return TAMANIO_PAGINA - offset; // pude liberar hasta el fin de la página 
+	// retorna lo que logró liberar
+	/*if(offset + faltante <= TAMANIO_PAGINA){
+		pagina->tamano_ocupado -= faltante;
+		return faltante; // pude liberar todo el tamaño
+	}
+	if(pagina->tamano_ocupado + offset <= TAMANIO_PAGINA){
+		pagina->tamano_ocupado = 0;
+		return TAMANIO_PAGINA - offset; // no me acuerdo que verga hacía esto
+	}
+	pagina->tamano_ocupado = offset;
+	return TAMANIO_PAGINA - offset; // pude liberar hasta el fin de la página*/
 }
 
 void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
@@ -83,18 +94,13 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
 		num_pagina++;
 	}
 
-	/*bool page_orderer(void* un_int, void* otro_int){
-		int num = (int) un_int;
-		int num2 = (int) otro_int;
-		return num > num2;
-	}
-	list_sort(paginas_a_remover, page_orderer);*/
-
 	void page_remover(void* un_int){
 		int num = (int) un_int;
 		pagina* pag2 = list_get(tabla->paginas, num);
 		if(pag2->en_memoria){
 			pag2->puntero_marco->libre = true;
+			pag2->puntero_marco->num_pagina = 0;
+			pag2->puntero_marco->pid = 0;
 		}
 		log_trace(logger,"[SWAP]: Libero el espacio en disco: %d", pag2->disk_index);
 		bitmap_disco[pag->disk_index] = false;
@@ -102,8 +108,10 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
 		//list_remove(tabla->paginas, num);
 		//free(pag2);
 	}
+	bloquear_lista_marcos();
 	list_iterate(paginas_a_remover, page_remover);
 	list_destroy(paginas_a_remover);
+	desbloquear_lista_marcos();
 }
 
 int matar_paginas_tcb(tabla_paginas* tabla, int tid){
@@ -122,8 +130,8 @@ int matar_paginas_tcb(tabla_paginas* tabla, int tid){
 }
 
 void matar_tabla_paginas(int pid){
-	log_debug(logger, "[PAG]: Matando patota PID: %d", pid);
     bloquear_lista_tablas();
+	log_debug(logger, "[PAG]: Matando patota PID: %d", pid);
 
     void table_destroyer(void* una_tabla){
         tabla_paginas* tabla = (tabla_paginas*) una_tabla;
@@ -148,8 +156,8 @@ void matar_tabla_paginas(int pid){
     sprintf(spid, "%d", pid);
     dictionary_remove_and_destroy(tablas,spid,table_destroyer);
 	
-	desbloquear_lista_tablas();
 	log_info(logger, "Se mató la tabla de paginas");
+	desbloquear_lista_tablas();
 }
 
 int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int pid){
@@ -443,24 +451,28 @@ pagina* get_lru(){
 
 pagina* get_clock(){
 	log_info(logger, "[SWAP]: Ejecuto busqueda por CLOCK");
+	bloquear_paginas_en_memoria();
     pagina* clock_p;
 	int cantidad_marcos = list_size(marcos);
 	marco* marco_actual;
 	while(1){
 		marco_actual = list_get(marcos, marco_clock);
 		pagina* pag = get_pagina_from_marco(marco_actual);
-		
-		if(marco_clock < cantidad_marcos-1){
-			marco_clock++;
+		if(pag != NULL && pag->disk_index != -1){
+			if(marco_clock < cantidad_marcos-1){
+				marco_clock++;
+			}else{
+				marco_clock = 0;
+			}
+			
+			if(!pag->usado){
+				clock_p = pag;
+				break;
+			}else{
+				pag->usado = false;
+			}
 		}else{
-			marco_clock = 0;
-		}
-		
-		if(!pag->usado){
-			clock_p = pag;
-			break;
-		}else{
-			pag->usado = false;
+			log_error(logger, "[SWAP]: Se quiso acceder a una página ya liberada");
 		}
 	}
     return clock_p;
