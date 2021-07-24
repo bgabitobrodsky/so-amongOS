@@ -17,10 +17,8 @@ void sortear(t_list* lista_bloques_ocupados);
 int bloques_ocupados_difieren(t_list* lista_bloques_ocupados);
 int md5_no_concuerda(); // TESTEADO
 int md5_no_concuerda_recurso(char* path_recurso);
-int tamanio_correcto();
-int bloques_sin_sentido();
 int bitmap_no_concuerda();
-void restaurar_blocks();
+void restaurar_blocks(int codigo);
 
 extern int existe_oxigeno;
 extern int existe_comida;

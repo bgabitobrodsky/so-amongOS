@@ -642,10 +642,10 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	set_caracter_llenado(path, caracter);
 
 	t_config* config = config_create(path);
-	lockearEscritura(path);
+	lockearLectura(path);
 	char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-	unlockear(path);
 	char* md5 = md5_archivo(cadena_blocks);
+	unlockear(path);
 	set_md5(path, md5);
 	config_destroy(config);
 	free(md5);

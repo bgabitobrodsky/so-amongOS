@@ -201,11 +201,14 @@ int verificar_block_counts(t_TCB* tripulante) {
 int verificar_blocks() {
 
 	log_trace(logger_mongo, "Pre if");
-	if (md5_no_concuerda() || bitmap_no_concuerda()) {
+
+	int codigo = md5_no_concuerda();
+	if(codigo != 0){
 		log_trace(logger_mongo, "Entro if");
-		restaurar_blocks();
+		restaurar_blocks(codigo);
 		return 1;
 	}
+
 	log_trace(logger_mongo, "Post if");
 
 	return 0;
@@ -216,17 +219,17 @@ int md5_no_concuerda() {
 
 	if(existe_basura) {
 		if(md5_no_concuerda_recurso(path_basura))
-			return 1;
+			return BASURA;
 	}
 
 	if(existe_comida) {
 		if(md5_no_concuerda_recurso(path_comida))
-			return 1;
+			return COMIDA;
 	}
 
 	if(existe_oxigeno) {
 		if(md5_no_concuerda_recurso(path_oxigeno))
-			return 1;
+			return OXIGENO;
 	}
 
 	log_warning(logger_mongo, "md5 concuerda");
@@ -251,53 +254,6 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 	}
 
 	config_destroy(config);
-	return 0;
-}
-
-int tamanio_correcto() {
-	uint32_t cant_bloques = obtener_cantidad_bloques_superbloque();
-	uint32_t tamanio_bloque = obtener_tamanio_bloque_superbloque();
-
-	return (cant_bloques * tamanio_bloque) == strlen(directorio.mapa_blocks); // Revisar logica
-}
-
-int bloques_sin_sentido() {
-	log_warning(logger_mongo, "Bloques_sin_sentido");
-	t_list* bloques_basura = get_lista_bloques(path_basura);
-	t_list* bloques_oxigeno = get_lista_bloques(path_oxigeno);
-	t_list* bloques_comida = get_lista_bloques(path_comida);
-	log_warning(logger_mongo, "Conseguidas listas");
-	int* nro_bloque = malloc(sizeof(int));
-
-	for(int i = 0; i < list_size(bloques_basura); i++) {
-		nro_bloque = list_get(bloques_basura, i);
-		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
-			free(nro_bloque);
-			//liberar listas
-			return 1;
-		}
-	}
-
-	for(int i = 0; i < list_size(bloques_oxigeno) ; i++) {
-		nro_bloque = list_get(bloques_oxigeno, i);
-		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
-			free(nro_bloque);
-			//liberar listas
-			return 1;
-		}
-	}
-
-	for(int i = 0; i < list_size(bloques_comida) ; i++) {
-		nro_bloque = list_get(bloques_comida, i);
-		if (*nro_bloque > obtener_cantidad_bloques_superbloque() || *nro_bloque < 0){
-			//liberar listas
-			free(nro_bloque);
-			return 1;
-		}
-	}
-	//liberar listas
-
-	free(nro_bloque);
 	return 0;
 }
 
@@ -338,31 +294,34 @@ int bitmap_no_concuerda() {
 	return 0;
 }
 
-void restaurar_blocks() {
+void restaurar_blocks(int codigo) {
 	log_warning(logger_mongo, "INICIO restaurar blocks");
+	uint32_t tamanio;
 
-	if(existe_basura) {
-		uint32_t tamanio_archivo_basura = tamanio_archivo(path_basura);
-		liberar_bloques(path_basura);
-		limpiar_metadata(path_basura);
-		log_warning(logger_mongo, "Tamanio NUEVO BASURA debe ser 0 : %i", tamanio_archivo(path_basura));
-		agregar(BASURA, (int) tamanio_archivo_basura);
-	}
+	switch(codigo){
+		case BASURA:
+			tamanio = tamanio_archivo(path_basura);
+			liberar_bloques(path_basura);
+			limpiar_metadata(path_basura);
+			log_warning(logger_mongo, "Tamanio NUEVO BASURA debe ser 0 : %i", tamanio_archivo(path_basura));
+			agregar(BASURA, (int) tamanio);
+			break;
 
-	if(existe_comida) {
-		uint32_t tamanio_archivo_comida = tamanio_archivo(path_comida);
-		liberar_bloques(path_comida);
-		limpiar_metadata(path_comida);
-		log_warning(logger_mongo, "Tamanio NUEVO COMIDA debe ser 0 : %i", tamanio_archivo(path_comida));
-		agregar(COMIDA, (int) tamanio_archivo_comida);
-	}
+		case COMIDA:
+			tamanio = tamanio_archivo(path_comida);
+			liberar_bloques(path_comida);
+			limpiar_metadata(path_comida);
+			log_warning(logger_mongo, "Tamanio NUEVO COMIDA debe ser 0 : %i", tamanio_archivo(path_comida));
+			agregar(COMIDA, (int) tamanio);
+			break;
 
-	if(existe_oxigeno) {
-		uint32_t tamanio_archivo_oxigeno = tamanio_archivo(path_oxigeno);
-		liberar_bloques(path_oxigeno);
-		limpiar_metadata(path_oxigeno);
-		log_warning(logger_mongo, "Tamanio NUEVO OXIGENO debe ser 0 : %i", tamanio_archivo(path_oxigeno));
-		agregar(OXIGENO, (int) tamanio_archivo_oxigeno);
+		case OXIGENO:
+			tamanio = tamanio_archivo(path_oxigeno);
+			liberar_bloques(path_oxigeno);
+			limpiar_metadata(path_oxigeno);
+			log_warning(logger_mongo, "Tamanio NUEVO OXIGENO debe ser 0 : %i", tamanio_archivo(path_oxigeno));
+			agregar(OXIGENO, (int) tamanio);
+			break;
 	}
 
 	log_warning(logger_mongo, "FIN restaurar blocks");
