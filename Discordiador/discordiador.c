@@ -761,7 +761,7 @@ void listar_tripulantes() {
     log_debug(logger, "\nTripulantes en READY: %i\n", queue_size(cola_tripulantes_ready));
     log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
     log_debug(logger, "\nTripulantes en BLOQ I/O: %i\n", queue_size(cola_tripulantes_block));
-    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block));
+    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block_emergencia));
     log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
 
     char* fechaHora = fecha_y_hora();
@@ -1241,13 +1241,10 @@ void guardian_mongo(){
 				break;
 			case SABOTAJE:
 				log_info(logger, "Sabotaje a la vista");
-				if(!planificacion_activa || (queue_is_empty(cola_tripulantes_ready) && list_is_empty(lista_tripulantes_exec))){
-					log_warning(logger, "planificacion_activa %i...", planificacion_activa);
-					log_warning(logger, "r  %i...", queue_is_empty(cola_tripulantes_ready));
-					log_warning(logger, "e %i...", list_is_empty(lista_tripulantes_exec));
+				if((queue_is_empty(cola_tripulantes_ready) && list_is_empty(lista_tripulantes_exec))){
 					log_warning(logger, "No estamos listos para defendernos del sabotaje...");
 					enviar_codigo(FALLO, socket_a_mongo_store);
-					log_info(logger, "Active la planificacion y asegurese de tener un tripulante en R o E.");
+					log_info(logger, "Asegurese de tener un tripulante en R o E.");
 				} else {
 					peligro(mensaje->posicion, socket_a_mi_ram_hq);
 				}
