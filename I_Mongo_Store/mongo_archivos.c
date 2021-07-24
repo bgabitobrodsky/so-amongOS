@@ -737,9 +737,12 @@ uint32_t bloques_contar(char caracter) {
 
 	}
 
+	matar_lista(bloques);
+
 	// log_warning(logger_mongo, "Unlockeo blocks para contar bloques");
 	unlockear(path_blocks);
 //	log_trace(logger_mongo, "Ya conté");
+
 	return cantidad;
 }
 
