@@ -110,6 +110,7 @@ int verificar_bitmap() {
     }
     else {
         matar_lista(bloques_ocupados);
+        return 0;
     }
 
 }
