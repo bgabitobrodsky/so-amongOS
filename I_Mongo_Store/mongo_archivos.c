@@ -195,6 +195,9 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 	if(list_is_empty(lista_bloques) && cantidad_deseada != 0){
 		log_trace(logger_mongo, "la lista ta vacia");
 		asignar_nuevo_bloque(path, 0);
+		log_trace(logger_mongo, "PRE REVIISAR");
+		list_destroy(lista_bloques); // TODO revisar
+		log_trace(logger_mongo, "POST");
 		lista_bloques = get_lista_bloques(path);
 	}
 
@@ -326,15 +329,17 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		asignar_nuevo_bloque(path, 0);
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
-
-	matar_lista(lista_bloques);
-
+	log_trace(logger_mongo, "pre romper");
+	// matar_lista(lista_bloques);
+	log_trace(logger_mongo, "post romper");
 	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	lista_bloques = get_lista_bloques(path);
 
 	iniciar_archivo_recurso(path, tam_archivo + cantidad + offset, cant_bloques, lista_bloques);
-	matar_lista(lista_bloques);
+	log_trace(logger_mongo, "pre romper 2 ");
+	// matar_lista(lista_bloques);
+	log_trace(logger_mongo, "post romper 2 ");
 	log_trace(logger_mongo, "FIN agregar, cantidad agregada: %i", cantidad);
 
 }

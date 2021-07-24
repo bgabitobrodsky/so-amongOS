@@ -268,11 +268,14 @@ void liberar_lista(t_list* lista){
 	} else if (list_is_empty(lista)){
 		log_info(logger_mongo, "VOID");
 		list_destroy(lista);
-	} else {
+	} else if (list_size(lista) > 0){
 		log_info(logger_mongo, "PEOPLE");
 		list_destroy(lista);
+		log_info(logger_mongo, "FUERA");
 
 //		list_destroy_and_destroy_elements(lista, free);
+	} else{
+		log_info(logger_mongo, "NADA");
 	}
 }
 
@@ -282,12 +285,18 @@ void matar_lista(t_list* lista){
 	if(lista == NULL){
 		// No hacer nada, aunque no se deberia cometer este error
 	} else if (list_is_empty(lista)){
+		log_info(logger_mongo, "solo lista.");
 		list_destroy(lista);
-	} else {
+	} else if (list_size(lista) > 0){
+		log_info(logger_mongo, "y todos sus elementos.");
 		void liberar(void* elemento){
 			free(elemento);
 		}
 
 		list_destroy_and_destroy_elements(lista, liberar);
+	} else{
+		log_info(logger_mongo, "NADA.");
 	}
+	log_info(logger_mongo, "matada lista");
+
 }
