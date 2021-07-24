@@ -112,16 +112,6 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 1 plantas.txt");
-    iniciar_planificacion();
-
     /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
     sleep(1);
     iniciar_patota("INICIAR_PATOTA 5 Prueba.ims");
@@ -1069,7 +1059,7 @@ void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 	}
 
 	enviar_codigo(REPARADO, socket_a_mongo_store);
-	iniciar_planificacion();
+	// iniciar_planificacion();
 
 }
 
