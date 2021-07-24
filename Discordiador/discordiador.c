@@ -283,7 +283,7 @@ void planificador(){
     log_info(logger, "Algoritmo %s", ALGORITMO);
 
     while(planificacion_activa){
-    	sleep(1);
+    	usleep(50);
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
 
             if(comparar_strings(ALGORITMO, "FIFO")){
