@@ -27,7 +27,7 @@ void reparar() {
 
     int reparado = 0;
     
-	log_warning(logger_mongo, "Verifiquemos la cantidad de bloques");
+	/*log_warning(logger_mongo, "Verifiquemos la cantidad de bloques");
     reparado = verificar_cant_bloques();
 
     if (reparado){
@@ -47,7 +47,7 @@ void reparar() {
     if (reparado){
     	log_warning(logger_mongo, "Se repara el tamanios de los archivos");
     }
-
+*/
     log_warning(logger_mongo, "Verifiquemos el block counts");
     reparado = verificar_block_counts();
 
@@ -55,7 +55,7 @@ void reparar() {
     	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
     }
 
-    log_warning(logger_mongo, "Verifiquemos los blocks");
+/*    log_warning(logger_mongo, "Verifiquemos los blocks");
     reparado = verificar_blocks();
 
     if (reparado){
@@ -64,7 +64,7 @@ void reparar() {
 
     if (!reparado){
     	log_warning(logger_mongo, "Estamos joya");
-    }
+    }*/
 }
 
 int verificar_cant_bloques() {
@@ -124,7 +124,7 @@ int verificar_sizes() {
 		uint32_t tamanio_real_B = bloques_contar('B');
 
 		if(tamanio_real_B != tamanio_archivo(path_basura)) {
-			log_trace(logger_mongo, "Basura saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_B, tamanio_archivo(path_basura));
+			log_trace(logger_mongo, "Size basura saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_B, tamanio_archivo(path_basura));
 			set_tam(path_basura, tamanio_real_B);
 			corrompido = 1;
 		}
@@ -134,7 +134,7 @@ int verificar_sizes() {
 		uint32_t tamanio_real_C = bloques_contar('C');
 
 		if(tamanio_real_C != tamanio_archivo(path_comida)) {
-			log_trace(logger_mongo, "Comida saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_C, tamanio_archivo(path_comida));
+			log_trace(logger_mongo, "Size comida saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_C, tamanio_archivo(path_comida));
 			set_tam(path_comida, tamanio_real_C);
 			corrompido = 1;
 		}
@@ -144,7 +144,7 @@ int verificar_sizes() {
 		uint32_t tamanio_real_O = bloques_contar('O');
 
 		if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
-			log_trace(logger_mongo, "Oxigeno saboteado, tamaño real: %i, tamaño encontrado: %i", tamanio_real_O, tamanio_archivo(path_oxigeno));
+			log_trace(logger_mongo, "Size oxigeno saboteado, tamaño real: %i, tamaño encontrado: %i", tamanio_real_O, tamanio_archivo(path_oxigeno));
 			set_tam(path_oxigeno, tamanio_real_O);
 			corrompido = 1;
 		}
@@ -155,33 +155,46 @@ int verificar_sizes() {
 
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso.
-
-	t_list* lista_bloques_basura = get_lista_bloques(path_basura);
-	t_list* lista_bloques_comida = get_lista_bloques(path_comida);
-	t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
-
-	uint32_t cantidad_real_basura = list_size(lista_bloques_basura);
-	uint32_t cantidad_real_comida = list_size(lista_bloques_comida);
-	uint32_t cantidad_real_oxigeno = list_size(lista_bloques_oxigeno);
-
 	int corrompido = 0;
 
-	if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
-		set_cant_bloques(path_oxigeno, cantidad_real_oxigeno);
-		corrompido = 1;
-	}
-	if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
-		set_cant_bloques(path_comida, cantidad_real_comida);
-		corrompido = 1;
-	}
-	if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
-		set_cant_bloques(path_basura, cantidad_real_basura);
-		corrompido = 1;
+	if(existe_basura) {
+		t_list* lista_bloques_basura = get_lista_bloques(path_basura);
+		uint32_t cantidad_real_basura = list_size(lista_bloques_basura);
+
+		if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
+			log_trace(logger_mongo, "Block_count basura saboteado, cantidad real: %i, cantidad encontrada: %i", cantidad_real_basura, cantidad_bloques_recurso(path_basura));
+			set_cant_bloques(path_basura, cantidad_real_basura);
+			corrompido = 1;
+		}
+
+		liberar_lista(lista_bloques_basura);
 	}
 
-	liberar_lista(lista_bloques_basura);
-	liberar_lista(lista_bloques_comida);
-	liberar_lista(lista_bloques_oxigeno);
+	if(existe_comida) {
+		t_list* lista_bloques_comida = get_lista_bloques(path_comida);
+		uint32_t cantidad_real_comida = list_size(lista_bloques_comida);
+
+		if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
+			log_trace(logger_mongo, "Block_count comida saboteado, cantidad real: %i, cantidad encontrada: %i", cantidad_real_comida, cantidad_bloques_recurso(path_comida));
+			set_cant_bloques(path_comida, cantidad_real_comida);
+			corrompido = 1;
+		}
+
+		liberar_lista(lista_bloques_comida);
+	}
+
+	if(existe_oxigeno) {
+		t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
+		uint32_t cantidad_real_oxigeno = list_size(lista_bloques_oxigeno);
+
+		if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
+			log_trace(logger_mongo, "Block_count oxigeno saboteado, cantidad real: %i, cantidad encontrada: %i", cantidad_real_oxigeno, cantidad_bloques_recurso(path_oxigeno));
+			set_cant_bloques(path_oxigeno, cantidad_real_oxigeno);
+			corrompido = 1;
+		}
+
+		liberar_lista(lista_bloques_oxigeno);
+	}
 
 	return corrompido;
 }
