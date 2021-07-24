@@ -242,8 +242,7 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 			if (*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) == tipo) {
 				*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) = ',';
 				cantidad_alcanzada++;
-				// Si ya recorri el bloque entero, lo libero
-				// TODO: testear si se libera bien
+
 				if(j == TAMANIO_BLOQUE-1){
 					liberar_bloque(path, *aux);
 				}
@@ -347,7 +346,6 @@ void quitar(int codigo_archivo, int cantidad) {
 	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
 
 	iniciar_archivo_recurso(path, tam_archivo - cantidad, cant_bloques, lista_bloques);
-
 
 	log_warning(logger_mongo, "FIN quitar");
 }
@@ -578,6 +576,8 @@ uint32_t obtener_cantidad_bloques(char* path){
 
 	char** bloques = config_get_array_value(config, "BLOCKS");
 	int cant_bloques = contar_palabras(bloques);
+	config_destroy(config);
+	liberar_puntero_doble(bloques);
 
 	unlockear(path);
 	// log_warning(logger_mongo, "Unlockeo cantidad bloques recurso");
@@ -617,7 +617,6 @@ t_list* get_lista_bloques(char* path){
 		return lista_bloques;
 	}
 
-	log_error(logger_mongo, "Soy un recurso");
 	t_list* lista_bloques = list_create();
 
 	char** bloques = config_get_array_value(config, "BLOCKS");
@@ -633,12 +632,10 @@ t_list* get_lista_bloques(char* path){
 
 	int* aux;
 
-	log_error(logger_mongo, "Entro al for");
 	for(int i = 0; i < contar_palabras(bloques); i++){
 		aux = malloc(sizeof(int));
 		*aux = atoi(bloques[i]);
 		list_add(lista_bloques, aux);
-		log_error(logger_mongo, "Se agrego el bloque: %i", *aux);
 	}
 
 	// log_warning(logger_mongo, "unlockear bloques");
@@ -651,7 +648,6 @@ t_list* get_lista_bloques(char* path){
 
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
 
-	log_trace(logger_mongo, "0 iniciar_archivo_recurso");
 	set_tam(path, tamanio);
 	set_cant_bloques(path, cant_bloques);
 	set_bloq(path, lista_bloques);
@@ -664,7 +660,6 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	set_md5(path, md5);
 	config_destroy(config);
 
-	log_trace(logger_mongo, "FIN iniciar_archivo_recurso");
 }
 
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloques) {
@@ -739,7 +734,6 @@ uint32_t bloques_contar(char caracter) {
 	lockearLectura(path_blocks);
 //	log_trace(logger_mongo, "lockeado el path_blocks");
 
-	log_trace(logger_mongo, "Pre for");
 	for(int i = 0 ; i < list_size(bloques); i++){
 		aux = list_get(bloques, i);
 		for(int j = 0 ; j < TAMANIO_BLOQUE; j++){
@@ -815,7 +809,9 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 			list_remove_by_condition(bloques, quitar_bloque);
 
 			set_bloq(path, bloques);
-			set_cant_bloques(path, list_size(bloques) - 1);
+			if(es_recurso(path)){
+				set_cant_bloques(path, list_size(bloques) - 1);
+			}
 		}
 	}
 
