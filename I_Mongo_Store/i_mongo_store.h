@@ -32,5 +32,6 @@ void sincronizar_blocks();
 void cerrar_archivos();
 void cerrar_mutexs();
 void manejo_discordiador();
+void matar_bitacora(void* una_bitacora);
 
 #endif /* I_MONGO_STORE_H_ */

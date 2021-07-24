@@ -104,7 +104,7 @@ t_buffer* serializar_entero(uint32_t numero) {
 
 t_buffer* serializar_tripulante(t_tripulante tripulante) {
 
-    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*3 + sizeof(char));
+    t_buffer* buffer = malloc(sizeof(t_TCB));
     buffer->tamanio_estructura = sizeof(uint32_t)*3 + sizeof(char);
     void* estructura = malloc(buffer->tamanio_estructura);
     int desplazamiento = 0;

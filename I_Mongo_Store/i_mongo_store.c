@@ -44,12 +44,17 @@ int main(int argc, char** argv){
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
 
+	reparar();
+
 	while(sistema_activo){
 		sleep(1);
 	}
 
-	log_info(logger_mongo, "Apagando...");
+	list_iterate(bitacoras, matar_bitacora);
 
+	matar_lista(lista_bloques_ocupados);
+	log_info(logger_mongo, "Apagando...");
+	sleep(1);
 	// Se cierran vestigios del pasado
 	log_info(logger_mongo, "Cerrando archivos");
 	cerrar_archivos();
@@ -232,8 +237,10 @@ void iniciar_file_system() {
 void sincronizar_blocks() {
 
 	while(1) {
+		lockearEscritura(path_blocks);
 		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
 		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
+		unlockear(path_blocks);
 		for(int i = 0; i < TIEMPO_SINCRONIZACION; i++){
 			sleep(1);
 			if(!sistema_activo){
@@ -258,9 +265,50 @@ void cerrar_archivos() {
 }
 
 void liberar_lista(t_list* lista){
-	if(list_is_empty(lista)){
-		list_destroy_and_destroy_elements(lista, free);
-	}else{
+	// log_info(logger_mongo, "here");
+	if(lista == NULL){
+		// log_info(logger_mongo, "NULL");
+		// No hacer nada, aunque no se deberia cometer este error
+	} else if (list_is_empty(lista)){
+		// log_info(logger_mongo, "VOID");
 		list_destroy(lista);
+	} else if (list_size(lista) > 0){
+		// log_info(logger_mongo, "PEOPLE");
+		list_destroy(lista);
+		// log_info(logger_mongo, "FUERA");
+
+//		list_destroy_and_destroy_elements(lista, free);
+	} else{
+		// log_info(logger_mongo, "NADA");
 	}
+}
+
+
+void matar_lista(t_list* lista){
+	// log_info(logger_mongo, "matando_lista");
+	if(lista == NULL){
+		// No hacer nada, aunque no se deberia cometer este error
+	} else if (list_is_empty(lista)){
+		// log_info(logger_mongo, "solo lista.");
+		list_destroy(lista);
+	} else if (list_size(lista) > 0){
+		// log_info(logger_mongo, "y todos sus elementos.");
+		void liberar(void* elemento){
+			free(elemento);
+		}
+
+		list_destroy_and_destroy_elements(lista, liberar);
+	} else{
+		// log_info(logger_mongo, "NADA.");
+	}
+	// log_info(logger_mongo, "matada lista");
+
+}
+
+void matar_bitacora(void* una_bitacora) {
+	t_bitacora* bitacora = (t_bitacora*) una_bitacora;
+	log_info(logger_mongo, "Obtenida bitacora. %s", bitacora->path);
+	liberar_bloques(bitacora->path);
+	liberar_lista(bitacora->bloques);
+	borrar_bitacora(bitacora->tripulante);
 }

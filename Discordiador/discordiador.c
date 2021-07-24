@@ -111,7 +111,16 @@ int main() {
 
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
-    
+
+
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 plantas.txt");
+    iniciar_planificacion();
 
     /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
     sleep(1);
@@ -147,15 +156,6 @@ int main() {
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
 
-//    iniciar_patota("INICIAR_PATOTA 2 FS_PatotaA.txt");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
-//    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|0");
-//    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota4.txt 0|0");
-    iniciar_planificacion();
-
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 	pthread_detach(hiloConsola);
@@ -167,6 +167,8 @@ int main() {
     while(sistema_activo){
     	sleep(1);
     }
+
+    enviar_codigo(DESCONEXION, socket_a_mongo_store);
 
     liberar_tripulantes();
     log_warning(logger, "Apagando sistema, espere por favor.");
