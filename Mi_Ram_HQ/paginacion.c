@@ -98,6 +98,7 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam){
 		}
 		log_trace(logger,"[SWAP]: Libero el espacio en disco: %d", pag2->disk_index);
 		bitmap_disco[pag->disk_index] = false;
+		pag2->disk_index = -1;
 		//list_remove(tabla->paginas, num);
 		//free(pag2);
 	}
@@ -159,19 +160,29 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 
 	if(offset > 0){
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
-		pagina->modificada = true;
-		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
-		desbloquear_pagina(pagina);
-		num_pagina++;
-		log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
+		if(pagina != NULL){
+			pagina->modificada = true;
+			progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
+			desbloquear_pagina(pagina);
+			num_pagina++;
+			log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
+		}else{
+			log_error(logger, "Se intentó escribir sobre una página que ya fue eliminada");
+			return 0;
+		}
 	}
 	while(progreso < tam){
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
-		pagina->modificada = true;
-		progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
-		desbloquear_pagina(pagina);
-		num_pagina++;
-		log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
+		if(pagina != NULL){
+			pagina->modificada = true;
+			progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
+			desbloquear_pagina(pagina);
+			num_pagina++;
+			log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
+		}else{
+			log_error(logger, "Se intentó escribir sobre una página que ya fue eliminada");
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -198,6 +209,8 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 
 	if(offset > 0){
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
+		if(pagina == NULL)
+			return NULL;
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
 		desbloquear_pagina(pagina);
 		num_pagina++;
@@ -207,6 +220,8 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	while(faltante > 0){
 
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
+		if(pagina == NULL)
+			return NULL;
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
 		desbloquear_pagina(pagina);
 		num_pagina++;
@@ -234,15 +249,17 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 
 	if(num_pagina >= 0){ // hay alguna pagina
 		pagina* ultima_pagina = get_pagina(tabla->paginas, pid, num_pagina);
-		if(ultima_pagina->tamano_ocupado < TAMANIO_PAGINA ){ // la ultima pagina no está llena
-			offset = ultima_pagina->tamano_ocupado;
-			progreso += escribir_en_marco(ultima_pagina->puntero_marco, data, offset, tam);
-			ultima_pagina->tamano_ocupado += progreso;
-			log_trace(logger, "Escribiendo... : %d / %d bytes", progreso, tam);
-		}else{
-			num_pagina++;
+		if(ultima_pagina != NULL){
+			if(ultima_pagina->tamano_ocupado < TAMANIO_PAGINA ){ // la ultima pagina no está llena
+				offset = ultima_pagina->tamano_ocupado;
+				progreso += escribir_en_marco(ultima_pagina->puntero_marco, data, offset, tam);
+				ultima_pagina->tamano_ocupado += progreso;
+				log_trace(logger, "Escribiendo... : %d / %d bytes", progreso, tam);
+			}else{
+				num_pagina++;
+			}
+			desbloquear_pagina(ultima_pagina);
 		}
-		desbloquear_pagina(ultima_pagina);
 	}else{
 		num_pagina = 0;
 	}
@@ -558,6 +575,10 @@ int get_disk_index(){
 
 pagina* get_pagina(t_list* paginas, int pid, int num_pagina){
 	pagina* pagina = list_get(paginas, num_pagina);
+	if(pagina->disk_index == -1){
+		log_error(logger, "Se intentó acceder a una pagina ya liberada");
+		return NULL; // pagina ya fue eliminada bro
+	}
 	bloquear_pagina(pagina);
 	if(!pagina->en_memoria){
 		bloquear_swap();

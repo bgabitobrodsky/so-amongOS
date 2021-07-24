@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_TRACE);
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_DEBUG);
 	config = config_create("mi_ram_hq.config");
 	signal(SIGUSR1, signal_compactacion);
 	signal(SIGUSR2, dump);
@@ -545,6 +545,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			free(tcb);
 			return NULL;
 		}
+		
 		int dl_tarea_tcb = tcb->siguiente_instruccion;
 		log_info(logger, "DL de la siguiente instruccion: %d", dl_tarea_tcb);
 		if(dl_tarea_tcb == 999999){
