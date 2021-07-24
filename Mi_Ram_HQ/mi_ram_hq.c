@@ -78,9 +78,8 @@ int main(int argc, char** argv) {
 
 void proceso_handler(void* args) {
 	log_debug(logger,"Se inicia el servidor multi-hilo");
-	args_escuchar* p = malloc(sizeof(args_escuchar));
-	p = args;
-	int socket_escucha = p->socket_oyente;
+	args_escuchar* p = args;
+    int socket_escucha = p->socket_oyente;
 
 	int addrlen, socket_especifico;
 	struct sockaddr_in address;
@@ -104,7 +103,6 @@ void proceso_handler(void* args) {
 			pthread_detach(un_hilo_tripulante);
 		}
 	}
-	free(p);
 }
 
 void atender_clientes(void* param) {
@@ -199,6 +197,7 @@ void atender_clientes(void* param) {
 				log_info(logger, "Se desconecto un cliente.\n");
 				flag = 0;
 				free(mensaje_recibido);
+				free(parametros);
 				pthread_exit(NULL);
 				//close(parametros->socket);
 				break;
@@ -210,7 +209,6 @@ void atender_clientes(void* param) {
 				break;
 		}
 	}
-
 }
 
 // MMMMMMMM               MMMMMMMMEEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMM     OOOOOOOOO     RRRRRRRRRRRRRRRRR   IIIIIIIIII               AAA               
@@ -543,11 +541,13 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
 		if(tcb == NULL){
 			//no deberia pasar pero por las dudas viste
+			log_error(logger, "No existe el trip en memoria TID: %d", tid);
 			free(tcb);
 			return NULL;
 		}
+		
 		int dl_tarea_tcb = tcb->siguiente_instruccion;
-
+		log_info(logger, "DL de la siguiente instruccion: %d", dl_tarea_tcb);
 		if(dl_tarea_tcb == 999999){
 			// Ya no quedan tareas
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
@@ -555,7 +555,6 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			return NULL;
 		}
 		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tabla->dl_pcb - dl_tarea_tcb, pid); // 0 porque las tareas siempre estan al inicio de todo
-		//char* tareas_restantes = string_substring_from(str_tareas, dl_tarea_tcb);
 		char** palabras = string_split(str_tareas, "\n");
 		char* str_tarea = palabras[0];
 		log_info(logger, "Tarea para TID: %d encontrada: %s", tid, str_tarea);
@@ -844,6 +843,7 @@ void bloquear_tabla(void* una_tabla){
 }
 
 void desbloquear_tabla(void* una_tabla){
+	log_trace(logger,"[SEM]: Desbloqueo tabla");
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 		tabla_segmentos* tabla = (tabla_segmentos*) una_tabla;
 		pthread_mutex_unlock(&(tabla->mutex));
@@ -851,7 +851,6 @@ void desbloquear_tabla(void* una_tabla){
 		tabla_paginas* tabla = (tabla_paginas*) una_tabla;
 		pthread_mutex_unlock(&(tabla->mutex));
 	}
-	log_trace(logger,"[SEM]: Desbloqueo tabla");
 }
 
 void bloquear_lista_tablas(){
@@ -860,8 +859,8 @@ void bloquear_lista_tablas(){
 }
 
 void desbloquear_lista_tablas(){
-	pthread_mutex_unlock(&m_tablas);
 	log_trace(logger,"[SEM]: Desloqueo lista de tablas");
+	pthread_mutex_unlock(&m_tablas);
 }
 
 void bloquear_mapa(){
@@ -870,6 +869,6 @@ void bloquear_mapa(){
 }
 
 void desbloquear_mapa(){
-	pthread_mutex_unlock(&m_mapa);
 	log_trace(logger,"[SEM]: Desloqueo mapa");
+	pthread_mutex_unlock(&m_mapa);
 }
