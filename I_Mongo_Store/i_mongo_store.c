@@ -48,6 +48,7 @@ int main(int argc, char** argv){
 		sleep(1);
 	}
 
+	matar_lista(lista_bloques_ocupados);
 	log_info(logger_mongo, "Apagando...");
 	sleep(1);
 	// Se cierran vestigios del pasado
@@ -258,9 +259,33 @@ void cerrar_archivos() {
 }
 
 void liberar_lista(t_list* lista){
-	if(list_is_empty(lista)){
-		list_destroy_and_destroy_elements(lista, free);
-	}else{
+	log_info(logger_mongo, "here");
+	if(lista == NULL){
+		log_info(logger_mongo, "NULL");
+		// No hacer nada, aunque no se deberia cometer este error
+	} else if (list_is_empty(lista)){
+		log_info(logger_mongo, "VOID");
 		list_destroy(lista);
+	} else {
+		log_info(logger_mongo, "PEOPLE");
+		list_destroy(lista);
+
+//		list_destroy_and_destroy_elements(lista, free);
+	}
+}
+
+
+void matar_lista(t_list* lista){
+	log_info(logger_mongo, "matando_lista");
+	if(lista == NULL){
+		// No hacer nada, aunque no se deberia cometer este error
+	} else if (list_is_empty(lista)){
+		list_destroy(lista);
+	} else {
+		void liberar(void* elemento){
+			free(elemento);
+		}
+
+		list_destroy_and_destroy_elements(lista, liberar);
 	}
 }

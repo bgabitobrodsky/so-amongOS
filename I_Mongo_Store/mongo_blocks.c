@@ -154,12 +154,15 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
 
     free(bitmap->bitarray);
     bitarray_destroy(bitmap);
+
 }
 
 void reescribir_bitmap(t_bitarray* bitmap){
+	lockearEscritura(path_superbloque);
 	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
 	fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
 	fflush(directorio.superbloque);
+	unlockear(path_superbloque);
 }
 
 void reemplazar(t_list* lista, int index, void* elemento){

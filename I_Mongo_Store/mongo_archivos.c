@@ -327,12 +327,14 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
 
+	matar_lista(lista_bloques);
+
 	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	lista_bloques = get_lista_bloques(path);
 
 	iniciar_archivo_recurso(path, tam_archivo + cantidad + offset, cant_bloques, lista_bloques);
-
+	matar_lista(lista_bloques);
 	log_trace(logger_mongo, "FIN agregar, cantidad agregada: %i", cantidad);
 
 }
@@ -548,7 +550,7 @@ char* md5_archivo(char* path) {
 	int largo = strlen(path);
 	MD5_CTX c;
 	unsigned char digest[16];
-	char *out = (char*)malloc(33);
+	char* out = (char*)malloc(33);
 
 	MD5_Init(&c);
 
@@ -645,6 +647,7 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	char* md5 = md5_archivo(cadena_blocks);
 	set_md5(path, md5);
 	config_destroy(config);
+	free(md5);
 
 }
 
@@ -699,10 +702,13 @@ void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
 	t_list* lista_bloques = get_lista_bloques(path);
 
 	// log_debug(logger_mongo, "Tamanio de la lista antes de agregar: %i", list_size(lista_bloques));
-	list_add(lista_bloques, pos_libre);
+	int* aux = malloc(sizeof(int));
+	*aux = *pos_libre;
+	list_add(lista_bloques, aux);
 	// log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
 
 	escribir_archivo_tripulante (path, tamanio, lista_bloques);
+	matar_lista(lista_bloques);
 }
 
 uint32_t bloques_contar(char caracter) {
@@ -763,6 +769,7 @@ void liberar_bloques(char* path) {
 		liberar_bloque(path, *nro_bloque);
 		blanquear_bloque(*nro_bloque);
 	}
+	matar_lista(bloques);
 }
 
 void blanquear_bloque(int bloque){
@@ -792,8 +799,8 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 				return (nro_bloque == *((int*) elemento1));
 			}
 
-			list_remove_by_condition(bloques, quitar_bloque);
-
+			int* aux = list_remove_by_condition(bloques, quitar_bloque);
+			free(aux);
 			if(es_recurso(path)){
 				set_bloq(path, bloques);
 				set_cant_bloques(path, list_size(bloques) - 1);
@@ -805,8 +812,9 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 		return *((int*) bloque) == nro_bloque;
 	}
 
-	list_remove_by_condition(lista_bloques_ocupados, quitar_bloque_de_lista);
-	liberar_lista(bloques);
+	int* aux = list_remove_by_condition(lista_bloques_ocupados, quitar_bloque_de_lista);
+	free(aux);
+	matar_lista(bloques);
 	free(nuevo_bitmap->bitarray);
 	bitarray_destroy(nuevo_bitmap);
 }
@@ -917,7 +925,9 @@ void set_cant_bloques(char* path, int cant){
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
-	config_set_value(config, "BLOCK_COUNT", string_itoa(cant));
+	char* aux = string_itoa(cant);
+	config_set_value(config, "BLOCK_COUNT", aux);
+	free(aux);
 	config_save(config);
 	config_destroy(config);
 
