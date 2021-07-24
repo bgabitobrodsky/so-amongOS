@@ -131,35 +131,35 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
     	}
 	}
 */
-
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-    	bitarray_clean_bit(bitmap, i); // limpio el bitarray, total despues le meto los que tengo registrados que andan ocupados
+    	bitarray_clean_bit(bitmap, i); // Limpio el bitarray, total despues le meto los que tengo registrados que andan ocupados
     }
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
     	if(esta_en_lista(bloques_ocupados, i)){
     		bitarray_set_bit(bitmap, i);
-    	} else{
+    	} else {
     		bitarray_clean_bit(bitmap, i);
     	}
     }
-
 /*
     log_trace(logger_mongo, "Bitmap nuevo:");
-        for(int i = 0; i < bitarray_get_max_bit(bitmap); i++){
-        	if(esta_en_lista(lista_bloques_ocupados, i)){
-        		log_info(logger_mongo, "bit ocupado: %i", i);
-        	}
-    	}
+	for(int i = 0; i < bitarray_get_max_bit(bitmap); i++){
+		if(esta_en_lista(lista_bloques_ocupados, i)){
+			log_info(logger_mongo, "bit ocupado: %i", i);
+		}
+	}
 */
-
-    // TODO: Delegar
-	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
-	fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
-	fflush(directorio.superbloque);
+    reescribir_bitmap(bitmap);
 
     free(bitmap->bitarray);
     bitarray_destroy(bitmap);
+}
+
+void reescribir_bitmap(t_bitarray* bitmap){
+	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
+	fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
+	fflush(directorio.superbloque);
 }
 
 void reemplazar(t_list* lista, int index, void* elemento){

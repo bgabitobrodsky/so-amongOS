@@ -27,7 +27,7 @@ void reparar() {
 
     int reparado = 0;
     
-	log_warning(logger_mongo, "Verifiquemos la cantidad de bloques");
+	/*log_warning(logger_mongo, "Verifiquemos la cantidad de bloques");
     reparado = verificar_cant_bloques();
 
     if (reparado){
@@ -47,7 +47,7 @@ void reparar() {
     if (reparado){
     	log_warning(logger_mongo, "Se repara el tamanios de los archivos");
     }
-
+*/
     log_warning(logger_mongo, "Verifiquemos el block counts");
     reparado = verificar_block_counts();
 
@@ -55,7 +55,7 @@ void reparar() {
     	log_warning(logger_mongo, "Se repara la cantidad de bloques de los recursos");
     }
 
-    log_warning(logger_mongo, "Verifiquemos los blocks");
+/*    log_warning(logger_mongo, "Verifiquemos los blocks");
     reparado = verificar_blocks();
 
     if (reparado){
@@ -64,7 +64,7 @@ void reparar() {
 
     if (!reparado){
     	log_warning(logger_mongo, "Estamos joya");
-    }
+    }*/
 }
 
 int verificar_cant_bloques() {
@@ -97,7 +97,9 @@ int verificar_bitmap() {
 	t_list* bloques_ocupados = list_create();
 	log_warning(logger_mongo, "0");
     recorrer_recursos(bloques_ocupados);
+	log_warning(logger_mongo, "Recorridos recursos");
     recorrer_bitacoras(bloques_ocupados);
+	log_warning(logger_mongo, "Recorridas bitacoras");
     sortear(bloques_ocupados);
 
 	log_warning(logger_mongo, "Pre if");
@@ -115,23 +117,37 @@ int verificar_bitmap() {
 int verificar_sizes() {
     // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio, devuelve 3, sino 0
 
-	uint32_t tamanio_real_B = bloques_contar('B');
-	uint32_t tamanio_real_C = bloques_contar('C');
-	uint32_t tamanio_real_O = bloques_contar('O');
-
+//	log_trace(logger_mongo, "Contando");
 	int corrompido = 0;
 
-	if(tamanio_real_B != tamanio_archivo(path_basura)) {
-		set_tam(path_basura, tamanio_real_B);
-		corrompido = 1;
+	if(existe_basura) {
+		uint32_t tamanio_real_B = bloques_contar('B');
+
+		if(tamanio_real_B != tamanio_archivo(path_basura)) {
+			log_trace(logger_mongo, "Size basura saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_B, tamanio_archivo(path_basura));
+			set_tam(path_basura, tamanio_real_B);
+			corrompido = 1;
+		}
 	}
-	if(tamanio_real_C != tamanio_archivo(path_comida)) {
-		set_tam(path_comida, tamanio_real_C);
-		corrompido = 1;
+
+	if(existe_comida) {
+		uint32_t tamanio_real_C = bloques_contar('C');
+
+		if(tamanio_real_C != tamanio_archivo(path_comida)) {
+			log_trace(logger_mongo, "Size comida saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_C, tamanio_archivo(path_comida));
+			set_tam(path_comida, tamanio_real_C);
+			corrompido = 1;
+		}
 	}
-	if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
-		set_tam(path_oxigeno, tamanio_real_O);
-		corrompido = 1;
+
+	if(existe_oxigeno) {
+		uint32_t tamanio_real_O = bloques_contar('O');
+
+		if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
+			log_trace(logger_mongo, "Size oxigeno saboteado, tamaño real: %i, tamaño encontrado: %i", tamanio_real_O, tamanio_archivo(path_oxigeno));
+			set_tam(path_oxigeno, tamanio_real_O);
+			corrompido = 1;
+		}
 	}
 
 	return corrompido;
@@ -139,33 +155,46 @@ int verificar_sizes() {
 
 int verificar_block_counts(t_TCB* tripulante) { 
     // Compara block count vs el largo de la lista de cada archivo recurso.
-
-	t_list* lista_bloques_basura = get_lista_bloques(path_basura);
-	t_list* lista_bloques_comida = get_lista_bloques(path_comida);
-	t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
-
-	uint32_t cantidad_real_basura = list_size(lista_bloques_basura);
-	uint32_t cantidad_real_comida = list_size(lista_bloques_comida);
-	uint32_t cantidad_real_oxigeno = list_size(lista_bloques_oxigeno);
-
 	int corrompido = 0;
 
-	if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
-		set_cant_bloques(path_oxigeno, cantidad_real_oxigeno);
-		corrompido = 1;
-	}
-	if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
-		set_cant_bloques(path_comida, cantidad_real_comida);
-		corrompido = 1;
-	}
-	if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
-		set_cant_bloques(path_basura, cantidad_real_basura);
-		corrompido = 1;
+	if(existe_basura) {
+		t_list* lista_bloques_basura = get_lista_bloques(path_basura);
+		uint32_t cantidad_real_basura = list_size(lista_bloques_basura);
+
+		if(cantidad_real_basura  != cantidad_bloques_recurso(path_basura)) {
+			log_trace(logger_mongo, "Block_count basura saboteado, cantidad real: %i, cantidad encontrada: %i", cantidad_real_basura, cantidad_bloques_recurso(path_basura));
+			set_cant_bloques(path_basura, cantidad_real_basura);
+			corrompido = 1;
+		}
+
+		liberar_lista(lista_bloques_basura);
 	}
 
-	liberar_lista(lista_bloques_basura);
-	liberar_lista(lista_bloques_comida);
-	liberar_lista(lista_bloques_oxigeno);
+	if(existe_comida) {
+		t_list* lista_bloques_comida = get_lista_bloques(path_comida);
+		uint32_t cantidad_real_comida = list_size(lista_bloques_comida);
+
+		if(cantidad_real_comida  != cantidad_bloques_recurso(path_comida)) {
+			log_trace(logger_mongo, "Block_count comida saboteado, cantidad real: %i, cantidad encontrada: %i", cantidad_real_comida, cantidad_bloques_recurso(path_comida));
+			set_cant_bloques(path_comida, cantidad_real_comida);
+			corrompido = 1;
+		}
+
+		liberar_lista(lista_bloques_comida);
+	}
+
+	if(existe_oxigeno) {
+		t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
+		uint32_t cantidad_real_oxigeno = list_size(lista_bloques_oxigeno);
+
+		if(cantidad_real_oxigeno != cantidad_bloques_recurso(path_oxigeno)) {
+			log_trace(logger_mongo, "Block_count oxigeno saboteado, cantidad real: %i, cantidad encontrada: %i", cantidad_real_oxigeno, cantidad_bloques_recurso(path_oxigeno));
+			set_cant_bloques(path_oxigeno, cantidad_real_oxigeno);
+			corrompido = 1;
+		}
+
+		liberar_lista(lista_bloques_oxigeno);
+	}
 
 	return corrompido;
 }
@@ -297,28 +326,6 @@ int bitmap_no_concuerda() {
 	return 0;
 }
 
-int lista_blocks_saboteada(FILE* archivo) {
-/*
-	//Concatenar los bloques de la lista de bloques
-	char* nuevo_hash = string_new();
-	int* lista_bloques = (int*) get_lista_bloques(recurso.basura);
-	for(int i = 0; i < sizeof(lista_bloques) / sizeof(int); i++)
-		string_append(&nuevo_hash, string_itoa(lista_bloques[i]));
-
-	//Hashear lo concatenado (Osea si la lista es [1,4,2], debo hashear a MD5 la cadena 142)
-    // TODO arreglar o cambiar
-	//unsigned char digest[16];
-    //compute_md5(nuevo_hash, digest);
-
-    //Comparar lo hasheado con el hash del archivo. Si son iguales no hay sabotaje. Si difieren está saboteado el archivo
-    if(strcmp(nuevo_hash, md5_archivo(recurso.basura)))
-    	return 0;
-    else
-    	return 1;
-*/
-	return 0;
-}
-
 void restaurar_blocks() {
 	log_warning(logger_mongo, "inicio restaurar blocks");
 	uint32_t tamanio_archivo_basura = tamanio_archivo(path_basura);
@@ -344,45 +351,49 @@ void restaurar_blocks() {
 void recorrer_recursos(t_list* bloques_ocupados) {
     // Recorre las listas de las metadatas de los recursos y va anotando en la lista que bloques estan ocupados
 
-	//BASURA
-	t_list* lista_bloques_basura = get_lista_bloques(path_basura);
-	int* aux = malloc(sizeof(int));
+	int* aux;
 
-	for(int i = 0; i < list_size(lista_bloques_basura); i++) {
-		aux = list_get(lista_bloques_basura, i);
-		list_add(bloques_ocupados, aux);
+	//BASURA
+	if(existe_basura){
+		t_list* lista_bloques_basura = get_lista_bloques(path_basura);
+
+		for(int i = 0; i < list_size(lista_bloques_basura); i++) {
+			aux = list_get(lista_bloques_basura, i);
+			list_add(bloques_ocupados, aux);
+		}
+		list_destroy(lista_bloques_basura);
 	}
 
 	//COMIDA
-	t_list* lista_bloques_comida = get_lista_bloques(path_comida);
+	if(existe_comida){
+		t_list* lista_bloques_comida = get_lista_bloques(path_comida);
 
-	for(int i = 0; i < list_size(lista_bloques_comida); i++) {
-		aux = list_get(lista_bloques_comida, i);
-		list_add(bloques_ocupados, aux);
-
+		for(int i = 0; i < list_size(lista_bloques_comida); i++) {
+			aux = list_get(lista_bloques_comida, i);
+			list_add(bloques_ocupados, aux);
+		}
+		list_destroy(lista_bloques_comida);
 	}
+
 
 	//OXIGENO
-	t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
+	if(existe_oxigeno){
+		t_list* lista_bloques_oxigeno = get_lista_bloques(path_oxigeno);
 
-	for(int i = 0; i < list_size(lista_bloques_oxigeno); i++) {
-		aux = list_get(lista_bloques_oxigeno, i);
-		list_add(bloques_ocupados, aux);
+		for(int i = 0; i < list_size(lista_bloques_oxigeno); i++) {
+			aux = list_get(lista_bloques_oxigeno, i);
+			list_add(bloques_ocupados, aux);
+		}
+		list_destroy(lista_bloques_oxigeno);
 	}
 
-	// liberar listas
-	log_trace(logger_mongo, "Liberando listas auxiliares");
-	free(aux);
-	liberar_lista(lista_bloques_basura);
-	liberar_lista(lista_bloques_comida);
-	liberar_lista(lista_bloques_oxigeno);
 }
 
 void recorrer_bitacoras(t_list* bloques_ocupados) {
 	// Recorre las listas de las metadatas de las bitacoras y va anotando en la lista que bloques estan ocupados
 
 	t_bitacora* bitacora_aux;
-	int* aux = malloc(sizeof(int));
+	int* aux;
 
 	//Itero por todas las bitacoras
 	for(int i = 0; i < list_size(bitacoras); i++) {
@@ -392,7 +403,6 @@ void recorrer_bitacoras(t_list* bloques_ocupados) {
 			list_add(bloques_ocupados, aux);
 		}
 	}
-	free(aux);
 }
 
 void sortear(t_list* bloques_ocupados) {
@@ -409,7 +419,7 @@ void sortear(t_list* bloques_ocupados) {
 
 int bloques_ocupados_difieren(t_list* bloques_ocupados) {
     // Compara lista contra el bitmap, apenas difieren devuelve 1 (como true), sino 0
-	int no_difieren;
+	int no_difieren = 1;
 	log_warning(logger_mongo, "bloques_ocupados_difieren");
 	t_bitarray* bitmap = obtener_bitmap();
 
@@ -419,7 +429,6 @@ int bloques_ocupados_difieren(t_list* bloques_ocupados) {
 		if(bitarray_test_bit(bitmap, i)){
 			no_difieren = esta_en_lista(bloques_ocupados, i);
 		}
-
 		//Si el bit es 0, la lista no debe contener el bloque n° i
 		else{
 			no_difieren = !esta_en_lista(bloques_ocupados, i);
@@ -428,10 +437,14 @@ int bloques_ocupados_difieren(t_list* bloques_ocupados) {
 		//Si el flag es 0, los bloques difieren
 		if(!no_difieren){
 			log_warning(logger_mongo, "difieren");
+			free(bitmap->bitarray);
+			bitarray_destroy(bitmap);
 			return 1;
 		}
 
 	}
 	log_warning(logger_mongo, "no difieren");
+	free(bitmap->bitarray);
+	bitarray_destroy(bitmap);
 	return 0;
 }
