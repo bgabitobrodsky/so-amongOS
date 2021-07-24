@@ -8,7 +8,9 @@ void reparar();
 int verificar_cant_bloques();
 int verificar_bitmap();
 int verificar_sizes(); // TESTEADO
+int verificar_size_recurso(char* path);
 int verificar_block_counts(); // TESTEADO
+int verificar_block_counts_recurso(char* path);
 int verificar_blocks();
 int lista_blocks_saboteada(FILE* archivo);
 void recorrer_recursos(t_list* lista_bloques_ocupados);

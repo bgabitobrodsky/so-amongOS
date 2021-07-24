@@ -116,6 +116,8 @@ int main() {
     iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
     iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
     iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
     iniciar_planificacion();
 
     /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
