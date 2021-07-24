@@ -52,7 +52,7 @@ int main(int argc, char** argv){
 	cerrar_archivos();
 	close(socket_oyente);
 	list_destroy(bitacoras);
-	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.\n");
+	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.");
 	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
 	config_destroy(config_superbloque);
@@ -132,16 +132,16 @@ void manejo_discordiador(){
 				if(bitacora_tripulante != NULL){
 					char* bitacora = rescatar_bitacora(bitacora_tripulante->path);
 					if(bitacora == NULL){
-						log_debug(logger_mongo, "El tripulante no tenia nada en la bitacora.");
+						log_info(logger_mongo, "El tripulante no tenia nada en la bitacora.");
 						enviar_codigo(FALLO, socket_discordiador);
 						log_debug(logger_mongo, "Envio un fallo.");
 
 					} else {
-						log_debug(logger_mongo, "Conseguimos la bitacora.");
+						log_info(logger_mongo, "Conseguimos la bitacora.");
 						t_archivo_tareas texto_archivo;
 						texto_archivo.texto = malloc(strlen(bitacora) + 1);
 						strcpy(texto_archivo.texto, bitacora);
-						log_debug(logger_mongo, "La bitacora tiene: %s.", texto_archivo.texto);
+						log_debug(logger_mongo, "La bitacora tiene: %s", texto_archivo.texto);
 						texto_archivo.largo_texto = strlen(bitacora);
 
 						t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);
@@ -152,6 +152,15 @@ void manejo_discordiador(){
 					log_debug(logger_mongo, "El tripulante no tenia bitacora.");
 					enviar_codigo(FALLO, socket_discordiador);
 				}
+				break;
+
+			case REPARADO:
+				reparar();
+				log_warning(logger_mongo, "Se reparo el sabotaje.");
+				break;
+
+			case FALLO:
+				log_warning(logger_mongo, "No se pudo reparar el sabotaje.");
 				break;
 
 			case DESCONEXION:
@@ -170,22 +179,12 @@ void manejo_discordiador(){
 	}
 }
 
-// TODO: Se ejecutaria aunque no haya un tripu disponible en discordiador
 void sabotaje(int n) {
 
-	// Se espera que set reciba la signal correspondiente
 	if (n == SIGUSR1) {
-		// log_error(logger_mongo, "Se detecto un sabotaje.\n");
-		// Se avisa y se espera a Discordiador que tome las acciones correspondientes al sabotaje
+		log_warning(logger_mongo, "Se detecto un sabotaje.");
 		enviar_posicion_sabotaje(socket_discordiador);
-
-		// Se activaria el protocolo fcsk
-		reparar();
-
-		log_warning(logger_mongo, "Se reparo el sabotaje.");
-
 	}
-
 }
 
 void iniciar_file_system() {

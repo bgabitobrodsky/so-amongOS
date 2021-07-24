@@ -148,7 +148,7 @@ int main() {
     // peligro("9|9", socket_a_mi_ram_hq);
 
     //iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 3 FS_PatotaA.txt");
+    iniciar_patota("INICIAR_PATOTA 1 FS_PatotaA.txt");
     iniciar_planificacion();
 
     pthread_t hiloConsola;
@@ -272,7 +272,7 @@ void iniciar_planificacion() {
     log_debug(logger, "\nTripulantes en READY: %i\n", queue_size(cola_tripulantes_ready));
     log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
     log_debug(logger, "\nTripulantes en BLOQ I/O: %i\n", queue_size(cola_tripulantes_block));
-    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block));
+    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block_emergencia));
     log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
 
     pthread_t t_planificador;
@@ -761,7 +761,7 @@ void listar_tripulantes() {
     log_debug(logger, "\nTripulantes en READY: %i\n", queue_size(cola_tripulantes_ready));
     log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
     log_debug(logger, "\nTripulantes en BLOQ I/O: %i\n", queue_size(cola_tripulantes_block));
-    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block));
+    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block_emergencia));
     log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
 
     char* fechaHora = fecha_y_hora();
@@ -976,7 +976,7 @@ void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket){
 void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 	// PRIMERO los de EXEC, los de mayor TID primero
 	// despues lo de READY, los de mayor TID primero
-
+	log_warning(logger, "Estamos en peligro!");
 	pausar_planificacion();
 
 	int i, j;
@@ -1061,6 +1061,7 @@ void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 		monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, t_aux);
 	}
 
+	enviar_codigo(REPARADO, socket_a_mongo_store);
 	iniciar_planificacion();
 
 }
@@ -1229,8 +1230,8 @@ void guardian_mongo(){
 				log_info(logger, "Bitacora del tripulante:");
 				char** bitacora_ordenada = string_split(mensaje->archivo_tareas->texto, ".");
 
-				for(int i = 0; i < contar_palabras(bitacora_ordenada) ; i++){
-					log_debug(logger, "%s", bitacora_ordenada[i]);
+				for(int i = 0; i < contar_palabras(bitacora_ordenada); i++){
+					log_info(logger, "%s", bitacora_ordenada[i]);
 				}
 
 				liberar_puntero_doble(bitacora_ordenada);
@@ -1240,9 +1241,10 @@ void guardian_mongo(){
 				break;
 			case SABOTAJE:
 				log_info(logger, "Sabotaje a la vista");
-				if(!planificacion_activa || (queue_is_empty(cola_tripulantes_ready) && list_is_empty(lista_tripulantes_exec))){
+				if((queue_is_empty(cola_tripulantes_ready) && list_is_empty(lista_tripulantes_exec))){
 					log_warning(logger, "No estamos listos para defendernos del sabotaje...");
-					log_info(logger, "Active la planificacion y asegurese de tener un tripulante en R o E.");
+					enviar_codigo(FALLO, socket_a_mongo_store);
+					log_info(logger, "Asegurese de tener un tripulante en R o E.");
 				} else {
 					peligro(mensaje->posicion, socket_a_mi_ram_hq);
 				}

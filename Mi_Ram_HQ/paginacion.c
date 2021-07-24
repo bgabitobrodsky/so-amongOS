@@ -504,9 +504,12 @@ void dump_paginacion(){
         free(dump_row);
 		num_marco++;
     }
-
-    txt_write_in_file(file, string_from_format("Dump: %s\n", temporal_get_string_time("%d/%m/%y %H:%M:%S")));
+	char* temporal = temporal_get_string_time("%d/%m/%y %H:%M:%S");
+	char* string_a_printear = string_from_format("Dump: %s\n", temporal);
+    txt_write_in_file(file, string_a_printear);
     list_iterate(marcos, impresor_dump);
+	free(temporal);
+	free(string_a_printear);
     txt_close_file(file);
 	desbloquear_lista_marcos();
 }

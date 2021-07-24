@@ -4,25 +4,23 @@ extern char** posiciones_sabotajes;
 int pos_actual_sabotaje = 0;
 
 void enviar_posicion_sabotaje(int socket_discordiador) {
-	log_warning(logger_mongo, "INICIO enviar_posicion_sabotaje");
+	log_warning(logger_mongo, "Enviando posiciones de sabotaje.");
 
 	if (pos_actual_sabotaje != contar_palabras(posiciones_sabotajes)) {
-		log_warning(logger_mongo, "dentro del if");
 		t_posicion posicion;
 
 		posicion.coord_x = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][0] - 48; // EQUIVALENCIA ASCII NUMERO
 		posicion.coord_y = (uint32_t) posiciones_sabotajes[pos_actual_sabotaje][2] - 48; // EQUIVALENCIA ASCII NUMERO
-		log_warning(logger_mongo, "antes de enviar");
 		empaquetar_y_enviar(serializar_posicion(posicion), SABOTAJE, socket_discordiador);
-		log_warning(logger_mongo, "enviada");
 
 		pos_actual_sabotaje++;
-	}
-	else{
-		log_warning(logger_mongo, "No hay posiciones de sabotaje");
-		pos_actual_sabotaje = 0; //reset para que vuelva a ser posible sabotear
-	}
 
+		if (pos_actual_sabotaje == contar_palabras(posiciones_sabotajes)){
+			log_warning(logger_mongo, "No hay posiciones de sabotaje.");
+			pos_actual_sabotaje = 0;
+			log_warning(logger_mongo, "Reiniciadas posiciones.");
+		}
+	}
 }
 
 void reparar() {
@@ -71,21 +69,21 @@ void reparar() {
 
 int verificar_cant_bloques() {
 
-	// log_warning(logger_mongo, "Verificar cant bloques");
-	uint32_t cant_bloques = obtener_tamanio_bloque_superbloque();
-	// log_warning(logger_mongo, "Cant_bloques leida: %i", cant_bloques);
+	log_warning(logger_mongo, "Verificando la cantidad de bloques del superbloque.");
+	uint32_t cant_bloques = obtener_cantidad_bloques_superbloque();
+	log_trace(logger_mongo, "Cantidad de bloques leida de SuperBloque.ims: %i", cant_bloques);
 
 	fseek(directorio.blocks, 0, SEEK_END);
 	int tamanio_en_bytes = ftell(directorio.blocks);
 	fseek(directorio.blocks, 0, SEEK_SET);
     int cantidad_real = tamanio_en_bytes / TAMANIO_BLOQUE;
 
-	// log_warning(logger_mongo, "1 Verificar_cant_bloques");
-	// log_warning(logger_mongo, "Cant_bloques %i", cant_bloques);
+    log_trace(logger_mongo, "Cantidad real: %i", cantidad_real);
 
     if (cant_bloques != cantidad_real) {
         t_bitarray* bitmap = obtener_bitmap();
         reescribir_superbloque(TAMANIO_BLOQUE, cantidad_real, bitmap);
+        free(bitmap->bitarray);
         bitarray_destroy(bitmap);
         return 1;
     }
@@ -97,11 +95,12 @@ int verificar_cant_bloques() {
 int verificar_bitmap() {
 	//Creo la lista
 	t_list* bloques_ocupados = list_create();
-
+	log_warning(logger_mongo, "0");
     recorrer_recursos(bloques_ocupados);
     recorrer_bitacoras(bloques_ocupados);
     sortear(bloques_ocupados);
 
+	log_warning(logger_mongo, "Pre if");
     if (bloques_ocupados_difieren(bloques_ocupados)) {
     	log_warning(logger_mongo, "Entrando");
         actualizar_bitmap(bloques_ocupados);
