@@ -105,12 +105,14 @@ int verificar_bitmap() {
     if (bloques_ocupados_difieren(bloques_ocupados)) {
     	log_warning(logger_mongo, "Entrando");
         actualizar_bitmap(bloques_ocupados);
+        matar_lista(bloques_ocupados);
         return 1;
     }
-    else
+    else {
+        matar_lista(bloques_ocupados);
         return 0;
+    }
 
-    list_destroy(bloques_ocupados);
 }
 
 int verificar_sizes() {
@@ -184,7 +186,7 @@ int verificar_block_counts_recurso(char* path) {
 		corrompido = 1;
 	}
 
-	liberar_lista(lista_bloques);
+	matar_lista(lista_bloques);
 	return corrompido;
 }
 
@@ -239,10 +241,12 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 
 	if (strcmp(nuevo_md5, md5)) {
 		log_warning(logger_mongo, "md5 no concuerda");
+		free(nuevo_md5);
 		config_destroy(config);
 		return 1;
 	}
 
+	free(nuevo_md5);
 	config_destroy(config);
 	return 0;
 }

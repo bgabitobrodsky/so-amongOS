@@ -44,6 +44,8 @@ int main(int argc, char** argv){
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
 
+	reparar();
+
 	while(sistema_activo){
 		sleep(1);
 	}
