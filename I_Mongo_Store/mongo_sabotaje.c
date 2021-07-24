@@ -115,23 +115,37 @@ int verificar_bitmap() {
 int verificar_sizes() {
     // Compara tamanio archivo vs lo que ocupa en sus blocks, uno por uno, si alguna vez rompio, devuelve 3, sino 0
 
-	uint32_t tamanio_real_B = bloques_contar('B');
-	uint32_t tamanio_real_C = bloques_contar('C');
-	uint32_t tamanio_real_O = bloques_contar('O');
-
+//	log_trace(logger_mongo, "Contando");
 	int corrompido = 0;
 
-	if(tamanio_real_B != tamanio_archivo(path_basura)) {
-		set_tam(path_basura, tamanio_real_B);
-		corrompido = 1;
+	if(existe_basura) {
+		uint32_t tamanio_real_B = bloques_contar('B');
+
+		if(tamanio_real_B != tamanio_archivo(path_basura)) {
+			log_trace(logger_mongo, "Basura saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_B, tamanio_archivo(path_basura));
+			set_tam(path_basura, tamanio_real_B);
+			corrompido = 1;
+		}
 	}
-	if(tamanio_real_C != tamanio_archivo(path_comida)) {
-		set_tam(path_comida, tamanio_real_C);
-		corrompido = 1;
+
+	if(existe_comida) {
+		uint32_t tamanio_real_C = bloques_contar('C');
+
+		if(tamanio_real_C != tamanio_archivo(path_comida)) {
+			log_trace(logger_mongo, "Comida saboteada, tamaño real: %i, tamaño encontrado: %i", tamanio_real_C, tamanio_archivo(path_comida));
+			set_tam(path_comida, tamanio_real_C);
+			corrompido = 1;
+		}
 	}
-	if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
-		set_tam(path_oxigeno, tamanio_real_O);
-		corrompido = 1;
+
+	if(existe_oxigeno) {
+		uint32_t tamanio_real_O = bloques_contar('O');
+
+		if(tamanio_real_O != tamanio_archivo(path_oxigeno)) {
+			log_trace(logger_mongo, "Oxigeno saboteado, tamaño real: %i, tamaño encontrado: %i", tamanio_real_O, tamanio_archivo(path_oxigeno));
+			set_tam(path_oxigeno, tamanio_real_O);
+			corrompido = 1;
+		}
 	}
 
 	return corrompido;
