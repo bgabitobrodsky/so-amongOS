@@ -196,7 +196,7 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 		log_trace(logger_mongo, "la lista ta vacia");
 		asignar_nuevo_bloque(path, 0);
 		log_trace(logger_mongo, "PRE REVIISAR");
-		list_destroy(lista_bloques); // TODO revisar
+		// list_destroy(lista_bloques); // TODO revisar
 		log_trace(logger_mongo, "POST");
 		lista_bloques = get_lista_bloques(path);
 	}
@@ -356,8 +356,7 @@ void quitar(int codigo_archivo, int cantidad) {
 	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
 
 	iniciar_archivo_recurso(path, tam_archivo - cantidad, cant_bloques, lista_bloques);
-	matar_lista(lista_bloques); // TODO ver si rompe
-	log_warning(logger_mongo, "FIN quitar");
+	matar_lista(lista_bloques);
 }
 
 char* tipo_a_path(char tipo){
@@ -647,7 +646,7 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	set_caracter_llenado(path, caracter);
 
 	t_config* config = config_create(path);
-	lockearEscritura(path);
+	lockearLectura(path);
 	char* cadena_blocks = config_get_string_value(config, "BLOCKS");
 	unlockear(path);
 	char* md5 = md5_archivo(cadena_blocks);
