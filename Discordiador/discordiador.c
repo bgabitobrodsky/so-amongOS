@@ -147,10 +147,13 @@ int main() {
     // sleep(1);
     // peligro("9|9", socket_a_mi_ram_hq);
 
-    //iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims");
-    // iniciar_patota("INICIAR_PATOTA 1 FS_PatotaA.txt");
-    iniciar_patota("INICIAR_PATOTA 1 CPU_Patota1.txt");
-
+//    iniciar_patota("INICIAR_PATOTA 2 FS_PatotaA.txt");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 1|1");
+//    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|0");
+//    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota4.txt 0|0");
     iniciar_planificacion();
 
     pthread_t hiloConsola;
