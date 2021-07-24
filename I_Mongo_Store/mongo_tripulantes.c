@@ -246,6 +246,8 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 
 	int* aux;
+	lockearLectura(path_blocks);
+
 	for(int i = 0; i < list_size(lista_bloques); i++){
 
 		aux = list_get(lista_bloques, i);
@@ -262,6 +264,7 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 			}
 		}
 	}
+	unlockear(path_blocks);
 
 	matar_lista(lista_bloques);
 

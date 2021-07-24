@@ -233,8 +233,10 @@ void iniciar_file_system() {
 void sincronizar_blocks() {
 
 	while(1) {
+		lockearEscritura(path_blocks);
 		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
 		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
+		unlockear(path_blocks);
 		for(int i = 0; i < TIEMPO_SINCRONIZACION; i++){
 			sleep(1);
 			if(!sistema_activo){

@@ -112,7 +112,9 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    iniciar_patota("INICIAR_PATOTA 1 FS_PatotaA.txt");
+    iniciar_patota("INICIAR_PATOTA 5 FS_PatotaA.txt");
+    iniciar_patota("INICIAR_PATOTA 4 oxigeno.txt");
+    iniciar_patota("INICIAR_PATOTA 4 IO_Patota3.txt");
 
     /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
     sleep(1);
