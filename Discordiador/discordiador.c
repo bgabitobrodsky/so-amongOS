@@ -1122,71 +1122,73 @@ int es_mi_turno(t_tripulante* un_tripulante){
 void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado){
     while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
         verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
-        if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
-        	if(estamos_en_peligro){
-				resolver_sabotaje(un_tripulante, st_ram, st_mongo);
-			}
-            if(planificacion_activa == 0){
-            	sleep(1); // Este espacio vacio es EXACTAMENTE lo que tiene que estar
-            }
-            else{
-                realizar_tarea(un_tripulante, st_ram, st_mongo);
-            }
-        } else if (un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
-            if(planificacion_activa == 0){
-            	sleep(1); // Este espacio vacio es EXACTAMENTE lo que tiene que estar
-            } else{
-            	if(es_mi_turno(un_tripulante)){
+
+    	if(planificacion_activa){
+    		switch(un_tripulante->estado_tripulante){
+    		case 'E':
+				if(estamos_en_peligro){
+					resolver_sabotaje(un_tripulante, st_ram, st_mongo);
+				}
+				realizar_tarea(un_tripulante, st_ram, st_mongo);
+    			break;
+    		case 'B':
+				if(es_mi_turno(un_tripulante)){
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
 					sleep(1); // Espero hasta que la entrada deje de estar ocupada
 				}
-            }
-        }
+    			break;
+    		case 'R':
+				sleep(1);
+				break;
+    		}
+    	} else {
+    		sleep(1);
+    	}
+
 		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
     }
 }
 
 void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado){
-    while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
+
+	while(un_tripulante->estado_tripulante != estado_tripulante[EXIT]){
         verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
-        if(un_tripulante->estado_tripulante == estado_tripulante[EXEC]){
-        	if(estamos_en_peligro){
-				resolver_sabotaje(un_tripulante, st_ram, st_mongo);
-        	}
 
-            if(un_tripulante->quantum_restante > 0){
-                if(planificacion_activa == 0){
-                	sleep(1);
-                    // este espacio vacio es EXACTAMENTE lo que tiene que estar
-                }
-                else{
-                    realizar_tarea(un_tripulante, st_ram, st_mongo);
-                    un_tripulante->quantum_restante--;
-                    log_debug(logger, "%i Trabaaajo muy duuro, como un esclaaaaavo: quantum restante %i", un_tripulante->TID, un_tripulante->quantum_restante);
-                }
-
-            } else {
-            	cambiar_estado(un_tripulante, estado_tripulante[READY], st_ram);
-                monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
-                log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
-            }
-        } else if (un_tripulante->estado_tripulante == estado_tripulante[BLOCK]){
-            if(planificacion_activa == 0){
-            	sleep(1); // este espacio vacio es EXACTAMENTE lo que tiene que estar
-            } else{
-            	if(es_mi_turno(un_tripulante)){
+    	if(planificacion_activa){
+            switch(un_tripulante->estado_tripulante){
+			case 'E':
+				if(estamos_en_peligro){
+					resolver_sabotaje(un_tripulante, st_ram, st_mongo);
+				}
+				if(un_tripulante->quantum_restante > 0){
+					realizar_tarea(un_tripulante, st_ram, st_mongo);
+					un_tripulante->quantum_restante--;
+					log_debug(logger, "%i Trabaaajo muy duuro, como un esclaaaaavo: quantum restante %i", un_tripulante->TID, un_tripulante->quantum_restante);
+				} else {
+					cambiar_estado(un_tripulante, estado_tripulante[READY], st_ram);
+					monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
+					log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
+				}
+				break;
+			case 'B':
+				if(es_mi_turno(un_tripulante)){
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
 					sleep(1); // espero hasta que la entrada deje de estar ocupada
 				}
+				break;
+			case 'R':
+				sleep(1);
+				break;
             }
-        }
-
-		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
-    }
+		} else{
+			sleep(1);
+		}
+    verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
+	}
 }
 
 
