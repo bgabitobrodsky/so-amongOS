@@ -94,6 +94,8 @@ void notificar_fin_sabotaje(t_tripulante* un_tripulante, int socket_mongo){
 	log_debug(logger, "Notifico a Mongo que soy un heroe");
 }
 
+void ejecutar_tarea(char* archpatota);
+
 int main() {
     if(testeo != DISCORDIADOR)
         correr_tests(testeo);
@@ -112,39 +114,7 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    /*iniciar_patota("INICIAR_PATOTA 9 espartana.txt");
-    sleep(1);
-    iniciar_patota("INICIAR_PATOTA 5 Prueba.ims");
-    sleep(1);
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 20001");
-    sleep(1);
-    iniciar_patota("INICIAR_PATOTA 4 oxigeno.txt");
-    sleep(1);
-    iniciar_patota("INICIAR_PATOTA 2 plantas.txt");
-    sleep(1);
-    iniciar_planificacion();
-    sleep(2);
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 30003");
-    sleep(4);
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 40003");
-    sleep(20);
-    pausar_planificacion();
-    listar_tripulantes();
-    */
-    /*
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 10001");
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 10002");
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 10004");
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 20002");
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 30004");
-    sleep(5);
-    iniciar_patota("INICIAR_PATOTA 2 plantas.txt");
-    expulsar_tripulante("EXPULSAR_TRIPULANTE 30002");
-    sleep(20);
-    pausar_planificacion();
-    */
-    // sleep(1);
-    // peligro("9|9", socket_a_mi_ram_hq);
+    ejecutar_tarea("estabilidad_general.txt");
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
@@ -155,7 +125,7 @@ int main() {
     pthread_detach(sabotaje);
 
     while(sistema_activo){
-    	sleep(1);
+    	usleep(1000);
     }
 
     enviar_codigo(DESCONEXION, socket_a_mongo_store);
@@ -177,6 +147,23 @@ int main() {
 
     }
 }
+
+void ejecutar_tarea(char* archpatota){
+	char* path_real = malloc(strlen(archpatota) + strlen(DIR_TAREAS) + 1);
+	strcpy(path_real, DIR_TAREAS);
+	strcat(path_real, archpatota);
+
+	char* texto = leer_archivo_entero(path_real);
+	char** texto_split = string_split(texto, "\n");
+
+	for(int i = 0; i < contar_palabras(texto_split) ; i++){
+		char** texto_nuevo = string_split(texto_split[i], " ");
+		if(!strcmp(texto_nuevo[0], "INICIAR_PATOTA")){
+			iniciar_patota(texto_split[i]);
+		}
+	}
+}
+
 
 int correr_tests(int enumerado) {
     switch(enumerado) {
@@ -386,7 +373,7 @@ void iniciar_tripulante(t_tripulante* un_tripulante, int socket){
 
     if (un_tripulante->estado_tripulante == estado_tripulante[NEW]){
         while(planificacion_activa == 0){
-        	sleep(1);
+        	usleep(1000);
             // por si lo matan antes de iniciar la planificacion
             if(un_tripulante->estado_tripulante == estado_tripulante[EXIT]){
             	un_tripulante->tarea.nombre = malloc(sizeof(char));
@@ -1044,7 +1031,7 @@ void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 	cambiar_estado(t_aux, estado_tripulante[EXEC], socket_ram);
 
 	while(estamos_en_peligro){
-		sleep(1); // todos se esperan a que termine el sabotaje
+    	usleep(1000); // todos se esperan a que termine el sabotaje
 	}
 
 	t_aux->tarea = contexto;
@@ -1136,15 +1123,15 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
-					sleep(1); // Espero hasta que la entrada deje de estar ocupada
+		        	usleep(1000); // Espero hasta que la entrada deje de estar ocupada
 				}
     			break;
     		case 'R':
-				sleep(1);
+            	usleep(1000);
 				break;
     		}
     	} else {
-    		sleep(1);
+        	usleep(1000);
     	}
 
 		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
@@ -1177,15 +1164,15 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
-					sleep(1); // espero hasta que la entrada deje de estar ocupada
+		        	usleep(1000); // espero hasta que la entrada deje de estar ocupada
 				}
 				break;
 			case 'R':
-				sleep(1);
+	        	usleep(1000);
 				break;
             }
 		} else{
-			sleep(1);
+        	usleep(1000);
 		}
     verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
 	}
