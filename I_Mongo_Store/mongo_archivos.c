@@ -642,10 +642,35 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 
 	t_config* config = config_create(path);
 	char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-	char* md5 = md5_archivo(cadena_blocks);
+	char* cadena_aux = concatenar_numeros(cadena_blocks, cant_bloques);
+
+	char* md5 = md5_archivo(cadena_aux);
 	set_md5(path, md5);
+
+	// Revisar frees
+	free(cadena_blocks);
+	free(cadena_aux);
+	free(md5);
 	config_destroy(config);
 
+}
+
+char* concatenar_numeros(char* cadena, int cant_chars) {
+	char* cadena_aux = malloc(sizeof(char) * cant_chars);
+
+	log_trace(logger_mongo, "Cadena es %s", cadena);
+
+	int j = 0;
+	for(int i = 0; i < strlen(cadena); i++) {
+		if (isdigit(cadena[i])) {
+			cadena_aux[j] = cadena[i];
+			j++;
+		}
+	}
+
+	log_trace(logger_mongo, "Cadena aux es %s", cadena_aux);
+
+	return cadena_aux;
 }
 
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloques) {

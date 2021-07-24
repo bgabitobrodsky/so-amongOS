@@ -293,6 +293,8 @@ void borrar_bitacora(t_TCB* tcb) {
 	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
 	fclose(bitacora->bitacora_asociada);
 	free(bitacora->tripulante);
+	liberar_bloques(bitacora->path);
+	liberar_lista(bitacora->bloques);
 	free(bitacora->path);
 	free(bitacora);
 

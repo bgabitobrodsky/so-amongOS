@@ -219,13 +219,17 @@ int md5_no_concuerda() {
 	char* bloques_oxigeno = config_get_string_value(config_oxigeno, "BLOCKS");
 	char* bloques_comida = config_get_string_value(config_comida, "BLOCKS");
 
+	char* basura_aux = concatenar_numeros(bloques_basura);
+	char* oxigeno_aux = concatenar_numeros(bloques_oxigeno);
+	char* comida_aux = concatenar_numeros(bloques_comida);
+
 	// log_warning(logger_mongo, "cadena bloque basura: %s", bloques_basura);
 	// log_warning(logger_mongo, "cadena bloque oxigeno: %s", bloques_oxigeno);
 	// log_warning(logger_mongo, "cadena bloque comida: %s", bloques_comida);
 
-	char* nuevo_md5_basura = md5_archivo(bloques_basura);
-	char* nuevo_md5_oxigeno = md5_archivo(bloques_oxigeno);
-	char* nuevo_md5_comida = md5_archivo(bloques_comida);
+	char* nuevo_md5_basura = md5_archivo(basura_aux);
+	char* nuevo_md5_oxigeno = md5_archivo(oxigeno_aux);
+	char* nuevo_md5_comida = md5_archivo(comida_aux);
 
 	log_warning(logger_mongo, "nuevo_md5_basura : %s", nuevo_md5_basura);
 	log_warning(logger_mongo, "nuevo_md5_oxigeno: %s", nuevo_md5_oxigeno);
@@ -239,11 +243,33 @@ int md5_no_concuerda() {
 	log_warning(logger_mongo, "viejo md5_oxigeno: %s", md5_oxigeno);
 	log_warning(logger_mongo, "viejo md5_comida: %s", md5_comida);
 
+	// Revisar frees
+	free(bloques_basura);
+	free(bloques_oxigeno);
+	free(bloques_comida);
+	free(basura_aux);
+	free(oxigeno_aux);
+	free(comida_aux);
+
 	if (strcmp(nuevo_md5_basura, md5_basura) || strcmp(nuevo_md5_oxigeno, md5_oxigeno) || strcmp(nuevo_md5_comida, md5_comida)) {
 		log_warning(logger_mongo, "md5 no concuerda");
+
+		free(nuevo_md5_basura);
+		free(nuevo_md5_oxigeno);
+		free(nuevo_md5_comida);
+		free(md5_basura);
+		free(md5_oxigeno);
+		free(md5_comida);
+
 		return 1;
 	}
 
+	free(nuevo_md5_basura);
+	free(nuevo_md5_oxigeno);
+	free(nuevo_md5_comida);
+	free(md5_basura);
+	free(md5_oxigeno);
+	free(md5_comida);
 	config_destroy(config_basura);
 	config_destroy(config_oxigeno);
 	config_destroy(config_comida);

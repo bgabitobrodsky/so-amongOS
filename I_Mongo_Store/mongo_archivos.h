@@ -41,6 +41,7 @@ int tamanio_archivo(char* path);
 uint32_t cantidad_bloques_recurso(char* path);
 char caracter_llenado_archivo(char* path);
 char* md5_archivo(char* path);
+char* concatenar_numeros(char* cadena, int cant_chars);
 uint32_t cantidad_bloques_tripulante(char* path);
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* lista_bloques);
 uint32_t bloques_contar(char caracter);
