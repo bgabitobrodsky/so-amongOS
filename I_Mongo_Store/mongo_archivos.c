@@ -806,7 +806,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 	}
 
 	list_remove_by_condition(lista_bloques_ocupados, quitar_bloque_de_lista);
-	// liberar lista
+	liberar_lista(bloques);
 	free(nuevo_bitmap->bitarray);
 	bitarray_destroy(nuevo_bitmap);
 }

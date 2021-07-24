@@ -49,7 +49,7 @@ int main(int argc, char** argv){
 	}
 
 	log_info(logger_mongo, "Apagando...");
-
+	sleep(1);
 	// Se cierran vestigios del pasado
 	log_info(logger_mongo, "Cerrando archivos");
 	cerrar_archivos();
