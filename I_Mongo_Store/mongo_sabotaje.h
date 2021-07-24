@@ -21,4 +21,8 @@ int bloques_sin_sentido();
 int bitmap_no_concuerda();
 void restaurar_blocks();
 
+extern int existe_oxigeno;
+extern int existe_comida;
+extern int existe_basura;
+
 #endif

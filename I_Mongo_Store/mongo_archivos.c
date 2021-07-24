@@ -765,8 +765,7 @@ void limpiar_metadata(char* path) {
 void liberar_bloques(char* path) {
 
 	t_list* bloques = get_lista_bloques(path);
-	uint32_t* nro_bloque;
-
+	uint32_t* nro_bloque = malloc(sizeof(int));
 	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
 		liberar_bloque(path, *nro_bloque);
@@ -788,7 +787,6 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 	t_list* bloques = get_lista_bloques(path);
 
 	uint32_t* nro_bloque_aux = malloc(sizeof(uint32_t));
-
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
 
 	for(int i = 0; i < list_size(bloques) ; i++) {
@@ -796,11 +794,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 		if (nro_bloque == *nro_bloque_aux) {
 			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
 
-			// TODO delegar
-			fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
-			fwrite(nuevo_bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
-			fflush(directorio.superbloque);
-
+			reescribir_bitmap(nuevo_bitmap);
 
 			bool quitar_bloque(void* elemento1){
 				return (nro_bloque == *((int*) elemento1));
@@ -809,17 +803,15 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 			list_remove_by_condition(bloques, quitar_bloque);
 
 			set_bloq(path, bloques);
-			set_cant_bloques(path, cantidad_bloques_recurso(path) - 1);
+			set_cant_bloques(path, list_size(bloques) - 1);
 		}
 	}
 
-	// TODO: Testear
 	bool quitar_bloque_de_lista(void* bloque){
 		return *((int*) bloque) == nro_bloque;
 	}
 
 	list_remove_by_condition(lista_bloques_ocupados, quitar_bloque_de_lista);
-
 	// liberar lista
 	free(nro_bloque_aux);
 }
@@ -841,7 +833,10 @@ void set_tam(char* path, int tamanio){
 
 void set_bloq(char* path, t_list* lista){
 
-	lockearEscritura(path);
+	if(es_recurso(path)){
+		lockearEscritura(path);
+	}
+
 	// log_warning(logger_mongo, "Lockeo set_bloq");
 
 	t_config* config = config_create(path);
@@ -906,8 +901,9 @@ void set_bloq(char* path, t_list* lista){
 	liberar_lista(list_aux);
 
 	free(lista_bloques);
-
-	unlockear(path);
+	if(es_recurso(path)){
+		unlockear(path);
+	}
 	// log_warning(logger_mongo, "Unlockeo set_bloq");
 
 }

@@ -42,6 +42,10 @@ void manejo_tripulante(void* socket) {
 		// Ultimo mensaje del tripulante, al morir o algo, sera la desconexion, lo cual borra la bitacora y libera los recursos
 		if (mensaje->codigo_operacion == DESCONEXION) { // Tripulante avisa desconexion para finalizar proceso
 			log_info(logger_mongo, "Se desconecto un tripulante.");
+			t_bitacora* bitacora = obtener_bitacora(tripulante->TID);
+			log_info(logger_mongo, "Obtenida bitacora.");
+			log_info(logger_mongo, "Obtenida bitacora. %s", bitacora->path);
+			liberar_bloques(bitacora->path);
 			borrar_bitacora(tripulante);
 			free(mensaje);
 
@@ -202,13 +206,11 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);
 	bitacora->bloques = lista_bloques;
-	bitacora->tamanio = tamanio; //+ largo_cadenita;
+	bitacora->tamanio = tamanio + largo_cadenita;
 	set_tam(bitacora->path, tamanio + largo_cadenita);
 }
 
 void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
-
-	log_trace(logger_mongo, "INICIO escribir_bitacora, path: %s", bitacora->path);
 
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 
@@ -223,7 +225,6 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	escribir_bloque_bitacora(mensaje, bitacora);
 
-
 	liberar_lista(lista_bloques);
 }
 
@@ -234,7 +235,6 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 
 	int* aux = malloc(sizeof(int));
-
 	for(int i = 0; i < list_size(lista_bloques); i++){
 
 		aux = list_get(lista_bloques, i);
@@ -246,10 +246,6 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 
 			if (*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) == ',') {
 				*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) = mensaje[cantidad_alcanzada];
-
-				// TODO ver si se actualiza
-				memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
-				msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
 
 				cantidad_alcanzada++;
 			}
