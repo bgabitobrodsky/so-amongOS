@@ -104,6 +104,7 @@ void proceso_handler(void* args) {
 			pthread_detach(un_hilo_tripulante);
 		}
 	}
+	free(p);
 }
 
 void atender_clientes(void* param) {
@@ -123,7 +124,9 @@ void atender_clientes(void* param) {
 				} else{
 					enviar_codigo(FALLO, parametros->socket);
 				}
-				////free(mensaje_recibido);
+				free(mensaje_recibido->archivo_tareas->texto);
+				free(mensaje_recibido->archivo_tareas);
+				free(mensaje_recibido);
 				break;
 
 			case PEDIR_TAREA:
@@ -132,11 +135,13 @@ void atender_clientes(void* param) {
 				if(una_tarea != NULL){
 					t_buffer* buffer_tarea = serializar_tarea(*una_tarea);
 					empaquetar_y_enviar(buffer_tarea, TAREA, parametros->socket);
+					free(una_tarea->nombre);
 				}else{
 					// esto puede ser por algun fallo o porque ya no queden tareas
 					enviar_codigo(FALLO, parametros->socket);
 				}
-				//free(mensaje_recibido);
+				free(una_tarea);
+				free(mensaje_recibido);
 				break;
 
 			case RECIBIR_TCB:
@@ -145,7 +150,8 @@ void atender_clientes(void* param) {
 				} else{
 					enviar_codigo(FALLO, parametros->socket);
 				}
-				//free(mensaje_recibido);
+				free(mensaje_recibido->tcb);
+				free(mensaje_recibido);
 				break;
 
 			case ACTUALIZAR:
@@ -156,7 +162,8 @@ void atender_clientes(void* param) {
 				} else{
 					log_error(logger, "No se pudo actualizar el TCB %i.", mensaje_recibido->tcb->TID);
 				}
-				//free(mensaje_recibido);
+				free(mensaje_recibido->tcb);
+				free(mensaje_recibido);
 				break;
 
 			case T_SIGKILL:
@@ -168,7 +175,7 @@ void atender_clientes(void* param) {
 					log_warning(logger, "No se pudo eliminar a %i", mensaje_recibido->tid);
 					enviar_codigo(FALLO, parametros->socket);
 				}
-				//free(mensaje_recibido);
+				free(mensaje_recibido);
 				break;
 
 			case LISTAR_POR_PID:
@@ -185,20 +192,21 @@ void atender_clientes(void* param) {
 				// PAGINACION: hay que liberar esta maldita lista (se chequea si es pag en la func.)
 				liberar_lista_tcbs_paginacion(tcbs_de_esta_patota);
 				enviar_codigo(EXITO, parametros->socket);
-				//free(mensaje_recibido);
+				free(mensaje_recibido);
 				break;
 
 			case DESCONEXION:
 				log_info(logger, "Se desconecto un cliente.\n");
 				flag = 0;
-				//free(mensaje_recibido);
-				// close(parametros->socket);
+				free(mensaje_recibido);
+				pthread_exit(NULL);
+				//close(parametros->socket);
 				break;
 
 			default:
 				log_info(logger, "Se recibio un codigo invalido.");
 				log_info(logger, "El codigo es %d", mensaje_recibido->codigo_operacion);
-				//free(mensaje_recibido);
+				free(mensaje_recibido);
 				break;
 		}
 	}
@@ -535,6 +543,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
 		if(tcb == NULL){
 			//no deberia pasar pero por las dudas viste
+			free(tcb);
 			return NULL;
 		}
 		int dl_tarea_tcb = tcb->siguiente_instruccion;
@@ -542,6 +551,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		if(dl_tarea_tcb == 999999){
 			// Ya no quedan tareas
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
+			free(tcb);
 			return NULL;
 		}
 		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tabla->dl_pcb - dl_tarea_tcb, pid); // 0 porque las tareas siempre estan al inicio de todo
@@ -561,11 +571,9 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		char stid[8];
 		sprintf(stid, "%d", tid);
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
-		//log_info(logger,"Actualizando TCB");
 		sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
 
 		liberar_puntero_doble(palabras);
-		//free(tareas_restantes);
 		free(str_tareas);
 		free(tcb);
 		return tarea;

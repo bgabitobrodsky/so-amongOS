@@ -7,7 +7,7 @@ void enviar_posicion_sabotaje(int socket_discordiador);
 void reparar();
 int verificar_cant_bloques();
 int verificar_bitmap();
-int verificar_sizes();
+int verificar_sizes(); // TESTEADO
 int verificar_block_counts(); // TESTEADO
 int verificar_blocks();
 int lista_blocks_saboteada(FILE* archivo);

@@ -588,7 +588,7 @@ uint32_t obtener_cantidad_bloques(char* path){
 t_list* get_lista_bloques(char* path){
 	// ESTA FUNCION DEBE LIBERAR EL RETORNO
 
-	// log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
+	log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
 
 	lockearLectura(path);
 
@@ -617,9 +617,11 @@ t_list* get_lista_bloques(char* path){
 		return lista_bloques;
 	}
 
+	log_error(logger_mongo, "Soy un recurso");
 	t_list* lista_bloques = list_create();
 
 	char** bloques = config_get_array_value(config, "BLOCKS");
+	log_error(logger_mongo, "Obtengo los bloques del config");
 
 	if(bloques[0] == NULL){
 
@@ -631,15 +633,18 @@ t_list* get_lista_bloques(char* path){
 
 	int* aux;
 
+	log_error(logger_mongo, "Entro al for");
 	for(int i = 0; i < contar_palabras(bloques); i++){
 		aux = malloc(sizeof(int));
 		*aux = atoi(bloques[i]);
 		list_add(lista_bloques, aux);
+		log_error(logger_mongo, "Se agrego el bloque: %i", *aux);
 	}
 
 	// log_warning(logger_mongo, "unlockear bloques");
 	config_destroy(config);
 	unlockear(path);
+	log_error(logger_mongo, "Retorno la lista de bloques");
 
 	return lista_bloques;
 }
@@ -721,14 +726,20 @@ void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
 
 uint32_t bloques_contar(char caracter) {
 
+//	log_trace(logger_mongo, "Contando ando");
 	int cantidad = 0;
 
 	char* path = tipo_a_path(caracter);
+//	log_trace(logger_mongo, "tengo el path");
 	t_list* bloques = get_lista_bloques(path);
+//	log_trace(logger_mongo, "tengo los bloques");
 	int* aux;
 
 	// log_warning(logger_mongo, "Lockeo blocks para contar bloques");
 	lockearLectura(path_blocks);
+//	log_trace(logger_mongo, "lockeado el path_blocks");
+
+	log_trace(logger_mongo, "Pre for");
 	for(int i = 0 ; i < list_size(bloques); i++){
 		aux = list_get(bloques, i);
 		for(int j = 0 ; j < TAMANIO_BLOQUE; j++){
@@ -741,6 +752,7 @@ uint32_t bloques_contar(char caracter) {
 
 	// log_warning(logger_mongo, "Unlockeo blocks para contar bloques");
 	unlockear(path_blocks);
+//	log_trace(logger_mongo, "Ya conté");
 	return cantidad;
 }
 

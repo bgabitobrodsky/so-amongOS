@@ -821,7 +821,14 @@ void dump_segmentacion(){
         free(dump_row);
     }
 
-    txt_write_in_file(file, string_from_format("Dump: %s\n", temporal_get_string_time("%d/%m/%y %H:%M:%S")));
+    char* temporal = temporal_get_string_time("%d/%m/%y %H:%M:%S");
+	char* string_a_printear = string_from_format("Dump: %s\n", temporal);
+
+    txt_write_in_file(file, string_a_printear);
+
+    free(temporal);
+	free(string_a_printear);
+    
     list_iterate(dump_segmentos, impresor_dump);
     txt_close_file(file);
 
