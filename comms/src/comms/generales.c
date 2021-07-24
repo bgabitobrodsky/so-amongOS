@@ -147,13 +147,11 @@ void* monitor_lista(pthread_mutex_t semaforo, void*(*operacion)(t_list*, void*),
 
 int contar_palabras (char** palabras){
 
-	log_error(logger_mongo, "Cuento palabras");
 	int contador = 0;
 
     while (palabras[contador] != NULL && *palabras[contador] != '\0') {
         contador++;
     }
-	log_error(logger_mongo, "Palabras contadas: %i", contador);
     return contador;
 
 }
