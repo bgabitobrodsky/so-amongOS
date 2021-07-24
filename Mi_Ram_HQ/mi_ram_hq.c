@@ -16,7 +16,7 @@
         return EXIT_FAILURE;                                                            \
     }
 
-bool mapa_on = false;
+bool mapa_on = true;
 
 int main(int argc, char** argv) {
 	
