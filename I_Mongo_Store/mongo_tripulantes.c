@@ -114,6 +114,7 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->path = path_tripulante;
+	nueva_bitacora->bloques = list_create();
 	nueva_bitacora->tripulante = tcb;
 
 	list_add(bitacoras, nueva_bitacora);
@@ -124,8 +125,8 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 
 	t_bitacora* bitacora = obtener_bitacora(mensaje->tcb->TID);
-	char* pos_inicial = NULL;
-	char* pos_final = NULL;
+	char* pos_inicial;
+	char* pos_final;
 	char* nombre_tarea;
 	char* cadenita;
 	int largo_cadenita;
@@ -165,6 +166,8 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			escribir_bitacora(bitacora, cadenita);
 			largo_cadenita = strlen(cadenita);
 			free(nombre_tarea);
+			free(mensaje_tarea->tarea->nombre);
+			free(mensaje_tarea->tarea);
 			free(mensaje_tarea);
 			break;
 		case FIN_TAREA:
@@ -184,6 +187,8 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			escribir_bitacora(bitacora, cadenita);
 			largo_cadenita = strlen(cadenita);
 			free(nombre_tarea);
+			free(mensaje_tarea->tarea->nombre);
+			free(mensaje_tarea->tarea);
 			free(mensaje_tarea);
 			break;
 		case CORRE_SABOTAJE:
@@ -205,6 +210,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	//Actualizo struct bitacora
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);
+	liberar_lista(bitacora->bloques);
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio + largo_cadenita;
 	set_tam(bitacora->path, tamanio + largo_cadenita);
@@ -219,6 +225,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	if(list_is_empty(lista_bloques)){
 		log_trace(logger_mongo, "La lista de bloques esta vacia, proceso a signar nuevo bloque");
+		liberar_lista(lista_bloques);
 		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
 		lista_bloques = get_lista_bloques(bitacora->path);
 	}
@@ -234,7 +241,7 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 	int cantidad_alcanzada = 0;
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 
-	int* aux = malloc(sizeof(int));
+	int* aux;
 	for(int i = 0; i < list_size(lista_bloques); i++){
 
 		aux = list_get(lista_bloques, i);
@@ -270,9 +277,13 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 char* formatear_posicion(int coord_x, int coord_y) { // Puede generar memory leaks
 	char* posicion_formateada = malloc(sizeof(char) * 3);
 
-	strcpy(posicion_formateada, string_itoa(coord_x));
+	char* aux = string_itoa(coord_x);
+	strcpy(posicion_formateada, aux);
+	free(aux);
 	strcat(posicion_formateada, "|");
-	strcat(posicion_formateada, string_itoa(coord_y));
+	aux = string_itoa(coord_y);
+	strcat(posicion_formateada, aux);
+	free(aux);
 
 	return posicion_formateada;
 }
@@ -318,7 +329,9 @@ char* fpath_tripulante(t_TCB* tcb) {
 	char* path_tripulante = malloc(strlen(path_bitacoras) + strlen("/Tripulante.ims") + strlen(string_itoa((int) (tcb->TID))) + 1);
 	strcpy(path_tripulante, path_bitacoras);
 	path_tripulante = strcat(path_tripulante, "/Tripulante");
-	path_tripulante = strcat(path_tripulante, string_itoa((int) (tcb->TID)));
+	char* aux = string_itoa((int) (tcb->TID));
+	path_tripulante = strcat(path_tripulante, aux);
+	free(aux);
 	path_tripulante = strcat(path_tripulante, ".ims");
 
 	return path_tripulante;

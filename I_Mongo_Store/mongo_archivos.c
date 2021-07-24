@@ -101,7 +101,7 @@ void inicializar_archivos_preexistentes() {
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
     cargar_bitmap(); // cargando la lista de bloqueados
-    limpiar_cuerpos();
+    // limpiar_cuerpos();
     // rename("/home/utnso/polus/Files/Bitacoras/Tripulante10001.ims", "/home/utnso/polus/Files/Bitacoras/OldTripulante10001.ims");
     //rename("/home/utnso/polus/Files/Bitacoras", "/home/utnso/polus/Files/ASID");
 
@@ -118,7 +118,8 @@ void limpiar_cuerpos() {
 	for (int i = 0; renombrado == 0; i++) {
 		char* nuevo_directorio = malloc(strlen(path_bitacoras) + 1);
 		strcpy(nuevo_directorio, path_bitacoras);
-		strcat(nuevo_directorio, string_itoa(i));
+		char* aux = string_itoa(i);
+		strcat(nuevo_directorio, aux);
 		DIR* dir = opendir(nuevo_directorio);
 
 		//Si el directorio no existe
@@ -130,6 +131,8 @@ void limpiar_cuerpos() {
 			mkdir(path_bitacoras, (mode_t) 0777);
 			renombrado = 1;
 		}
+		free(aux);
+		free(nuevo_directorio);
 	}
 }
 
@@ -589,44 +592,23 @@ t_list* get_lista_bloques(char* path){
 	// ESTA FUNCION DEBE LIBERAR EL RETORNO
 
 	log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
-
-	lockearLectura(path);
-
-	t_config* config = config_create(path);
-
-	if(!config_has_property(config, "BLOCK_COUNT")){
-
-		char** bloques = config_get_array_value(config, "BLOCKS");
-		t_list* lista_bloques = list_create();
-		if(bloques[0] == NULL){
-			log_error(logger_mongo, "EL path no tiene bloques");
-			config_destroy(config);
-			unlockear(path);
-			return lista_bloques;
-		}
-
-		// log_warning(logger_mongo, "blocks es %s", config_get_string_value(config, "BLOCKS"));
-		int* aux;
-		for(int i = 0; i < contar_palabras(bloques); i++){
-			aux = malloc(sizeof(int));
-			*aux = atoi(bloques[i]);
-			list_add(lista_bloques, aux);
-		}
-		config_destroy(config);
-		unlockear(path);
-		return lista_bloques;
+	if(es_recurso(path)){
+		lockearLectura(path);
 	}
 
+	t_config* config = config_create(path);
 	t_list* lista_bloques = list_create();
 
 	char** bloques = config_get_array_value(config, "BLOCKS");
-	log_error(logger_mongo, "Obtengo los bloques del config");
 
 	if(bloques[0] == NULL){
 
 		log_error(logger_mongo, "EL path no tiene bloques");
 		config_destroy(config);
-		unlockear(path);
+		liberar_puntero_doble(bloques);
+		if(es_recurso(path)){
+			unlockear(path);
+		}
 		return lista_bloques;
 	}
 
@@ -640,9 +622,13 @@ t_list* get_lista_bloques(char* path){
 
 	// log_warning(logger_mongo, "unlockear bloques");
 	config_destroy(config);
-	unlockear(path);
-	log_error(logger_mongo, "Retorno la lista de bloques");
+	liberar_puntero_doble(bloques);
 
+	if(es_recurso(path)){
+		unlockear(path);
+	}
+
+	log_error(logger_mongo, "Retorno la lista de bloques");
 	return lista_bloques;
 }
 
@@ -771,7 +757,7 @@ void limpiar_metadata(char* path) {
 void liberar_bloques(char* path) {
 
 	t_list* bloques = get_lista_bloques(path);
-	uint32_t* nro_bloque = malloc(sizeof(int));
+	int* nro_bloque;
 	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
 		liberar_bloque(path, *nro_bloque);
@@ -792,7 +778,7 @@ void blanquear_bloque(int bloque){
 void liberar_bloque(char* path, uint32_t nro_bloque) {
 	t_list* bloques = get_lista_bloques(path);
 
-	uint32_t* nro_bloque_aux = malloc(sizeof(uint32_t));
+	uint32_t* nro_bloque_aux;
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
 
 	for(int i = 0; i < list_size(bloques) ; i++) {
@@ -808,8 +794,8 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 
 			list_remove_by_condition(bloques, quitar_bloque);
 
-			set_bloq(path, bloques);
 			if(es_recurso(path)){
+				set_bloq(path, bloques);
 				set_cant_bloques(path, list_size(bloques) - 1);
 			}
 		}
@@ -821,7 +807,8 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 
 	list_remove_by_condition(lista_bloques_ocupados, quitar_bloque_de_lista);
 	// liberar lista
-	free(nro_bloque_aux);
+	free(nuevo_bitmap->bitarray);
+	bitarray_destroy(nuevo_bitmap);
 }
 
 void set_tam(char* path, int tamanio){
@@ -831,7 +818,9 @@ void set_tam(char* path, int tamanio){
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
-	config_set_value(config, "SIZE", string_itoa(tamanio));
+	char* aux = string_itoa(tamanio);
+	config_set_value(config, "SIZE", aux);
+	free(aux);
 	config_save(config);
 	config_destroy(config);
 
@@ -876,7 +865,9 @@ void set_bloq(char* path, t_list* lista){
 
 		for(int i = 0; i < list_size(list_aux); i++){
 			aux = list_get(list_aux, i);
-			cant_numeros += strlen(string_itoa(*aux));
+			char* string_aux = string_itoa(*aux);
+			cant_numeros += strlen(string_aux);
+			free(string_aux);
 		}
 
 		lista_bloques = malloc(2 + cant_numeros + comas + 1);
@@ -890,7 +881,9 @@ void set_bloq(char* path, t_list* lista){
 
 		for(int i = 0; i < list_size(list_aux); i++){
 			aux = list_get(list_aux, i);
-			strcat(lista_bloques, string_itoa(*aux));
+			char* string_aux = string_itoa(*aux);
+			strcat(lista_bloques, string_aux);
+			free(string_aux);
 
 			if(i+1 < list_size(list_aux)){
 				strcat(lista_bloques, ",");

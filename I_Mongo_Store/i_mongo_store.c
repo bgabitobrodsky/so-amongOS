@@ -40,7 +40,6 @@ int main(int argc, char** argv){
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.");
 
-
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
@@ -49,7 +48,10 @@ int main(int argc, char** argv){
 		sleep(1);
 	}
 
+	log_info(logger_mongo, "Apagando...");
+
 	// Se cierran vestigios del pasado
+	log_info(logger_mongo, "Cerrando archivos");
 	cerrar_archivos();
 	close(socket_oyente);
 	list_destroy(bitacoras);
@@ -242,9 +244,17 @@ void sincronizar_blocks() {
 }
 
 void cerrar_archivos() {
-	fclose(recurso.oxigeno);
-	fclose(recurso.comida);
-	fclose(recurso.basura);
+
+	if(existe_oxigeno){
+		fclose(recurso.oxigeno);
+	}
+	if(existe_comida){
+		fclose(recurso.comida);
+	}
+	if(existe_basura){
+		fclose(recurso.basura);
+	}
+
 }
 
 void liberar_lista(t_list* lista){
