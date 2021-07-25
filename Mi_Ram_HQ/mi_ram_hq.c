@@ -7,25 +7,26 @@
 #define ESQUEMA_MEMORIA config_get_string_value(config, "ESQUEMA_MEMORIA")
 #define PATH_SWAP config_get_string_value(config, "PATH_SWAP")
 #define TAMANIO_SWAP config_get_int_value(config, "TAMANIO_SWAP")
+#define CRITERIO_SELECCION config_get_string_value(config, "CRITERIO_SELECCION")
+#define ALGORITMO_REEMPLAZO config_get_string_value(config, "ALGORITMO_REEMPLAZO")
+#define MAPA_ON config_get_int_value(config, "MAPA_ON")
+#define LOG_LEVEL config_get_int_value(config, "LOG_LEVEL")
 #define LIMIT_CONNECTIONS 10
-#define ASSERT_CREATE(nivel, id, err)                                                   \
-    if(err) {                                                                           \
-        nivel_destruir(nivel);                                                          \
-        nivel_gui_terminar();                                                           \
-        fprintf(stderr, "Error al crear '%c': %s\n", id, nivel_gui_string_error(err));  \
-        return EXIT_FAILURE;                                                            \
-    }
 
-bool mapa_on = true;
+bool mapa_on;
 
 int main(int argc, char** argv) {
 	
+	//mapa_on = false;
 	// Reinicio el log
 	FILE* f = fopen("mi_ram_hq.log", "w");
     fclose(f);
 
-	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL_TRACE);
 	config = config_create("mi_ram_hq.config");
+	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL);
+	
+	mapa_on = MAPA_ON;
+	
 	signal(SIGUSR1, signal_compactacion);
 	signal(SIGUSR2, dump);
 
@@ -77,7 +78,7 @@ int main(int argc, char** argv) {
 //         CCCCCCCCCCCCC     OOOOOOOOO     NNNNNNNN         NNNNNNNEEEEEEEEEEEEEEEEEEEEEEXXXXXXX       XXXXXXXIIIIIIIIII     OOOOOOOOO     NNNNNNNN         NNNNNNN
 
 void proceso_handler(void* args) {
-	log_debug(logger,"Se inicia el servidor multi-hilo");
+	//log_debug(logger,"Se inicia el servidor multi-hilo");
 	args_escuchar* p = args;
     int socket_escucha = p->socket_oyente;
 
@@ -230,10 +231,13 @@ void atender_clientes(void* param) {
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
+	memset(memoria_principal,0,TAMANIO_MEMORIA);
 	tablas = dictionary_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
-		log_debug(logger,"[SEG]: Se inicia memoria con esquema se SEGMENTACION");
+		log_debug(logger,"Se inicia memoria con esquema se SEGMENTACION");
+		log_debug(logger,"Memo. principal: %d", TAMANIO_MEMORIA);
+		log_debug(logger,"Criterio de seleccion: %s", CRITERIO_SELECCION);
 		segmentos = list_create();
 		segmento* segmento_principal = crear_segmento(0,TAMANIO_MEMORIA,true);
 		list_add(segmentos,segmento_principal);
@@ -241,6 +245,8 @@ void iniciar_memoria(){
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
 
 		log_debug(logger,"Se inicia memoria con esquema de PAGINACION");
+		log_debug(logger,"Memo. principal: %d\tMemo. virtual: %d\tPageSize: %d", TAMANIO_MEMORIA, TAMANIO_SWAP, TAMANIO_PAGINA);
+		log_debug(logger,"Algoritmo de reemplazo: %s", ALGORITMO_REEMPLAZO);
 		marcos = list_create();
 		marco_clock = 0;
 		int cantidad_marcos = TAMANIO_MEMORIA/TAMANIO_PAGINA;
@@ -262,6 +268,8 @@ void iniciar_memoria(){
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
+
+
 }
 
 void* buscar_tabla(int pid){

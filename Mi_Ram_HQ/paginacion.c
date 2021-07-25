@@ -141,7 +141,9 @@ void matar_tabla_paginas(int pid){
 			if(pag->en_memoria){
 				pag->puntero_marco->libre = true;
 			}
-			bitmap_disco[pag->disk_index] = false;
+			if(pag->disk_index >= 0){
+				bitmap_disco[pag->disk_index] = false;
+			}
 			free(pag);
 		}
 
@@ -400,6 +402,7 @@ void swap_in(pagina* pag){
 	// escribo la página en disco, accediendo directamente con su indice
 	void* data = memoria_principal + pag->puntero_marco->base;
 	bloquear_disco();
+	log_info(logger, "[SWAP]: Escribo en disco en la pos: %d", pag->disk_index);
 	fseek(disco, TAMANIO_PAGINA * pag->disk_index, SEEK_SET);
 	fwrite(data, TAMANIO_PAGINA, 1, disco);
 	desbloquear_disco();
@@ -411,6 +414,7 @@ void swap_out(pagina* pagina){
 	//bloquear_swap();
 
 	bloquear_disco();
+	log_info(logger, "[SWAP]: Leo en disco en la pos: %d", pagina->disk_index);
 	fseek(disco, pagina->disk_index * TAMANIO_PAGINA, SEEK_SET);
 	fread(memoria_principal + pagina->puntero_marco->base, TAMANIO_PAGINA, 1, disco);
 	desbloquear_disco();
@@ -418,7 +422,7 @@ void swap_out(pagina* pagina){
 }
 
 void page_fault(pagina* pag, int pid, int num){
-	log_error(logger,"[SWAP]: PageFault PID: %d, pag: %d", pid, num + 1);
+	log_error(logger,"[SWAP]: PageFault PID: %d, pag: %d, pos.disco: %d", pid, num + 1, pag->disk_index);
 	swap_out(pag);
 	pag->puntero_marco->pid = pid;
 	pag->puntero_marco->num_pagina = num + 1;
@@ -558,7 +562,7 @@ int get_disk_index(){
 	for(int i = 0; i < marcos_disco_size; i++){
 		if(!bitmap_disco[i]){
 			bitmap_disco[i] = true;
-			log_trace(logger, "[SWAP]: Espacio disco asignado: %d", i);
+			log_info(logger, "[SWAP]: Espacio disco asignado: %d", i);
 			desbloquear_disco();
 			return i;
 		}
