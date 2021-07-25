@@ -1,20 +1,21 @@
 #include "mongo_tripulantes.h"
 
 void manejo_tripulante(void* socket) {
+
 	int socket_tripulante = ((hilo_tripulante*) socket)->socket;
 	char* posicion_tripulante;
 	t_TCB* tripulante;
+
 	while(1) {
 		// Se espera a ver que manda el tripulante
-		log_info(logger_mongo, "Esperando mensaje ");
+		log_info(logger_mongo, "Se espera mensaje del tripulante.");
 
 		t_estructura* mensaje = recepcion_y_deserializacion(socket_tripulante);
 		// log_trace(logger_mongo, "El código recibido es: %i", mensaje->codigo_operacion);
 
 		// Si es primera conexion, se crea la bitacora y se asigna a la lista
 		if (mensaje->codigo_operacion == RECIBIR_TCB) {
-		    log_info(logger_mongo, "Pedido de crear bitacora");
-		    log_trace(logger_mongo, "Creando bitacora para el tripulante %i.", mensaje->tcb->TID);
+		    log_info(logger_mongo, "Pedido de crear bitacora del tripulante %i.", mensaje->tcb->TID);
 		    posicion_tripulante = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
 		    log_info(logger_mongo, "La posicion inicial del tripulante es: %c|%c", posicion_tripulante[0], posicion_tripulante[2]);
 			crear_estructuras_tripulante(mensaje->tcb, socket_tripulante);
@@ -25,15 +26,14 @@ void manejo_tripulante(void* socket) {
 		else {
 			// Codigos mayores a Basura y menores a Sabotaje corresponden a asignaciones de bitacora
 			if (mensaje->codigo_operacion > BASURA && mensaje->codigo_operacion < SABOTAJE) {
-				log_info(logger_mongo, "Pedido de modificar bitacora");
+				log_info(logger_mongo, "Pedido de modificar bitacora.");
 				modificar_bitacora(mensaje, &posicion_tripulante, socket_tripulante);
-				log_info(logger_mongo, "Modificada la bitacora");
+				log_info(logger_mongo, "Se modifico la bitacora.");
 			}
 
 			// Si es otro codigo
 			else if(mensaje->codigo_operacion > BITACORA && mensaje->codigo_operacion < MOVIMIENTO){
-				log_info(logger_mongo, "Pedido de alterar cositas");
-				// log_trace(logger_mongo, "Recibo un pedido de alterar, tripulante %i", mensaje->tcb->TID); // eventualmente rompe, no perder el tiempo con esto
+				log_info(logger_mongo, "Pedido alterar la cantidad de recurso %s", conseguir_tipo(conseguir_char(mensaje->codigo_operacion))); // Revisar
 				log_trace(logger_mongo, "Numero de codigo: %i", mensaje->codigo_operacion);
 				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
 			}
@@ -47,12 +47,13 @@ void manejo_tripulante(void* socket) {
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
 			pthread_exit(NULL);
 		}
+
 		free(mensaje);
 	}
 }
 
 char* rescatar_bitacora(char* path){
-	log_trace(logger_mongo, "Rescatando bitacora");
+	log_trace(logger_mongo, "Rescatando bitacora.");
 	t_list* lista_bloques_bitacora = get_lista_bloques(path);
 
 	int lectura = 0;
@@ -63,20 +64,22 @@ char* rescatar_bitacora(char* path){
 	}
 
 	char* string = malloc(size + 1);
-	// log_trace(logger_mongo, "Size es: %i", size);
+	// log_trace(logger_mongo, "Tamanio de la bitacora es: %i", size);
 	int* aux;
 
 	lockearLectura(path_blocks);
 
 	for(int i = 0; i < list_size(lista_bloques_bitacora); i++){
 		aux = list_get(lista_bloques_bitacora, i);
-		for(int j = 0; j < TAMANIO_BLOQUE; j++){
 
+		for(int j = 0; j < TAMANIO_BLOQUE; j++) {
 			string[lectura] = *(directorio.mapa_blocks + (TAMANIO_BLOQUE * *aux) + j);
 			lectura++;
+
 			if(lectura == size){
 				string[size] = '\0';
 				unlockear(path_blocks);
+
 				return string;
 			}
 		}
@@ -84,6 +87,7 @@ char* rescatar_bitacora(char* path){
 
 	string[size] = '\0';
 	unlockear(path_blocks);
+
 	return string;
 }
 
@@ -106,8 +110,9 @@ void crear_estructuras_tripulante(t_TCB* tcb, int socket_tripulante) {
 
 void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb) {
 	// Se utiliza un struct que conoce al tripulante y a su archivo, para luego saber donde se realizan los cambios pedidos por el mismo
-    log_trace(logger_mongo, "Acomodando bitacora");
+    log_trace(logger_mongo, "Acomodando bitacora.");
 	t_bitacora* nueva_bitacora = malloc(sizeof(t_bitacora));
+
 	nueva_bitacora->bitacora_asociada = file_tripulante;
 	nueva_bitacora->path = path_tripulante;
 	nueva_bitacora->bloques = list_create();
@@ -130,10 +135,11 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 
 	switch (mensaje->codigo_operacion) {
 		case MOVIMIENTO:
-			log_debug(logger_mongo, "Me llega un movimiento de %i", mensaje->tcb->TID);
+			log_trace(logger_mongo, "Me llega un movimiento de %i", mensaje->tcb->TID);
 			pos_inicial = malloc(sizeof(char)*3 + 1);
 			strcpy(pos_inicial, *posicion);
 			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
+
 			cadenita = malloc(strlen("Se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1 + 1);
 			strcpy(cadenita, "Se mueve de ");
 			strcat(cadenita, pos_inicial);
@@ -146,9 +152,11 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			free(pos_inicial);
 			free(pos_final);
 			free(mensaje->tcb);
+
 			break;
+
 		case INICIO_TAREA:
-			log_debug(logger_mongo, "Inicio de tarea de %i", mensaje->tcb->TID);
+			log_trace(logger_mongo, "Inicio de tarea de %i", mensaje->tcb->TID);
 			free(mensaje->tcb);
 			mensaje_tarea = recepcion_y_deserializacion(socket);
 			nombre_tarea = malloc(strlen(mensaje_tarea->tarea->nombre) + 1);
@@ -165,10 +173,11 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			free(mensaje_tarea->tarea->nombre);
 			free(mensaje_tarea->tarea);
 			free(mensaje_tarea);
-			break;
-		case FIN_TAREA:
 
-			log_debug(logger_mongo, "Fin de tarea de %i", mensaje->tcb->TID);
+			break;
+
+		case FIN_TAREA:
+			log_trace(logger_mongo, "Fin de tarea de %i", mensaje->tcb->TID);
 			free(mensaje->tcb);
 			mensaje_tarea = recepcion_y_deserializacion(socket);
 			nombre_tarea = malloc(strlen(mensaje_tarea->tarea->nombre) + 1);
@@ -185,32 +194,44 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			free(mensaje_tarea->tarea->nombre);
 			free(mensaje_tarea->tarea);
 			free(mensaje_tarea);
+
 			break;
+
 		case CORRE_SABOTAJE:
-			log_debug(logger_mongo, "Corre hacia el sabotaje %i", mensaje->tcb->TID);
+			log_trace(logger_mongo, "%i corre hacia el sabotaje.", mensaje->tcb->TID);
 			cadenita = malloc(strlen("Se corre en panico a la ubicacion del sabotaje." + 1));
 			strcpy(cadenita, "Se corre en panico a la ubicacion del sabotaje.");
+
 			largo_cadenita = strlen(cadenita);
 			escribir_bitacora(bitacora, cadenita);
 			free(mensaje->tcb);
+
 			break;
+
 		case RESUELVE_SABOTAJE:
-			log_debug(logger_mongo, "Resuelve sabotaje %i", mensaje->tcb->TID);
+			log_trace(logger_mongo, "Resuelve sabotaje %i", mensaje->tcb->TID);
 			cadenita = malloc(strlen("Se resuelve el sabotaje." + 1));
 			strcpy(cadenita, "Se resuelve el sabotaje.");
+
 			largo_cadenita = strlen(cadenita);
 			escribir_bitacora(bitacora, cadenita);
 			free(mensaje->tcb);
+
 			break;
 	}
+
+	log_trace(logger_mongo, "Mensaje agregado a bitacora: %s", cadenita);
 	free(cadenita);
+
 	//Actualizo struct bitacora
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);
-	log_warning(logger_mongo, "Peligro");
+	// log_trace(logger_mongo, "Se mata lista bloques.");
 	matar_lista(bitacora->bloques);
+
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio + largo_cadenita;
+
 	set_tam(bitacora->path, tamanio + largo_cadenita);
 }
 
@@ -218,11 +239,9 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 
-	// log_trace(logger_mongo, "Es null? %i", lista_bloques == NULL);
-	// log_trace(logger_mongo, "tamanio? %i", list_size(lista_bloques));
-
-	if(list_is_empty(lista_bloques)){
-		log_trace(logger_mongo, "La lista de bloques esta vacia, proceso a signar nuevo bloque");
+	if (list_is_empty(lista_bloques)){
+		log_trace(logger_mongo, "La lista de bloques esta vacia.");
+		log_trace(logger_mongo, "Se asigna un nuevo bloque..");
 		list_destroy(lista_bloques);
 		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
 		lista_bloques = get_lista_bloques(bitacora->path);
@@ -234,7 +253,6 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 }
 
 void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
-	log_trace(logger_mongo, "INICIO escribir_bloque_bitacora");
 
 	int cantidad_alcanzada = 0;
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
@@ -245,6 +263,7 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 	for(int i = 0; i < list_size(lista_bloques); i++){
 
 		aux = list_get(lista_bloques, i);
+
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
 
 			if (cantidad_alcanzada == strlen(mensaje)) {
@@ -258,26 +277,26 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 			}
 		}
 	}
+
 	unlockear(path_blocks);
 
 	matar_lista(lista_bloques);
 
 	if (cantidad_alcanzada != strlen(mensaje)) {
-		log_debug(logger_mongo, "Quedo un pedacito de mensaje");
-		log_debug(logger_mongo, "Alcance %i bytes de %i bytes, ", cantidad_alcanzada, strlen(mensaje));
+		log_trace(logger_mongo, "Falta escribir parte del mensaje. ");
+		log_trace(logger_mongo, "Alcance %i bytes de %i bytes, ", cantidad_alcanzada, strlen(mensaje));
 		// el size lo podria dejar aca, y no pasar por param
 		asignar_nuevo_bloque(bitacora->path, cantidad_alcanzada);
 		char* resto_mensaje = malloc(strlen(mensaje + cantidad_alcanzada) + 1);
-		// log_debug(logger_mongo, "Me falta copiar: %s", mensaje + cantidad_alcanzada);
-		// log_debug(logger_mongo, "De longitud:", strlen(mensaje + cantidad_alcanzada));
 		strcpy(resto_mensaje, (mensaje + cantidad_alcanzada));
-		// log_debug(logger_mongo, "El resto del mensaje queda: %s", resto_mensaje);
+		// log_trace(logger_mongo, "El resto del mensaje sera: %s", resto_mensaje);
 		escribir_bitacora(bitacora, resto_mensaje);
 		free(resto_mensaje);
 	}
 }
 
 char* formatear_posicion(int coord_x, int coord_y) {
+
 	char* posicion_formateada = malloc(sizeof(char)*3 + 1);
 
 	char* aux = string_itoa(coord_x);
@@ -287,6 +306,8 @@ char* formatear_posicion(int coord_x, int coord_y) {
 	aux = string_itoa(coord_y);
 	strcat(posicion_formateada, aux);
 	free(aux);
+
+	log_trace(logger_mongo, "La posicion formateada resulta %s", posicion_formateada);
 
 	return posicion_formateada;
 }
@@ -298,7 +319,6 @@ void borrar_bitacora(t_TCB* tcb) {
 	free(bitacora->tripulante);
 	free(bitacora->path);
 	free(bitacora);
-
 }
 
 t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
@@ -308,6 +328,7 @@ t_bitacora* quitar_bitacora_lista(t_TCB* tcb) {
 	}
 
 	t_bitacora* bitacora = list_remove_by_condition(bitacoras, contains);
+
 	return bitacora;
 }
 
@@ -320,7 +341,7 @@ t_bitacora* obtener_bitacora(int tid) {
 	t_bitacora* bitacora = list_find(bitacoras, contains);
 
 	if(bitacora == NULL){
-		log_warning(logger_mongo, "No se encontro la bitacora");
+		log_warning(logger_mongo, "No se encontro la bitacora asociada al tripulante %i", tid);
 		return NULL;
 	}
 
