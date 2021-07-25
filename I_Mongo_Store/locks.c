@@ -21,6 +21,7 @@ void unlockear(char* path) {
 
 void  verificarExistencia(char* path) {
 	if(!dictionary_has_key(diccionarioLocks,path)){
+		log_trace(logger_mongo, "No existia el lock");
 		pthread_rwlock_t* unLock = malloc(sizeof(pthread_rwlock_t));
 		pthread_rwlock_init(unLock,NULL);
 		dictionary_put(diccionarioLocks,path,unLock);
