@@ -117,7 +117,8 @@ void guardian_mongo();
 // TRIPULANTES
 int esta_tripulante_en_lista(t_list* lista, int elemento);
 void* eliminar_tripulante_de_lista(t_list* lista, int elemento);
-void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket);
+void enviar_tripulante (t_tripulante un_tripulante, int socket);
+t_TCB tripulante_a_tcb(t_tripulante un_tripulante);
 t_tripulante* crear_tripulante(int tid, int x, int y, char estado);
 t_tripulante* crear_puntero_tripulante(uint32_t tid, char* posicion);
 int soy_el_ultimo_de_mi_especie(int tid);

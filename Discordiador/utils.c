@@ -142,9 +142,25 @@ void enviar_pid_a_ram(uint32_t pid, int socket){
 
 }
 
-void enviar_tripulante_a_ram (t_tripulante un_tripulante, int socket){
-    t_buffer* buffer_t = serializar_tripulante(un_tripulante);
+void enviar_tripulante (t_tripulante un_tripulante, int socket){
+
+	t_TCB tcb_aux = tripulante_a_tcb(un_tripulante);
+	t_buffer* buffer_t = serializar_tcb(tcb_aux);
     empaquetar_y_enviar(buffer_t, RECIBIR_TCB, socket);
+
+}
+
+t_TCB tripulante_a_tcb(t_tripulante un_tripulante){
+
+	t_TCB tcb_aux;
+	tcb_aux.TID = un_tripulante.TID;
+	tcb_aux.coord_x = un_tripulante.coord_x;
+	tcb_aux.coord_y = un_tripulante.coord_y;
+	tcb_aux.estado_tripulante = un_tripulante.estado_tripulante;
+	tcb_aux.puntero_a_pcb = 0;
+	tcb_aux.siguiente_instruccion = 0;
+
+	return tcb_aux;
 }
 
 int esta_tripulante_en_lista(t_list* lista, int elemento){
