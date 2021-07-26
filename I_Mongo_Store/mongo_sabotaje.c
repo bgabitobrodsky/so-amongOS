@@ -269,20 +269,24 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 
 	t_config* config = config_create(path_recurso);
 	char* bloques = config_get_string_value(config, "BLOCKS");
+	int cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 	log_trace(logger_mongo, "Cadena de bloques del path %s: %s", path_recurso, bloques);
+	char* bloques_aux = concatenar_numeros(bloques, cant_bloques);
 
-	char* nuevo_md5 = md5_archivo(bloques);
+	char* nuevo_md5 = md5_archivo(bloques_aux);
 	log_trace(logger_mongo, "MD5 real: %s", nuevo_md5);
 	char* md5 = config_get_string_value(config, "MD5_ARCHIVO");
 	log_trace(logger_mongo, "MD5 de archivo: %s", md5);
 
 	if (strcmp(nuevo_md5, md5)) {
 		free(nuevo_md5);
+		free(bloques_aux);
 		config_destroy(config);
 		return 1;
 	}
 
 	free(nuevo_md5);
+	free(bloques_aux);
 	config_destroy(config);
 	return 0;
 }

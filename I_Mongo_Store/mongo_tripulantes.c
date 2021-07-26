@@ -67,7 +67,7 @@ char* rescatar_bitacora(char* path){
 	// log_trace(logger_mongo, "Tamanio de la bitacora es: %i", size);
 	int* aux;
 
-	lockearLectura(path_blocks);
+	// lockearLectura(path_blocks);
 
 	for(int i = 0; i < list_size(lista_bloques_bitacora); i++){
 		aux = list_get(lista_bloques_bitacora, i);
@@ -78,7 +78,7 @@ char* rescatar_bitacora(char* path){
 
 			if(lectura == size){
 				string[size] = '\0';
-				unlockear(path_blocks);
+				// unlockear(path_blocks);
 
 				return string;
 			}
@@ -86,7 +86,7 @@ char* rescatar_bitacora(char* path){
 	}
 
 	string[size] = '\0';
-	unlockear(path_blocks);
+	// unlockear(path_blocks);
 
 	return string;
 }

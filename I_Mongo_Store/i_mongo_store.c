@@ -49,6 +49,7 @@ int main(int argc, char** argv){
     sem_destroy(&sistema_activo);
 
 	list_iterate(bitacoras, matar_bitacora);
+	sincronizar_map();
 
 	matar_lista(lista_bloques_ocupados);
 	log_info(logger_mongo, "Apagando...");
@@ -243,8 +244,7 @@ void sincronizar_blocks() {
 
 	while(1) {
 		lockearEscritura(path_blocks);
-		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
-		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
+		sincronizar_map();
 		unlockear(path_blocks);
 		for(int i = 0; i < TIEMPO_SINCRONIZACION; i++){
 			sleep(1);
@@ -317,4 +317,9 @@ void matar_bitacora(void* una_bitacora) {
 	liberar_bloques(bitacora->path);
 	liberar_lista(bitacora->bloques);
 	borrar_bitacora(bitacora->tripulante);
+}
+
+void sincronizar_map(){
+	memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+	msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
 }
