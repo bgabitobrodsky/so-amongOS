@@ -32,7 +32,6 @@ void inicializar_archivos() {
 
 	log_trace(logger_mongo, "Se configuraron los paths.");
 
-	// TODO ver feedback
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
@@ -41,11 +40,9 @@ void inicializar_archivos() {
 
 	directorio.superbloque = fdopen(filedescriptor_superbloque, "w+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "w+b");
-	//directorio.superbloque = fopen(path_superbloque, "w+b");
 
 	log_trace(logger_mongo, "Se crearon los archivos de Blocks y Superbloque.");
 
-	// iniciar_superbloque(directorio.superbloque);
 	iniciar_superbloque_fd(filedescriptor_superbloque);
 	iniciar_blocks(filedescriptor_blocks);
 	inicializar_mapa();
@@ -101,7 +98,6 @@ void inicializar_archivos_preexistentes() {
 		existe_basura = 0;
 	}
 
-	// TODO ver feedback
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
@@ -794,7 +790,7 @@ char* crear_puntero_a_bitmap_fd(){
 
 	lockearLectura(path_superbloque);
     memcpy(puntero_a_bitmap, directorio.supermapa + 8, CANTIDAD_BLOQUES/8);
-    msync(directorio.supermapa, strlen(directorio.superbloque), MS_ASYNC);
+    msync(directorio.supermapa, strlen(directorio.supermapa), MS_ASYNC);
 	unlockear(path_superbloque);
 
 	return puntero_a_bitmap;

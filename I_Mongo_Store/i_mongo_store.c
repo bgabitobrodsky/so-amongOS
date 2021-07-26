@@ -26,7 +26,6 @@ int main(int argc, char** argv){
 
 	FILE* f = fopen("i_mongo_store.log", "w");
     fclose(f);
-
 	// Se crea la lista de bitacoras para los tripulantes, lista actua de registro para saber que tripulantes poseen bitacora en Mongo
 	bitacoras = list_create();
 
