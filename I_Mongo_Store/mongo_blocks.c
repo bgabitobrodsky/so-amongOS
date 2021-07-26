@@ -22,7 +22,6 @@ char* path_blocks;
 char* mapa;
 
 void iniciar_superbloque(FILE* archivo) {
-	// TODO podria ser un mmap
 	log_trace(logger_mongo, "Iniciando superbloque");
 
     uint32_t block_size = TAMANIO_BLOQUE; // Bytes
@@ -44,6 +43,42 @@ void iniciar_superbloque(FILE* archivo) {
 
     fwrite(bitmap->bitarray, bitmap->size, 1, archivo);
     fflush(archivo);
+    bitarray_destroy(bitmap);
+
+	log_trace(logger_mongo, "Se inicio el superbloque.");
+}
+
+
+void iniciar_superbloque_fd(int filedescriptor_superbloque) {
+
+	log_trace(logger_mongo, "Iniciando superbloque");
+
+    uint32_t block_size = TAMANIO_BLOQUE;
+    uint32_t size = CANTIDAD_BLOQUES;
+
+    void* puntero_a_bits = malloc(size/8);
+    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST);
+
+    posix_fallocate(filedescriptor_superbloque, 0, sizeof(uint32_t) * 2 + size / 8);
+
+    directorio.supermapa = (void*) mmap(NULL, sizeof(uint32_t) * 2 + size / 8, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_superbloque, 0);
+
+    if(directorio.supermapa == MAP_FAILED){
+        log_error(logger_mongo, "Fallo en la creacion del mapa.");
+    }
+
+    log_info(logger_mongo,"Cantidad de bloques del FileSystem: %i", CANTIDAD_BLOQUES);
+    log_info(logger_mongo,"Tamanio de los bloques del FileSystem: %i", TAMANIO_BLOQUE);
+
+    for(int i = 0; i < size; i++) {
+ 	   bitarray_clean_bit(bitmap, i);
+    }
+
+    memcpy(directorio.supermapa, &block_size, sizeof(uint32_t)*2);
+    memcpy(directorio.supermapa + 4, &size, sizeof(uint32_t)*2);
+    memcpy(directorio.supermapa + 8, bitmap->bitarray, bitmap->size);
+
+    free(bitmap->bitarray);
     bitarray_destroy(bitmap);
 
 	log_trace(logger_mongo, "Se inicio el superbloque.");
@@ -106,7 +141,7 @@ uint32_t obtener_cantidad_bloques_superbloque() {
 
 t_bitarray* obtener_bitmap() {
 
-	char* puntero_a_bitmap = crear_puntero_a_bitmap();
+	char* puntero_a_bitmap = crear_puntero_a_bitmap_fd();
 	t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bitmap, CANTIDAD_BLOQUES/8, MSB_FIRST);
 
 	return bitmap;
@@ -123,6 +158,22 @@ void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bit
     fwrite(&cantidad, sizeof(uint32_t), 1, directorio.superbloque);
     fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
     fflush(directorio.superbloque);
+
+	log_trace(logger_mongo, "Se reescribio el superbloque.");
+
+	unlockear(path_superbloque);
+
+}
+
+void reescribir_superbloque_fd(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap) {
+
+	lockearEscritura(path_superbloque);
+
+	log_trace(logger_mongo, "Reescribiendo el superbloque.");
+
+    memcpy(directorio.supermapa, &tamanio, sizeof(uint32_t)*2);
+    memcpy(directorio.supermapa + 4, &cantidad, sizeof(uint32_t)*2);
+    memcpy(directorio.supermapa + 8, bitmap->bitarray, bitmap->size);
 
 	log_trace(logger_mongo, "Se reescribio el superbloque.");
 
@@ -161,7 +212,7 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
 		}
 	} */
 
-    reescribir_bitmap(bitmap);
+    reescribir_bitmap_fd(bitmap);
 
 	log_trace(logger_mongo, "Se reescribio el bitmap.");
 
@@ -178,6 +229,13 @@ void reescribir_bitmap(t_bitarray* bitmap){
 	fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
 	fflush(directorio.superbloque);
 
+	unlockear(path_superbloque);
+}
+
+void reescribir_bitmap_fd(t_bitarray* bitmap){
+
+	lockearEscritura(path_superbloque);
+    memcpy(directorio.supermapa + 8, bitmap->bitarray, bitmap->size);
 	unlockear(path_superbloque);
 }
 

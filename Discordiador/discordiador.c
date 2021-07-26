@@ -110,7 +110,7 @@ void notificar_fin_sabotaje(t_tripulante* un_tripulante, int socket_mongo){
 void ejecutar_tarea(char* path_archivo);
 
 sem_t sistema_activo;
-
+sem_t entrada_salida_libre;
 
 int main() {
     if(testeo != DISCORDIADOR)
@@ -129,12 +129,14 @@ int main() {
 
     sem_init(&sistema_activo, 0, 0);
 
-
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     // ejecutar_tarea("estabilidad_general.txt");
-    iniciar_patota("INICIAR_PATOTA 10 Random.ims");
+
+    ejecutar_tarea("test_sin_entrada_salida");
+
+    // iniciar_patota("INICIAR_PATOTA 10 Random.ims");
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
@@ -272,17 +274,22 @@ int iniciar_patota(char* leido){
 
 void iniciar_planificacion() {
 
-    planificacion_activa = 1;
-    log_debug(logger, "\nTripulantes en NEW: %i\n", list_size(lista_tripulantes_new));
-    log_debug(logger, "\nTripulantes en READY: %i\n", queue_size(cola_tripulantes_ready));
-    log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
-    log_debug(logger, "\nTripulantes en BLOQ I/O: %i\n", queue_size(cola_tripulantes_block));
-    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block_emergencia));
-    log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
+	if(planificacion_activa){
+		log_info(logger, "La planificacion ya esta activa");
+	} else{
 
-    pthread_t t_planificador;
-    pthread_create(&t_planificador, NULL, (void*) planificador, NULL);
-    pthread_detach(t_planificador);
+	    planificacion_activa = 1;
+	    log_debug(logger, "\nTripulantes en NEW: %i\n", list_size(lista_tripulantes_new));
+	    log_debug(logger, "\nTripulantes en READY: %i\n", queue_size(cola_tripulantes_ready));
+	    log_debug(logger, "\nTripulantes en EXEC: %i\n", list_size(lista_tripulantes_exec));
+	    log_debug(logger, "\nTripulantes en BLOQ I/O: %i\n", queue_size(cola_tripulantes_block));
+	    log_debug(logger, "\nTripulantes en BLOQ EMERGENCIA: %i\n", queue_size(cola_tripulantes_block_emergencia));
+	    log_debug(logger, "\nTripulantes VIVOS: %i\n", list_size(lista_tripulantes));
+
+	    pthread_t t_planificador;
+	    pthread_create(&t_planificador, NULL, (void*) planificador, NULL);
+	    pthread_detach(t_planificador);
+	}
 
 }
 
@@ -290,8 +297,33 @@ void planificador(){
     log_info(logger, "Planificando");
     log_info(logger, "Algoritmo %s", ALGORITMO);
 
+    // sem_t planificador;
+    // sem_init(&planificador, 0, MIN(GRADO_MULTITAREA, queue_size(cola_tripulantes_ready)));
+
     while(planificacion_activa){
-    	usleep(50);
+    	usleep(1000);
+
+    	// TODO
+    	// sem_wait(&planificador);
+/*
+        if(comparar_strings(ALGORITMO, "FIFO")){
+            t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
+        	quitar_tripulante_de_listas(aux_tripulante);
+        	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
+            monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
+            // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
+        }
+
+        else if(comparar_strings(ALGORITMO, "RR")){
+            t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
+        	quitar_tripulante_de_listas(aux_tripulante);
+        	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
+            aux_tripulante->quantum_restante = QUANTUM;
+            monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
+            // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
+        }
+*/
+
         while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
 
             if(comparar_strings(ALGORITMO, "FIFO")){
@@ -311,6 +343,7 @@ void planificador(){
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
         }
+
     }
 }
 
@@ -319,7 +352,7 @@ void tripulante(t_tripulante* un_tripulante){
     int st_ram = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     int st_mongo = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    usleep(500);
+    usleep(1000);
 
     enviar_tripulante(*un_tripulante, st_mongo);
 
@@ -359,7 +392,8 @@ int conseguir_siguiente_tarea(t_tripulante* un_tripulante, int socket_ram, int s
     	log_debug(logger, "%i paso a exit", un_tripulante->TID);
     	quitar_tripulante_de_listas(un_tripulante);
     	un_tripulante->estado_tripulante = estado_tripulante[EXIT];
-		t_buffer* b_tripulante = serializar_tripulante(*un_tripulante);
+    	t_TCB tcb_aux = tripulante_a_tcb(*un_tripulante);
+    	t_buffer* b_tripulante = serializar_tcb(tcb_aux);
 		empaquetar_y_enviar(b_tripulante, ACTUALIZAR, socket_ram);
 		free(tarea);
     }
@@ -390,7 +424,7 @@ void iniciar_tripulante(t_tripulante* un_tripulante, int socket){
 
     if (un_tripulante->estado_tripulante == estado_tripulante[NEW]){
         while(planificacion_activa == 0){
-        	sleep(1);
+        	usleep(1000);
             // por si lo matan antes de iniciar la planificacion
             if(un_tripulante->estado_tripulante == estado_tripulante[EXIT]){
             	un_tripulante->tarea.nombre = malloc(sizeof(char));
@@ -943,10 +977,6 @@ void actualizar_tripulante(t_tripulante* un_tripulante, int socket){
 		t_buffer* buffer_t = serializar_tcb(tcb_aux);
 		empaquetar_y_enviar(buffer_t, ACTUALIZAR, socket);
 
-		// TODO ver feedback
-	    // t_buffer* buffer_t = serializar_tripulante(*un_tripulante);
-		// empaquetar_y_enviar(buffer_t, ACTUALIZAR, socket);
-
 	}
 }
 
@@ -985,7 +1015,6 @@ void cambiar_estado(t_tripulante* un_tripulante, char estado, int socket){
 	un_tripulante->estado_tripulante = estado;
 	actualizar_tripulante(un_tripulante, socket);
 }
-
 
 void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 	// PRIMERO los de EXEC, los de mayor TID primero
@@ -1061,7 +1090,7 @@ void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 	cambiar_estado(t_aux, estado_tripulante[EXEC], socket_ram);
 
 	while(estamos_en_peligro){
-		sleep(1); // todos se esperan a que termine el sabotaje
+		usleep(1000); // todos se esperan a que termine el sabotaje
 	}
 
 	t_aux->tarea = contexto;
@@ -1153,15 +1182,15 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
-					sleep(1); // Espero hasta que la entrada deje de estar ocupada
+					usleep(1000); // Espero hasta que la entrada deje de estar ocupada
 				}
     			break;
     		case 'R':
-				sleep(1);
+				usleep(1000);
 				break;
     		}
     	} else {
-    		sleep(1);
+    		usleep(1000);
     	}
 
 		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
@@ -1186,7 +1215,7 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
 				} else {
 					cambiar_estado(un_tripulante, estado_tripulante[READY], st_ram);
 					monitor_cola_push(sem_cola_ready, cola_tripulantes_ready, un_tripulante);
-					log_warning(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
+					log_debug(logger, "%i Ayudaaa me desalojan", un_tripulante->TID);
 				}
 				break;
 			case 'B':
@@ -1194,15 +1223,15 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
-					sleep(1); // espero hasta que la entrada deje de estar ocupada
+					usleep(1000); // espero hasta que la entrada deje de estar ocupada
 				}
 				break;
 			case 'R':
-				sleep(1);
+				usleep(1000);
 				break;
             }
 		} else{
-			sleep(1);
+			usleep(1000);
 		}
     verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
 	}

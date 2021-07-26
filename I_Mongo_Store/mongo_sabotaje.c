@@ -85,7 +85,7 @@ int verificar_cant_bloques() {
         log_trace(logger_mongo, "Se arregla sabotaje de cantidad de bloques.");
 
         t_bitarray* bitmap = obtener_bitmap();
-        reescribir_superbloque(TAMANIO_BLOQUE, cantidad_real, bitmap);
+        reescribir_superbloque_fd(TAMANIO_BLOQUE, cantidad_real, bitmap);
         free(bitmap->bitarray);
         bitarray_destroy(bitmap);
 

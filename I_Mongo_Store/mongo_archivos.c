@@ -32,16 +32,21 @@ void inicializar_archivos() {
 
 	log_trace(logger_mongo, "Se configuraron los paths.");
 
+	// TODO ver feedback
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-	directorio.superbloque = fopen(path_superbloque, "w+b");
+
+	directorio.superbloque = fdopen(filedescriptor_superbloque, "w+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "w+b");
+	//directorio.superbloque = fopen(path_superbloque, "w+b");
 
 	log_trace(logger_mongo, "Se crearon los archivos de Blocks y Superbloque.");
 
-	iniciar_superbloque(directorio.superbloque);
+	// iniciar_superbloque(directorio.superbloque);
+	iniciar_superbloque_fd(filedescriptor_superbloque);
 	iniciar_blocks(filedescriptor_blocks);
 	inicializar_mapa();
 }
@@ -68,8 +73,6 @@ void inicializar_archivos_preexistentes() {
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
 	log_trace(logger_mongo, "Se configuraron los paths.");
-
-	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
@@ -98,7 +101,11 @@ void inicializar_archivos_preexistentes() {
 		existe_basura = 0;
 	}
 
-	directorio.superbloque = fopen(path_superbloque, "r+b");
+	// TODO ver feedback
+	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+
+	directorio.superbloque = fdopen(filedescriptor_superbloque, "r+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
 
 	log_trace(logger_mongo, "Se abrieron los archivos del FileSystem.");
@@ -108,10 +115,11 @@ void inicializar_archivos_preexistentes() {
 	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
+    directorio.supermapa = (void*) mmap(NULL, sizeof(uint32_t) * 2 + CANTIDAD_BLOQUES / 8, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_superbloque, 0);
     cargar_bitmap(); // cargando la lista de bloqueados
     // limpiar_cuerpos();
     // rename("/home/utnso/polus/Files/Bitacoras/Tripulante10001.ims", "/home/utnso/polus/Files/Bitacoras/OldTripulante10001.ims");
-    //rename("/home/utnso/polus/Files/Bitacoras", "/home/utnso/polus/Files/ASID");
+    // rename("/home/utnso/polus/Files/Bitacoras", "/home/utnso/polus/Files/ASID");
 
     log_info(logger_mongo, "Se inicializaron los archivos pre-existentes.");
 }
@@ -210,7 +218,7 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 
 	int* aux;
 
-	lockearEscritura(path_blocks);
+	// lockearEscritura(path_blocks);
 
 	for(int i = 0; i < list_size(lista_bloques); i++){
 		aux = list_get(lista_bloques, i);
@@ -228,13 +236,13 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 
 			if (cantidad_alcanzada == cantidad_deseada) {
 				log_trace(logger_mongo, "Se llego a la cantidad deseada.");
-				unlockear(path_blocks);
+				// unlockear(path_blocks);
 				return 0;
 			}
 		}
 	}
 
-	unlockear(path_blocks);
+	// unlockear(path_blocks);
 
 	return cantidad_alcanzada - cantidad_deseada;
 }
@@ -249,7 +257,7 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 
 	char* path = tipo_a_path(tipo);
 
-	lockearEscritura(path_blocks);
+	// lockearEscritura(path_blocks);
 	for(int i = (list_size(lista_bloques) - 1); i >= 0 ; i--){
 
 		aux = list_get(lista_bloques, i);
@@ -269,7 +277,7 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 			}
 		}
 	}
-	unlockear(path_blocks);
+	// unlockear(path_blocks);
 
 	return cantidad_alcanzada - cantidad_deseada;
 }
@@ -744,7 +752,7 @@ uint32_t bloques_contar(char caracter) {
 	t_list* bloques = get_lista_bloques(path);
 	int* aux;
 
-	lockearLectura(path_blocks);
+	// lockearLectura(path_blocks);
 
 	for(int i = 0 ; i < list_size(bloques); i++){
 		aux = list_get(bloques, i);
@@ -760,7 +768,7 @@ uint32_t bloques_contar(char caracter) {
 
 	matar_lista(bloques);
 
-	unlockear(path_blocks);
+	// unlockear(path_blocks);
 
 	return cantidad;
 }
@@ -774,6 +782,19 @@ char* crear_puntero_a_bitmap(){
 	lockearLectura(path_superbloque);
 	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
 	fread(puntero_a_bitmap, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
+	unlockear(path_superbloque);
+
+	return puntero_a_bitmap;
+}
+
+char* crear_puntero_a_bitmap_fd(){
+
+	// EL RETORNO SE DEBE LIBERAR
+	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
+
+	lockearLectura(path_superbloque);
+    memcpy(puntero_a_bitmap, directorio.supermapa + 8, CANTIDAD_BLOQUES/8);
+    msync(directorio.supermapa, strlen(directorio.superbloque), MS_ASYNC);
 	unlockear(path_superbloque);
 
 	return puntero_a_bitmap;
@@ -804,13 +825,13 @@ void blanquear_bloque(int bloque){
 
 	log_trace(logger_mongo, "Se llena de centinelas el bloque %i", bloque);
 
-	lockearEscritura(path_blocks);
+	// lockearEscritura(path_blocks);
 
 	for(int i = 0; i < TAMANIO_BLOQUE; i++){
 		*(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i) = ',';
 	}
 
-	unlockear(path_blocks);
+	// unlockear(path_blocks);
 }
 
 void liberar_bloque(char* path, uint32_t nro_bloque) {
@@ -826,7 +847,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 		if (nro_bloque == *nro_bloque_aux) {
 			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
 
-			reescribir_bitmap(nuevo_bitmap);
+			reescribir_bitmap_fd(nuevo_bitmap);
 
 			bool quitar_bloque(void* elemento1){
 				return (nro_bloque == *((int*) elemento1));

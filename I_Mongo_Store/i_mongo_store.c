@@ -6,11 +6,12 @@
  */
 
 #include "i_mongo_store.h"
+#include <semaphore.h>
 
 int socket_discordiador;
 char** posiciones_sabotajes;
 t_list* lista_bloques_ocupados;
-int sistema_activo = 1;
+sem_t sistema_activo;
 
 int main(int argc, char** argv){
 
@@ -21,6 +22,7 @@ int main(int argc, char** argv){
 	signal(SIGUSR1, sabotaje);
 	posiciones_sabotajes = POSICIONES_SABOTAJE;
 	lista_bloques_ocupados = list_create();
+    sem_init(&sistema_activo, 0, 0);
 
 	FILE* f = fopen("i_mongo_store.log", "w");
     fclose(f);
@@ -44,23 +46,18 @@ int main(int argc, char** argv){
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
 
-	reparar();
-
-	while(sistema_activo){
-		sleep(1);
-	}
+    sem_wait(&sistema_activo);
+    sem_destroy(&sistema_activo);
 
 	list_iterate(bitacoras, matar_bitacora);
 
 	matar_lista(lista_bloques_ocupados);
 	log_info(logger_mongo, "Apagando...");
 	sleep(1);
-	// Se cierran vestigios del pasado
 	log_info(logger_mongo, "Cerrando archivos");
 	cerrar_archivos();
 	close(socket_oyente);
 	list_destroy(bitacoras);
-	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
 	config_destroy(config_superbloque);
 	free(path_superbloque);
@@ -71,6 +68,7 @@ int main(int argc, char** argv){
 	free(path_oxigeno);
 	free(path_bitacoras);
 	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.");
+	log_destroy(logger_mongo);
 }
 
 void escuchar_mongo(void* args) {
@@ -182,7 +180,7 @@ void manejo_discordiador(){
 			case DESCONEXION:
 				log_info(logger_mongo, "Se desconecto un cliente.");
 				flag = 0;
-				sistema_activo = 0;
+				sem_post(&sistema_activo);
 				// close(socket_discordiador);
 				break;
 
@@ -251,9 +249,10 @@ void sincronizar_blocks() {
 		unlockear(path_blocks);
 		for(int i = 0; i < TIEMPO_SINCRONIZACION; i++){
 			sleep(1);
-			if(!sistema_activo){
-				pthread_exit(NULL);
-			}
+			// TODO cambiar
+			// if(!sistema_activo){
+				// pthread_exit(NULL);
+			// }
 		}
 	}
 }
