@@ -215,13 +215,12 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 
 	if(list_is_empty(lista_bloques) && cantidad_deseada != 0){
 		log_trace(logger_mongo, "la lista de bloques esta vacia");
-		uint32_t* nuevo_bloque = malloc(sizeof(uint32_t));
-		*nuevo_bloque = asignar_nuevo_bloque(path, 0);
+		uint32_t nuevo_bloque = asignar_nuevo_bloque(path, 0);
 		// log_trace(logger_mongo, "Se quiere destruir la lista.");
 		// list_destroy(lista_bloques); // TODO revisar
 		// log_trace(logger_mongo, "Se destruyo la lista");
 		// lista_bloques = get_lista_bloques(path);
-		list_add(lista_bloques, nuevo_bloque);
+		list_add(lista_bloques, &nuevo_bloque);
 	}
 
 	int* aux;
