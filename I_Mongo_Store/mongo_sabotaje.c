@@ -271,7 +271,7 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 	char* bloques = config_get_string_value(config, "BLOCKS");
 	int cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 	log_trace(logger_mongo, "Cadena de bloques del path %s: %s", path_recurso, bloques);
-	char* bloques_aux = concatenar_numeros(bloques, cant_bloques);
+	char* bloques_aux = concatenar_numeros(bloques);
 
 	char* nuevo_md5 = md5_archivo(bloques_aux);
 	log_trace(logger_mongo, "MD5 real: %s", nuevo_md5);

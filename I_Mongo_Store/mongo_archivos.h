@@ -34,7 +34,7 @@ void liberar_bloques(char* path);
 void liberar_bloque(char* path, uint32_t nro_bloque);
 void blanquear_bloque(int bloque);
 uint32_t obtener_cantidad_bloques(char* path);
-char* concatenar_numeros(char* cadena, int cant_chars);
+char* concatenar_numeros(char* cadena);
 
 // devuelven la metadata del archivo
 t_list* get_lista_bloques(char* path); // TESTEADA
