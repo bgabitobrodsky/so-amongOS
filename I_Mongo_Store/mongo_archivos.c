@@ -218,9 +218,9 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 
 	for(int i = 0; i < list_size(lista_bloques); i++){
 		aux = list_get(lista_bloques, i);
+		log_trace(logger_mongo, "Se esta agregando en bloque %i", *aux);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
-			log_trace(logger_mongo, "Se esta agregando en bloque %i", *aux);
 
 			if (*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) == ',') {
 				*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) = tipo;
@@ -659,44 +659,56 @@ t_list* get_lista_bloques(char* path){
 }
 
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
-	// log_warning(logger_mongo, "RECURSO");
+
+	log_warning(logger_mongo, "RECURSO");
 	set_tam(path, tamanio);
 	set_cant_bloques(path, cant_bloques);
 	set_bloq(path, lista_bloques);
 
 	char caracter = caracter_llenado_archivo(path);
-	// log_warning(logger_mongo, "POST LLENADO");
+	log_warning(logger_mongo, "POST LLENADO");
 	set_caracter_llenado(path, caracter);
-	// log_warning(logger_mongo, "PRE CONFIG");
-	// log_warning(logger_mongo, "CONFIG path = %s", path);
-
-	t_config* config = config_create(path);
-	// log_warning(logger_mongo, "POST  CONFIG");
 
 	if(cant_bloques != 0){
+		log_warning(logger_mongo, "PRE LOCKEAR");
 		lockearLectura(path);
+		log_warning(logger_mongo, "PRE CONFIG");
+		log_warning(logger_mongo, "CONFIG path = %s", path);
+		t_config* config = config_create(path);
+		log_warning(logger_mongo, "POST  CONFIG");
+		log_warning(logger_mongo, "PRE CADENA BLOCKS");
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
+		log_warning(logger_mongo, "POST CADENA BLOCKS");
 		unlockear(path);
+		log_warning(logger_mongo, "POST UNLOCKEAR");
+		log_warning(logger_mongo, "PRE CONCATENAR");
 		char* cadena_aux = concatenar_numeros(cadena_blocks);
+		log_warning(logger_mongo, "POST CONCATENAR");
+		log_warning(logger_mongo, "PRE MD5");
 		char* md5 = md5_archivo(cadena_aux);
+		log_warning(logger_mongo, "POST MD5");
+		log_warning(logger_mongo, "PRE SET MD5");
 		set_md5(path, md5);
+		log_warning(logger_mongo, "POST SET");
+		log_warning(logger_mongo, "PRE FREE MD5");
 		free(md5);
-		// log_warning(logger_mongo, "PRE FREE AUX");
+		log_warning(logger_mongo, "PRE FREE AUX");
 		free(cadena_aux);
-		// log_warning(logger_mongo, "POST FREE AUX");
+		log_warning(logger_mongo, "POST FREE AUX");
+		config_destroy(config);
 	} else {
 		// Esto no deberia pasar, ya no inicializamos archivos vacios, pero pendiente de revision
 		log_error(logger_mongo, "MD5 INDEFINIDO");
 		set_md5(path, "INDEFINIDO"); // Que no se setee si no tiene bloques
 	}
 
-	config_destroy(config);
-	// log_warning(logger_mongo, "POST RECURSO");
+	log_warning(logger_mongo, "POST RECURSO");
 }
 
 char* concatenar_numeros(char* cadena) {
 
 	int cantidad_numeros = 0;
+	log_warning(logger_mongo, "PRE FOR");
 
 	for(int i = 0; i < strlen(cadena); i++) {
 		if (isdigit(cadena[i])) {
@@ -704,7 +716,10 @@ char* concatenar_numeros(char* cadena) {
 		}
 	}
 
+	log_warning(logger_mongo, "POST FOR Y PRE MALLOC");
+
 	char* cadena_aux = malloc((sizeof(char) * cantidad_numeros) + 1);
+	log_warning(logger_mongo, "POST MALLOC PRE CADENA");
 
 	log_trace(logger_mongo, "Cadena es %s", cadena);
 
