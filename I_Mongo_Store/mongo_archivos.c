@@ -32,6 +32,8 @@ void inicializar_archivos() {
 
 	log_trace(logger_mongo, "Se configuraron los paths.");
 
+	ultimo_bloque_libre = 0;
+
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
@@ -71,13 +73,16 @@ void inicializar_archivos_preexistentes() {
 
 	log_trace(logger_mongo, "Se configuraron los paths.");
 
+	ultimo_bloque_libre = 0;
+
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
 
 	if((recurso.oxigeno = fopen(path_oxigeno, "r+b")) != NULL){
 		log_info(logger_mongo, "Existe oxigeno");
 		existe_oxigeno = 1;
-	} else{
+	}
+	else {
 		log_info(logger_mongo, "No existe oxigeno");
 		existe_oxigeno = 0;
 	}
@@ -85,7 +90,8 @@ void inicializar_archivos_preexistentes() {
 	if((recurso.comida = fopen(path_comida, "r+b")) != NULL){
 		log_info(logger_mongo, "Existe comida");
 		existe_comida = 1;
-	} else{
+	}
+	else {
 		log_info(logger_mongo, "No existe comida");
 		existe_comida = 0;
 	}
@@ -93,7 +99,8 @@ void inicializar_archivos_preexistentes() {
 	if((recurso.basura = fopen(path_basura, "r+b")) != NULL){
 		log_info(logger_mongo, "Existe basura");
 		existe_basura = 1;
-	} else{
+	}
+	else {
 		log_info(logger_mongo, "No existe basura");
 		existe_basura = 0;
 	}
@@ -148,7 +155,7 @@ void limpiar_cuerpos() {
 	}
 }
 
-void asignar_nuevo_bloque(char* path, int size_agregado) {
+uint32_t asignar_nuevo_bloque(char* path, int size_agregado) {
 	lockearEscritura(path_blocks);
 	log_trace(logger_mongo, "Asignando un nuevo bloque");
 
@@ -158,11 +165,12 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 	int* pos_libre = malloc(sizeof(int));
 
 	//Recorro todas las posiciones del bitarray
-	for (uint32_t i = 0; i < CANTIDAD_BLOQUES; i++){
+	for (uint32_t i = ultimo_bloque_libre; i < CANTIDAD_BLOQUES; i++){
 		//Entra si el bit del bitmap está en 0
 		if(!bitarray_test_bit(bitmap, i)){
 			bit_libre = 1;
 			*pos_libre = i;
+			ultimo_bloque_libre = i;
 			break;
 		}
 	}
@@ -186,7 +194,7 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 		actualizar_bitmap(lista_bloques_ocupados);
 	    log_trace(logger_mongo, "Actualizado el bitmap");
 	}
-	else{
+	else {
 		log_warning(logger_mongo, "No hay bloques disponibles en este momento");
 	}
 
@@ -194,6 +202,8 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 
 	free(bitmap->bitarray);
 	bitarray_destroy(bitmap);
+
+	return *pos_libre;
 
 }
 
@@ -205,11 +215,12 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 
 	if(list_is_empty(lista_bloques) && cantidad_deseada != 0){
 		log_trace(logger_mongo, "la lista de bloques esta vacia");
-		asignar_nuevo_bloque(path, 0);
+		uint32_t nuevo_bloque = asignar_nuevo_bloque(path, 0);
 		// log_trace(logger_mongo, "Se quiere destruir la lista.");
 		// list_destroy(lista_bloques); // TODO revisar
 		// log_trace(logger_mongo, "Se destruyo la lista");
-		lista_bloques = get_lista_bloques(path);
+		// lista_bloques = get_lista_bloques(path);
+		list_add(lista_bloques, &nuevo_bloque);
 	}
 
 	int* aux;
@@ -218,9 +229,9 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 
 	for(int i = 0; i < list_size(lista_bloques); i++){
 		aux = list_get(lista_bloques, i);
+		log_trace(logger_mongo, "Se esta agregando en bloque %i", *aux);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
-			log_trace(logger_mongo, "Se esta agregando en bloque %i", *aux);
 
 			if (*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) == ',') {
 				*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) = tipo;
@@ -523,7 +534,7 @@ int min (int a, int b) {
 
 int tamanio_archivo(char* path) {
 
-	if(es_recurso(path)) {
+	if (es_recurso(path)) {
 		lockearLectura(path);
 	}
 
@@ -617,7 +628,7 @@ t_list* get_lista_bloques(char* path){
 
 	log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
 
-	if(es_recurso(path)){
+	if (es_recurso(path)){
 		lockearLectura(path);
 	}
 
@@ -626,13 +637,13 @@ t_list* get_lista_bloques(char* path){
 
 	char** bloques = config_get_array_value(config, "BLOCKS");
 
-	if(bloques[0] == NULL){
+	if (bloques[0] == NULL){
 
 		log_trace(logger_mongo, "EL path dado no tiene bloques.");
 		config_destroy(config);
 		liberar_puntero_doble(bloques);
 
-		if(es_recurso(path)){
+		if (es_recurso(path)){
 			unlockear(path);
 		}
 
@@ -650,7 +661,7 @@ t_list* get_lista_bloques(char* path){
 	config_destroy(config);
 	liberar_puntero_doble(bloques);
 
-	if(es_recurso(path)){
+	if (es_recurso(path)){
 		unlockear(path);
 	}
 
@@ -673,7 +684,7 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	t_config* config = config_create(path);
 	// log_warning(logger_mongo, "POST  CONFIG");
 
-	if(cant_bloques != 0){
+	if (cant_bloques != 0){
 		lockearLectura(path);
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
 		unlockear(path);
@@ -684,7 +695,8 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 		// log_warning(logger_mongo, "PRE FREE AUX");
 		free(cadena_aux);
 		// log_warning(logger_mongo, "POST FREE AUX");
-	} else {
+	}
+	else {
 		// Esto no deberia pasar, ya no inicializamos archivos vacios, pero pendiente de revision
 		log_error(logger_mongo, "MD5 INDEFINIDO");
 		set_md5(path, "INDEFINIDO"); // Que no se setee si no tiene bloques
@@ -730,13 +742,13 @@ void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloq
 
 int es_recurso(char* path) {
 
-	if(comparar_strings(path, path_basura)){
+	if (comparar_strings(path, path_basura)){
 		return 1;
 	}
-	if(comparar_strings(path, path_oxigeno)){
+	if (comparar_strings(path, path_oxigeno)){
 		return 1;
 	}
-	if(comparar_strings(path, path_comida)){
+	if (comparar_strings(path, path_comida)){
 		return 1;
 	}
 
@@ -1004,7 +1016,7 @@ void set_bloq(char* path, t_list* lista){
 
 	free(lista_bloques);
 
-	if(es_recurso(path)){
+	if (es_recurso(path)){
 		unlockear(path);
 	}
 }
