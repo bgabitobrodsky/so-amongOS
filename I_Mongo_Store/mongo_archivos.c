@@ -809,7 +809,6 @@ char* crear_puntero_a_bitmap_fd(){
 
 	lockearLectura(path_superbloque);
     memcpy(puntero_a_bitmap, directorio.supermapa + 8, CANTIDAD_BLOQUES/8);
-    msync(directorio.supermapa, strlen(directorio.supermapa), MS_ASYNC);
 	unlockear(path_superbloque);
 
 	return puntero_a_bitmap;

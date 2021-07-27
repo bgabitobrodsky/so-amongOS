@@ -194,16 +194,13 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
 	} */
 
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-    	bitarray_clean_bit(bitmap, i); // Limpio el bitarray, total despues le meto los que tengo registrados que andan ocupados
-    }
+		bitarray_clean_bit(bitmap, i);
+	}
 
-    for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
-    	if(esta_en_lista(bloques_ocupados, i)){
-    		bitarray_set_bit(bitmap, i);
-    	} else {
-    		bitarray_clean_bit(bitmap, i);
-    	}
-    }
+	for(int i = 0; i < list_size(lista_bloques_ocupados); i++) {
+		int* aux = list_get(lista_bloques_ocupados, i);
+		bitarray_set_bit(bitmap, *aux);
+	}
 
     /* log_trace(logger_mongo, "Bitmap nuevo:");
 	for(int i = 0; i < bitarray_get_max_bit(bitmap); i++){
