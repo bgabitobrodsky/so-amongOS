@@ -21,8 +21,6 @@ char* path_blocks;
 
 char* mapa;
 
-int ultimo_bloque_libre = 0;
-
 void iniciar_superbloque(FILE* archivo) {
 	log_trace(logger_mongo, "Iniciando superbloque");
 

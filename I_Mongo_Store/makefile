@@ -1,7 +1,7 @@
 TARGET = i_mongo_store
 LIBS = -lcommons -lpthread -lcomms -lcunit -lcrypto -lssl
 CC = gcc
-CFLAGS = -g -pg -Wall
+CFLAGS = -g -Wall
 
 .PHONY: default all clean
 
