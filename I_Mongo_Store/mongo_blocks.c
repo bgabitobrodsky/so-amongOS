@@ -196,11 +196,12 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
     for(int i = 0; i < CANTIDAD_BLOQUES; i++) {
 		bitarray_clean_bit(bitmap, i);
 	}
-
+    pthread_mutex_lock(&sem_lista_bloques_ocupados);
 	for(int i = 0; i < list_size(lista_bloques_ocupados); i++) {
 		int* aux = list_get(lista_bloques_ocupados, i);
 		bitarray_set_bit(bitmap, *aux);
 	}
+	pthread_mutex_unlock(&sem_lista_bloques_ocupados);
 
     /* log_trace(logger_mongo, "Bitmap nuevo:");
 	for(int i = 0; i < bitarray_get_max_bit(bitmap); i++){
@@ -256,7 +257,7 @@ void cargar_bitmap(){
 		if(bitarray_test_bit(bitmap, i)){
 			aux = malloc(sizeof(int));
 			*aux = i;
-			list_add(lista_bloques_ocupados, aux);
+			monitor_lista(sem_lista_bloques_ocupados, (void*) list_add, lista_bloques_ocupados, aux);
 		}
 	}
 

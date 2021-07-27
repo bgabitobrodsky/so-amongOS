@@ -13,6 +13,8 @@ char** posiciones_sabotajes;
 t_list* lista_bloques_ocupados;
 sem_t sistema_activo;
 
+pthread_mutex_t sem_lista_bloques_ocupados;
+
 int main(int argc, char** argv){
 
 	// Se crean estructuras de registro y configuracion
@@ -23,6 +25,7 @@ int main(int argc, char** argv){
 	posiciones_sabotajes = POSICIONES_SABOTAJE;
 	lista_bloques_ocupados = list_create();
     sem_init(&sistema_activo, 0, 0);
+	pthread_mutex_init(&sem_lista_bloques_ocupados, NULL);
 
 	FILE* f = fopen("i_mongo_store.log", "w");
     fclose(f);
@@ -47,6 +50,7 @@ int main(int argc, char** argv){
 
     sem_wait(&sistema_activo);
     sem_destroy(&sistema_activo);
+	pthread_mutex_destroy(&sem_lista_bloques_ocupados);
 
 	list_iterate(bitacoras, matar_bitacora);
 	sincronizar_map();

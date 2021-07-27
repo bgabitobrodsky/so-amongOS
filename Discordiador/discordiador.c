@@ -132,7 +132,8 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    // iniciar_patota("INICIAR_PATOTA 10 ZJavier.ims");
+    /*
+    iniciar_patota("INICIAR_PATOTA 10 ZJavier.ims");
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
@@ -150,8 +151,9 @@ int main() {
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
+    */
     // iniciar_planificacion();
-    // ejecutar_tarea("estabilidad_general.txt");
+    ejecutar_tarea("estabilidad_general.txt");
 
     // ejecutar_tarea("test_sin_entrada_salida");
 

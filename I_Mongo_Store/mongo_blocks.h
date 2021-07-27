@@ -80,6 +80,7 @@ pthread_mutex_t mutex_oxigeno;
 pthread_mutex_t mutex_comida;
 pthread_mutex_t mutex_basura;
 pthread_mutex_t mutex_blocks;
+extern pthread_mutex_t sem_lista_bloques_ocupados;
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;

@@ -182,7 +182,7 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 			asignar_bloque_tripulante(path, pos_libre, size_agregado);
 		}
 
-		list_add(lista_bloques_ocupados, pos_libre);
+		monitor_lista(sem_lista_bloques_ocupados, (void*) list_add, lista_bloques_ocupados, pos_libre);
 		actualizar_bitmap(lista_bloques_ocupados);
 	    log_trace(logger_mongo, "Actualizado el bitmap");
 	}
@@ -678,7 +678,7 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 
 	config_destroy(config);
 	free(md5);
-	free(cadena_aux);
+	// free(cadena_aux); TODO: arreglar
 }
 
 char* concatenar_numeros(char* cadena, int cant_chars) {
@@ -881,7 +881,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 		return *((int*) bloque) == nro_bloque;
 	}
 
-	int* aux = list_remove_by_condition(lista_bloques_ocupados, quitar_bloque_de_lista);
+	int* aux = monitor_lista(sem_lista_bloques_ocupados, (void*) list_remove_by_condition, lista_bloques_ocupados, (void*) quitar_bloque_de_lista);
 	free(aux);
 
 	matar_lista(bloques);
