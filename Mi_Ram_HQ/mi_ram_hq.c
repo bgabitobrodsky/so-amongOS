@@ -23,9 +23,10 @@ int main(int argc, char** argv) {
     fclose(f);
 
 	config = config_create("mi_ram_hq.config");
+	mapa_on = MAPA_ON;
+
 	logger = log_create("mi_ram_hq.log", "MI_RAM_HQ", !mapa_on, LOG_LEVEL);
 	
-	mapa_on = MAPA_ON;
 	
 	signal(SIGUSR1, signal_compactacion);
 	signal(SIGUSR2, dump);
@@ -38,6 +39,8 @@ int main(int argc, char** argv) {
 
 	iniciar_memoria();
 	iniciar_mapa();
+
+	//test_gestionar_tareas_paginacion();
 
 	int socket_oyente = crear_socket_oyente(IP, PUERTO);
     	args_escuchar args_miram;
