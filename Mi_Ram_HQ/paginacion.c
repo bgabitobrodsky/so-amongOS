@@ -488,14 +488,10 @@ marco* crear_marco(int base, bool libre){
 }
 
 void liberar_lista_tcbs_paginacion(t_list* lista){
-	if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		void free_tcb(void* un_tcb){
-			free(un_tcb);
-		}
-		list_destroy_and_destroy_elements(lista, free_tcb);
-	}else{
-		list_destroy(lista);
+	void free_tcb(void* un_tcb){
+		free(un_tcb);
 	}
+	list_destroy_and_destroy_elements(lista, free_tcb);
 }
 
 void dump_paginacion(){

@@ -54,12 +54,10 @@ void compactacion(){
                         t_PCB* pcb = (t_PCB*) (memoria_principal + segmento_ocupado->base);
                         t_list* tcbs = buscar_tcbs_por_pid(pcb->PID);
 
-                        // Movemos primero la memoria real
                         memcpy(memoria_principal + segmento_libre->base,
                             memoria_principal + segmento_ocupado->base,
                             segmento_ocupado->tam);
 
-                        // Despues acomodamos las estrucuras
                         segmento_ocupado->base = segmento_libre->base;
                         segmento_libre->base += segmento_ocupado->tam;
 
@@ -67,7 +65,14 @@ void compactacion(){
                             t_TCB* tcb = (t_TCB*) un_tcb;
                             log_trace(logger, "[COMP]: Muevo el puntero a PCB de TID: %d, -%dbytes", tcb->TID, segmento_libre->tam);
                             tcb->puntero_a_pcb -= segmento_libre->tam;
+
+                            segmento* segmento_tcb = buscar_segmento_por_tid(tcb->TID);
+                            t_buffer* buffer = serializar_tcb(*tcb);
+                            memcpy(memoria_principal + segmento_tcb->base, buffer->estructura, sizeof(uint32_t)*5 + sizeof(char));
                             desbloquear_segmento_por_tid(tcb->TID);
+                            free(buffer->estructura);
+                            free(buffer);
+                            free(tcb);
                         }
                         list_iterate(tcbs,updater_tcb_pcb);
 
@@ -90,12 +95,10 @@ void compactacion(){
                         log_trace(logger, "[COMP]: Muevo el puntero a tareas de PID: %d, -%dbytes", pcb->PID, segmento_libre->tam);
                         pcb->direccion_tareas -= segmento_libre->tam;
                         
-                        // Movemos primero la memoria real
                         memcpy(memoria_principal + segmento_libre->base,
                             memoria_principal + segmento_ocupado->base,
                             segmento_ocupado->tam);
 
-                        // Despues acomodamos las estrucuras
                         segmento_ocupado->base = segmento_libre->base;
                         segmento_libre->base += segmento_ocupado->tam;
 
@@ -107,20 +110,26 @@ void compactacion(){
                             if((void*)tcb->siguiente_instruccion != NULL){
                                 tcb->siguiente_instruccion -= segmento_libre->tam;
                             }
+                            segmento* segmento_tcb = buscar_segmento_por_tid(tcb->TID);
+                            t_buffer* buffer = serializar_tcb(*tcb);
+                            memcpy(memoria_principal + segmento_tcb->base, buffer->estructura, sizeof(uint32_t)*5 + sizeof(char));
                             desbloquear_segmento_por_tid(tcb->TID);
+                            free(buffer->estructura);
+                            free(buffer);
                         }
                         list_iterate(tcbs,updater_tcb_tareas);
 
                         void desbloqueador_de_tcb(void* un_tcb){
                             t_TCB* tcb = (t_TCB*) un_tcb;
                             desbloquear_segmento_por_tid(tcb->TID);
+                            free(tcb);
                         }
                         list_iterate(tcbs,desbloqueador_de_tcb);
 
                     }else if(segmento_ocupado->tipo == S_TCB){
                         log_trace(logger, "[COMP]: Es un segmento de TCB");
                         //por suerte si se mueve un segmento de un tcb no tengo que hacer nada yeiii :D
-                        // Movemos primero la memoria real
+
                         memcpy(memoria_principal + segmento_libre->base,
                             memoria_principal + segmento_ocupado->base,
                             segmento_ocupado->tam);
