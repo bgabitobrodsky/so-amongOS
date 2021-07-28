@@ -357,6 +357,7 @@ void descartar_basura() {
 	// Eliminar el archivo
 	fclose(recurso.basura);
 	remove(path_basura);
+	existe_basura = 0;
 	log_info(logger_mongo, "Se elimino el archivo Basura.");
 }
 
