@@ -45,7 +45,7 @@ void algoritmo_de_reemplazo();
 void swap_in(pagina* pagina);
 void swap_out(pagina* pagina);
 int liberar_pagina(pagina* pagina, int offset, int faltante);
-void liberar_paginas(tabla_paginas* tabla, int dl, int tam);
+void liberar_paginas(tabla_paginas* tabla, int dl, int tam, int pid);
 int matar_paginas_tcb(tabla_paginas* tabla, int tid);
 void matar_tabla_paginas(int pid);
 pagina* get_lru();
@@ -75,6 +75,9 @@ void bloquear_disco();
 void desbloquear_disco();
 void bloquear_paginas_en_memoria();
 void desbloquear_paginas_en_memoria();
+
+void test();
+
 #endif /* PAGINACION_H_ */
 
 
