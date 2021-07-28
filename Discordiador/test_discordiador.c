@@ -91,7 +91,7 @@ void test_serializar_tarea(){
     printf("Duracion: %i\n", t2->duracion);
 
 }
-
+/*
 void test_serializar_tripulante(){
 
     t_tripulante un_tripulante;
@@ -110,5 +110,5 @@ void test_serializar_tripulante(){
     log_info(logger, "Tripulante despues de serializar:\n");
     log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)un_tripulante_deserializado->TID, (char) un_tripulante_deserializado->estado_tripulante,(int) un_tripulante_deserializado->coord_x, (int) un_tripulante_deserializado->coord_y);
 
-}
+}*/
 
