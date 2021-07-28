@@ -246,15 +246,17 @@ int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
-int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo) {
+int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 
+	sem_wait(&sem_quitar_ultimo_bloque_libre);
 	log_trace(logger_mongo, "Quitando del bloque de recurso");
-	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
 	int cantidad_alcanzada = 0;
 	int* aux;
 
 	char* path = tipo_a_path(tipo);
+	t_list* lista_bloques = get_lista_bloques(path); //TODO liberar lista_bloques
+	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
 	// lockearEscritura(path_blocks);
 	for(int i = (list_size(lista_bloques) - 1); i >= 0 ; i--){
@@ -272,12 +274,14 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 			}
 
 			if (cantidad_alcanzada == cantidad_deseada) {
+				sem_post(&sem_quitar_ultimo_bloque_libre);
 				return 0;
 			}
 		}
 	}
 	// unlockear(path_blocks);
 
+	sem_post(&sem_quitar_ultimo_bloque_libre);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -336,7 +340,6 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	log_trace(logger_mongo, "Codigo: %i, Cantidad %i", codigo_archivo, cantidad);
 
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
-
 	log_trace(logger_mongo, "El path del recurso es %s", path);
 
 	char tipo = caracter_llenado_archivo(path);
@@ -365,16 +368,21 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 void quitar(int codigo_archivo, int cantidad) {
 	log_trace(logger_mongo, "Por quitar a archivo recurso.");
+	log_trace(logger_mongo, "Codigo: %i, Cantidad %i", codigo_archivo, cantidad);
+
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
+	log_trace(logger_mongo, "El path del recurso es %s", path);
+
+	char tipo = caracter_llenado_archivo(path);
+
+	quitar_ultimo_bloque_libre(cantidad, tipo);
 
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = get_lista_bloques(path);
-	char tipo = caracter_llenado_archivo(path);
-
-	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
-
-	iniciar_archivo_recurso2(path, -cantidad, cant_bloques, lista_bloques);
-	matar_lista(lista_bloques);
+	iniciar_archivo_recurso2(path, -cantidad, cant_bloques + 1, lista_bloques); //Puede romper el +1
+//	log_trace(logger_mongo, "Se intenta matar lista");
+//	matar_lista(lista_bloques); TODO
+//	log_trace(logger_mongo, "Se mato lista");
 	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
 
@@ -999,7 +1007,7 @@ void quitar_tam(char* path, int tamanio) {
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 	int tamanio_viejo = config_get_int_value(config, "SIZE");
-	tamanio_viejo -= tamanio;
+	tamanio_viejo += tamanio;
 	char* aux = string_itoa(tamanio_viejo);
 	config_set_value(config, "SIZE", aux);
 	free(aux);

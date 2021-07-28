@@ -12,8 +12,7 @@
 void inicializar_archivos();
 void inicializar_archivos_preexistentes();
 void asignar_nuevo_bloque(char* path, int size_agregado);
-int asignar_primer_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo,  char* path);
-int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo);
+int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo);
 int existe_archivo(int codigo_archivo);
 int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path);
 void alterar(int codigo_archivo, int cantidad);
@@ -63,6 +62,7 @@ extern t_directorio directorio;
 extern t_recurso recurso;
 extern t_list* bitacoras;
 extern sem_t sem_llenar_bloque_recurso;
+extern sem_t sem_quitar_ultimo_bloque_libre;
 
 extern char* path_directorio;
 extern char* path_files;
