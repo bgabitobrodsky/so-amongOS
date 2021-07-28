@@ -74,7 +74,7 @@ void compactacion(){
                             free(buffer);
                             free(tcb);
                         }
-                        list_iterate(tcbs,updater_tcb_pcb);
+                        list_destroy_and_destroy_elements(tcbs,updater_tcb_pcb);
 
                     }else if(segmento_ocupado->tipo == S_TAREAS){
                         log_trace(logger, "[COMP]: Es un segmento de tareas");
@@ -124,7 +124,7 @@ void compactacion(){
                             desbloquear_segmento_por_tid(tcb->TID);
                             free(tcb);
                         }
-                        list_iterate(tcbs,desbloqueador_de_tcb);
+                        list_destroy_and_destroy_elements(tcbs,desbloqueador_de_tcb);
 
                     }else if(segmento_ocupado->tipo == S_TCB){
                         log_trace(logger, "[COMP]: Es un segmento de TCB");

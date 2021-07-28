@@ -10,7 +10,7 @@
 // En esta funcion se pone el comportamiento comun de la serializacion
 t_buffer* serializar_tcb(t_TCB tcb) {
 
-    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*5 + sizeof(char));
+    t_buffer* buffer = malloc(sizeof(t_buffer));
     buffer->tamanio_estructura = sizeof(uint32_t)*5 + sizeof(char);  // Se le da el tamanio del struct del parametro
     // estructura NO se debe liberar!!
     void* estructura = malloc(buffer->tamanio_estructura); // Se utiliza intermediario
@@ -77,7 +77,7 @@ t_buffer* serializar_posicion(t_posicion posicion) {
 
 // Nombre medio raro, serializa una cantidad de las cosas del filesystem (int, puede ser negativo)
 t_buffer* serializar_cantidad(int cantidad) {
-    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    t_buffer* buffer = malloc(sizeof(t_buffer));
     buffer->tamanio_estructura = sizeof(int);
 
     void* estructura = malloc((buffer->tamanio_estructura));
@@ -90,7 +90,7 @@ t_buffer* serializar_cantidad(int cantidad) {
 }
 
 t_buffer* serializar_entero(uint32_t numero) {
-    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    t_buffer* buffer = malloc(sizeof(t_buffer));
     buffer->tamanio_estructura = sizeof(int);
 
     void* estructura = malloc((buffer->tamanio_estructura));
@@ -102,30 +102,9 @@ t_buffer* serializar_entero(uint32_t numero) {
     return buffer;
 }
 
-t_buffer* serializar_tripulante(t_tripulante tripulante) {
-
-    t_buffer* buffer = malloc(sizeof(t_TCB));
-    buffer->tamanio_estructura = sizeof(uint32_t)*3 + sizeof(char);
-    void* estructura = malloc(buffer->tamanio_estructura);
-    int desplazamiento = 0;
-
-    memcpy(estructura + desplazamiento, &tripulante.TID, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.estado_tripulante, sizeof(char));
-    desplazamiento += sizeof(char);
-    memcpy(estructura + desplazamiento, &tripulante.coord_x, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-    memcpy(estructura + desplazamiento, &tripulante.coord_y, sizeof(uint32_t));
-    desplazamiento += sizeof(uint32_t);
-
-    buffer->estructura = estructura;
-
-    return buffer;
-}
-
 t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
 
-    t_buffer* buffer = malloc(sizeof(uint32_t) + sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1);
+    t_buffer* buffer = malloc(sizeof(t_buffer));
     buffer->tamanio_estructura = sizeof(uint32_t)*2 + texto_archivo.largo_texto + 1;
 
     void* estructura = malloc(buffer->tamanio_estructura);
@@ -145,7 +124,7 @@ t_buffer* serializar_archivo_tareas(t_archivo_tareas texto_archivo) {
 // Serializa un buffer "vacio" (dejo que lleve un char por las dudas) para envio de codigos nomas (podriamos cambiarlo a semaforos)
 t_buffer* serializar_vacio() {
 
-    t_buffer* buffer = malloc((sizeof(t_buffer)));
+    t_buffer* buffer = malloc(sizeof(t_buffer));
 
     buffer->tamanio_estructura = 0;
 
@@ -356,23 +335,6 @@ t_archivo_tareas* deserializar_archivo_tareas(t_buffer* buffer) {
     memcpy(&(texto_archivo->pid), estructura, sizeof(uint32_t));
 
     return texto_archivo;
-}
-
-t_tripulante* deserializar_tripulante(t_buffer* buffer) {
-
-	t_tripulante* un_tripulante = malloc(sizeof(uint32_t)*3 + sizeof(char));
-    void* estructura = buffer->estructura;
-
-    memcpy(&(un_tripulante->TID), estructura, sizeof(uint32_t));
-    estructura += sizeof(uint32_t);
-    memcpy(&(un_tripulante->estado_tripulante), estructura, sizeof(char));
-    estructura += sizeof(char);
-    memcpy(&(un_tripulante->coord_x), estructura, sizeof(uint32_t));
-    estructura += sizeof(uint32_t);
-    memcpy(&(un_tripulante->coord_y), estructura, sizeof(uint32_t));
-    estructura += sizeof(uint32_t);
-
-    return un_tripulante;
 }
 
 void eliminar_paquete(t_paquete* paquete) {

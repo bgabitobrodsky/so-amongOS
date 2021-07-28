@@ -192,7 +192,7 @@ void atender_clientes(void* param) {
 					}
 				}
 				// PAGINACION: hay que liberar esta maldita lista (se chequea si es pag en la func.)
-				liberar_lista_tcbs_paginacion(tcbs_de_esta_patota);
+				liberar_lista_tcbs_paginacion(tcbs_de_esta_patota); // al final tambien se usa en segment.
 				enviar_codigo(EXITO, parametros->socket);
 				free(mensaje_recibido);
 				break;
