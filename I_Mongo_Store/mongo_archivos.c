@@ -349,11 +349,10 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	// matar_lista(lista_bloques);
 	// log_trace(logger_mongo, "Se mato lista");
 
-	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	lista_bloques = get_lista_bloques(path);
 
-	iniciar_archivo_recurso(path, tam_archivo + cantidad + offset, cant_bloques, lista_bloques);
+	iniciar_archivo_recurso2(path, cantidad + offset, cant_bloques, lista_bloques);
 
 	// log_trace(logger_mongo, "Se intenta matar lista");
 	// matar_lista(lista_bloques);
@@ -658,6 +657,53 @@ t_list* get_lista_bloques(char* path){
 	return lista_bloques;
 }
 
+void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list* lista_bloques) {
+
+	log_warning(logger_mongo, "RECURSO");
+	agregar_tam(path, tamanio);
+	set_cant_bloques(path, cant_bloques);
+	set_bloq(path, lista_bloques);
+
+	char caracter = caracter_llenado_archivo(path);
+	log_warning(logger_mongo, "POST LLENADO");
+	set_caracter_llenado(path, caracter);
+
+	if(cant_bloques != 0){
+		log_warning(logger_mongo, "PRE LOCKEAR");
+		lockearLectura(path);
+		log_warning(logger_mongo, "PRE CONFIG");
+		log_warning(logger_mongo, "CONFIG path = %s", path);
+		t_config* config = config_create(path);
+		log_warning(logger_mongo, "POST  CONFIG");
+		log_warning(logger_mongo, "PRE CADENA BLOCKS");
+		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
+		log_warning(logger_mongo, "POST CADENA BLOCKS");
+		unlockear(path);
+		log_warning(logger_mongo, "POST UNLOCKEAR");
+		log_warning(logger_mongo, "PRE CONCATENAR");
+		char* cadena_aux = concatenar_numeros(cadena_blocks);
+		log_warning(logger_mongo, "POST CONCATENAR");
+		log_warning(logger_mongo, "PRE MD5");
+		char* md5 = md5_archivo(cadena_aux);
+		log_warning(logger_mongo, "POST MD5");
+		log_warning(logger_mongo, "PRE SET MD5");
+		set_md5(path, md5);
+		log_warning(logger_mongo, "POST SET");
+		log_warning(logger_mongo, "PRE FREE MD5");
+		free(md5);
+		log_warning(logger_mongo, "PRE FREE AUX");
+		free(cadena_aux);
+		log_warning(logger_mongo, "POST FREE AUX");
+		config_destroy(config);
+	} else {
+		// Esto no deberia pasar, ya no inicializamos archivos vacios, pero pendiente de revision
+		log_error(logger_mongo, "MD5 INDEFINIDO");
+		set_md5(path, "INDEFINIDO"); // Que no se setee si no tiene bloques
+	}
+
+	log_warning(logger_mongo, "POST RECURSO");
+}
+
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
 
 	log_warning(logger_mongo, "RECURSO");
@@ -925,6 +971,22 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 	matar_lista(bloques);
 	free(nuevo_bitmap->bitarray);
 	bitarray_destroy(nuevo_bitmap);
+}
+
+void agregar_tam(char* path, int tamanio) {
+	lockearEscritura(path);
+
+	t_config* config = config_create(path);
+	config_save_in_file(config, path);
+	int tamanio_viejo = config_get_int_value(config, "SIZE");
+	tamanio += tamanio_viejo;
+	char* aux = string_itoa(tamanio);
+	config_set_value(config, "SIZE", aux);
+	free(aux);
+	config_save(config);
+	config_destroy(config);
+
+	unlockear(path);
 }
 
 void set_tam(char* path, int tamanio){

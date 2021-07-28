@@ -153,7 +153,9 @@ int main() {
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     */
     // iniciar_planificacion();
-    ejecutar_tarea("estabilidad_general.txt");
+    iniciar_patota("INICIAR_PATOTA 3 FS_PatotaA.txt");
+    iniciar_patota("INICIAR_PATOTA 3 FS_PatotaB.txt");
+    iniciar_planificacion();
 
     // ejecutar_tarea("test_sin_entrada_salida");
 

@@ -35,6 +35,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque);
 void blanquear_bloque(int bloque);
 uint32_t obtener_cantidad_bloques(char* path);
 char* concatenar_numeros(char* cadena);
+void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list* lista_bloques);
 
 // devuelven la metadata del archivo
 t_list* get_lista_bloques(char* path); // TESTEADA
@@ -46,6 +47,7 @@ uint32_t cantidad_bloques_tripulante(char* path);
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* lista_bloques);
 uint32_t bloques_contar(char caracter);
 
+void agregar_tam(char* path, int tamanio);
 void set_tam(char* path, int tamanio);
 void set_bloq(char* path, t_list* lista);
 void set_cant_bloques(char* path, int cant);
