@@ -80,6 +80,7 @@ pthread_mutex_t mutex_oxigeno;
 pthread_mutex_t mutex_comida;
 pthread_mutex_t mutex_basura;
 pthread_mutex_t mutex_blocks;
+extern pthread_mutex_t sem_lista_bloques_ocupados;
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
@@ -103,6 +104,7 @@ void actualizar_bitmap(t_list* bloques_ocupados); // TESTEADO
 void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
 void reescribir_bitmap(t_bitarray* bitmap);
 void reescribir_bitmap_fd(t_bitarray* bitmap);
+void sincronizar_map();
 
 void set_bloq(char* path, t_list* lista); // TESTEADO
 void set_tam(char* path, int tamanio); // TESTEADO

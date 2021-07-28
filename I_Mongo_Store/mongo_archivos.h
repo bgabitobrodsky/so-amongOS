@@ -4,6 +4,7 @@
 #include "mongo_blocks.h"
 #include <dirent.h>
 #include <errno.h>
+#include <semaphore.h>
 
 
 /* ESTRUCTURAS PROPIAS */
@@ -14,6 +15,7 @@ void asignar_nuevo_bloque(char* path, int size_agregado);
 int asignar_primer_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo,  char* path);
 int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo);
 int existe_archivo(int codigo_archivo);
+int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path);
 void alterar(int codigo_archivo, int cantidad);
 void agregar(int codigo_archivo, int cantidad);
 void quitar(int codigo_archivo, int cantidad);
@@ -34,6 +36,8 @@ void liberar_bloques(char* path);
 void liberar_bloque(char* path, uint32_t nro_bloque);
 void blanquear_bloque(int bloque);
 uint32_t obtener_cantidad_bloques(char* path);
+char* concatenar_numeros(char* cadena);
+void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list* lista_bloques);
 
 // devuelven la metadata del archivo
 t_list* get_lista_bloques(char* path); // TESTEADA
@@ -45,6 +49,8 @@ uint32_t cantidad_bloques_tripulante(char* path);
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* lista_bloques);
 uint32_t bloques_contar(char caracter);
 
+void agregar_tam(char* path, int tamanio);
+void quitar_tam(char* path, int tamanio);
 void set_tam(char* path, int tamanio);
 void set_bloq(char* path, t_list* lista);
 void set_cant_bloques(char* path, int cant);
@@ -56,6 +62,7 @@ extern t_config* config_mongo;
 extern t_directorio directorio;
 extern t_recurso recurso;
 extern t_list* bitacoras;
+extern sem_t sem_llenar_bloque_recurso;
 
 extern char* path_directorio;
 extern char* path_files;
