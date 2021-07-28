@@ -197,9 +197,10 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 
 }
 
-int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo, char* path) {
-
+int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
+	sem_wait(&sem_llenar_bloque_recurso);
 	log_trace(logger_mongo, "Llenando el bloque de recurso");
+	t_list* lista_bloques = get_lista_bloques(path);
 	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 	int cantidad_alcanzada = 0;
 
@@ -233,6 +234,7 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 			if (cantidad_alcanzada == cantidad_deseada) {
 				log_trace(logger_mongo, "Se llego a la cantidad deseada.");
 				// unlockear(path_blocks);
+				sem_post(&sem_llenar_bloque_recurso);
 				return 0;
 			}
 		}
@@ -240,6 +242,7 @@ int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo
 
 	// unlockear(path_blocks);
 
+	sem_post(&sem_llenar_bloque_recurso);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -336,10 +339,9 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 	log_trace(logger_mongo, "El path del recurso es %s", path);
 
-	t_list* lista_bloques = get_lista_bloques(path);
 	char tipo = caracter_llenado_archivo(path);
 
-	int offset = llenar_bloque_recurso(lista_bloques, cantidad, tipo, path);
+	int offset = llenar_bloque_recurso(cantidad, tipo, path);
 
 	if (offset < 0) { // Falto agregar cantidad, dada por offset
 		asignar_nuevo_bloque(path, 0);
@@ -350,7 +352,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	// log_trace(logger_mongo, "Se mato lista");
 
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
-	lista_bloques = get_lista_bloques(path);
+	t_list* lista_bloques = get_lista_bloques(path);
 
 	iniciar_archivo_recurso2(path, cantidad + offset, cant_bloques, lista_bloques);
 
@@ -365,14 +367,13 @@ void quitar(int codigo_archivo, int cantidad) {
 	log_trace(logger_mongo, "Por quitar a archivo recurso.");
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
 
-	uint32_t tam_archivo = tamanio_archivo(path);
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = get_lista_bloques(path);
 	char tipo = caracter_llenado_archivo(path);
 
 	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
 
-	iniciar_archivo_recurso(path, tam_archivo - cantidad, cant_bloques, lista_bloques);
+	iniciar_archivo_recurso2(path, -cantidad, cant_bloques, lista_bloques);
 	matar_lista(lista_bloques);
 	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
@@ -660,7 +661,10 @@ t_list* get_lista_bloques(char* path){
 void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list* lista_bloques) {
 
 	log_warning(logger_mongo, "RECURSO");
-	agregar_tam(path, tamanio);
+	if(tamanio >= 0)
+		agregar_tam(path, tamanio);
+	else
+		quitar_tam(path, tamanio);
 	set_cant_bloques(path, cant_bloques);
 	set_bloq(path, lista_bloques);
 
@@ -979,8 +983,24 @@ void agregar_tam(char* path, int tamanio) {
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 	int tamanio_viejo = config_get_int_value(config, "SIZE");
-	tamanio += tamanio_viejo;
-	char* aux = string_itoa(tamanio);
+	tamanio_viejo += tamanio;
+	char* aux = string_itoa(tamanio_viejo);
+	config_set_value(config, "SIZE", aux);
+	free(aux);
+	config_save(config);
+	config_destroy(config);
+
+	unlockear(path);
+}
+
+void quitar_tam(char* path, int tamanio) {
+	lockearEscritura(path);
+
+	t_config* config = config_create(path);
+	config_save_in_file(config, path);
+	int tamanio_viejo = config_get_int_value(config, "SIZE");
+	tamanio_viejo -= tamanio;
+	char* aux = string_itoa(tamanio_viejo);
 	config_set_value(config, "SIZE", aux);
 	free(aux);
 	config_save(config);
