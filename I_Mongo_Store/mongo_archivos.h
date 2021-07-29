@@ -16,6 +16,7 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo);
 int existe_archivo(int codigo_archivo);
 int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path);
 void alterar(int codigo_archivo, int cantidad);
+void descartar_basura();
 void agregar(int codigo_archivo, int cantidad);
 void quitar(int codigo_archivo, int cantidad);
 char* conseguir_tipo(char tipo);

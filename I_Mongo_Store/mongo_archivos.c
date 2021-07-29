@@ -302,37 +302,63 @@ void alterar(int codigo_archivo, int cantidad) {
 	log_trace(logger_mongo, "Por alterar archivo recurso.");
 	log_trace(logger_mongo, "Codigo = %i, Cantidad = %i", codigo_archivo, cantidad);
 
-	char* path = conseguir_path_recurso_codigo(codigo_archivo);
-	if (!existe_archivo(codigo_archivo)) {
-		log_trace(logger_mongo, "Inicializando archivos recurso");
-		switch(codigo_archivo) {
-			case OXIGENO:
-				existe_oxigeno = 1;
-				recurso.oxigeno = fopen(path_oxigeno, "w+b");
-				log_info(logger_mongo, "Se creo el archivo de oxigeno.");
-				break;
-			case COMIDA:
-				existe_comida = 1;
-				recurso.comida  = fopen(path_comida, "w+b");
-				log_info(logger_mongo, "Se creo el archivo de comida.");
-				break;
-			case BASURA:
-				existe_basura = 1;
-				recurso.basura  = fopen(path_basura, "w+b");
-				log_info(logger_mongo, "Se creo el archivo de basura.");
-				break;
-		}
-		iniciar_archivo_recurso(path, 0, 0, NULL);
-	}
+	if (cantidad > 0){
 
-	if (cantidad >= 0){
+		char* path = conseguir_path_recurso_codigo(codigo_archivo);
+		if (!existe_archivo(codigo_archivo)) {
+			log_trace(logger_mongo, "Inicializando archivos recurso");
+
+				switch(codigo_archivo) {
+				case OXIGENO:
+					existe_oxigeno = 1;
+					recurso.oxigeno = fopen(path_oxigeno, "w+b");
+					log_info(logger_mongo, "Se creo el archivo de oxigeno.");
+					break;
+				case COMIDA:
+					existe_comida = 1;
+					recurso.comida  = fopen(path_comida, "w+b");
+					log_info(logger_mongo, "Se creo el archivo de comida.");
+					break;
+				case BASURA:
+					existe_basura = 1;
+					recurso.basura  = fopen(path_basura, "w+b");
+					log_info(logger_mongo, "Se creo el archivo de basura.");
+					break;
+				}
+
+				iniciar_archivo_recurso(path, 0, 0, NULL);
+			}
+
 		agregar(codigo_archivo, cantidad);
 		log_info(logger_mongo, "Se agregaron %i unidades a %s.", cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
-	else{
-		quitar(codigo_archivo, cantidad * (-1));
-		log_info(logger_mongo, "Se quitaron %i unidades a %s.", (cantidad * (-1)) , conseguir_tipo(conseguir_char(codigo_archivo)));
+	else {
+
+		if (!existe_archivo(codigo_archivo)) {
+			log_warning(logger_mongo, "El archivo del que se quiere quitar no existe.");
+		}
+		else {
+
+			if (codigo_archivo == BASURA) {
+				descartar_basura();
+			}
+			else {
+				quitar(codigo_archivo, cantidad * (-1));
+				log_info(logger_mongo, "Se quitaron %i unidades a %s.", (cantidad * (-1)) , conseguir_tipo(conseguir_char(codigo_archivo)));
+			}
+		}
+
 	}
+}
+
+void descartar_basura() {
+	// Liberar los bloques de basura
+	liberar_bloques(path_basura);
+	// Eliminar el archivo
+	fclose(recurso.basura);
+	remove(path_basura);
+	existe_basura = 0;
+	log_info(logger_mongo, "Se elimino el archivo Basura.");
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
@@ -375,7 +401,11 @@ void quitar(int codigo_archivo, int cantidad) {
 
 	char tipo = caracter_llenado_archivo(path);
 
-	quitar_ultimo_bloque_libre(cantidad, tipo);
+	int resultado = quitar_ultimo_bloque_libre(cantidad, tipo);
+
+	if (resultado != 0) {
+		log_info(logger_mongo, "Se intento quitar mas de lo ya existente en el archivo.");
+	}
 
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = get_lista_bloques(path);

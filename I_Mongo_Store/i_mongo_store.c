@@ -48,9 +48,6 @@ int main(int argc, char** argv){
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.");
 
-	char* prueba = concatenar_numeros("[67,83,117,65,97,114,78,93,94]");
-	log_info(logger_mongo, "prueba es : %s", prueba);
-
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
@@ -180,6 +177,8 @@ void manejo_discordiador(){
 				break;
 
 			case REPARADO:
+				log_info(logger_mongo, "Ejecutando el protocolo FSCK");
+			    sleep(3);
 				reparar();
 				log_info(logger_mongo, "Se reparo el sabotaje.");
 				break;

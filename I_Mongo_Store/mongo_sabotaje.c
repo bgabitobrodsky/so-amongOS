@@ -27,35 +27,35 @@ void reparar() {
 
     int reparado = 0;
     
-    log_trace(logger_mongo, "Se verifica la cantidad de bloques.");
+    log_info(logger_mongo, "Se verifica la cantidad de bloques.");
     reparado = verificar_cant_bloques();
 
     if (reparado){
     	log_info(logger_mongo, "Se repara la cantidad de bloques del superbloque.");
     }
 
-    log_trace(logger_mongo, "Se verifica el bitmap.");
+    log_info(logger_mongo, "Se verifica el bitmap.");
     reparado = verificar_bitmap();
 
     if (reparado){
     	log_info(logger_mongo, "Se repara el bitmap del superbloque.");
     }
 
-    log_trace(logger_mongo, "Se verifica el sizes de los archivos.");
+    log_info(logger_mongo, "Se verifica el sizes de los archivos.");
     reparado = verificar_sizes();
 
     if (reparado){
     	log_info(logger_mongo, "Se repara el tamanio de los archivos.");
     }
 
-    log_trace(logger_mongo, "Se verifica el block counts de los archivos.");
+    log_info(logger_mongo, "Se verifica el block counts de los archivos.");
     reparado = verificar_block_counts();
 
     if (reparado){
     	log_info(logger_mongo, "Se repara la cantidad de bloques de los recursos.");
     }
 
-    log_trace(logger_mongo, "Se verifican los blocks de los archivos.");
+    log_info(logger_mongo, "Se verifican los blocks de los archivos.");
     reparado = verificar_blocks();
 
     if (reparado){
@@ -176,7 +176,7 @@ int verificar_size_recurso(char* path) {
 	return 0;
 }
 
-int verificar_block_counts(t_TCB* tripulante) { 
+int verificar_block_counts() {
     // Compara block count vs el largo de la lista de cada archivo recurso.
 	int corrompido = 0;
 
@@ -269,7 +269,6 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 
 	t_config* config = config_create(path_recurso);
 	char* bloques = config_get_string_value(config, "BLOCKS");
-	int cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 	log_trace(logger_mongo, "Cadena de bloques del path %s: %s", path_recurso, bloques);
 	char* bloques_aux = concatenar_numeros(bloques);
 
@@ -279,14 +278,20 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 	log_trace(logger_mongo, "MD5 de archivo: %s", md5);
 
 	if (strcmp(nuevo_md5, md5)) {
+		log_trace(logger_mongo, "pre md5");
 		free(nuevo_md5);
+		log_trace(logger_mongo, "pre md6");
 		free(bloques_aux);
+		log_trace(logger_mongo, "pre md7");
 		config_destroy(config);
 		return 1;
 	}
 
+	log_trace(logger_mongo, "pre md5");
 	free(nuevo_md5);
+	log_trace(logger_mongo, "pre md6");
 	free(bloques_aux);
+	log_trace(logger_mongo, "pre md7");
 	config_destroy(config);
 	return 0;
 }

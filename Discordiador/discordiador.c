@@ -153,10 +153,10 @@ int main() {
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     */
     // iniciar_planificacion();
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaC.txt 8|8");
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaD.txt 0|8");
+    // iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
+    // iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
+    // iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaC.txt 8|8");
+    // iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaD.txt 0|8");
     iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");
     iniciar_planificacion();
 
@@ -1198,9 +1198,6 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
     	if(planificacion_activa){
     		switch(un_tripulante->estado_tripulante){
     		case 'E':
-				if(estamos_en_peligro){
-					resolver_sabotaje(un_tripulante, st_ram, st_mongo);
-				}
 				realizar_tarea(un_tripulante, st_ram, st_mongo);
     			break;
     		case 'B':
@@ -1216,7 +1213,11 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 				break;
     		}
     	} else {
-    		usleep(1000);
+			if(estamos_en_peligro && un_tripulante->estado_tripulante == 'E'){
+				resolver_sabotaje(un_tripulante, st_ram, st_mongo);
+			} else{
+				usleep(1000);
+			}
     	}
 
 		verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
@@ -1231,9 +1232,6 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
     	if(planificacion_activa){
             switch(un_tripulante->estado_tripulante){
 			case 'E':
-				if(estamos_en_peligro){
-					resolver_sabotaje(un_tripulante, st_ram, st_mongo);
-				}
 				if(un_tripulante->quantum_restante > 0){
 					realizar_tarea(un_tripulante, st_ram, st_mongo);
 					un_tripulante->quantum_restante--;
@@ -1257,7 +1255,13 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
 				break;
             }
 		} else{
-			usleep(1000);
+
+			if(estamos_en_peligro && un_tripulante->estado_tripulante == 'E'){
+				resolver_sabotaje(un_tripulante, st_ram, st_mongo);
+			} else{
+				usleep(1000);
+			}
+
 		}
     verificar_cambio_estado(estado_guardado, un_tripulante, st_ram);
 	}
