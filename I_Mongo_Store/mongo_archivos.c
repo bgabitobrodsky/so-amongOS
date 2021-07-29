@@ -403,11 +403,13 @@ void quitar(int codigo_archivo, int cantidad) {
 
 	if (resultado != 0) {
 		log_info(logger_mongo, "Se intento quitar mas de lo ya existente en el archivo.");
+		iniciar_archivo_recurso(path, 0, 0, NULL);
+		return;
 	}
 
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = get_lista_bloques(path);
-	iniciar_archivo_recurso2(path, -cantidad, cant_bloques + 1, lista_bloques); //Puede romper el +1
+	iniciar_archivo_recurso2(path, -cantidad, cant_bloques + 1, lista_bloques);
 //	log_trace(logger_mongo, "Se intenta matar lista");
 	matar_lista(lista_bloques);
 //	log_trace(logger_mongo, "Se mato lista");
