@@ -234,7 +234,7 @@ void atender_clientes(void* param) {
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
-	memset(memoria_principal,0,TAMANIO_MEMORIA);
+	memset(memoria_principal,'0',TAMANIO_MEMORIA);
 	tablas = dictionary_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
@@ -596,27 +596,24 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			return NULL;
 		}
 		int dl_tarea_tcb = tcb->siguiente_instruccion;
-		log_info(logger, "DL de la siguiente instruccion: %d", dl_tarea_tcb);
-		if(dl_tarea_tcb == 999999){
-			// Ya no quedan tareas
+		//log_info(logger, "DL de la siguiente instruccion: %d", dl_tarea_tcb);
+
+		char* str_tareas = rescatar_de_paginas(tabla, 0, tabla->dl_pcb , pid); // 0 porque las tareas siempre estan al inicio de todo
+		char** palabras = string_split(str_tareas, "\n");
+
+		if(palabras[dl_tarea_tcb] == NULL){
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
 			free(tcb);
+			liberar_puntero_doble(palabras);
+			free(str_tareas);
 			desbloquear_tabla(tabla);
 			return NULL;
 		}
-		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tabla->dl_pcb - dl_tarea_tcb, pid); // 0 porque las tareas siempre estan al inicio de todo
-		char** palabras = string_split(str_tareas, "\n");
-		char* str_tarea = palabras[0];
+		char* str_tarea = palabras[dl_tarea_tcb];
 		log_info(logger, "Tarea para TID: %d encontrada: %s", tid, str_tarea);
 		tarea = crear_tarea(str_tarea);
 
-		if(palabras[1] == NULL){
-			// no hay proxima tarea
-			tcb->siguiente_instruccion = 999999; // como es que NULL = 0
-		}else{
-			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
-		}
-		log_info(logger, "[MIRAME PO FAVO]: mi siguiente tarea será: %d", tcb->siguiente_instruccion);
+		tcb->siguiente_instruccion++; // a la siguiente tarea del split
 
 		char stid[8];
 		sprintf(stid, "%d", tid);
@@ -738,13 +735,25 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
 		bloquear_tabla(tabla);
+		
 		// no me traigo el tcb actual sino sobreescribo directamente sus paginas
+		
+		t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
+		if(tcb == NULL){
+			free(tcb);
+			return 0;
+		}
+		tcb->coord_x = nuevo_tcb->coord_x;
+		tcb->coord_y = nuevo_tcb->coord_y;
+		tcb->estado_tripulante = nuevo_tcb->estado_tripulante;
+
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 
-		t_buffer* buffer = serializar_tcb(*nuevo_tcb);
-		int result = sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char), pid);
+		t_buffer* buffer = serializar_tcb(*tcb);
+		int result = sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, 21, pid);
 		free(buffer->estructura);
 		free(buffer);
+		free(tcb);
 
 		if(!result){
 			desbloquear_tabla(tabla);

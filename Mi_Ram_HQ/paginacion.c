@@ -210,6 +210,7 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	if(offset > 0){
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
 		if(pagina == NULL){
+			free(data);
 			return NULL;
 		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
@@ -222,6 +223,7 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
 		if(pagina == NULL){
+			free(data);
 			return NULL;
 		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
@@ -466,6 +468,11 @@ pagina* get_clock(){
 				pag->usado = false;
 			}
 		}else{
+			if(marco_clock < cantidad_marcos-1){
+				marco_clock++;
+			}else{
+				marco_clock = 0;
+			}
 			log_error(logger, "[SWAP]: Se quiso acceder a una página ya liberada");
 		}
 	}
@@ -480,7 +487,9 @@ pagina* get_pagina_from_marco(marco* marco){
 	int num_pagina = marco->num_pagina;
 
 	tabla_paginas* tabla = buscar_tabla(pid);
-	return list_get(tabla->paginas, num_pagina - 1);
+	if(tabla != NULL)
+		return list_get(tabla->paginas, num_pagina - 1);
+	return NULL;
 }
 
 marco* crear_marco(int base, bool libre){
@@ -575,20 +584,25 @@ int get_disk_index(){
 //  SSSSSSSSSSSSSSS   EEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMMAAAAAAA                   AAAAAAAFFFFFFFFFFF                OOOOOOOOO     RRRRRRRR     RRRRRRR     OOOOOOOOO      SSSSSSSSSSSSSSS   
 
 pagina* get_pagina(t_list* paginas, int pid, int num_pagina){
-	pagina* pagina = list_get(paginas, num_pagina);
-	if(pagina->disk_index == -1){
-		log_error(logger, "Se intentó acceder a una pagina ya liberada");
-		return NULL; // pagina ya fue eliminada bro
+	int size = list_size(paginas);
+	if(num_pagina < size){
+		pagina* pagina = list_get(paginas, num_pagina);
+		if(pagina->disk_index == -1){
+			log_error(logger, "Se intentó acceder a una pagina ya liberada");
+			return NULL; // pagina ya fue eliminada bro
+		}
+		bloquear_pagina(pagina);
+		if(!pagina->en_memoria){
+			bloquear_swap();
+			page_fault(pagina, pid, num_pagina);
+			desbloquear_swap();
+		}
+		pagina->ultimo_uso =  get_timestamp();
+		pagina->usado = true;
+		return pagina;
+	}else{
+		return NULL;
 	}
-	bloquear_pagina(pagina);
-	if(!pagina->en_memoria){
-		bloquear_swap();
-		page_fault(pagina, pid, num_pagina);
-		desbloquear_swap();
-	}
-	pagina->ultimo_uso =  get_timestamp();
-	pagina->usado = true;
-	return pagina;
 }
 
 void bloquear_pagina(pagina* pagina){

@@ -9,6 +9,7 @@ t_tarea* crear_tarea(char* string_tarea){
 		// es tarea generica
 		char** tarea_s = string_split(palabras[0], ";");
 		t_tarea* tarea = malloc(sizeof(t_tarea));
+		memset(tarea,'0',sizeof(t_tarea));
 		tarea->nombre = malloc(strlen(tarea_s[0]) + 1);
 		strcpy(tarea->nombre, tarea_s[0]);
 		tarea->largo_nombre = strlen(tarea_s[0]);
@@ -25,6 +26,7 @@ t_tarea* crear_tarea(char* string_tarea){
 		char** tarea_s = string_split(palabras[1], ";");
 
 		t_tarea* tarea = malloc(sizeof(t_tarea));
+		memset(tarea,'0',sizeof(t_tarea));
 		tarea->nombre = malloc(strlen(palabras[0]) + 1);
 		strcpy(tarea->nombre, palabras[0]);
 		tarea->largo_nombre = strlen(palabras[0]);
