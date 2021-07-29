@@ -332,7 +332,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		}
 		log_info(logger, "Guardando tareas con PID: %d", pid);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid);
-		//log_error(logger, "TAREAS: %s", archivo->texto);
+
 		if(dl_tareas == 99999){
 			matar_tabla_paginas(pid);
 			return 0;
@@ -405,11 +405,17 @@ int gestionar_tcb(t_TCB* tcb){
 		log_info(logger, "[PAG]: Guardando TCB TID: %d", tcb->TID);
 		tcb->siguiente_instruccion = 0;
 		tcb->puntero_a_pcb = tabla->dl_pcb;
-		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, sizeof(t_TCB), pid);
+
+		t_buffer* buffer = serializar_tcb(*tcb);
+		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, tamanio_tcb, pid);
+		free(buffer->estructura);
+		free(buffer);
+		
 		if(dl_tcb == 99999){
 			matar_tabla_paginas(pid);
 			return 0;
 		}
+
 		char stid[8];
 		sprintf(stid,"%d", tcb->TID);
 		dictionary_put(tabla->dl_tcbs, stid, (void*) dl_tcb);
@@ -454,7 +460,17 @@ t_TCB* buscar_tcb_por_tid(int tid){
 		}
 		char stid[8];
 		sprintf(stid, "%d", tid);
-		tcb_recuperado = (t_TCB*) rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), sizeof(t_TCB), pid);
+		if(dictionary_has_key(tabla->dl_tcbs,stid)){
+			t_buffer* buffer = malloc(sizeof(t_buffer));
+			buffer->estructura = rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), 21, pid);
+			tcb_recuperado = deserializar_tcb(buffer);
+			log_info(logger, "[MIRAMEEE]: mi dl de siguiente instruccion es: %d", tcb_recuperado->siguiente_instruccion);
+			free(buffer->estructura);
+			free(buffer);
+		}else{
+			return NULL;
+		}
+
 		if(tcb_recuperado == NULL){
 			return NULL;
 		}
@@ -495,7 +511,11 @@ t_list* buscar_tcbs_por_pid(int pid){
 		//hay que liberarla despues
 		void tcb_finder(char* stid, void* una_dl){
 			int dl = (int) una_dl;
-			t_TCB* tcb = rescatar_de_paginas(tabla,dl,sizeof(t_TCB), pid);
+			t_buffer* buffer = malloc(sizeof(t_buffer));
+			buffer->estructura = rescatar_de_paginas(tabla,dl,21,pid);
+			t_TCB* tcb = deserializar_tcb(buffer);
+			free(buffer->estructura);
+			free(buffer);
 			list_add(lista_tcbs, tcb);
 		}
 		
@@ -592,15 +612,21 @@ t_tarea* buscar_siguiente_tarea(int tid){
 
 		if(palabras[1] == NULL){
 			// no hay proxima tarea
-			tcb->siguiente_instruccion = 999999; // como es que NULL = 0 en este lenguaje choto
+			tcb->siguiente_instruccion = 999999; // como es que NULL = 0
 		}else{
 			tcb->siguiente_instruccion += strlen(str_tarea) + 1; // +1 por el \n
 		}
+		log_info(logger, "[MIRAME PO FAVO]: mi siguiente tarea será: %d", tcb->siguiente_instruccion);
 
 		char stid[8];
 		sprintf(stid, "%d", tid);
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
-		sobreescribir_paginas(tabla, (void*) tcb, dl_tcb, sizeof(t_TCB), pid);
+		
+		t_buffer* buffer = serializar_tcb(*tcb);
+		sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, buffer->tamanio_estructura, pid);
+		free(buffer->estructura);
+		free(buffer);
+		
 		desbloquear_tabla(tabla);
 
 		liberar_puntero_doble(palabras);
@@ -714,7 +740,12 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		bloquear_tabla(tabla);
 		// no me traigo el tcb actual sino sobreescribo directamente sus paginas
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
-		int result = sobreescribir_paginas(tabla, nuevo_tcb, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char), pid);
+
+		t_buffer* buffer = serializar_tcb(*nuevo_tcb);
+		int result = sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, sizeof(uint32_t) * 3 + sizeof(char), pid);
+		free(buffer->estructura);
+		free(buffer);
+
 		if(!result){
 			desbloquear_tabla(tabla);
 			return 0;

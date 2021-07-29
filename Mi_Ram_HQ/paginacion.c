@@ -101,6 +101,7 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	list_iterate(paginas_a_remover, page_remover);
 	list_destroy(paginas_a_remover);
 	desbloquear_lista_marcos();
+
 }
 
 int matar_paginas_tcb(tabla_paginas* tabla, int tid){
@@ -113,7 +114,7 @@ int matar_paginas_tcb(tabla_paginas* tabla, int tid){
 		return 0;
 	}
 
-	liberar_paginas(tabla, dl_tcb, sizeof(t_TCB), tid / 10000);
+	liberar_paginas(tabla, dl_tcb, 21, tid / 10000);
 	dictionary_remove(tabla->dl_tcbs, stid);
 	return 1;
 }
@@ -208,8 +209,9 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 
 	if(offset > 0){
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
-		if(pagina == NULL)
+		if(pagina == NULL){
 			return NULL;
+		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
 		desbloquear_pagina(pagina);
 		log_trace(logger, "[PAG]: Leyendo... %d / %d bytes", tam - faltante, tam);
@@ -219,14 +221,14 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	while(faltante > 0){
 
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
-		if(pagina == NULL)
+		if(pagina == NULL){
 			return NULL;
+		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
 		desbloquear_pagina(pagina);
 		log_trace(logger, "[PAG]: Leyendo... %d / %d bytes", tam - faltante, tam);
 		num_pagina++;
 	}
-	
 	return data;
 }
 
@@ -376,6 +378,7 @@ void algoritmo_de_reemplazo(){
 	}
 
 	swap_in(pagina);
+
 	desbloquear_pagina(pagina);
 	desbloquear_paginas_en_memoria();
 }
@@ -419,8 +422,8 @@ void page_fault(pagina* pag, int pid, int num){
 }
 
 pagina* get_lru(){
-	log_info(logger, "[SWAP]: Ejecuto busqueda por LRU");
 	bloquear_paginas_en_memoria();
+	log_info(logger, "[SWAP]: Ejecuto busqueda por LRU");
 	uint64_t lru_ts = get_timestamp();
     pagina* lru_p = NULL;
     
