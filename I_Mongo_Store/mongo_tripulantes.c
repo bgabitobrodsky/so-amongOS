@@ -199,7 +199,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 
 		case CORRE_SABOTAJE:
 			log_trace(logger_mongo, "%i corre hacia el sabotaje.", mensaje->tcb->TID);
-			cadenita = malloc(strlen("Se corre en panico a la ubicacion del sabotaje." + 1));
+			cadenita = malloc(strlen("Se corre en panico a la ubicacion del sabotaje.") + 1);
 			strcpy(cadenita, "Se corre en panico a la ubicacion del sabotaje.");
 
 			largo_cadenita = strlen(cadenita);
@@ -210,7 +210,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 
 		case RESUELVE_SABOTAJE:
 			log_trace(logger_mongo, "Resuelve sabotaje %i", mensaje->tcb->TID);
-			cadenita = malloc(strlen("Se resuelve el sabotaje." + 1));
+			cadenita = malloc(strlen("Se resuelve el sabotaje.") + 1);
 			strcpy(cadenita, "Se resuelve el sabotaje.");
 
 			largo_cadenita = strlen(cadenita);
@@ -227,7 +227,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);
 	// log_trace(logger_mongo, "Se mata lista bloques.");
-	matar_lista(bitacora->bloques);
+	// matar_lista(bitacora->bloques); // TODO: revisar invalid free
 
 	bitacora->bloques = lista_bloques;
 	bitacora->tamanio = tamanio + largo_cadenita;
