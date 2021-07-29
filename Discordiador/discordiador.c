@@ -157,10 +157,10 @@ int main() {
     // iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
     // iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaC.txt 8|8");
     // iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaD.txt 0|8");
-    //iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");
+    // iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");
+    iniciar_planificacion();
     ejecutar_tarea("estabilidad_general.txt");
-    //iniciar_planificacion();
-
+    // ejecutar_tarea("test_sin_entrada_salida");
 
     // iniciar_patota("INICIAR_PATOTA 10 Random.ims");
 
