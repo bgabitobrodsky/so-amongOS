@@ -205,17 +205,14 @@ int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
 	int cantidad_alcanzada = 0;
 
 	if(list_is_empty(lista_bloques) && cantidad_deseada != 0){
+		log_trace(logger_mongo, "Se quiere destruir la lista.1");
+		list_destroy(lista_bloques);
 		log_trace(logger_mongo, "la lista de bloques esta vacia");
 		asignar_nuevo_bloque(path, 0);
-		// log_trace(logger_mongo, "Se quiere destruir la lista.");
-		// list_destroy(lista_bloques); // TODO revisar
-		// log_trace(logger_mongo, "Se destruyo la lista");
 		lista_bloques = get_lista_bloques(path);
 	}
 
 	int* aux;
-
-	// lockearEscritura(path_blocks);
 
 	for(int i = 0; i < list_size(lista_bloques); i++){
 		aux = list_get(lista_bloques, i);
@@ -233,16 +230,17 @@ int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
 
 			if (cantidad_alcanzada == cantidad_deseada) {
 				log_trace(logger_mongo, "Se llego a la cantidad deseada.");
-				// unlockear(path_blocks);
+				log_trace(logger_mongo, "Se quiere destruir la lista.2");
+				matar_lista(lista_bloques);
 				sem_post(&sem_llenar_bloque_recurso);
 				return 0;
 			}
 		}
 	}
 
-	// unlockear(path_blocks);
-
 	sem_post(&sem_llenar_bloque_recurso);
+	log_trace(logger_mongo, "Se quiere destruir la lista.3");
+	matar_lista(lista_bloques);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -255,10 +253,9 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 	int* aux;
 
 	char* path = tipo_a_path(tipo);
-	t_list* lista_bloques = get_lista_bloques(path); //TODO liberar lista_bloques
+	t_list* lista_bloques = get_lista_bloques(path);
 	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
-	// lockearEscritura(path_blocks);
 	for(int i = (list_size(lista_bloques) - 1); i >= 0 ; i--){
 
 		aux = list_get(lista_bloques, i);
@@ -275,13 +272,14 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 
 			if (cantidad_alcanzada == cantidad_deseada) {
 				sem_post(&sem_quitar_ultimo_bloque_libre);
+				matar_lista(lista_bloques);
 				return 0;
 			}
 		}
 	}
-	// unlockear(path_blocks);
 
 	sem_post(&sem_quitar_ultimo_bloque_libre);
+	matar_lista(lista_bloques);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -385,9 +383,9 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 
 	iniciar_archivo_recurso2(path, cantidad + offset, cant_bloques, lista_bloques);
 
-	// log_trace(logger_mongo, "Se intenta matar lista");
-	// matar_lista(lista_bloques);
-	// log_trace(logger_mongo, "Se mato lista");
+	log_trace(logger_mongo, "Se intenta matar lista");
+	matar_lista(lista_bloques);
+	log_trace(logger_mongo, "Se mato lista");
 
 	log_trace(logger_mongo, "Se agregaron: %i", cantidad);
 }
@@ -411,7 +409,7 @@ void quitar(int codigo_archivo, int cantidad) {
 	t_list* lista_bloques = get_lista_bloques(path);
 	iniciar_archivo_recurso2(path, -cantidad, cant_bloques + 1, lista_bloques); //Puede romper el +1
 //	log_trace(logger_mongo, "Se intenta matar lista");
-//	matar_lista(lista_bloques); TODO
+	matar_lista(lista_bloques);
 //	log_trace(logger_mongo, "Se mato lista");
 	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
@@ -854,7 +852,10 @@ void asignar_bloque_recurso(char* path, int* pos_libre) {
 	log_trace(logger_mongo, "Cantidad de bloques inicial es %i, sera aumentada.", cantidad_bloques);
 	t_list* lista_bloques = get_lista_bloques(path);
 
-	list_add(lista_bloques, pos_libre);
+	// NO CAMBIEN ESTO, DEJENLO COMO ESTA
+	int* aux = malloc(sizeof(int));
+	*aux = *pos_libre;
+	list_add(lista_bloques, aux);
 
 	/*// PRINTEO DE TESTEO
 	int* aux;
@@ -867,6 +868,7 @@ void asignar_bloque_recurso(char* path, int* pos_libre) {
 	*/
 
 	iniciar_archivo_recurso(path, tamanio, cantidad_bloques + 1, lista_bloques);
+	matar_lista(lista_bloques);
 }
 
 void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
@@ -1003,11 +1005,11 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 		}
 	}
 
-	bool quitar_bloque_de_lista(void* bloque){
-		return *((int*) bloque) == nro_bloque;
+	bool quitar_bloque(void* elemento1){
+		return (nro_bloque == *((int*) elemento1));
 	}
 
-	int* aux = monitor_lista(sem_lista_bloques_ocupados, (void*) list_remove_by_condition, lista_bloques_ocupados, (void*) quitar_bloque_de_lista);
+	int* aux = monitor_lista(sem_lista_bloques_ocupados, (void*) list_remove_by_condition, lista_bloques_ocupados, (void*) quitar_bloque);
 	free(aux);
 
 	matar_lista(bloques);

@@ -224,12 +224,9 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 	free(cadenita);
 
 	//Actualizo struct bitacora
-	t_list* lista_bloques = get_lista_bloques(bitacora->path);
 	uint32_t tamanio = tamanio_archivo(bitacora->path);
-	// log_trace(logger_mongo, "Se mata lista bloques.");
-	// matar_lista(bitacora->bloques); // TODO: revisar invalid free
 
-	bitacora->bloques = lista_bloques;
+	// bitacora->bloques; Realmente no la usamos nunca, mejor dejarlo asi
 	bitacora->tamanio = tamanio + largo_cadenita;
 
 	set_tam(bitacora->path, tamanio + largo_cadenita);
