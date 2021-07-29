@@ -92,23 +92,3 @@ void test_serializar_tarea(){
 
 }
 
-void test_serializar_tripulante(){
-
-    t_tripulante un_tripulante;
-
-    un_tripulante.TID = 10001;
-    un_tripulante.estado_tripulante = estado_tripulante[NEW];
-    un_tripulante.coord_x = 1;
-    un_tripulante.coord_y = 1;
-
-    log_info(logger, "Tripulante antes de serializar:\n");
-    log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)un_tripulante.TID, (char) un_tripulante.estado_tripulante,(int) un_tripulante.coord_x, (int) un_tripulante.coord_y);
-
-    t_buffer* b = serializar_tripulante(un_tripulante);
-    t_tripulante* un_tripulante_deserializado = deserializar_tripulante(b);
-
-    log_info(logger, "Tripulante despues de serializar:\n");
-    log_info(logger, "Tripulante %i, estado: %c pos: %i %i\n", (int)un_tripulante_deserializado->TID, (char) un_tripulante_deserializado->estado_tripulante,(int) un_tripulante_deserializado->coord_x, (int) un_tripulante_deserializado->coord_y);
-
-}
-

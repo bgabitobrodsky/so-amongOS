@@ -52,6 +52,7 @@ int liberar_pagina(pagina* pagina, int offset, int faltante){
 }
 
 void liberar_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
+	bloquear_lista_segmentos();
 	int faltante = tam;
 	int num_pagina = dl / TAMANIO_PAGINA;
 	int offset = dl % TAMANIO_PAGINA;
@@ -101,6 +102,8 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	list_iterate(paginas_a_remover, page_remover);
 	list_destroy(paginas_a_remover);
 	desbloquear_lista_marcos();
+
+	desbloquear_lista_segmentos();
 }
 
 int matar_paginas_tcb(tabla_paginas* tabla, int tid){
@@ -113,7 +116,7 @@ int matar_paginas_tcb(tabla_paginas* tabla, int tid){
 		return 0;
 	}
 
-	liberar_paginas(tabla, dl_tcb, sizeof(t_TCB), tid / 10000);
+	liberar_paginas(tabla, dl_tcb, 21, tid / 10000);
 	dictionary_remove(tabla->dl_tcbs, stid);
 	return 1;
 }
@@ -152,6 +155,7 @@ void matar_tabla_paginas(int pid){
 }
 
 int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int pid){
+	bloquear_lista_segmentos();
 	pagina* pagina;
 	int progreso = 0;
 	int num_pagina = dl / TAMANIO_PAGINA;
@@ -167,6 +171,7 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 			log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
 		}else{
 			log_error(logger, "Se intentó escribir sobre una página que ya fue eliminada");
+			desbloquear_lista_segmentos();
 			return 0;
 		}
 	}
@@ -180,9 +185,11 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 			log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
 		}else{
 			log_error(logger, "Se intentó escribir sobre una página que ya fue eliminada");
+			desbloquear_lista_segmentos();
 			return 0;
 		}
 	}
+	desbloquear_lista_segmentos();
 	return 1;
 }
 
@@ -200,6 +207,7 @@ int escribir_en_marco(marco* marco, void* data, int offset, int tam){
 }
 
 void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
+	bloquear_lista_segmentos();
 	void* data = malloc(tam); // puntero a retornar con la info solicitada
 	pagina* pagina; 
 	int faltante = tam;
@@ -208,8 +216,10 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 
 	if(offset > 0){
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
-		if(pagina == NULL)
+		if(pagina == NULL){
+			desbloquear_lista_segmentos();
 			return NULL;
+		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
 		desbloquear_pagina(pagina);
 		log_trace(logger, "[PAG]: Leyendo... %d / %d bytes", tam - faltante, tam);
@@ -219,14 +229,16 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	while(faltante > 0){
 
 		pagina = get_pagina(tabla->paginas, pid, num_pagina);
-		if(pagina == NULL)
+		if(pagina == NULL){
+			desbloquear_lista_segmentos();
 			return NULL;
+		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
 		desbloquear_pagina(pagina);
 		log_trace(logger, "[PAG]: Leyendo... %d / %d bytes", tam - faltante, tam);
 		num_pagina++;
 	}
-	
+	desbloquear_lista_segmentos();
 	return data;
 }
 
@@ -238,6 +250,7 @@ int rescatar_de_marco(marco* marco, void* data, int offset, int tam){
 }
 
 int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int pid){
+	bloquear_lista_segmentos();
 	// esta función devuelve la dirección lógica de lo que se guardó
 	int dl;
 	int progreso = 0;
@@ -272,10 +285,12 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 			log_trace(logger, "Escribiendo... %d / %d bytes", progreso, tam);
 		}else{
 			// no hubo mas progreso, por ende no hay mas memoria
+			desbloquear_lista_segmentos();
 			return 99999; // se retorna estó porque NULL = 0 y me lo tomaría como la DL 0
 		}
 	}
 	desbloquear_tabla(tabla);
+	desbloquear_lista_segmentos();
 	return dl;	
 }
 
@@ -376,6 +391,7 @@ void algoritmo_de_reemplazo(){
 	}
 
 	swap_in(pagina);
+
 	desbloquear_pagina(pagina);
 	desbloquear_paginas_en_memoria();
 }
@@ -419,8 +435,8 @@ void page_fault(pagina* pag, int pid, int num){
 }
 
 pagina* get_lru(){
-	log_info(logger, "[SWAP]: Ejecuto busqueda por LRU");
 	bloquear_paginas_en_memoria();
+	log_info(logger, "[SWAP]: Ejecuto busqueda por LRU");
 	uint64_t lru_ts = get_timestamp();
     pagina* lru_p = NULL;
     
