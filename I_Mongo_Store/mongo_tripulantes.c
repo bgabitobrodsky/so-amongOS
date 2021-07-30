@@ -312,6 +312,7 @@ char* formatear_posicion(int coord_x, int coord_y) {
 void borrar_bitacora(t_TCB* tcb) {
 
 	t_bitacora* bitacora = quitar_bitacora_lista(tcb);
+	remove(bitacora->path);
 	fclose(bitacora->bitacora_asociada);
 	free(bitacora->tripulante);
 	free(bitacora->path);
