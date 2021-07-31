@@ -56,13 +56,13 @@ int main(int argc, char** argv){
 	pthread_detach(hilo_escucha);
 
     sem_wait(&sistema_activo);
-    sem_destroy(&sistema_activo);
-	pthread_mutex_destroy(&sem_lista_bloques_ocupados);
 
 	list_iterate(bitacoras, matar_bitacora);
 	sincronizar_map();
 
 	matar_lista(lista_bloques_ocupados);
+    sem_destroy(&sistema_activo);
+	pthread_mutex_destroy(&sem_lista_bloques_ocupados);
 	log_info(logger_mongo, "Apagando...");
 	sleep(1);
 	log_info(logger_mongo, "Cerrando archivos");
