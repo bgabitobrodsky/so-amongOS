@@ -1,5 +1,7 @@
 #include "mongo_tripulantes.h"
 
+extern pthread_mutex_t sem_bitacoras;
+
 void manejo_tripulante(void* socket) {
 
 	int socket_tripulante = ((hilo_tripulante*) socket)->socket;
@@ -118,7 +120,7 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 	nueva_bitacora->bloques = list_create();
 	nueva_bitacora->tripulante = tcb;
 
-	list_add(bitacoras, nueva_bitacora);
+	monitor_lista(sem_bitacoras, (void*) list_add, bitacoras, nueva_bitacora);
 
 	asignar_nuevo_bloque(nueva_bitacora->path, 0);
 }
