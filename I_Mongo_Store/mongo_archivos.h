@@ -9,6 +9,7 @@
 
 /* ESTRUCTURAS PROPIAS */
 
+void iniciar_paths();
 void inicializar_archivos();
 void inicializar_archivos_preexistentes();
 void asignar_nuevo_bloque(char* path, int size_agregado);
@@ -22,7 +23,6 @@ void quitar(int codigo_archivo, int cantidad);
 char* conseguir_tipo(char tipo);
 char conseguir_char(int codigo_archivo);
 char* tipo_a_path(char tipo);
-FILE* conseguir_archivo_char(char tipo);
 FILE* conseguir_archivo_recurso(int codigo);
 char* conseguir_path_recurso_codigo(int codigo_archivo);
 char* conseguir_path_recurso_archivo(FILE* archivo);

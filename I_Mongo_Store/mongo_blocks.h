@@ -96,7 +96,6 @@ void inicializar_mapa(); // testeado
 uint32_t obtener_tamanio_bloque_superbloque(); // testeado
 uint32_t obtener_cantidad_bloques_superbloque(); // testeado
 t_bitarray* obtener_bitmap(); // TESTEADO
-char* crear_puntero_a_bitmap(); // TESTEADO
 char* crear_puntero_a_bitmap_fd();
 void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // TESTEADO
 void reescribir_superbloque_fd(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap);
