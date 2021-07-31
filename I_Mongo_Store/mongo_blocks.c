@@ -147,24 +147,6 @@ t_bitarray* obtener_bitmap() {
 	return bitmap;
 }
 
-void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap) {
-
-	lockearEscritura(path_superbloque);
-
-	log_trace(logger_mongo, "Reescribiendo el superbloque.");
-
-	fseek(directorio.superbloque, 0, SEEK_SET);
-    fwrite(&tamanio, sizeof(uint32_t), 1, directorio.superbloque);
-    fwrite(&cantidad, sizeof(uint32_t), 1, directorio.superbloque);
-    fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
-    fflush(directorio.superbloque);
-
-	log_trace(logger_mongo, "Se reescribio el superbloque.");
-
-	unlockear(path_superbloque);
-
-}
-
 void reescribir_superbloque_fd(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap) {
 
 	lockearEscritura(path_superbloque);
@@ -219,17 +201,6 @@ void actualizar_bitmap(t_list* bloques_ocupados) {
 
 }
 
-void reescribir_bitmap(t_bitarray* bitmap){
-
-	lockearEscritura(path_superbloque);
-
-	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
-	fwrite(bitmap->bitarray, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
-	fflush(directorio.superbloque);
-
-	unlockear(path_superbloque);
-}
-
 void reescribir_bitmap_fd(t_bitarray* bitmap){
 
 	lockearEscritura(path_superbloque);
@@ -241,11 +212,6 @@ void reemplazar(t_list* lista, int index, void* elemento){
 
 	list_replace(lista, index, elemento);
 
-	/* void liberar(void* un_elemento){
-		free(un_elemento);
-	}
-
-	list_replace_and_destroy_element(lista, index, elemento, liberar); */
 }
 
 void cargar_bitmap(){
