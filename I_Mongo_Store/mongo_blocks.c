@@ -21,34 +21,6 @@ char* path_blocks;
 
 char* mapa;
 
-void iniciar_superbloque(FILE* archivo) {
-	log_trace(logger_mongo, "Iniciando superbloque");
-
-    uint32_t block_size = TAMANIO_BLOQUE; // Bytes
-    uint32_t size = CANTIDAD_BLOQUES;
-
-    void* puntero_a_bits = malloc(size/8);
-    t_bitarray* bitmap = bitarray_create_with_mode(puntero_a_bits, size/8, LSB_FIRST); // SE DIVIDE POR OCHO PORQUE EL SIZE ES EN BYTES, PONER 1 SIGNIFICA CREAR UN BITARRAY DE 8 BITS
-
-    log_info(logger_mongo,"Cantidad de bloques del FileSystem: %i", CANTIDAD_BLOQUES);
-    log_info(logger_mongo,"Tamanio de los bloques del FileSystem: %i", TAMANIO_BLOQUE);
-
-    for(int i = 0; i < size; i++) {
- 	   bitarray_clean_bit(bitmap, i);
-    }
-
-    fwrite(&block_size, sizeof(uint32_t), 1, archivo);
-    fwrite(&size, sizeof(uint32_t), 1, archivo);
-    fflush(archivo);
-
-    fwrite(bitmap->bitarray, bitmap->size, 1, archivo);
-    fflush(archivo);
-    bitarray_destroy(bitmap);
-
-	log_trace(logger_mongo, "Se inicio el superbloque.");
-}
-
-
 void iniciar_superbloque_fd(int filedescriptor_superbloque) {
 
 	log_trace(logger_mongo, "Iniciando superbloque");

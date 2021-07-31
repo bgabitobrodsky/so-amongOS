@@ -97,18 +97,6 @@ typedef struct {
 
 typedef struct {
 
-    uint32_t TID;
-    char estado_tripulante;
-    uint32_t coord_x;
-    uint32_t coord_y;
-    t_tarea tarea;
-    uint32_t quantum_restante;
-    int soy_el_elegido;
-
-} t_tripulante;
-
-typedef struct {
-
     uint32_t PID;
     t_list* tareas_patota;
 

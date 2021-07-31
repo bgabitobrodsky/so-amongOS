@@ -89,7 +89,6 @@ extern t_list* bitacoras;
 extern t_list* lista_bloques_ocupados;
 extern char* mapa;
 
-void iniciar_superbloque(FILE* archivo); // testeado
 void iniciar_superbloque_fd(int filedescriptor_superbloque);
 void iniciar_blocks(int filedescriptor_blocks); // testeado
 void inicializar_mapa(); // testeado
