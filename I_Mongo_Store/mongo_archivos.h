@@ -37,12 +37,12 @@ void liberar_bloque(char* path, uint32_t nro_bloque);
 void blanquear_bloque(int bloque);
 uint32_t obtener_cantidad_bloques(char* path);
 char* concatenar_numeros(char* cadena);
-void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list* lista_bloques);
+void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques);
 
 // devuelven la metadata del archivo
 t_list* get_lista_bloques(char* path); // TESTEADA
 int tamanio_archivo(char* path);
-uint32_t cantidad_bloques_recurso(char* path);
+int cantidad_bloques_recurso(char* path);
 char caracter_llenado_archivo(char* path);
 char* md5_archivo(char* path);
 uint32_t cantidad_bloques_tripulante(char* path);

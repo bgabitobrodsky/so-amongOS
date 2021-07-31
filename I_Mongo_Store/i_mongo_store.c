@@ -304,20 +304,25 @@ void matar_lista(t_list* lista){
 	log_trace(logger_mongo, "Matando lista");
 	if(lista == NULL){
 		// No hacer nada, aunque no se deberia cometer este error
+		log_trace(logger_mongo, "La lista era NULL");
 	} else if (list_is_empty(lista)){
 		// log_info(logger_mongo, "solo lista.");
+		log_trace(logger_mongo, "La lista estaba vacía");
 		list_destroy(lista);
 	} else if (list_size(lista) > 0){
 		// log_info(logger_mongo, "y todos sus elementos.");
+		log_trace(logger_mongo, "La lista tenía %d elementos", list_size(lista));
 		void liberar(void* elemento){
+			log_trace(logger_mongo, "Liberando un elemento");
 			free(elemento);
+			log_trace(logger_mongo, "Elemento liberado");
 		}
 
 		list_destroy_and_destroy_elements(lista, liberar);
 	} else{
 		// log_info(logger_mongo, "NADA.");
 	}
-	// log_info(logger_mongo, "matada lista");
+	log_info(logger_mongo, "matada lista");
 
 }
 

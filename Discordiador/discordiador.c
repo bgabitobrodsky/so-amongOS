@@ -151,17 +151,23 @@ int main() {
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
     iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    */
+
     // iniciar_planificacion();
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaC.txt 8|8");
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaD.txt 0|8");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");
-    iniciar_planificacion();
-    // ejecutar_tarea("estabilidad_general.txt");
-    // ejecutar_tarea("test_sin_entrada_salida");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");    */
+    //    	ejecutar_tarea("test_sin_entrada_salida");
+    for(int j = 0; j<10; j++) {
+    	iniciar_patota("INICIAR_PATOTA 3 ES3_Patota1.txt 9|9 0|0 5|5");
+    	iniciar_patota("INICIAR_PATOTA 3 ES3_Patota2.txt 4|0 2|6 8|2");
+    	iniciar_patota("INICIAR_PATOTA 3 ES3_Patota3.txt 2|3 5|8 5|3");
+    	iniciar_patota("INICIAR_PATOTA 3 ES3_Patota4.txt 0|9 4|4 9|0");
+    	iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
+    }
 
+    iniciar_planificacion();
     // iniciar_patota("INICIAR_PATOTA 10 Random.ims");
 
     pthread_t hiloConsola;
