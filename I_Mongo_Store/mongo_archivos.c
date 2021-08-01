@@ -1,6 +1,5 @@
 #include "mongo_archivos.h"
 
-
 // Vars globales
 t_log* logger_mongo;
 t_config* config_mongo;
@@ -9,28 +8,32 @@ int existe_oxigeno = 0;
 int existe_comida = 0;
 int existe_basura = 0;
 
-void inicializar_archivos() {
+void iniciar_paths(){
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
-	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
+	path_oxigeno = malloc(strlen(path_files) + strlen("/Oxigeno.ims") + 1);
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
 	// Se obtiene el path al archivo comida dentro de la carpeta files
-	path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
+	path_comida = malloc(strlen(path_files) + strlen("/Comida.ims") + 1);
 	sprintf(path_comida, "%s/Comida.ims", path_files);
 
 	// Se obtiene el path al archivo basura dentro de la carpeta files
-	path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
+	path_basura = malloc(strlen(path_files) + strlen("/Basura.ims") + 1);
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
 	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_superbloque = malloc((strlen(path_directorio)+1) + strlen("/SuperBloque.ims"));
+	path_superbloque = malloc(strlen(path_directorio) + strlen("/SuperBloque.ims") + 1);
 	sprintf(path_superbloque, "%s/SuperBloque.ims", path_directorio);
 
 	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
+	path_blocks = malloc(strlen(path_directorio) + strlen("/Blocks.ims") + 1);
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
 	log_trace(logger_mongo, "Se configuraron los paths.");
+}
+
+void inicializar_archivos() {
+	iniciar_paths();
 
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
@@ -49,27 +52,7 @@ void inicializar_archivos() {
 }
 
 void inicializar_archivos_preexistentes() {
-	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
-	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
-	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
-
-	// Se obtiene el path al archivo comida dentro de la carpeta files
-	path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
-	sprintf(path_comida, "%s/Comida.ims", path_files);
-
-	// Se obtiene el path al archivo basura dentro de la carpeta files
-	path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
-	sprintf(path_basura, "%s/Basura.ims", path_files);
-
-	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_superbloque = malloc((strlen(path_directorio)+1) + strlen("/SuperBloque.ims"));
-	sprintf(path_superbloque, "%s/SuperBloque.ims", path_directorio);
-
-	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
-	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
-
-	log_trace(logger_mongo, "Se configuraron los paths.");
+	iniciar_paths();
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
@@ -121,7 +104,7 @@ void inicializar_archivos_preexistentes() {
 }
 
 void limpiar_cuerpos() {
-	path_bitacoras = malloc((strlen(path_files)+1) + strlen("/Bitacoras"));
+	path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
 	sprintf(path_bitacoras, "%s/Bitacoras", path_files);
 	log_trace(logger_mongo, "Limpiando cuerpos");
 	log_trace(logger_mongo, "Path bitácoras: %s", path_bitacoras);
@@ -350,10 +333,8 @@ void alterar(int codigo_archivo, int cantidad) {
 }
 
 void descartar_basura() {
-	// Liberar los bloques de basura
 	liberar_bloques(path_basura);
-	// Eliminar el archivo
-	fclose(recurso.basura);
+	// fclose(recurso.basura);
 	remove(path_basura);
 	existe_basura = 0;
 	log_info(logger_mongo, "Se elimino el archivo Basura.");
@@ -374,9 +355,6 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		asignar_nuevo_bloque(path, 0);
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
-	// log_trace(logger_mongo, "Se intenta matar lista");
-	// matar_lista(lista_bloques);
-	// log_trace(logger_mongo, "Se mato lista");
 
 	uint32_t cant_bloques = cantidad_bloques_recurso(path);
 	t_list* lista_bloques = get_lista_bloques(path);
@@ -473,16 +451,6 @@ FILE* conseguir_archivo_recurso(int codigo) {
 	return NULL;
 }
 
-FILE* conseguir_archivo_char(char tipo) {
-	if (tipo == 'O')
-        return recurso.oxigeno;
-    if (tipo == 'C')
-        return recurso.comida;
-    if (tipo == 'B')
-        return recurso.basura;
-    return NULL;
-}
-
 char* conseguir_path_recurso_codigo(int codigo) {
 	switch(codigo) {
 		case OXIGENO:
@@ -513,7 +481,6 @@ char* conseguir_path_recurso_archivo(FILE* archivo) {
 	return NULL;
 
 }
-
 
 FILE* conseguir_archivo(char* path) {
 
@@ -698,7 +665,7 @@ t_list* get_lista_bloques(char* path){
 
 void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list* lista_bloques) {
 
-	log_warning(logger_mongo, "RECURSO");
+	log_debug(logger_mongo, "RECURSO");
 	if(tamanio >= 0)
 		agregar_tam(path, tamanio);
 	else
@@ -707,96 +674,61 @@ void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list*
 	set_bloq(path, lista_bloques);
 
 	char caracter = caracter_llenado_archivo(path);
-	log_warning(logger_mongo, "POST LLENADO");
 	set_caracter_llenado(path, caracter);
 
 	if(cant_bloques != 0){
-		log_warning(logger_mongo, "PRE LOCKEAR");
 		lockearLectura(path);
-		log_warning(logger_mongo, "PRE CONFIG");
-		log_warning(logger_mongo, "CONFIG path = %s", path);
 		t_config* config = config_create(path);
-		log_warning(logger_mongo, "POST  CONFIG");
-		log_warning(logger_mongo, "PRE CADENA BLOCKS");
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-		log_warning(logger_mongo, "POST CADENA BLOCKS");
 		unlockear(path);
-		log_warning(logger_mongo, "POST UNLOCKEAR");
-		log_warning(logger_mongo, "PRE CONCATENAR");
 		char* cadena_aux = concatenar_numeros(cadena_blocks);
-		log_warning(logger_mongo, "POST CONCATENAR");
-		log_warning(logger_mongo, "PRE MD5");
 		char* md5 = md5_archivo(cadena_aux);
-		log_warning(logger_mongo, "POST MD5");
-		log_warning(logger_mongo, "PRE SET MD5");
 		set_md5(path, md5);
-		log_warning(logger_mongo, "POST SET");
-		log_warning(logger_mongo, "PRE FREE MD5");
 		free(md5);
-		log_warning(logger_mongo, "PRE FREE AUX");
 		free(cadena_aux);
-		log_warning(logger_mongo, "POST FREE AUX");
 		config_destroy(config);
 	} else {
 		// Esto no deberia pasar, ya no inicializamos archivos vacios, pero pendiente de revision
-		log_error(logger_mongo, "MD5 INDEFINIDO");
+		log_warning(logger_mongo, "MD5 INDEFINIDO");
 		set_md5(path, "INDEFINIDO"); // Que no se setee si no tiene bloques
 	}
 
-	log_warning(logger_mongo, "POST RECURSO");
+	log_debug(logger_mongo, "POST RECURSO");
 }
 
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
 
-	log_warning(logger_mongo, "RECURSO");
+	log_debug(logger_mongo, "RECURSO");
 	set_tam(path, tamanio);
 	set_cant_bloques(path, cant_bloques);
 	set_bloq(path, lista_bloques);
 
 	char caracter = caracter_llenado_archivo(path);
-	log_warning(logger_mongo, "POST LLENADO");
 	set_caracter_llenado(path, caracter);
 
 	if(cant_bloques != 0){
-		log_warning(logger_mongo, "PRE LOCKEAR");
 		lockearLectura(path);
-		log_warning(logger_mongo, "PRE CONFIG");
-		log_warning(logger_mongo, "CONFIG path = %s", path);
 		t_config* config = config_create(path);
-		log_warning(logger_mongo, "POST  CONFIG");
-		log_warning(logger_mongo, "PRE CADENA BLOCKS");
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-		log_warning(logger_mongo, "POST CADENA BLOCKS");
 		unlockear(path);
-		log_warning(logger_mongo, "POST UNLOCKEAR");
-		log_warning(logger_mongo, "PRE CONCATENAR");
 		char* cadena_aux = concatenar_numeros(cadena_blocks);
-		log_warning(logger_mongo, "POST CONCATENAR");
-		log_warning(logger_mongo, "PRE MD5");
 		char* md5 = md5_archivo(cadena_aux);
-		log_warning(logger_mongo, "POST MD5");
-		log_warning(logger_mongo, "PRE SET MD5");
 		set_md5(path, md5);
-		log_warning(logger_mongo, "POST SET");
-		log_warning(logger_mongo, "PRE FREE MD5");
 		free(md5);
-		log_warning(logger_mongo, "PRE FREE AUX");
 		free(cadena_aux);
-		log_warning(logger_mongo, "POST FREE AUX");
 		config_destroy(config);
 	} else {
 		// Esto no deberia pasar, ya no inicializamos archivos vacios, pero pendiente de revision
-		log_error(logger_mongo, "MD5 INDEFINIDO");
+		log_warning(logger_mongo, "MD5 INDEFINIDO");
 		set_md5(path, "INDEFINIDO"); // Que no se setee si no tiene bloques
 	}
 
-	log_warning(logger_mongo, "POST RECURSO");
+	log_debug(logger_mongo, "POST RECURSO");
 }
 
 char* concatenar_numeros(char* cadena) {
 
 	int cantidad_numeros = 0;
-	log_warning(logger_mongo, "PRE FOR");
 
 	for(int i = 0; i < strlen(cadena); i++) {
 		if (isdigit(cadena[i])) {
@@ -804,10 +736,7 @@ char* concatenar_numeros(char* cadena) {
 		}
 	}
 
-	log_warning(logger_mongo, "POST FOR Y PRE MALLOC");
-
 	char* cadena_aux = malloc((sizeof(char) * cantidad_numeros) + 1);
-	log_warning(logger_mongo, "POST MALLOC PRE CADENA");
 
 	log_trace(logger_mongo, "Cadena es %s", cadena);
 
@@ -906,30 +835,14 @@ uint32_t bloques_contar(char caracter) {
 				cantidad++;
 			}
 		}
-
 	}
 
 	log_trace(logger_mongo, "Se contaron bloques, son %i", cantidad);
-
 	matar_lista(bloques);
 
 	// unlockear(path_blocks);
 
 	return cantidad;
-}
-
-
-char* crear_puntero_a_bitmap(){
-
-	// EL RETORNO SE DEBE LIBERAR
-	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
-
-	lockearLectura(path_superbloque);
-	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
-	fread(puntero_a_bitmap, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
-	unlockear(path_superbloque);
-
-	return puntero_a_bitmap;
 }
 
 char* crear_puntero_a_bitmap_fd(){

@@ -54,7 +54,6 @@ int estamos_en_peligro = 0; // variable de sabotaje
 int planificacion_activa = 0;
 int testeo = DISCORDIADOR;
 
-
 void notificar_fin_de_tarea(t_tripulante* un_tripulante, int socket_mongo){
 
 	t_TCB tcb_aux = tripulante_a_tcb(*un_tripulante);
@@ -132,26 +131,6 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    /*
-    iniciar_patota("INICIAR_PATOTA 10 ZJavier.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    iniciar_patota("INICIAR_PATOTA 3 Random.ims");
-    */
     // iniciar_planificacion();
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
