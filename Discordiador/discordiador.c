@@ -131,12 +131,13 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
+    for(int i = 0; i<10; i++){
+        ejecutar_tarea("estabilidad_general.txt");
+    }
+
+
+
     // iniciar_planificacion();
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaC.txt 8|8");
-    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaD.txt 0|8");
-    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");
     iniciar_planificacion();
     // ejecutar_tarea("estabilidad_general.txt");
     // ejecutar_tarea("test_sin_entrada_salida");
@@ -188,6 +189,10 @@ void ejecutar_tarea(char* path_archivo){
 		char** texto_nuevo = string_split(texto_split[i], " ");
 		if(!strcmp(texto_nuevo[0], "INICIAR_PATOTA")){
 			iniciar_patota(texto_split[i]);
+		} else if (!strcmp(texto_nuevo[0], "INICIAR_PLANIFICACION")){
+			iniciar_planificacion();
+		} else if (!strcmp(texto_nuevo[0], "LISTAR_TRIPULANTES")){
+			listar_tripulantes();
 		}
 	}
 }

@@ -7,6 +7,7 @@ t_list* bitacoras;
 int existe_oxigeno = 0;
 int existe_comida = 0;
 int existe_basura = 0;
+extern pthread_mutex_t sem_existencial;
 
 void iniciar_paths(){
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
@@ -131,7 +132,7 @@ void limpiar_cuerpos() {
 	}
 }
 
-void asignar_nuevo_bloque(char* path, int size_agregado) {
+void asignar_nuevo_bloque(char* path) {
 	lockearEscritura(path_blocks);
 	log_trace(logger_mongo, "Asignando un nuevo bloque");
 
@@ -162,7 +163,7 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 		}
 		else {
 			log_trace(logger_mongo, "Se asigna un bloque a un tripulante");
-			asignar_bloque_tripulante(path, pos_libre, size_agregado);
+			asignar_bloque_tripulante(path, pos_libre);
 		}
 
 		monitor_lista(sem_lista_bloques_ocupados, (void*) list_add, lista_bloques_ocupados, pos_libre);
@@ -191,7 +192,7 @@ int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
 		log_trace(logger_mongo, "Se quiere destruir la lista.1");
 		list_destroy(lista_bloques);
 		log_trace(logger_mongo, "la lista de bloques esta vacia");
-		asignar_nuevo_bloque(path, 0);
+		asignar_nuevo_bloque(path);
 		lista_bloques = get_lista_bloques(path);
 	}
 
@@ -279,7 +280,20 @@ int existe_archivo(int codigo_archivo) {
 	return -1;
 }
 
+void alterar_wrap(int codigo_archivo, int cantidad) {
+	pthread_mutex_lock(&sem_existencial);
+	if(codigo_archivo == BASURA){
+		if(existe_basura){
+			alterar( codigo_archivo, cantidad);
+		}
+	} else{
+		alterar( codigo_archivo, cantidad);
+	}
+	pthread_mutex_unlock(&sem_existencial);
+}
+
 void alterar(int codigo_archivo, int cantidad) {
+
 	log_trace(logger_mongo, "Por alterar archivo recurso.");
 	log_trace(logger_mongo, "Codigo = %i, Cantidad = %i", codigo_archivo, cantidad);
 
@@ -332,12 +346,17 @@ void alterar(int codigo_archivo, int cantidad) {
 	}
 }
 
+
 void descartar_basura() {
-	liberar_bloques(path_basura);
-	// fclose(recurso.basura);
-	remove(path_basura);
-	existe_basura = 0;
-	log_info(logger_mongo, "Se elimino el archivo Basura.");
+	pthread_mutex_lock(&sem_existencial);
+	if(existe_basura){
+		liberar_bloques(path_basura);
+		// fclose(recurso.basura);
+		remove(path_basura);
+		existe_basura = 0;
+		log_info(logger_mongo, "Se elimino el archivo Basura.");
+	}
+	pthread_mutex_unlock(&sem_existencial);
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
@@ -352,7 +371,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 	int offset = llenar_bloque_recurso(cantidad, tipo, path);
 
 	if (offset < 0) { // Falto agregar cantidad, dada por offset
-		asignar_nuevo_bloque(path, 0);
+		asignar_nuevo_bloque(path);
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
 
@@ -528,17 +547,11 @@ int min (int a, int b) {
 
 int tamanio_archivo(char* path) {
 
-	if(es_recurso(path)) {
-		lockearLectura(path);
-	}
-
+	lockear_recurso_lectura(path);
 	t_config* config = config_create(path);
 	int tam_archivo = config_get_int_value(config, "SIZE");
 	config_destroy(config);
-
-	if(es_recurso(path)) {
-		unlockear(path);
-	}
+	unlockear_recurso(path);
 
 	return tam_archivo;
 }
@@ -622,9 +635,7 @@ t_list* get_lista_bloques(char* path){
 
 	log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
 
-	if(es_recurso(path)){
-		lockearLectura(path);
-	}
+	lockear_recurso_lectura(path);
 
 	t_config* config = config_create(path);
 	t_list* lista_bloques = list_create();
@@ -637,10 +648,7 @@ t_list* get_lista_bloques(char* path){
 		config_destroy(config);
 		liberar_puntero_doble(bloques);
 
-		if(es_recurso(path)){
-			unlockear(path);
-		}
-
+		unlockear_recurso(path);
 		return lista_bloques;
 	}
 
@@ -655,9 +663,7 @@ t_list* get_lista_bloques(char* path){
 	config_destroy(config);
 	liberar_puntero_doble(bloques);
 
-	if(es_recurso(path)){
-		unlockear(path);
-	}
+	unlockear_recurso(path);
 
 	log_trace(logger_mongo, "Se devuelve la lista de bloques");
 	return lista_bloques;
@@ -802,7 +808,7 @@ void asignar_bloque_recurso(char* path, int* pos_libre) {
 	matar_lista(lista_bloques);
 }
 
-void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
+void asignar_bloque_tripulante(char* path, int* pos_libre) {
 
 	uint32_t tamanio = tamanio_archivo(path);
 	t_list* lista_bloques = get_lista_bloques(path);
@@ -933,7 +939,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 }
 
 void agregar_tam(char* path, int tamanio) {
-	lockearEscritura(path);
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
@@ -945,11 +951,11 @@ void agregar_tam(char* path, int tamanio) {
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
+	unlockear_recurso(path);
 }
 
 void quitar_tam(char* path, int tamanio) {
-	lockearEscritura(path);
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
@@ -961,12 +967,12 @@ void quitar_tam(char* path, int tamanio) {
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
+	unlockear_recurso(path);
 }
 
 void set_tam(char* path, int tamanio){
 
-	lockearEscritura(path);
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
@@ -976,14 +982,12 @@ void set_tam(char* path, int tamanio){
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
+	unlockear_recurso(path);
 }
 
 void set_bloq(char* path, t_list* lista){
 
-	if(es_recurso(path)){
-		lockearEscritura(path);
-	}
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 
@@ -1004,14 +1008,12 @@ void set_bloq(char* path, t_list* lista){
 	char* lista_bloques;
 
 	if(list_aux == NULL || list_is_empty(list_aux)){
-	    // log_trace(logger_mongo, "La lista esta vacia");
 
 		lista_bloques = malloc(2 + 1);
 		strcpy(lista_bloques, "[]");
 
 	}
 	else {
-		// log_trace(logger_mongo, "La lista no es vacia.");
 
 		int comas = max(list_size(list_aux)-1, 0);
 		int cant_numeros = 0;
@@ -1056,15 +1058,13 @@ void set_bloq(char* path, t_list* lista){
 
 	free(lista_bloques);
 
-	if(es_recurso(path)){
-		unlockear(path);
-	}
+	unlockear_recurso(path);
 }
 
 
 void set_cant_bloques(char* path, int cant){
 
-	lockearEscritura(path);
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
@@ -1074,12 +1074,12 @@ void set_cant_bloques(char* path, int cant){
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
+	unlockear_recurso(path);
 }
 
 void set_caracter_llenado(char* path, char caracter){
 
-	lockearEscritura(path);
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
@@ -1093,18 +1093,61 @@ void set_caracter_llenado(char* path, char caracter){
 	config_destroy(config);
 	free(caracter_string);
 
-	unlockear(path);
+	unlockear_recurso(path);
 }
 
 void set_md5(char* path, char* md5){
 
-	lockearEscritura(path);
-
+	lockear_recurso_escritura(path);
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 	config_set_value(config, "MD5_ARCHIVO", md5);
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
+	unlockear_recurso(path);
+}
+
+
+void lockear_recurso_lectura(char* path){
+	if(es_recurso(path)){
+		if(!strcmp(path, path_basura)){
+			if(existe_basura){
+				log_warning(logger_mongo, "existe basura lectura");
+				lockearLectura(path);
+				log_warning(logger_mongo, "salgo basura lectura");
+			}
+		} else {
+			lockearLectura(path);
+		}
+	}
+}
+
+void lockear_recurso_escritura(char* path){
+
+	if(es_recurso(path)){
+		if(!strcmp(path, path_basura)){
+			if(existe_basura){
+				log_warning(logger_mongo, "existe basura escritura");
+				lockearEscritura(path);
+				log_warning(logger_mongo, "salgo basura escritura");
+			}
+		} else {
+			lockearEscritura(path);
+		}
+	}
+}
+
+void unlockear_recurso(char* path){
+	if(es_recurso(path)){
+		if(!strcmp(path, path_basura)){
+			if(existe_basura){
+				log_warning(logger_mongo, "existe basura unlockeo");
+				unlockear(path);
+				log_warning(logger_mongo, "salgo existe basura unlockeo");
+			}
+		} else {
+			unlockear(path);
+		}
+	}
 }

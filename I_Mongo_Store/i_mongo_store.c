@@ -17,6 +17,8 @@ sem_t sem_quitar_ultimo_bloque_libre;
 
 pthread_mutex_t sem_lista_bloques_ocupados;
 pthread_mutex_t sem_bitacoras;
+pthread_mutex_t sem_diccionario;
+pthread_mutex_t sem_existencial;
 
 int main(int argc, char** argv){
 
@@ -32,7 +34,8 @@ int main(int argc, char** argv){
     sem_init(&sem_quitar_ultimo_bloque_libre, 0, 1);
 	pthread_mutex_init(&sem_lista_bloques_ocupados, NULL);
 	pthread_mutex_init(&sem_bitacoras, NULL);
-
+	pthread_mutex_init(&sem_diccionario, NULL);
+	pthread_mutex_init(&sem_existencial, NULL);
 
 	FILE* f = fopen("i_mongo_store.log", "w");
     fclose(f);
