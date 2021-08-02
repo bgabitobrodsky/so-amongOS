@@ -46,6 +46,7 @@ void manejo_tripulante(void* socket) {
 			log_info(logger_mongo, "Se desconecto un tripulante.");
 			free(posicion_tripulante);
 			free(mensaje);
+			free(socket);
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
 			pthread_exit(NULL);
 		}
