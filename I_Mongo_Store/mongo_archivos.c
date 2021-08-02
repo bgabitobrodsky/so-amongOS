@@ -356,14 +356,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
 
-	uint32_t cant_bloques = cantidad_bloques_recurso(path);
-	t_list* lista_bloques = get_lista_bloques(path);
-
-	iniciar_archivo_recurso2(path, cantidad + offset, cant_bloques, lista_bloques);
-
-	log_trace(logger_mongo, "Se intenta matar lista");
-	matar_lista(lista_bloques);
-	log_trace(logger_mongo, "Se mato lista");
+	iniciar_archivo_recurso2(path, cantidad + offset, 0);
 
 	log_trace(logger_mongo, "Se agregaron: %i", cantidad);
 }
@@ -385,12 +378,8 @@ void quitar(int codigo_archivo, int cantidad) {
 		return;
 	}
 
-	uint32_t cant_bloques = cantidad_bloques_recurso(path);
-	t_list* lista_bloques = get_lista_bloques(path);
-	iniciar_archivo_recurso2(path, -cantidad, cant_bloques + 1, lista_bloques);
-//	log_trace(logger_mongo, "Se intenta matar lista");
-	matar_lista(lista_bloques);
-//	log_trace(logger_mongo, "Se mato lista");
+	iniciar_archivo_recurso2(path, -cantidad, 1);
+
 	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
 
@@ -663,15 +652,16 @@ t_list* get_lista_bloques(char* path){
 	return lista_bloques;
 }
 
-void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques, t_list* lista_bloques) {
+void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques_a_agregar) {
 
 	log_debug(logger_mongo, "RECURSO");
 	if(tamanio >= 0)
 		agregar_tam(path, tamanio);
 	else
 		quitar_tam(path, tamanio);
-	set_cant_bloques(path, cant_bloques);
-	set_bloq(path, lista_bloques);
+
+	int cant_bloques = cantidad_bloques_recurso(path);
+	set_cant_bloques(path, cant_bloques + cant_bloques_a_agregar); //Posible error de sincro
 
 	char caracter = caracter_llenado_archivo(path);
 	set_caracter_llenado(path, caracter);
