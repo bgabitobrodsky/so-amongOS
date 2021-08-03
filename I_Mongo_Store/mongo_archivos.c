@@ -1,6 +1,5 @@
 #include "mongo_archivos.h"
 
-
 // Vars globales
 t_log* logger_mongo;
 t_config* config_mongo;
@@ -8,62 +7,53 @@ t_list* bitacoras;
 int existe_oxigeno = 0;
 int existe_comida = 0;
 int existe_basura = 0;
+extern pthread_mutex_t sem_existencial;
 
-void inicializar_archivos() {
+void iniciar_paths(){
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
-	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
+	path_oxigeno = malloc(strlen(path_files) + strlen("/Oxigeno.ims") + 1);
 	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
 
 	// Se obtiene el path al archivo comida dentro de la carpeta files
-	path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
+	path_comida = malloc(strlen(path_files) + strlen("/Comida.ims") + 1);
 	sprintf(path_comida, "%s/Comida.ims", path_files);
 
 	// Se obtiene el path al archivo basura dentro de la carpeta files
-	path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
+	path_basura = malloc(strlen(path_files) + strlen("/Basura.ims") + 1);
 	sprintf(path_basura, "%s/Basura.ims", path_files);
 
 	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_superbloque = malloc((strlen(path_directorio)+1) + strlen("/SuperBloque.ims"));
+	path_superbloque = malloc(strlen(path_directorio) + strlen("/SuperBloque.ims") + 1);
 	sprintf(path_superbloque, "%s/SuperBloque.ims", path_directorio);
 
 	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
+	path_blocks = malloc(strlen(path_directorio) + strlen("/Blocks.ims") + 1);
 	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
 
+	log_trace(logger_mongo, "Se configuraron los paths.");
+}
+
+void inicializar_archivos() {
+	iniciar_paths();
+
 	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
 
 	// Trunco los archivos o los creo en modo escritura y lectura
 	// Se guarda to.do en un struct para uso en distintas funciones
-	directorio.superbloque = fopen(path_superbloque, "w+b");
+
+	directorio.superbloque = fdopen(filedescriptor_superbloque, "w+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "w+b");
 
-	iniciar_superbloque(directorio.superbloque);
+	log_trace(logger_mongo, "Se crearon los archivos de Blocks y Superbloque.");
+
+	iniciar_superbloque_fd(filedescriptor_superbloque);
 	iniciar_blocks(filedescriptor_blocks);
 	inicializar_mapa();
 }
 
 void inicializar_archivos_preexistentes() {
-	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
-	path_oxigeno = malloc((strlen(path_files)+1) + strlen("/Oxigeno.ims"));
-	sprintf(path_oxigeno, "%s/Oxigeno.ims", path_files);
-
-	// Se obtiene el path al archivo comida dentro de la carpeta files
-	path_comida = malloc((strlen(path_files)+1) + strlen("/Comida.ims"));
-	sprintf(path_comida, "%s/Comida.ims", path_files);
-
-	// Se obtiene el path al archivo basura dentro de la carpeta files
-	path_basura = malloc((strlen(path_files)+1) + strlen("/Basura.ims"));
-	sprintf(path_basura, "%s/Basura.ims", path_files);
-
-	// Se obtiene el path al archivo superbloque dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_superbloque = malloc((strlen(path_directorio)+1) + strlen("/SuperBloque.ims"));
-	sprintf(path_superbloque, "%s/SuperBloque.ims", path_directorio);
-
-	// Se obtiene el path al archivo blocks dentro de la carpeta files (deberia ser dentro del punto de montaje nomas)
-	path_blocks = malloc((strlen(path_directorio)+1) + strlen("/Blocks.ims"));
-	sprintf(path_blocks, "%s/Blocks.ims", path_directorio);
-
-	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+	iniciar_paths();
 
 	// Abro los archivos en modo escritura y lectura (deben existir archivos)
 	// Se guarda to.do en un struct para uso en distintas funciones
@@ -92,27 +82,33 @@ void inicializar_archivos_preexistentes() {
 		existe_basura = 0;
 	}
 
-	directorio.superbloque = fopen(path_superbloque, "r+b");
+	int filedescriptor_blocks = open(path_blocks, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+	int filedescriptor_superbloque = open(path_superbloque, O_RDWR | O_APPEND | O_CREAT, (mode_t) 0777);
+
+	directorio.superbloque = fdopen(filedescriptor_superbloque, "r+b");
 	directorio.blocks      = fdopen(filedescriptor_blocks, "r+b");
+
+	log_trace(logger_mongo, "Se abrieron los archivos del FileSystem.");
 
 	iniciar_blocks(filedescriptor_blocks);
 	// mapea y sincroniza
 	memcpy(directorio.mapa_blocks, mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
     msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_ASYNC);
 
+    directorio.supermapa = (void*) mmap(NULL, sizeof(uint32_t) * 2 + CANTIDAD_BLOQUES / 8, PROT_READ | PROT_WRITE, MAP_SHARED, filedescriptor_superbloque, 0);
     cargar_bitmap(); // cargando la lista de bloqueados
     // limpiar_cuerpos();
     // rename("/home/utnso/polus/Files/Bitacoras/Tripulante10001.ims", "/home/utnso/polus/Files/Bitacoras/OldTripulante10001.ims");
-    //rename("/home/utnso/polus/Files/Bitacoras", "/home/utnso/polus/Files/ASID");
+    // rename("/home/utnso/polus/Files/Bitacoras", "/home/utnso/polus/Files/ASID");
 
-    log_info(logger_mongo, "Inicializados archivos pre existentes.");
+    log_info(logger_mongo, "Se inicializaron los archivos pre-existentes.");
 }
 
 void limpiar_cuerpos() {
-	path_bitacoras = malloc((strlen(path_files)+1) + strlen("/Bitacoras"));
+	path_bitacoras = malloc(strlen(path_files) + strlen("/Bitacoras") + 1);
 	sprintf(path_bitacoras, "%s/Bitacoras", path_files);
-	log_info(logger_mongo, "Limpiando cuerpos");
-	log_info(logger_mongo, "Path bitácoras: %s", path_bitacoras);
+	log_trace(logger_mongo, "Limpiando cuerpos");
+	log_trace(logger_mongo, "Path bitácoras: %s", path_bitacoras);
 	int renombrado = 0;
 
 	for (int i = 0; renombrado == 0; i++) {
@@ -136,8 +132,7 @@ void limpiar_cuerpos() {
 	}
 }
 
-void asignar_nuevo_bloque(char* path, int size_agregado) {
-	// log_warning(logger_mongo, "sincronizar inicio");
+void asignar_nuevo_bloque(char* path) {
 	lockearEscritura(path_blocks);
 	log_trace(logger_mongo, "Asignando un nuevo bloque");
 
@@ -158,90 +153,98 @@ void asignar_nuevo_bloque(char* path, int size_agregado) {
 
 	//Si había un bloque libre
 	if (bit_libre == 1) {
-		log_trace(logger_mongo, "Habemus bloque libre, el bit libre es = %i", *pos_libre);
+		log_trace(logger_mongo, "El bit libre es = %i", *pos_libre);
 		//Marco el bit como ocupado
 		bitarray_set_bit(bitmap, *pos_libre);
 
 		if (es_recurso(path)){
-			log_trace(logger_mongo, "Asignemos un bloque a un recurso");
+			log_trace(logger_mongo, "Se asigna un bloque a un recurso");
 			asignar_bloque_recurso(path, pos_libre);
 		}
 		else {
-			log_trace(logger_mongo, "Asignemos un bloque a un tripulante");
-			asignar_bloque_tripulante(path, pos_libre, size_agregado);
+			log_trace(logger_mongo, "Se asigna un bloque a un tripulante");
+			asignar_bloque_tripulante(path, pos_libre);
 		}
 
-		list_add(lista_bloques_ocupados, pos_libre);
+		monitor_lista(sem_lista_bloques_ocupados, (void*) list_add, lista_bloques_ocupados, pos_libre);
 		actualizar_bitmap(lista_bloques_ocupados);
-	    log_trace(logger_mongo, "Actualizado");
+	    log_trace(logger_mongo, "Actualizado el bitmap");
 	}
 	else{
-		log_info(logger_mongo, "No hay bloques disponibles en este momento");
+		log_warning(logger_mongo, "No hay bloques disponibles en este momento");
 	}
 
 	unlockear(path_blocks);
-	// log_warning(logger_mongo, "sincronizar fin");
 
 	free(bitmap->bitarray);
 	bitarray_destroy(bitmap);
 
 }
 
-int llenar_bloque_recurso(t_list* lista_bloques, int cantidad_deseada, char tipo, char* path) {
-
-	log_trace(logger_mongo, "0 asignar_primer_bloque, cant bloques %i", list_size(lista_bloques));
+int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
+	sem_wait(&sem_llenar_bloque_recurso);
+	log_trace(logger_mongo, "Llenando el bloque de recurso");
+	t_list* lista_bloques = get_lista_bloques(path);
+	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 	int cantidad_alcanzada = 0;
 
 	if(list_is_empty(lista_bloques) && cantidad_deseada != 0){
-		log_trace(logger_mongo, "la lista ta vacia");
-		asignar_nuevo_bloque(path, 0);
+		log_trace(logger_mongo, "Se quiere destruir la lista.1");
+		list_destroy(lista_bloques);
+		log_trace(logger_mongo, "la lista de bloques esta vacia");
+		asignar_nuevo_bloque(path);
 		lista_bloques = get_lista_bloques(path);
 	}
 
 	int* aux;
 
-	lockearEscritura(path_blocks);
-
 	for(int i = 0; i < list_size(lista_bloques); i++){
 		aux = list_get(lista_bloques, i);
+		log_trace(logger_mongo, "Se esta agregando en bloque %i", *aux);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
-			// log_trace(logger_mongo, "pos %i lista; %i: ", i, *aux);
 
 			if (*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) == ',') {
 				*(directorio.mapa_blocks + *aux * TAMANIO_BLOQUE + j) = tipo;
 
+				log_trace(logger_mongo, "Se agrego char en posicion %i", j);
+
 				cantidad_alcanzada++;
-				// log_trace(logger_mongo, "cantidad mas mas");
 			}
 
 			if (cantidad_alcanzada == cantidad_deseada) {
-				// log_trace(logger_mongo, "retorno cero");
-				unlockear(path_blocks);
+				log_trace(logger_mongo, "Se llego a la cantidad deseada.");
+				log_trace(logger_mongo, "Se quiere destruir la lista.2");
+				matar_lista(lista_bloques);
+				sem_post(&sem_llenar_bloque_recurso);
 				return 0;
 			}
 		}
 	}
-	unlockear(path_blocks);
 
+	sem_post(&sem_llenar_bloque_recurso);
+	log_trace(logger_mongo, "Se quiere destruir la lista.3");
+	matar_lista(lista_bloques);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
-int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char tipo) {
+int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 
-	log_trace(logger_mongo, "INICIO quitar_ultimo_bloque, cant bloques %i", list_size(lista_bloques));
+	sem_wait(&sem_quitar_ultimo_bloque_libre);
+	log_trace(logger_mongo, "Quitando del bloque de recurso");
 
 	int cantidad_alcanzada = 0;
 	int* aux;
 
 	char* path = tipo_a_path(tipo);
+	t_list* lista_bloques = get_lista_bloques(path);
+	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
 	for(int i = (list_size(lista_bloques) - 1); i >= 0 ; i--){
 
 		aux = list_get(lista_bloques, i);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
-			lockearEscritura(path_blocks);
 			if (*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) == tipo) {
 				*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) = ',';
 				cantidad_alcanzada++;
@@ -250,14 +253,17 @@ int quitar_ultimo_bloque_libre(t_list* lista_bloques, int cantidad_deseada, char
 					liberar_bloque(path, *aux);
 				}
 			}
-			unlockear(path_blocks);
 
 			if (cantidad_alcanzada == cantidad_deseada) {
+				sem_post(&sem_quitar_ultimo_bloque_libre);
+				matar_lista(lista_bloques);
 				return 0;
 			}
 		}
 	}
-	
+
+	sem_post(&sem_quitar_ultimo_bloque_libre);
+	matar_lista(lista_bloques);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -274,83 +280,126 @@ int existe_archivo(int codigo_archivo) {
 	return -1;
 }
 
-void alterar(int codigo_archivo, int cantidad) {  
-	log_trace(logger_mongo, "INICIO alterar, codigo = %i cantidad = %i", codigo_archivo, cantidad);
-
-	char* path = conseguir_path_recurso_codigo(codigo_archivo);
-	if (!existe_archivo(codigo_archivo)) {
-		log_trace(logger_mongo, "Inicializando archivos recurso");
-		switch(codigo_archivo) {
-			case OXIGENO:
-				existe_oxigeno = 1;
-				recurso.oxigeno = fopen(path_oxigeno, "w+b");
-				log_trace(logger_mongo, "Se creo el archivo de oxigeno");
-				break;
-			case COMIDA:
-				existe_comida = 1;
-				recurso.comida  = fopen(path_comida, "w+b");
-				log_trace(logger_mongo, "Se creo el archivo de comida");
-				break;
-			case BASURA:
-				existe_basura = 1;
-				recurso.basura  = fopen(path_basura, "w+b");
-				log_trace(logger_mongo, "Se creo el archivo de basura");
-				break;
+void alterar_wrap(int codigo_archivo, int cantidad) {
+	if(codigo_archivo == BASURA){
+		pthread_mutex_lock(&sem_existencial);
+		if(existe_basura){
+			alterar( codigo_archivo, cantidad);
 		}
-		iniciar_archivo_recurso(path, 0, 0, NULL);
+		pthread_mutex_unlock(&sem_existencial);
+	} else{
+		alterar( codigo_archivo, cantidad);
 	}
+}
 
-	if (cantidad >= 0){
+void alterar(int codigo_archivo, int cantidad) {
+
+	log_trace(logger_mongo, "Por alterar archivo recurso.");
+	log_trace(logger_mongo, "Codigo = %i, Cantidad = %i", codigo_archivo, cantidad);
+
+	if (cantidad > 0){
+
+		char* path = conseguir_path_recurso_codigo(codigo_archivo);
+		if (!existe_archivo(codigo_archivo)) {
+			log_trace(logger_mongo, "Inicializando archivos recurso");
+
+				switch(codigo_archivo) {
+				case OXIGENO:
+					existe_oxigeno = 1;
+					recurso.oxigeno = fopen(path_oxigeno, "w+b");
+					log_info(logger_mongo, "Se creo el archivo de oxigeno.");
+					break;
+				case COMIDA:
+					existe_comida = 1;
+					recurso.comida  = fopen(path_comida, "w+b");
+					log_info(logger_mongo, "Se creo el archivo de comida.");
+					break;
+				case BASURA:
+					existe_basura = 1;
+					recurso.basura  = fopen(path_basura, "w+b");
+					log_info(logger_mongo, "Se creo el archivo de basura.");
+					break;
+				}
+
+				iniciar_archivo_recurso(path, 0, 0, NULL);
+			}
+
 		agregar(codigo_archivo, cantidad);
 		log_info(logger_mongo, "Se agregaron %i unidades a %s.", cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
 	}
-	else{
-		quitar(codigo_archivo, cantidad * (-1));
-		log_info(logger_mongo, "Se quitaron %i unidades a %s.", cantidad, conseguir_tipo(conseguir_char(codigo_archivo)));
+	else {
+
+		if (!existe_archivo(codigo_archivo)) {
+			log_warning(logger_mongo, "El archivo del que se quiere quitar no existe.");
+		}
+		else {
+
+			if (codigo_archivo == BASURA) {
+				descartar_basura();
+			}
+			else {
+				quitar(codigo_archivo, cantidad * (-1));
+				log_info(logger_mongo, "Se quitaron %i unidades a %s.", (cantidad * (-1)) , conseguir_tipo(conseguir_char(codigo_archivo)));
+			}
+		}
+
 	}
+}
+
+
+void descartar_basura() {
+	pthread_mutex_lock(&sem_existencial);
+	if(existe_basura){
+		liberar_bloques(path_basura);
+		// fclose(recurso.basura);
+		remove(path_basura);
+		existe_basura = 0;
+		log_info(logger_mongo, "Se elimino el archivo Basura.");
+	}
+	pthread_mutex_unlock(&sem_existencial);
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
-	log_trace(logger_mongo, "INICIO agregar, codigo: %i, cantidad %i", codigo_archivo, cantidad);
+	log_trace(logger_mongo, "Por agregar a archivo recurso.");
+	log_trace(logger_mongo, "Codigo: %i, Cantidad %i", codigo_archivo, cantidad);
 
 	char* path = conseguir_path_recurso_codigo(codigo_archivo);
+	log_trace(logger_mongo, "El path del recurso es %s", path);
 
-	log_trace(logger_mongo, "Nuestro path es %s", path);
-
-	t_list* lista_bloques = get_lista_bloques(path);
 	char tipo = caracter_llenado_archivo(path);
 
-	int offset = llenar_bloque_recurso(lista_bloques, cantidad, tipo, path);
+	int offset = llenar_bloque_recurso(cantidad, tipo, path);
 
 	if (offset < 0) { // Falto agregar cantidad, dada por offset
-		asignar_nuevo_bloque(path, 0);
+		asignar_nuevo_bloque(path);
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
 
-	uint32_t tam_archivo = tamanio_archivo(path);
-	uint32_t cant_bloques = cantidad_bloques_recurso(path);
-	lista_bloques = get_lista_bloques(path);
+	iniciar_archivo_recurso2(path, cantidad + offset, 0);
 
-	iniciar_archivo_recurso(path, tam_archivo + cantidad + offset, cant_bloques, lista_bloques);
-
-	log_trace(logger_mongo, "FIN agregar, cantidad agregada: %i", cantidad);
-
+	log_trace(logger_mongo, "Se agregaron: %i", cantidad);
 }
 
 void quitar(int codigo_archivo, int cantidad) {
-	log_trace(logger_mongo, "INICIO quitar");
-	char* path = conseguir_path_recurso_codigo(codigo_archivo);
+	log_trace(logger_mongo, "Por quitar a archivo recurso.");
+	log_trace(logger_mongo, "Codigo: %i, Cantidad %i", codigo_archivo, cantidad);
 
-	uint32_t tam_archivo = tamanio_archivo(path);
-	uint32_t cant_bloques = cantidad_bloques_recurso(path);
-	t_list* lista_bloques = get_lista_bloques(path);
+	char* path = conseguir_path_recurso_codigo(codigo_archivo);
+	log_trace(logger_mongo, "El path del recurso es %s", path);
+
 	char tipo = caracter_llenado_archivo(path);
 
-	quitar_ultimo_bloque_libre(lista_bloques, cantidad, tipo);
+	int resultado = quitar_ultimo_bloque_libre(cantidad, tipo);
 
-	iniciar_archivo_recurso(path, tam_archivo - cantidad, cant_bloques, lista_bloques);
+	if (resultado != 0) {
+		log_info(logger_mongo, "Se intento quitar mas de lo ya existente en el archivo.");
+		iniciar_archivo_recurso(path, 0, 0, NULL);
+		return;
+	}
 
-	log_warning(logger_mongo, "FIN quitar");
+	iniciar_archivo_recurso2(path, -cantidad, 1);
+
+	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
 
 char* tipo_a_path(char tipo){
@@ -410,16 +459,6 @@ FILE* conseguir_archivo_recurso(int codigo) {
 	return NULL;
 }
 
-FILE* conseguir_archivo_char(char tipo) {
-	if (tipo == 'O')
-        return recurso.oxigeno;
-    if (tipo == 'C')
-        return recurso.comida;
-    if (tipo == 'B')
-        return recurso.basura;
-    return NULL;
-}
-
 char* conseguir_path_recurso_codigo(int codigo) {
 	switch(codigo) {
 		case OXIGENO:
@@ -450,7 +489,6 @@ char* conseguir_path_recurso_archivo(FILE* archivo) {
 	return NULL;
 
 }
-
 
 FILE* conseguir_archivo(char* path) {
 
@@ -497,29 +535,24 @@ int min (int a, int b) {
 
 
 int tamanio_archivo(char* path) {
-	if(es_recurso(path)) {
-		// log_warning(logger_mongo, "lockear tamaño");
-		lockearLectura(path);
-	}
+
+	lockear_recurso_lectura(path);
 	t_config* config = config_create(path);
 	int tam_archivo = config_get_int_value(config, "SIZE");
 	config_destroy(config);
-	if(es_recurso(path)) {
-		// log_warning(logger_mongo, "unlockear tamaño");
-		unlockear(path);
-	}
+	unlockear_recurso(path);
+
 	return tam_archivo;
 }
 
 uint32_t cantidad_bloques_recurso(char* path) {
-	// log_warning(logger_mongo, "lockear cantidad bloques");
+
 	lockearLectura(path);
 
 	t_config* config = config_create(path);
 	int cant_bloques = config_get_int_value(config, "BLOCK_COUNT");
 	config_destroy(config);
 
-	// log_warning(logger_mongo, "unlockear cantidad bloques");
 	unlockear(path);
 
 	return cant_bloques;
@@ -548,7 +581,7 @@ char* md5_archivo(char* path) {
 	int largo = strlen(path);
 	MD5_CTX c;
 	unsigned char digest[16];
-	char *out = (char*)malloc(33);
+	char* out = (char*)malloc(33);
 
 	MD5_Init(&c);
 
@@ -572,18 +605,16 @@ char* md5_archivo(char* path) {
 }
 
 uint32_t obtener_cantidad_bloques(char* path){
+
 	lockearLectura(path);
-	// log_warning(logger_mongo, "Lockeo cantidad bloques recurso");
 
 	t_config* config = config_create(path);
-
 	char** bloques = config_get_array_value(config, "BLOCKS");
 	int cant_bloques = contar_palabras(bloques);
 	config_destroy(config);
 	liberar_puntero_doble(bloques);
 
 	unlockear(path);
-	// log_warning(logger_mongo, "Unlockeo cantidad bloques recurso");
 
 	return cant_bloques;
 }
@@ -592,9 +623,8 @@ t_list* get_lista_bloques(char* path){
 	// ESTA FUNCION DEBE LIBERAR EL RETORNO
 
 	log_trace(logger_mongo, "Obteniendo la lista de bloques de %s", path);
-	if(es_recurso(path)){
-		lockearLectura(path);
-	}
+
+	lockear_recurso_lectura(path);
 
 	t_config* config = config_create(path);
 	t_list* lista_bloques = list_create();
@@ -603,12 +633,11 @@ t_list* get_lista_bloques(char* path){
 
 	if(bloques[0] == NULL){
 
-		log_error(logger_mongo, "EL path no tiene bloques");
+		log_trace(logger_mongo, "EL path dado no tiene bloques.");
 		config_destroy(config);
 		liberar_puntero_doble(bloques);
-		if(es_recurso(path)){
-			unlockear(path);
-		}
+
+		unlockear_recurso(path);
 		return lista_bloques;
 	}
 
@@ -620,39 +649,111 @@ t_list* get_lista_bloques(char* path){
 		list_add(lista_bloques, aux);
 	}
 
-	// log_warning(logger_mongo, "unlockear bloques");
 	config_destroy(config);
 	liberar_puntero_doble(bloques);
 
-	if(es_recurso(path)){
+	unlockear_recurso(path);
+
+	log_trace(logger_mongo, "Se devuelve la lista de bloques");
+	return lista_bloques;
+}
+
+void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques_a_agregar) {
+
+	log_debug(logger_mongo, "RECURSO");
+	if(tamanio >= 0)
+		agregar_tam(path, tamanio);
+	else
+		quitar_tam(path, tamanio);
+
+	int cant_bloques = cantidad_bloques_recurso(path);
+	set_cant_bloques(path, cant_bloques + cant_bloques_a_agregar); // Posible error de sincro
+
+	char caracter = caracter_llenado_archivo(path);
+	set_caracter_llenado(path, caracter);
+
+	if(cant_bloques != 0){
+		lockearLectura(path);
+		t_config* config = config_create(path);
+		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
 		unlockear(path);
+		char* cadena_aux = concatenar_numeros(cadena_blocks);
+		char* md5 = md5_archivo(cadena_aux);
+		set_md5(path, md5);
+		free(md5);
+		free(cadena_aux);
+		config_destroy(config);
+	} else {
+		// Esto no deberia pasar, ya no inicializamos archivos vacios, pero pendiente de revision
+		log_warning(logger_mongo, "MD5 INDEFINIDO");
+		set_md5(path, "INDEFINIDO"); // Que no se setee si no tiene bloques
 	}
 
-	log_error(logger_mongo, "Retorno la lista de bloques");
-	return lista_bloques;
+	log_debug(logger_mongo, "POST RECURSO");
 }
 
 void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* lista_bloques){
 
+	log_debug(logger_mongo, "RECURSO");
 	set_tam(path, tamanio);
 	set_cant_bloques(path, cant_bloques);
 	set_bloq(path, lista_bloques);
+
 	char caracter = caracter_llenado_archivo(path);
 	set_caracter_llenado(path, caracter);
 
-	t_config* config = config_create(path);
-	char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-	char* md5 = md5_archivo(cadena_blocks);
-	set_md5(path, md5);
-	config_destroy(config);
+	if(cant_bloques != 0){
+		lockearLectura(path);
+		t_config* config = config_create(path);
+		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
+		unlockear(path);
+		char* cadena_aux = concatenar_numeros(cadena_blocks);
+		char* md5 = md5_archivo(cadena_aux);
+		set_md5(path, md5);
+		free(md5);
+		free(cadena_aux);
+		config_destroy(config);
+	} else {
+		// Esto no deberia pasar, ya no inicializamos archivos vacios, pero pendiente de revision
+		log_warning(logger_mongo, "MD5 INDEFINIDO");
+		set_md5(path, "INDEFINIDO"); // Que no se setee si no tiene bloques
+	}
 
+	log_debug(logger_mongo, "POST RECURSO");
+}
+
+char* concatenar_numeros(char* cadena) {
+
+	int cantidad_numeros = 0;
+
+	for(int i = 0; i < strlen(cadena); i++) {
+		if (isdigit(cadena[i])) {
+			cantidad_numeros++;
+		}
+	}
+
+	char* cadena_aux = malloc((sizeof(char) * cantidad_numeros) + 1);
+
+	log_trace(logger_mongo, "Cadena es %s", cadena);
+
+	int j = 0;
+	for(int i = 0; i < strlen(cadena); i++) {
+		if (isdigit(cadena[i])) {
+			cadena_aux[j] = cadena[i];
+			j++;
+		}
+	}
+	cadena_aux[j] = '\0';
+
+	log_trace(logger_mongo, "Cadena aux es %s", cadena_aux);
+
+	return cadena_aux;
 }
 
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* list_bloques) {
 
 	set_tam(path, tamanio);
 	set_bloq(path, list_bloques);
-
 }
 
 int es_recurso(char* path) {
@@ -675,10 +776,13 @@ void asignar_bloque_recurso(char* path, int* pos_libre) {
 
 	uint32_t tamanio = tamanio_archivo(path);
 	uint32_t cantidad_bloques = cantidad_bloques_recurso(path);
-	log_trace(logger_mongo, "cantidad de bloques: %i, sera aumentada", cantidad_bloques);
+	log_trace(logger_mongo, "Cantidad de bloques inicial es %i, sera aumentada.", cantidad_bloques);
 	t_list* lista_bloques = get_lista_bloques(path);
 
-	list_add(lista_bloques, pos_libre);
+	// NO CAMBIEN ESTO, DEJENLO COMO ESTA
+	int* aux = malloc(sizeof(int));
+	*aux = *pos_libre;
+	list_add(lista_bloques, aux);
 
 	/*// PRINTEO DE TESTEO
 	int* aux;
@@ -691,34 +795,34 @@ void asignar_bloque_recurso(char* path, int* pos_libre) {
 	*/
 
 	iniciar_archivo_recurso(path, tamanio, cantidad_bloques + 1, lista_bloques);
+	matar_lista(lista_bloques);
 }
 
-void asignar_bloque_tripulante(char* path, int* pos_libre, int size_agregado) {
+void asignar_bloque_tripulante(char* path, int* pos_libre) {
 
 	uint32_t tamanio = tamanio_archivo(path);
 	t_list* lista_bloques = get_lista_bloques(path);
 
-	// log_debug(logger_mongo, "Tamanio de la lista antes de agregar: %i", list_size(lista_bloques));
-	list_add(lista_bloques, pos_libre);
-	// log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
+	log_debug(logger_mongo, "Tamanio de la lista antes de agregar: %i", list_size(lista_bloques));
+	int* aux = malloc(sizeof(int));
+	*aux = *pos_libre;
+	list_add(lista_bloques, aux);
+	log_debug(logger_mongo, "Tamanio de la lista luego de agregar: %i", list_size(lista_bloques));
 
 	escribir_archivo_tripulante (path, tamanio, lista_bloques);
+	matar_lista(lista_bloques);
 }
 
 uint32_t bloques_contar(char caracter) {
 
-//	log_trace(logger_mongo, "Contando ando");
+ 	log_trace(logger_mongo, "Por contar cantidad de bloques.");
 	int cantidad = 0;
 
 	char* path = tipo_a_path(caracter);
-//	log_trace(logger_mongo, "tengo el path");
 	t_list* bloques = get_lista_bloques(path);
-//	log_trace(logger_mongo, "tengo los bloques");
 	int* aux;
 
-	// log_warning(logger_mongo, "Lockeo blocks para contar bloques");
-	lockearLectura(path_blocks);
-//	log_trace(logger_mongo, "lockeado el path_blocks");
+	// lockearLectura(path_blocks);
 
 	for(int i = 0 ; i < list_size(bloques); i++){
 		aux = list_get(bloques, i);
@@ -727,25 +831,25 @@ uint32_t bloques_contar(char caracter) {
 				cantidad++;
 			}
 		}
-
 	}
 
-	// log_warning(logger_mongo, "Unlockeo blocks para contar bloques");
-	unlockear(path_blocks);
-//	log_trace(logger_mongo, "Ya conté");
+	log_trace(logger_mongo, "Se contaron bloques, son %i", cantidad);
+	matar_lista(bloques);
+
+	// unlockear(path_blocks);
+
 	return cantidad;
 }
 
+char* crear_puntero_a_bitmap_fd(){
 
-char* crear_puntero_a_bitmap(){
 	// EL RETORNO SE DEBE LIBERAR
 	char* puntero_a_bitmap = malloc(CANTIDAD_BLOQUES / 8);
-	// log_warning(logger_mongo, "Lockeo superbloque para crear puntero a bitmap");
+
 	lockearLectura(path_superbloque);
-	fseek(directorio.superbloque, sizeof(uint32_t)*2, SEEK_SET);
-	fread(puntero_a_bitmap, CANTIDAD_BLOQUES/8, 1, directorio.superbloque);
+    memcpy(puntero_a_bitmap, directorio.supermapa + 8, CANTIDAD_BLOQUES/8);
 	unlockear(path_superbloque);
-	// log_warning(logger_mongo, "Unlockeo superbloque para crear puntero a bitmap");
+
 	return puntero_a_bitmap;
 }
 
@@ -756,23 +860,31 @@ void limpiar_metadata(char* path) {
 
 void liberar_bloques(char* path) {
 
+	log_info(logger_mongo, "Se liberan los bloques asociados al path %s", path);
+
 	t_list* bloques = get_lista_bloques(path);
 	int* nro_bloque;
+
 	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
 		liberar_bloque(path, *nro_bloque);
 		blanquear_bloque(*nro_bloque);
 	}
+
+	matar_lista(bloques);
 }
 
 void blanquear_bloque(int bloque){
-	// log_warning(logger_mongo, "lockeo path blocks");
-	lockearEscritura(path_blocks);
+
+	log_trace(logger_mongo, "Se llena de centinelas el bloque %i", bloque);
+
+	// lockearEscritura(path_blocks);
+
 	for(int i = 0; i < TAMANIO_BLOQUE; i++){
 		*(directorio.mapa_blocks + bloque * TAMANIO_BLOQUE + i) = ',';
 	}
-	unlockear(path_blocks);
-	// log_warning(logger_mongo, "unlockeo path blocks");
+
+	// unlockear(path_blocks);
 }
 
 void liberar_bloque(char* path, uint32_t nro_bloque) {
@@ -782,17 +894,20 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
 
 	for(int i = 0; i < list_size(bloques) ; i++) {
+
 		nro_bloque_aux = list_get(bloques, i);
+
 		if (nro_bloque == *nro_bloque_aux) {
 			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
 
-			reescribir_bitmap(nuevo_bitmap);
+			reescribir_bitmap_fd(nuevo_bitmap);
 
 			bool quitar_bloque(void* elemento1){
 				return (nro_bloque == *((int*) elemento1));
 			}
 
-			list_remove_by_condition(bloques, quitar_bloque);
+			int* aux = list_remove_by_condition(bloques, quitar_bloque);
+			free(aux);
 
 			if(es_recurso(path)){
 				set_bloq(path, bloques);
@@ -801,20 +916,53 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 		}
 	}
 
-	bool quitar_bloque_de_lista(void* bloque){
-		return *((int*) bloque) == nro_bloque;
+	bool quitar_bloque(void* elemento1){
+		return (nro_bloque == *((int*) elemento1));
 	}
 
-	list_remove_by_condition(lista_bloques_ocupados, quitar_bloque_de_lista);
-	// liberar lista
+	int* aux = monitor_lista(sem_lista_bloques_ocupados, (void*) list_remove_by_condition, lista_bloques_ocupados, (void*) quitar_bloque);
+	free(aux);
+
+	matar_lista(bloques);
 	free(nuevo_bitmap->bitarray);
 	bitarray_destroy(nuevo_bitmap);
 }
 
+void agregar_tam(char* path, int tamanio) {
+	lockear_recurso_escritura(path);
+
+	t_config* config = config_create(path);
+	config_save_in_file(config, path);
+	int tamanio_viejo = config_get_int_value(config, "SIZE");
+	tamanio_viejo += tamanio;
+	char* aux = string_itoa(tamanio_viejo);
+	config_set_value(config, "SIZE", aux);
+	free(aux);
+	config_save(config);
+	config_destroy(config);
+
+	unlockear_recurso(path);
+}
+
+void quitar_tam(char* path, int tamanio) {
+	lockear_recurso_escritura(path);
+
+	t_config* config = config_create(path);
+	config_save_in_file(config, path);
+	int tamanio_viejo = config_get_int_value(config, "SIZE");
+	tamanio_viejo += tamanio;
+	char* aux = string_itoa(tamanio_viejo);
+	config_set_value(config, "SIZE", aux);
+	free(aux);
+	config_save(config);
+	config_destroy(config);
+
+	unlockear_recurso(path);
+}
+
 void set_tam(char* path, int tamanio){
 
-	lockearEscritura(path);
-	// log_warning(logger_mongo, "Lockeo set_tam");
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
@@ -824,26 +972,24 @@ void set_tam(char* path, int tamanio){
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
-	// log_warning(logger_mongo, "Unlockeo set_tam");
+	unlockear_recurso(path);
 }
 
 void set_bloq(char* path, t_list* lista){
 
-	if(es_recurso(path)){
-		lockearEscritura(path);
-	}
-
-	// log_warning(logger_mongo, "Lockeo set_bloq");
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 
-	log_debug(logger_mongo, "la lista de bloques es %s", config_get_string_value(config, "BLOCKS"));
+	log_debug(logger_mongo, "la lista de bloques a escribir en archivo es %s", config_get_string_value(config, "BLOCKS"));
 
 	t_list* list_aux;
+
 	if(lista == NULL){
 		list_aux = list_create();
-	} else{
+	}
+
+	else {
 		t_list* nueva = lista;
 		list_aux = list_duplicate(nueva);
 	}
@@ -852,14 +998,13 @@ void set_bloq(char* path, t_list* lista){
 	char* lista_bloques;
 
 	if(list_aux == NULL || list_is_empty(list_aux)){
-	    // log_trace(logger_mongo, "empty");
 
 		lista_bloques = malloc(2 + 1);
 		strcpy(lista_bloques, "[]");
 
-	} else {
+	}
+	else {
 
-		// log_trace(logger_mongo, "Not empty %i", list_is_empty(list_aux));
 		int comas = max(list_size(list_aux)-1, 0);
 		int cant_numeros = 0;
 
@@ -873,11 +1018,11 @@ void set_bloq(char* path, t_list* lista){
 		lista_bloques = malloc(2 + cant_numeros + comas + 1);
 		strcpy(lista_bloques, "[");
 
-		// log_error(logger_mongo, "printeando lista");
-		// for(int i = 0; i < list_size(list_aux); i++){
-			// aux = list_get(list_aux, i);
-			// log_error(logger_mongo, "valor %i, %i", i, *aux);
-		// }
+		/* log_trace(logger_mongo, "printeando lista");
+		for(int i = 0; i < list_size(list_aux); i++){
+			aux = list_get(list_aux, i);
+			log_error(logger_mongo, "valor %i, %i", i, *aux);
+		} */
 
 		for(int i = 0; i < list_size(list_aux); i++){
 			aux = list_get(list_aux, i);
@@ -889,12 +1034,12 @@ void set_bloq(char* path, t_list* lista){
 				strcat(lista_bloques, ",");
 			}
 		}
-		strcat(lista_bloques, "]");
 
+		strcat(lista_bloques, "]");
 	}
 
 	config_set_value(config, "BLOCKS", lista_bloques);
-	// log_debug(logger_mongo, "la lista de bloques queda %s", config_get_string_value(config, "BLOCKS"));
+	log_trace(logger_mongo, "La lista de bloques se escribio como %s", config_get_string_value(config, "BLOCKS"));
 
 	config_save_in_file(config, path);
 	config_destroy(config);
@@ -902,57 +1047,97 @@ void set_bloq(char* path, t_list* lista){
 	liberar_lista(list_aux);
 
 	free(lista_bloques);
-	if(es_recurso(path)){
-		unlockear(path);
-	}
-	// log_warning(logger_mongo, "Unlockeo set_bloq");
 
+	unlockear_recurso(path);
 }
 
 
 void set_cant_bloques(char* path, int cant){
 
-	lockearEscritura(path);
-	// log_warning(logger_mongo, "Lockeo set_cant_bloques");
+	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
-	config_set_value(config, "BLOCK_COUNT", string_itoa(cant));
+	char* aux = string_itoa(cant);
+	config_set_value(config, "BLOCK_COUNT", aux);
+	free(aux);
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
-	// log_warning(logger_mongo, "Unlockeo set_cant_bloques");
-
+	unlockear_recurso(path);
 }
 
 void set_caracter_llenado(char* path, char caracter){
-	lockearEscritura(path);
+
+	lockear_recurso_escritura(path);
+
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 
 	char* caracter_string = malloc(sizeof(char)*2);
 	*caracter_string = caracter;
 	*(caracter_string+1) = '\0';
-
 	config_set_value(config, "CARACTER_LLENADO", caracter_string);
 	config_save(config);
+
 	config_destroy(config);
 	free(caracter_string);
-	unlockear(path);
+
+	unlockear_recurso(path);
 }
 
 void set_md5(char* path, char* md5){
 
-	lockearEscritura(path);
-	// log_warning(logger_mongo, "Lockeo set_md5");
-
+	lockear_recurso_escritura(path);
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 	config_set_value(config, "MD5_ARCHIVO", md5);
 	config_save(config);
 	config_destroy(config);
 
-	unlockear(path);
-	// log_warning(logger_mongo, "Unlockeo set_md5");
+	unlockear_recurso(path);
+}
+
+
+void lockear_recurso_lectura(char* path){
+	if(es_recurso(path)){
+		if(!strcmp(path, path_basura)){
+			if(existe_basura){
+				log_warning(logger_mongo, "existe basura lectura");
+				lockearLectura(path);
+				log_warning(logger_mongo, "salgo basura lectura");
+			}
+		} else {
+			lockearLectura(path);
+		}
+	}
+}
+
+void lockear_recurso_escritura(char* path){
+
+	if(es_recurso(path)){
+		if(!strcmp(path, path_basura)){
+			if(existe_basura){
+				log_warning(logger_mongo, "existe basura escritura");
+				lockearEscritura(path);
+				log_warning(logger_mongo, "salgo basura escritura");
+			}
+		} else {
+			lockearEscritura(path);
+		}
+	}
+}
+
+void unlockear_recurso(char* path){
+	if(es_recurso(path)){
+		if(!strcmp(path, path_basura)){
+			if(existe_basura){
+				log_warning(logger_mongo, "existe basura unlockeo");
+				unlockear(path);
+				log_warning(logger_mongo, "salgo existe basura unlockeo");
+			}
+		} else {
+			unlockear(path);
+		}
+	}
 }

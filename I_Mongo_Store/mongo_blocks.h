@@ -53,7 +53,7 @@ typedef struct {
     FILE* superbloque;
     FILE* blocks;
     char* mapa_blocks;
-
+    char* supermapa;
 } t_directorio;
 
 typedef struct {
@@ -80,6 +80,7 @@ pthread_mutex_t mutex_oxigeno;
 pthread_mutex_t mutex_comida;
 pthread_mutex_t mutex_basura;
 pthread_mutex_t mutex_blocks;
+extern pthread_mutex_t sem_lista_bloques_ocupados;
 
 extern t_log* logger_mongo;
 extern t_config* config_mongo;
@@ -88,17 +89,18 @@ extern t_list* bitacoras;
 extern t_list* lista_bloques_ocupados;
 extern char* mapa;
 
-void iniciar_superbloque(FILE* archivo); // testeado
+void iniciar_superbloque_fd(int filedescriptor_superbloque);
 void iniciar_blocks(int filedescriptor_blocks); // testeado
 void inicializar_mapa(); // testeado
 uint32_t obtener_tamanio_bloque_superbloque(); // testeado
 uint32_t obtener_cantidad_bloques_superbloque(); // testeado
 t_bitarray* obtener_bitmap(); // TESTEADO
-char* crear_puntero_a_bitmap(); // TESTEADO
-void reescribir_superbloque(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap); // TESTEADO
+char* crear_puntero_a_bitmap_fd();
+void reescribir_superbloque_fd(uint32_t tamanio, uint32_t cantidad, t_bitarray* bitmap);
 void actualizar_bitmap(t_list* bloques_ocupados); // TESTEADO
 void reemplazar(t_list* lista, int index, void* elemento); // TESTEADO y patear a generales
-void reescribir_bitmap(t_bitarray* bitmap);
+void reescribir_bitmap_fd(t_bitarray* bitmap);
+void sincronizar_map();
 
 void set_bloq(char* path, t_list* lista); // TESTEADO
 void set_tam(char* path, int tamanio); // TESTEADO
@@ -117,5 +119,6 @@ void lockearEscritura(char*);
 void unlockear(char*);
 void  verificarExistencia(char*);
 void liberar_lista(t_list* lista);
+void matar_lista(t_list* lista);
 
 #endif

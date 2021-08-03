@@ -6,25 +6,39 @@
  */
 
 #include "i_mongo_store.h"
+#include <semaphore.h>
 
 int socket_discordiador;
 char** posiciones_sabotajes;
 t_list* lista_bloques_ocupados;
-int sistema_activo = 1;
+sem_t sistema_activo;
+sem_t sem_llenar_bloque_recurso;
+sem_t sem_quitar_ultimo_bloque_libre;
+
+pthread_mutex_t sem_lista_bloques_ocupados;
+pthread_mutex_t sem_bitacoras;
+pthread_mutex_t sem_diccionario;
+pthread_mutex_t sem_existencial;
 
 int main(int argc, char** argv){
 
 	// Se crean estructuras de registro y configuracion
-	logger_mongo = log_create("mongo.log", "i_mongo_store", 1, 0); // Corregir nombres
+	logger_mongo = log_create("i_mongo_store.log", "i_mongo_store", 1, 0);
 	config_mongo = config_create("i_mongo_store.config");
 	config_superbloque = config_create("superbloque.config");
 	signal(SIGUSR1, sabotaje);
 	posiciones_sabotajes = POSICIONES_SABOTAJE;
 	lista_bloques_ocupados = list_create();
+    sem_init(&sistema_activo, 0, 0);
+    sem_init(&sem_llenar_bloque_recurso, 0, 1);
+    sem_init(&sem_quitar_ultimo_bloque_libre, 0, 1);
+	pthread_mutex_init(&sem_lista_bloques_ocupados, NULL);
+	pthread_mutex_init(&sem_bitacoras, NULL);
+	pthread_mutex_init(&sem_diccionario, NULL);
+	pthread_mutex_init(&sem_existencial, NULL);
 
-	FILE* f = fopen("mongo.log", "w");
+	FILE* f = fopen("i_mongo_store.log", "w");
     fclose(f);
-
 	// Se crea la lista de bitacoras para los tripulantes, lista actua de registro para saber que tripulantes poseen bitacora en Mongo
 	bitacoras = list_create();
 
@@ -44,19 +58,20 @@ int main(int argc, char** argv){
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);
 
-	while(sistema_activo){
-		sleep(1);
-	}
+    sem_wait(&sistema_activo);
 
+	list_iterate(bitacoras, matar_bitacora);
+	sincronizar_map();
+
+	matar_lista(lista_bloques_ocupados);
+    sem_destroy(&sistema_activo);
+	pthread_mutex_destroy(&sem_lista_bloques_ocupados);
 	log_info(logger_mongo, "Apagando...");
-
-	// Se cierran vestigios del pasado
+	sleep(1);
 	log_info(logger_mongo, "Cerrando archivos");
 	cerrar_archivos();
 	close(socket_oyente);
 	list_destroy(bitacoras);
-	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.");
-	log_destroy(logger_mongo);
 	config_destroy(config_mongo);
 	config_destroy(config_superbloque);
 	free(path_superbloque);
@@ -66,6 +81,8 @@ int main(int argc, char** argv){
 	free(path_comida);
 	free(path_oxigeno);
 	free(path_bitacoras);
+	log_info(logger_mongo, "El I_Mongo_Store finalizo su ejecucion.");
+	log_destroy(logger_mongo);
 }
 
 void escuchar_mongo(void* args) {
@@ -80,14 +97,14 @@ void escuchar_mongo(void* args) {
     int socket_especifico;
 
     if (listen(socket_escucha, LIMIT_CONNECTIONS) == -1)
-        log_info(logger_mongo, "Error al configurar recepcion de mensajes\n");
+        log_error(logger_mongo, "Error al configurar recepcion de mensajes\n");
 
     struct sigaction sa;
     sa.sa_handler = sigchld_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-        log_info(logger_mongo, "Error al limpiar procesos\n");
+    	log_error(logger_mongo, "Error al limpiar procesos\n");
         exit(1);
     }
 
@@ -103,6 +120,8 @@ void escuchar_mongo(void* args) {
        		es_discordiador = 0; // Se cambia flujo para que los subsiguientes sean tripulantes
        		socket_discordiador = socket_especifico;
 
+       		log_info(logger_mongo, "Se ha conectado el modulo Discordiador.");
+
        		pthread_t hilo_disc;
        		pthread_create(&hilo_disc, NULL, (void*) manejo_discordiador, NULL);
        		pthread_detach(hilo_disc);
@@ -111,6 +130,9 @@ void escuchar_mongo(void* args) {
        	else { // Flujo para tripulantes
        		hilo_tripulante* parametros = malloc(sizeof(hilo_tripulante));
        		parametros->socket = socket_especifico;
+
+       		log_info(logger_mongo, "Se ha conectado un tripulante.");
+
        		pthread_t un_hilo_tripulante;
        		pthread_create(&un_hilo_tripulante, NULL, (void*) manejo_tripulante, (void *) parametros);
        		pthread_detach(un_hilo_tripulante);
@@ -130,17 +152,18 @@ void manejo_discordiador(){
 
 		switch(mensaje->codigo_operacion) {
 			case PEDIR_BITACORA:
-				log_trace(logger_mongo, "Nos piden una bitacora");
+				log_trace(logger_mongo, "Se solicita bitacora");
 				t_bitacora* bitacora_tripulante = obtener_bitacora(mensaje->tid);
 				if(bitacora_tripulante != NULL){
 					char* bitacora = rescatar_bitacora(bitacora_tripulante->path);
 					if(bitacora == NULL){
-						log_info(logger_mongo, "El tripulante no tenia nada en la bitacora.");
+						log_warning(logger_mongo, "La bitacora se encuentra vacia.");
 						enviar_codigo(FALLO, socket_discordiador);
-						log_debug(logger_mongo, "Envio un fallo.");
+						log_trace(logger_mongo, "Se envia un fallo a Discordiador.");
 
-					} else {
-						log_info(logger_mongo, "Conseguimos la bitacora.");
+					}
+					else {
+						log_trace(logger_mongo, "Se obtiene bitacora.");
 						t_archivo_tareas texto_archivo;
 						texto_archivo.texto = malloc(strlen(bitacora) + 1);
 						strcpy(texto_archivo.texto, bitacora);
@@ -149,33 +172,37 @@ void manejo_discordiador(){
 
 						t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);
 						empaquetar_y_enviar(b_bitacora, BITACORA, socket_discordiador);
-						log_debug(logger_mongo, "Enviada bitacora del tripulante %i", mensaje->tid);
+						log_info(logger_mongo, "Se envio la bitacora del tripulante %i", mensaje->tid);
 					}
-				} else {
-					log_debug(logger_mongo, "El tripulante no tenia bitacora.");
+				}
+				else {
+					log_trace(logger_mongo, "No existe la bitacora solicitada.");
 					enviar_codigo(FALLO, socket_discordiador);
+					log_trace(logger_mongo, "Se envia un fallo a Discordiador.");
 				}
 				break;
 
 			case REPARADO:
+				log_info(logger_mongo, "Ejecutando el protocolo FSCK");
+			    sleep(3);
 				reparar();
-				log_warning(logger_mongo, "Se reparo el sabotaje.");
+				log_info(logger_mongo, "Se reparo el sabotaje.");
 				break;
 
 			case FALLO:
-				log_warning(logger_mongo, "No se pudo reparar el sabotaje.");
+				log_error(logger_mongo, "No se pudo reparar el sabotaje.");
 				break;
 
 			case DESCONEXION:
 				log_info(logger_mongo, "Se desconecto un cliente.");
 				flag = 0;
-				sistema_activo = 0;
+				sem_post(&sistema_activo);
 				// close(socket_discordiador);
 				break;
 
 			default:
 				log_info(logger_mongo, "Se recibio un codigo invalido.");
-				log_info(logger_mongo, "El codigo es %d", mensaje->codigo_operacion);
+				log_trace(logger_mongo, "El codigo es %d", mensaje->codigo_operacion);
 				break;
 		}
 		free(mensaje);
@@ -191,7 +218,7 @@ void sabotaje(int n) {
 }
 
 void iniciar_file_system() {
-	log_trace(logger_mongo, "INICIO iniciar_file_system");
+	log_trace(logger_mongo, "Se busca iniciar el FileSystem.");
 	// Se crea estructura para verificar directorios
 	struct stat dir = {0};
 
@@ -210,7 +237,7 @@ void iniciar_file_system() {
 
 	// Se verifica si ya tengo carpetas hechas, o sea, un filesystem
 	if ((stat(path_directorio, &dir) != -1)) {
-		log_info(logger_mongo, "Se detecto un FileSystem existente.\n");
+		log_info(logger_mongo, "Se detecto un FileSystem existente.");
 		inicializar_archivos_preexistentes();
 	}
 	else {
@@ -218,7 +245,7 @@ void iniciar_file_system() {
 		mkdir(path_directorio, (mode_t) 0777);
 		mkdir(path_files, (mode_t) 0777);
 		mkdir(path_bitacoras, (mode_t) 0777);
-		log_info(logger_mongo, "Se creo un FileSystem.\n");
+		log_info(logger_mongo, "Se creo un FileSystem.");
 		// Se asignan los archivos como antes
 		inicializar_archivos();
 	}
@@ -232,13 +259,15 @@ void iniciar_file_system() {
 void sincronizar_blocks() {
 
 	while(1) {
-		memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
-		msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
+		lockearEscritura(path_blocks);
+		sincronizar_map();
+		unlockear(path_blocks);
 		for(int i = 0; i < TIEMPO_SINCRONIZACION; i++){
 			sleep(1);
-			if(!sistema_activo){
-				pthread_exit(NULL);
-			}
+			// TODO cambiar
+			// if(!sistema_activo){
+				// pthread_exit(NULL);
+			// }
 		}
 	}
 }
@@ -258,9 +287,55 @@ void cerrar_archivos() {
 }
 
 void liberar_lista(t_list* lista){
-	if(list_is_empty(lista)){
-		list_destroy_and_destroy_elements(lista, free);
-	}else{
+	log_trace(logger_mongo, "Liberando lista");
+	if(lista == NULL){
+		// log_info(logger_mongo, "NULL");
+		// No hacer nada, aunque no se deberia cometer este error
+	} else if (list_is_empty(lista)){
+		// log_info(logger_mongo, "VOID");
 		list_destroy(lista);
+	} else if (list_size(lista) > 0){
+		// log_info(logger_mongo, "PEOPLE");
+		list_destroy(lista);
+		// log_info(logger_mongo, "FUERA");
+
+//		list_destroy_and_destroy_elements(lista, free);
+	} else{
+		// log_info(logger_mongo, "NADA");
 	}
+}
+
+
+void matar_lista(t_list* lista){
+	log_trace(logger_mongo, "Matando lista");
+	if(lista == NULL){
+		// No hacer nada, aunque no se deberia cometer este error
+	} else if (list_is_empty(lista)){
+		// log_info(logger_mongo, "solo lista.");
+		list_destroy(lista);
+	} else if (list_size(lista) > 0){
+		// log_info(logger_mongo, "y todos sus elementos.");
+		void liberar(void* elemento){
+			free(elemento);
+		}
+
+		list_destroy_and_destroy_elements(lista, liberar);
+	} else{
+		// log_info(logger_mongo, "NADA.");
+	}
+	// log_info(logger_mongo, "matada lista");
+
+}
+
+void matar_bitacora(void* una_bitacora) {
+	t_bitacora* bitacora = (t_bitacora*) una_bitacora;
+	log_debug(logger_mongo, "Se borra la bitacora %s", bitacora->path);
+	liberar_bloques(bitacora->path);
+	liberar_lista(bitacora->bloques);
+	borrar_bitacora(bitacora->tripulante);
+}
+
+void sincronizar_map(){
+	memcpy(mapa, directorio.mapa_blocks, CANTIDAD_BLOQUES * TAMANIO_BLOQUE);
+	msync(mapa, CANTIDAD_BLOQUES * TAMANIO_BLOQUE, MS_SYNC);
 }
