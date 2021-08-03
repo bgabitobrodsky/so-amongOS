@@ -281,15 +281,15 @@ int existe_archivo(int codigo_archivo) {
 }
 
 void alterar_wrap(int codigo_archivo, int cantidad) {
-	pthread_mutex_lock(&sem_existencial);
 	if(codigo_archivo == BASURA){
+		pthread_mutex_lock(&sem_existencial);
 		if(existe_basura){
 			alterar( codigo_archivo, cantidad);
 		}
+		pthread_mutex_unlock(&sem_existencial);
 	} else{
 		alterar( codigo_archivo, cantidad);
 	}
-	pthread_mutex_unlock(&sem_existencial);
 }
 
 void alterar(int codigo_archivo, int cantidad) {
@@ -667,7 +667,7 @@ void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques_a_agrega
 		quitar_tam(path, tamanio);
 
 	int cant_bloques = cantidad_bloques_recurso(path);
-	set_cant_bloques(path, cant_bloques + cant_bloques_a_agregar); //Posible error de sincro
+	set_cant_bloques(path, cant_bloques + cant_bloques_a_agregar); // Posible error de sincro
 
 	char caracter = caracter_llenado_archivo(path);
 	set_caracter_llenado(path, caracter);
