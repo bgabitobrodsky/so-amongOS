@@ -142,10 +142,10 @@ int main() {
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaD.txt 0|8");
     iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");*/
 
-    iniciar_planificacion();
+    /*iniciar_planificacion();
     for(int i = 0; i < 1; i++){
         ejecutar_tarea("estabilidad_general.txt");
-    }
+    }*/
     //iniciar_patota("INICIAR_PATOTA 10 ES3_Patota1.txt 9|9 0|0 5|5");
     
     // ejecutar_tarea("test_sin_entrada_salida");
