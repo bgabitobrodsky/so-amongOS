@@ -136,10 +136,21 @@ int main() {
     }
 
     // iniciar_planificacion();
-    // ejecutar_tarea("estabilidad_general.txt");
-    // ejecutar_tarea("test_sin_entrada_salida");
+    /*iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
+    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
+    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaC.txt 8|8");
+    iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaD.txt 0|8");
+    iniciar_patota("INICIAR_PATOTA 1 ZJavier.ims 0|8");*/
 
+    iniciar_planificacion();
+    for(int i = 0; i < 1; i++){
+        ejecutar_tarea("estabilidad_general.txt");
+    }
+    //iniciar_patota("INICIAR_PATOTA 10 ES3_Patota1.txt 9|9 0|0 5|5");
+    
+    // ejecutar_tarea("test_sin_entrada_salida");
     // iniciar_patota("INICIAR_PATOTA 10 Random.ims");
+
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);

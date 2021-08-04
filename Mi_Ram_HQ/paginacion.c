@@ -201,6 +201,9 @@ int escribir_en_marco(marco* marco, void* data, int offset, int tam){
 }
 
 void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
+	if(tam <= 0){
+		return NULL;
+	}
 	void* data = malloc(tam); // puntero a retornar con la info solicitada
 	pagina* pagina; 
 	int faltante = tam;
@@ -667,11 +670,6 @@ void desbloquear_paginas_en_memoria(){
 	list_iterate(marcos,page_unlocker);
 }
 
-
-
-test(){
-
-}
 
 void imprimir_paginas(int pid){
     tabla_paginas* tabla = buscar_tabla(pid);

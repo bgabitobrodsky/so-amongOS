@@ -464,7 +464,6 @@ t_TCB* buscar_tcb_por_tid(int tid){
 			t_buffer* buffer = malloc(sizeof(t_buffer));
 			buffer->estructura = rescatar_de_paginas(tabla, (int) dictionary_get(tabla->dl_tcbs,stid), 21, pid);
 			tcb_recuperado = deserializar_tcb(buffer);
-			log_info(logger, "[MIRAMEEE]: mi dl de siguiente instruccion es: %d", tcb_recuperado->siguiente_instruccion);
 			free(buffer->estructura);
 			free(buffer);
 		}else{
@@ -598,7 +597,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		int dl_tarea_tcb = tcb->siguiente_instruccion;
 		//log_info(logger, "DL de la siguiente instruccion: %d", dl_tarea_tcb);
 
-		char* str_tareas = rescatar_de_paginas(tabla, 0, tabla->dl_pcb , pid); // 0 porque las tareas siempre estan al inicio de todo
+		/*char* str_tareas = rescatar_de_paginas(tabla, 0, tabla->dl_pcb , pid); // 0 porque las tareas siempre estan al inicio de todo
 		char** palabras = string_split(str_tareas, "\n");
 
 		if(palabras[dl_tarea_tcb] == NULL){
@@ -614,6 +613,38 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		tarea = crear_tarea(str_tarea);
 
 		tcb->siguiente_instruccion++; // a la siguiente tarea del split
+
+		char stid[8];
+		sprintf(stid, "%d", tid);
+		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
+		
+		t_buffer* buffer = serializar_tcb(*tcb);
+		sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, buffer->tamanio_estructura, pid);
+		free(buffer->estructura);
+		free(buffer);*/
+
+		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tabla->dl_pcb - dl_tarea_tcb , pid); // 0 porque las tareas siempre estan al inicio de todo
+		if(str_tareas == NULL){
+			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
+			free(tcb);
+			desbloquear_tabla(tabla);
+			return NULL;
+		}
+		char** palabras = string_split(str_tareas, "\n");
+
+		if(palabras[0] == NULL){
+			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
+			free(tcb);
+			liberar_puntero_doble(palabras);
+			free(str_tareas);
+			desbloquear_tabla(tabla);
+			return NULL;
+		}
+		char* str_tarea = palabras[0];
+		log_info(logger, "Tarea para TID: %d encontrada: %s", tid, str_tarea);
+		tarea = crear_tarea(str_tarea);
+
+		tcb->siguiente_instruccion += strlen(str_tarea) + 1; // a la siguiente tarea del split
 
 		char stid[8];
 		sprintf(stid, "%d", tid);
@@ -738,7 +769,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		
 		// no me traigo el tcb actual sino sobreescribo directamente sus paginas
 		
-		t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
+		/*t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
 		if(tcb == NULL){
 			free(tcb);
 			return 0;
@@ -753,7 +784,17 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		int result = sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, 21, pid);
 		free(buffer->estructura);
 		free(buffer);
-		free(tcb);
+		free(tcb);*/
+
+		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
+		if(dl_tcb == NULL){
+			desbloquear_tabla(tabla);
+			return NULL;
+		}
+		t_buffer* buffer = serializar_tcb(*nuevo_tcb);
+		int result = sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, 13, pid);
+		free(buffer->estructura);
+		free(buffer);
 
 		if(!result){
 			desbloquear_tabla(tabla);
