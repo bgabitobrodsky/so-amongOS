@@ -283,11 +283,14 @@ int existe_archivo(int codigo_archivo) {
 void alterar_wrap(int codigo_archivo, int cantidad) {
 	if(codigo_archivo == BASURA){
 		pthread_mutex_lock(&sem_existencial);
-		if(existe_basura){
+
+		//if (existe_basura) {
 			alterar( codigo_archivo, cantidad);
-		}
+		//}
+
 		pthread_mutex_unlock(&sem_existencial);
-	} else{
+	}
+	else {
 		alterar( codigo_archivo, cantidad);
 	}
 }
@@ -348,15 +351,15 @@ void alterar(int codigo_archivo, int cantidad) {
 
 
 void descartar_basura() {
-	pthread_mutex_lock(&sem_existencial);
+	//pthread_mutex_lock(&sem_existencial);
 	if(existe_basura){
 		liberar_bloques(path_basura);
-		// fclose(recurso.basura);
+		fclose(recurso.basura); // Estaba comentado
 		remove(path_basura);
 		existe_basura = 0;
 		log_info(logger_mongo, "Se elimino el archivo Basura.");
 	}
-	pthread_mutex_unlock(&sem_existencial);
+	//pthread_mutex_unlock(&sem_existencial);
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
