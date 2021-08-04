@@ -37,7 +37,7 @@ void manejo_tripulante(void* socket) {
 			else if(mensaje->codigo_operacion > BITACORA && mensaje->codigo_operacion < MOVIMIENTO){
 				log_info(logger_mongo, "Pedido alterar la cantidad de recurso %s", conseguir_tipo(conseguir_char(mensaje->codigo_operacion))); // Revisar
 				log_trace(logger_mongo, "Numero de codigo: %i", mensaje->codigo_operacion);
-				alterar(mensaje->codigo_operacion, mensaje->cantidad); 
+				alterar_wrap(mensaje->codigo_operacion, mensaje->cantidad);
 			}
 		}
 
@@ -46,6 +46,7 @@ void manejo_tripulante(void* socket) {
 			log_info(logger_mongo, "Se desconecto un tripulante.");
 			free(posicion_tripulante);
 			free(mensaje);
+			free(socket);
 			// Aca finalizaria el hilo creado por el tripulante al conectarse a Mongo
 			pthread_exit(NULL);
 		}
@@ -122,7 +123,7 @@ void acomodar_bitacora(FILE* file_tripulante, char* path_tripulante, t_TCB* tcb)
 
 	monitor_lista(sem_bitacoras, (void*) list_add, bitacoras, nueva_bitacora);
 
-	asignar_nuevo_bloque(nueva_bitacora->path, 0);
+	asignar_nuevo_bloque(nueva_bitacora->path);
 }
 
 void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
@@ -242,7 +243,7 @@ void escribir_bitacora(t_bitacora* bitacora, char* mensaje) {
 		log_trace(logger_mongo, "La lista de bloques esta vacia.");
 		log_trace(logger_mongo, "Se asigna un nuevo bloque..");
 		list_destroy(lista_bloques);
-		asignar_nuevo_bloque(bitacora->path, strlen(mensaje));
+		asignar_nuevo_bloque(bitacora->path);
 		lista_bloques = get_lista_bloques(bitacora->path);
 	}
 
@@ -285,7 +286,7 @@ void escribir_bloque_bitacora(char* mensaje, t_bitacora* bitacora) {
 		log_trace(logger_mongo, "Falta escribir parte del mensaje. ");
 		log_trace(logger_mongo, "Alcance %i bytes de %i bytes, ", cantidad_alcanzada, strlen(mensaje));
 		// el size lo podria dejar aca, y no pasar por param
-		asignar_nuevo_bloque(bitacora->path, cantidad_alcanzada);
+		asignar_nuevo_bloque(bitacora->path);
 		char* resto_mensaje = malloc(strlen(mensaje + cantidad_alcanzada) + 1);
 		strcpy(resto_mensaje, (mensaje + cantidad_alcanzada));
 		// log_trace(logger_mongo, "El resto del mensaje sera: %s", resto_mensaje);
