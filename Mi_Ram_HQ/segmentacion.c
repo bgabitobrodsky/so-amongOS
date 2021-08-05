@@ -259,13 +259,14 @@ segmento* best_fit(int tam){
 }
 
 segmento* asignar_segmento(int tam){
-
+    bloquear_asignacion();
 	log_info(logger, "Asignando segmento");
     segmento* segmento_libre = buscar_segmento_libre(tam);
 	if(segmento_libre != NULL){
         intento_asignar_segmento = 0;
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
+            desbloquear_asignacion();
 			return segmento_libre;
 		}else{
 		//Si no tengo que dividir el segmento
@@ -274,12 +275,14 @@ segmento* asignar_segmento(int tam){
 			segmento_libre->base += tam;
 			segmento_libre->tam -= tam;
 			ordenar_segmentos();
+            desbloquear_asignacion();
 			return nuevo_segmento;
 		}
 	}else{
         if(intento_asignar_segmento == 1){
             intento_asignar_segmento = 0;
             log_error(logger,"No hay mas memoria bro");
+            desbloquear_asignacion();
             return NULL;
         }
         intento_asignar_segmento = 1;

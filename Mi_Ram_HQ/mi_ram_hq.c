@@ -271,16 +271,12 @@ void iniciar_memoria(){
 		log_error(logger,"Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
 	}
-
-
 }
 
 void* buscar_tabla(int pid){
-	bloquear_lista_tablas();
 	char spid[4];
 	sprintf(spid, "%d", pid);
 	void* tabla = dictionary_get(tablas,spid);
-	desbloquear_lista_tablas();
 	return tabla;
 }
 
@@ -622,24 +618,24 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, buffer->tamanio_estructura, pid);
 		free(buffer->estructura);
 		free(buffer);*/
-
-		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tabla->dl_pcb - dl_tarea_tcb , pid); // 0 porque las tareas siempre estan al inicio de todo
-		if(str_tareas == NULL){
+		int tam_rescate = tabla->dl_pcb - dl_tarea_tcb;
+		if(tam_rescate <= 0){
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
 			free(tcb);
 			desbloquear_tabla(tabla);
 			return NULL;
 		}
+		char* str_tareas = rescatar_de_paginas(tabla, dl_tarea_tcb, tam_rescate , pid); // 0 porque las tareas siempre estan al inicio de todo
 		char** palabras = string_split(str_tareas, "\n");
 
-		if(palabras[0] == NULL){
+		/*if(palabras[0] == NULL){
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tid);
 			free(tcb);
 			liberar_puntero_doble(palabras);
 			free(str_tareas);
 			desbloquear_tabla(tabla);
 			return NULL;
-		}
+		}*/
 		char* str_tarea = palabras[0];
 		log_info(logger, "Tarea para TID: %d encontrada: %s", tid, str_tarea);
 		tarea = crear_tarea(str_tarea);
@@ -820,6 +816,10 @@ void signal_compactacion(int n){
 
 void dump(int n){
 	if(n == SIGUSR2){
+		struct stat st = {0};
+		if(stat("./dump/", &st) == -1) {
+			mkdir("./dump", 0700);
+		}
 		log_debug(logger,"Se inicia el dump de memoria");
 		if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
 			dump_segmentacion();
@@ -982,6 +982,16 @@ void bloquear_lista_tablas(){
 void desbloquear_lista_tablas(){
 	log_trace(logger,"[SEM]: Desloqueo lista de tablas");
 	pthread_mutex_unlock(&m_tablas);
+}
+
+void bloquear_asignacion(){
+	pthread_mutex_lock(&m_asignacion);
+	log_trace(logger,"[SEM]: Bloqueo asignacion");
+}
+
+void desbloquear_asignacion(){
+	log_trace(logger,"[SEM]: Desloqueo asignacion");
+	pthread_mutex_unlock(&m_asignacion);
 }
 
 void bloquear_mapa(){
