@@ -8,6 +8,7 @@ typedef struct marco {
     bool libre;
     int pid;
     int num_pagina;
+    pthread_mutex_t mutex;
 } marco;
 t_list* marcos;
 
@@ -41,7 +42,7 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid);
 marco* buscar_marco_libre();
 marco* asignar_marco();
-void algoritmo_de_reemplazo();
+marco* algoritmo_de_reemplazo();
 void swap_in(pagina* pagina);
 void swap_out(pagina* pagina);
 int liberar_pagina(pagina* pagina, int offset, int faltante);
