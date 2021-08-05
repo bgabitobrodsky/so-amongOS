@@ -1,6 +1,7 @@
 #include "mongo_tripulantes.h"
 
 extern pthread_mutex_t sem_bitacoras;
+extern pthread_mutex_t sem_existencial;
 
 void manejo_tripulante(void* socket) {
 
@@ -37,7 +38,9 @@ void manejo_tripulante(void* socket) {
 			else if(mensaje->codigo_operacion > BITACORA && mensaje->codigo_operacion < MOVIMIENTO){
 				log_info(logger_mongo, "Pedido alterar la cantidad de recurso %s", conseguir_tipo(conseguir_char(mensaje->codigo_operacion))); // Revisar
 				log_trace(logger_mongo, "Numero de codigo: %i", mensaje->codigo_operacion);
-				alterar_wrap(mensaje->codigo_operacion, mensaje->cantidad);
+				pthread_mutex_lock(&sem_existencial);
+				alterar(mensaje->codigo_operacion, mensaje->cantidad);
+				pthread_mutex_unlock(&sem_existencial);
 			}
 		}
 
