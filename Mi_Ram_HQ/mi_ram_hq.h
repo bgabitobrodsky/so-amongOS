@@ -9,6 +9,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
@@ -36,7 +38,6 @@
 */
 t_log* logger;
 t_config* config;
-
 /*
     MAPA
 */
@@ -52,6 +53,7 @@ pthread_mutex_t m_mapa;
 */
 void* memoria_principal;
 t_dictionary* tablas;
+pthread_mutex_t m_asignacion;
 
 /*
     SEMAFOROS GENERALES

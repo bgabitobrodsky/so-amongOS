@@ -7,7 +7,6 @@ t_list* bitacoras;
 int existe_oxigeno = 0;
 int existe_comida = 0;
 int existe_basura = 0;
-extern pthread_mutex_t sem_existencial;
 
 void iniciar_paths(){
 	// Se obtiene el path al archivo oxigeno dentro de la carpeta files
@@ -280,18 +279,6 @@ int existe_archivo(int codigo_archivo) {
 	return -1;
 }
 
-void alterar_wrap(int codigo_archivo, int cantidad) {
-	if(codigo_archivo == BASURA){
-		pthread_mutex_lock(&sem_existencial);
-		if(existe_basura){
-			alterar( codigo_archivo, cantidad);
-		}
-		pthread_mutex_unlock(&sem_existencial);
-	} else{
-		alterar( codigo_archivo, cantidad);
-	}
-}
-
 void alterar(int codigo_archivo, int cantidad) {
 
 	log_trace(logger_mongo, "Por alterar archivo recurso.");
@@ -348,15 +335,15 @@ void alterar(int codigo_archivo, int cantidad) {
 
 
 void descartar_basura() {
-	pthread_mutex_lock(&sem_existencial);
+	//pthread_mutex_lock(&sem_existencial);
 	if(existe_basura){
 		liberar_bloques(path_basura);
-		// fclose(recurso.basura);
+		fclose(recurso.basura); // Estaba comentado
 		remove(path_basura);
 		existe_basura = 0;
 		log_info(logger_mongo, "Se elimino el archivo Basura.");
 	}
-	pthread_mutex_unlock(&sem_existencial);
+	//pthread_mutex_unlock(&sem_existencial);
 }
 
 void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mallocs previos
@@ -375,7 +362,7 @@ void agregar(int codigo_archivo, int cantidad) { // Puede que haya que hacer mal
 		agregar(codigo_archivo, offset * (-1)); // Recursividad con la cantidad que falto
 	}
 
-	iniciar_archivo_recurso2(path, cantidad + offset, 0);
+	iniciar_archivo_recurso2(path, cantidad + offset);
 
 	log_trace(logger_mongo, "Se agregaron: %i", cantidad);
 }
@@ -397,7 +384,7 @@ void quitar(int codigo_archivo, int cantidad) {
 		return;
 	}
 
-	iniciar_archivo_recurso2(path, -cantidad, 1);
+	iniciar_archivo_recurso2(path, -cantidad);
 
 	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
@@ -658,7 +645,7 @@ t_list* get_lista_bloques(char* path){
 	return lista_bloques;
 }
 
-void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques_a_agregar) {
+void iniciar_archivo_recurso2(char* path, int tamanio) {
 
 	log_debug(logger_mongo, "RECURSO");
 	if(tamanio >= 0)
@@ -667,7 +654,6 @@ void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques_a_agrega
 		quitar_tam(path, tamanio);
 
 	int cant_bloques = cantidad_bloques_recurso(path);
-	set_cant_bloques(path, cant_bloques + cant_bloques_a_agregar); // Posible error de sincro
 
 	char caracter = caracter_llenado_archivo(path);
 	set_caracter_llenado(path, caracter);

@@ -17,7 +17,6 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo);
 int existe_archivo(int codigo_archivo);
 int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path);
 void alterar(int codigo_archivo, int cantidad);
-void alterar_wrap(int codigo_archivo, int cantidad);
 void descartar_basura();
 void agregar(int codigo_archivo, int cantidad);
 void quitar(int codigo_archivo, int cantidad);
@@ -38,7 +37,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque);
 void blanquear_bloque(int bloque);
 uint32_t obtener_cantidad_bloques(char* path);
 char* concatenar_numeros(char* cadena);
-void iniciar_archivo_recurso2(char* path, int tamanio, int cant_bloques_a_agregar);
+void iniciar_archivo_recurso2(char* path, int tamanio);
 
 // devuelven la metadata del archivo
 t_list* get_lista_bloques(char* path); // TESTEADA
