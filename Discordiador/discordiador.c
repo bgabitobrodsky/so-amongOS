@@ -131,9 +131,12 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    /*for(int i = 0; i<3; i++){
+    /*for(int i = 0; i<10; i++){
         ejecutar_tarea("estabilidad_general.txt");
     }*/
+    for(int i = 0; i < 50; i++)
+    	iniciar_patota("INICIAR_PATOTA 5 P_Nico.txt 8|0");
+    iniciar_planificacion();
 
     // iniciar_planificacion();
     /*iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
