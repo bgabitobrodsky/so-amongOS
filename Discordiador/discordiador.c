@@ -132,8 +132,8 @@ int main() {
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     iniciar_planificacion();
-    for(int i = 0; i<1; i++){
-    	iniciar_patota("INICIAR_PATOTA 1 ZSeba.ims");
+    for(int i = 0; i<6; i++){
+        ejecutar_tarea("estabilidad_general.txt");
     }
 
     pthread_t hiloConsola;
