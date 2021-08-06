@@ -326,7 +326,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		bloquear_tabla(tabla);
 		log_info(logger, "Guardando tareas con PID: %d", pid);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid);
-
 		if(dl_tareas == 99999){
 			matar_tabla_paginas(pid);
 			return 0;
@@ -395,6 +394,7 @@ int gestionar_tcb(t_TCB* tcb){
 		if(tabla == NULL){ 
 			// esto no tendria que pasar, pero por las dudas
 			log_error(logger,"La tabla no existe pid: %d",pid);
+			desbloquear_lista_tablas();
 			return 0;
 		}
 		bloquear_tabla(tabla);

@@ -289,7 +289,7 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 	}
 	// armo la DL a retornar
 	dl = num_pagina * TAMANIO_PAGINA + offset;
-
+	
 	while(progreso < tam){
 		int temp = agregar_pagina(tabla, data + progreso, tam - progreso, pid);
 		if(temp > 0){
@@ -325,9 +325,10 @@ int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid){
 	pag->ultimo_uso =  get_timestamp();
 	pag->usado = true;
 	pag->en_memoria = true;
-
+	
 	list_add(tabla->paginas,pag);
 	pag->tamano_ocupado = escribir_en_marco(pag->puntero_marco, data, 0, tam);
+
 	desbloquear_marco(pag->puntero_marco);
 	desbloquear_pagina(pag);
 	return pag->tamano_ocupado;
@@ -382,6 +383,7 @@ marco* asignar_marco(){
 
 marco* algoritmo_de_reemplazo(){
 	//bloquear_paginas_en_memoria();
+	bloquear_lista_tablas();
 	t_list* paginas_bloqueadas = list_create();
 
 	void page_locker(void* un_marco){
@@ -418,6 +420,7 @@ marco* algoritmo_de_reemplazo(){
 	}
 	list_iterate(paginas_bloqueadas,page_unlocker);
 	list_destroy(paginas_bloqueadas);
+	desbloquear_lista_tablas();
 	return marco;
 }
 
