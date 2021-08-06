@@ -322,13 +322,10 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		free(pcb);
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
-		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
-		if(tabla == NULL){ 
-			tabla = crear_tabla_paginas(pid);
-		}
+		tabla_paginas* tabla  = crear_tabla_paginas(pid);
+		bloquear_tabla(tabla);
 		log_info(logger, "Guardando tareas con PID: %d", pid);
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid);
-
 		if(dl_tareas == 99999){
 			matar_tabla_paginas(pid);
 			return 0;
@@ -349,7 +346,7 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		log_info(logger, "Se terminó la creación del PCB de pid: %d, direccion lógica: %d", pid, dl_pcb);
 		
 		free(pcb);
-
+		desbloquear_tabla(tabla);
 		return 1;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
@@ -366,6 +363,7 @@ int gestionar_tcb(t_TCB* tcb){
 		if(tabla == NULL){ 
 			tabla = crear_tabla_segmentos(pid);
 		}
+		bloquear_tabla(tabla);
 		
 		//Creamos segmento para el tcb y lo guardamos en la tabla de la patota
 		log_info(logger, "[SEG]: Creando segmento para TCB TID: %d", tcb->TID);
@@ -390,13 +388,16 @@ int gestionar_tcb(t_TCB* tcb){
 		list_add(tabla->segmentos_tcb, segmento_tcb);
 		free(buffer->estructura);
 		free(buffer);
+		desbloquear_tabla(tabla);
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);
 		if(tabla == NULL){ 
 			// esto no tendria que pasar, pero por las dudas
 			log_error(logger,"La tabla no existe pid: %d",pid);
+			desbloquear_lista_tablas();
 			return 0;
 		}
+		bloquear_tabla(tabla);
 
 		log_info(logger, "[PAG]: Guardando TCB TID: %d", tcb->TID);
 		tcb->siguiente_instruccion = 0;
@@ -415,6 +416,7 @@ int gestionar_tcb(t_TCB* tcb){
 		char stid[8];
 		sprintf(stid,"%d", tcb->TID);
 		dictionary_put(tabla->dl_tcbs, stid, (void*) dl_tcb);
+		desbloquear_tabla(tabla);
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
 		exit(EXIT_FAILURE);
@@ -484,6 +486,7 @@ t_list* buscar_tcbs_por_pid(int pid){
 		if(tabla == NULL){
 			return NULL;
 		}
+		bloquear_tabla(tabla);
 
 		void* transformer(void* un_segmento){
 			segmento* segmento_tcb = (segmento*) un_segmento;
@@ -495,13 +498,16 @@ t_list* buscar_tcbs_por_pid(int pid){
 			free(buffer);
 			return tcb_recuperado;
 		}
-		return list_map(tabla->segmentos_tcb, transformer);
+		t_list* lista_aux = list_map(tabla->segmentos_tcb, transformer);
+		desbloquear_tabla(tabla);
+		return lista_aux;
 
 	}else if(strcmp(ESQUEMA_MEMORIA,"PAGINACION")==0){
 		tabla_paginas* tabla = buscar_tabla(pid);
 		if(tabla == NULL){
 			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
+		bloquear_tabla(tabla);
 		t_list* lista_tcbs = list_create();
 		//hay que liberarla despues
 		void tcb_finder(char* stid, void* una_dl){
@@ -515,7 +521,7 @@ t_list* buscar_tcbs_por_pid(int pid){
 		}
 		
 		dictionary_iterator(tabla->dl_tcbs, tcb_finder);
-		
+		desbloquear_tabla(tabla);
 		return lista_tcbs;
 	}else{
 		log_error(logger,"Esquema de memoria desconocido");
@@ -533,11 +539,13 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		if(tabla == NULL){
 			return NULL; // tabla no encontrada, no debería pasar pero por las dudas viste
 		}
+		bloquear_tabla(tabla);
 		bloquear_segmento(tabla->segmento_tareas);
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
 		if(tcb == NULL){
 			// tcb no encontrado, no debería pasar pero por las dudas viste
 			desbloquear_segmento(tabla->segmento_tareas);
+			desbloquear_tabla(tabla);
 			free(tcb);
 			return NULL;
 		}
@@ -547,6 +555,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 			// Ya no quedan tareas
 			log_warning(logger, "Ya no quedan tareas para el tripulante %d", tcb->TID);
 			desbloquear_segmento(tabla->segmento_tareas);
+			desbloquear_tabla(tabla);
 			free(tcb);
 			return NULL;
 		}
@@ -575,6 +584,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		free(buffer->estructura);
 		free(buffer);
 		free(tcb);
+		desbloquear_tabla(tabla);
 		return tarea;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = buscar_tabla(pid);
@@ -647,7 +657,7 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		int dl_tcb = (int) dictionary_get(tabla->dl_tcbs, stid);
 		
 		t_buffer* buffer = serializar_tcb(*tcb);
-		sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, buffer->tamanio_estructura, pid);
+		sobreescribir_paginas(tabla, buffer->estructura, dl_tcb, 21, pid);
 		free(buffer->estructura);
 		free(buffer);
 		
@@ -739,6 +749,11 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 	}
 	
 	if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
+		tabla_segmentos* tabla = (tabla_segmentos*) buscar_tabla(pid);
+		if(tabla == NULL){
+			return 0; // tabla no encontrada, no debería pasar pero por las dudas viste
+		}
+		bloquear_tabla(tabla);
 		t_TCB* tcb = buscar_tcb_por_tid(nuevo_tcb->TID);
 		if(tcb == NULL){
 			return 0;
@@ -755,6 +770,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 		free(buffer->estructura);
 		free(buffer);
 		desbloquear_segmento_por_tid(tcb->TID);
+		desbloquear_tabla(tabla);
 		free(tcb);
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla = (tabla_paginas*) buscar_tabla(pid);

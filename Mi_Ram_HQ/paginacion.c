@@ -60,48 +60,56 @@ void liberar_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	t_list* paginas_a_remover = list_create(); // lista de paginas enteras que tengo que eliminar de la tabla
 
 	if(offset > 0){
-		pag = list_get(tabla->paginas, num_pagina);
-		bloquear_pagina(pag);
+		pag = get_pagina(tabla->paginas, pid, num_pagina, false);
 		faltante -= liberar_pagina(pag, offset, faltante);
-		desbloquear_pagina(pag);
 
 		if(pag->tamano_ocupado <= 0){
+			/*int* num = malloc(sizeof(int));
+			memcpy(num, num_pagina, sizeof(int));*/
 			list_add(paginas_a_remover, (void*) num_pagina);
+		}else{
+			desbloquear_pagina(pag);
 		}
 		num_pagina++;
 	}
 
 	while(faltante > 0){
-		pag = list_get(tabla->paginas, num_pagina);
-		bloquear_pagina(pag);
+		pag = get_pagina(tabla->paginas, pid, num_pagina, false);
 		faltante -= liberar_pagina(pag, 0, faltante);
-		desbloquear_pagina(pag);
 
 		if(pag->tamano_ocupado <= 0){
+			/*int* num = malloc(sizeof(int));
+			memcpy(num, &num_pagina, sizeof(int));*/
 			list_add(paginas_a_remover, (void*) num_pagina);
+		}else{
+			desbloquear_pagina(pag);
 		}
 		num_pagina++;
 	}
 
 	void page_remover(void* un_int){
 		int num = (int) un_int;
+		//log_info(logger,"MATO LA PAGINA %d", num);
 		pagina* pag2 = list_get(tabla->paginas, num);
 		if(pag2->en_memoria){
 			pag2->puntero_marco->libre = true;
 			pag2->puntero_marco->num_pagina = 0;
 			pag2->puntero_marco->pid = 0;
+			pag2->en_memoria = false;
+			pag2->puntero_marco = NULL;
 		}
-		log_trace(logger,"[SWAP]: Libero el espacio en disco: %d, de PID: %d PAG: %d", pag2->disk_index, pid, num);
+		log_trace(logger,"[SWAP]: Libero el espacio en disco: %d, de PID: %d PAG: %d", pag2->disk_index, pid, num + 1);
 		bitmap_disco[pag->disk_index] = false;
 		pag2->disk_index = -1;
-		//list_remove(tabla->paginas, num);
-		//free(pag2);
+		desbloquear_pagina(pag2);
 	}
-	bloquear_lista_marcos();
 	list_iterate(paginas_a_remover, page_remover);
-	list_destroy(paginas_a_remover);
-	desbloquear_lista_marcos();
 
+	/*void destr(void* un_int){
+		free(un_int);
+	}
+	list_destroy_and_destroy_elements(paginas_a_remover,destr);*/
+	list_destroy(paginas_a_remover);
 }
 
 int matar_paginas_tcb(tabla_paginas* tabla, int tid){
@@ -129,7 +137,11 @@ void matar_tabla_paginas(int pid){
 		void page_destroyer(void* una_pagina){
 			pagina* pag = (pagina*) una_pagina;
 			if(pag->en_memoria){
-				pag->puntero_marco->libre = true;
+				if(pag->puntero_marco != NULL){
+					pag->puntero_marco->libre = true;
+				}else{
+					log_error(logger,"Pagina dice que está en memoria pero no tiene un marco asignado pinche pagina puta y mentirosa");
+				}
 			}
 			if(pag->disk_index >= 0){
 				bitmap_disco[pag->disk_index] = false;
@@ -159,10 +171,11 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 	int offset = dl % TAMANIO_PAGINA;
 
 	if(offset > 0){
-		pagina = get_pagina(tabla->paginas, pid, num_pagina);
+		pagina = get_pagina(tabla->paginas, pid, num_pagina, true);
 		if(pagina != NULL){
 			pagina->modificada = true;
 			progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, offset, tam - progreso);
+			desbloquear_marco(pagina->puntero_marco);
 			desbloquear_pagina(pagina);
 			num_pagina++;
 			log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
@@ -172,10 +185,11 @@ int sobreescribir_paginas(tabla_paginas* tabla, void* data, int dl, int tam, int
 		}
 	}
 	while(progreso < tam){
-		pagina = get_pagina(tabla->paginas, pid, num_pagina);
+		pagina = get_pagina(tabla->paginas, pid, num_pagina, true);
 		if(pagina != NULL){
 			pagina->modificada = true;
 			progreso += escribir_en_marco(pagina->puntero_marco, data + progreso, 0, tam - progreso);
+			desbloquear_marco(pagina->puntero_marco);
 			desbloquear_pagina(pagina);
 			num_pagina++;
 			log_trace(logger, "[PAG]: Escribiendo... %d / %d bytes", progreso, tam);
@@ -204,6 +218,7 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	if(tam <= 0){
 		return NULL;
 	}
+	
 	log_info(logger,"[PAG]: Rescatando de memoria PID: %d, DL: %d, TAM: %d", pid, dl, tam);
 	void* data = malloc(tam); // puntero a retornar con la info solicitada
 	pagina* pagina; 
@@ -212,25 +227,26 @@ void* rescatar_de_paginas(tabla_paginas* tabla, int dl, int tam, int pid){
 	int offset = dl % TAMANIO_PAGINA;
 
 	if(offset > 0){
-		pagina = get_pagina(tabla->paginas, pid, num_pagina);
+		pagina = get_pagina(tabla->paginas, pid, num_pagina, true);
 		if(pagina == NULL){
 			free(data);
 			return NULL;
 		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, offset, faltante);
+		desbloquear_marco(pagina->puntero_marco);
 		desbloquear_pagina(pagina);
 		log_trace(logger, "[PAG]: Leyendo... %d / %d bytes", tam - faltante, tam);
 		num_pagina++;
 	}
 
 	while(faltante > 0){
-
-		pagina = get_pagina(tabla->paginas, pid, num_pagina);
+		pagina = get_pagina(tabla->paginas, pid, num_pagina, true);
 		if(pagina == NULL){
 			free(data);
 			return NULL;
 		}
 		faltante -= rescatar_de_marco(pagina->puntero_marco, data + tam - faltante, 0, faltante);
+		desbloquear_marco(pagina->puntero_marco);
 		desbloquear_pagina(pagina);
 		log_trace(logger, "[PAG]: Leyendo... %d / %d bytes", tam - faltante, tam);
 		num_pagina++;
@@ -242,6 +258,7 @@ int rescatar_de_marco(marco* marco, void* data, int offset, int tam){
 	//esta funcion retorna lo que de rescató de memoria
 	int tam_rescate = MIN(tam, TAMANIO_PAGINA - offset);
 	memcpy(data, memoria_principal + marco->base + offset, tam_rescate);
+	log_info(logger, "[PAG]: Se lee la página PID: %d, NUM: %d", marco->pid, marco->num_pagina);
 	return tam_rescate;
 }
 
@@ -251,11 +268,10 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 	int progreso = 0;
 	int offset = 0;
 
-	bloquear_tabla(tabla);
 	int num_pagina = list_size(tabla->paginas) - 1;
 
 	if(num_pagina >= 0){ // hay alguna pagina
-		pagina* ultima_pagina = get_pagina(tabla->paginas, pid, num_pagina);
+		pagina* ultima_pagina = get_pagina(tabla->paginas, pid, num_pagina, true);
 		if(ultima_pagina != NULL){
 			if(ultima_pagina->tamano_ocupado < TAMANIO_PAGINA ){ // la ultima pagina no está llena
 				offset = ultima_pagina->tamano_ocupado;
@@ -265,6 +281,7 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 			}else{
 				num_pagina++;
 			}
+			desbloquear_marco(ultima_pagina->puntero_marco);
 			desbloquear_pagina(ultima_pagina);
 		}
 	}else{
@@ -272,7 +289,7 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 	}
 	// armo la DL a retornar
 	dl = num_pagina * TAMANIO_PAGINA + offset;
-
+	
 	while(progreso < tam){
 		int temp = agregar_pagina(tabla, data + progreso, tam - progreso, pid);
 		if(temp > 0){
@@ -283,13 +300,12 @@ int agregar_paginas_segun_tamano(tabla_paginas* tabla, void* data, int tam, int 
 			return 99999; // se retorna estó porque NULL = 0 y me lo tomaría como la DL 0
 		}
 	}
-	desbloquear_tabla(tabla);
+	
 	return dl;	
 }
 
 int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid){
 	// retorna lo que se logró guardar
-
 	pagina* pag = malloc(sizeof(pagina));
 	pag->disk_index = get_disk_index();
 	if(pag->disk_index == -1){
@@ -309,9 +325,11 @@ int agregar_pagina(tabla_paginas* tabla, void* data, int tam, int pid){
 	pag->ultimo_uso =  get_timestamp();
 	pag->usado = true;
 	pag->en_memoria = true;
-
+	
 	list_add(tabla->paginas,pag);
 	pag->tamano_ocupado = escribir_en_marco(pag->puntero_marco, data, 0, tam);
+
+	desbloquear_marco(pag->puntero_marco);
 	desbloquear_pagina(pag);
 	return pag->tamano_ocupado;
 }
@@ -322,6 +340,7 @@ marco* buscar_marco_libre(){
 	for(int i=0; i<size; i++){
         marco* x = list_get(marcos, i);
         if(x->libre){
+			bloquear_marco(x);
             return x;
         }
     }
@@ -330,25 +349,18 @@ marco* buscar_marco_libre(){
 }
 
 marco* asignar_marco(){
-	bloquear_lista_marcos();
-	bloquear_marcos();
+	bloquear_asignacion();
 	marco* marco_libre = buscar_marco_libre();
 	if(marco_libre != NULL){
 		log_debug(logger,"[PAG]: Encontré marco libre");
 		marco_libre->libre = false;
-		desbloquear_marcos();
-		desbloquear_lista_marcos();
-
-		bloquear_marco(marco_libre);
+		desbloquear_asignacion();
 		return marco_libre;
 	}
 
 	marco_libre = algoritmo_de_reemplazo();
 	marco_libre->libre = false;
-	desbloquear_marcos();
-	desbloquear_lista_marcos();
-
-	bloquear_marco(marco_libre);
+	desbloquear_asignacion();
 	return marco_libre;
 }
 
@@ -370,49 +382,73 @@ marco* asignar_marco(){
 //             VVV            IIIIIIIIIIRRRRRRRR     RRRRRRR      TTTTTTTTTTT            UUUUUUUUU  AAAAAAA                   AAAAAAALLLLLLLLLLLLLLLLLLLLLLLL
 
 marco* algoritmo_de_reemplazo(){
-	bloquear_paginas_en_memoria();
-	pagina* pagina;
+	//bloquear_paginas_en_memoria();
+	bloquear_lista_tablas();
+	t_list* paginas_bloqueadas = list_create();
+
+	void page_locker(void* un_marco){
+		marco* marc = (marco*) un_marco;
+		if(!marc->libre){
+			pagina* pag = get_pagina_from_marco(marc);
+			if(pag != NULL){
+				bloquear_pagina(pag);
+				list_add(paginas_bloqueadas, pag);
+			}
+		}
+	}
+	//log_trace(logger,"[SEM]: Desbloqueo paginas en memoria");
+	list_iterate(marcos,page_locker);
+
+	pagina* pagina1;
 	if(strcmp(ALGORITMO_REEMPLAZO,"LRU") == 0){
-		pagina = get_lru();
+		pagina1 = get_lru();
 	}else if(strcmp(ALGORITMO_REEMPLAZO,"CLOCK") == 0){
-		pagina = get_clock();
+		pagina1 = get_clock();
 	}else{
 		log_error(logger,"Algoritmo de reemplazo desconocido");
 		exit(EXIT_FAILURE);
 	}
 	log_info(logger, "[PAG]: Pagina a swapear encontrada");
-	marco* marco = pagina->puntero_marco;
-	swap_in(pagina);
-	desbloquear_pagina(pagina);
-	desbloquear_paginas_en_memoria();
-	desbloquear_marcos();
+	marco* marco = pagina1->puntero_marco;
+	bloquear_marco(marco);
+	swap_in(pagina1);
+	//desbloquear_pagina(pagina);
+	//desbloquear_paginas_en_memoria();
+	void page_unlocker(void* una_pagina){
+		pagina* pag2 = (pagina*) una_pagina;
+		desbloquear_pagina(pag2);
+	}
+	list_iterate(paginas_bloqueadas,page_unlocker);
+	list_destroy(paginas_bloqueadas);
+	desbloquear_lista_tablas();
 	return marco;
 }
 
 void swap_in(pagina* pag){
 	log_info(logger, "[SWAP]: SWAP-IN PID: %d, PAG: %d", pag->puntero_marco->pid, pag->puntero_marco->num_pagina);
-
 	if(pag->modificada){
 		void* data = memoria_principal + pag->puntero_marco->base;
-		bloquear_disco();
 		log_info(logger, "[SWAP]: Pagina modificada, escribo en disco en la pos: %d", pag->disk_index);
+		bloquear_disco();
 		fseek(disco, TAMANIO_PAGINA * pag->disk_index, SEEK_SET);
 		fwrite(data, TAMANIO_PAGINA, 1, disco);
 		desbloquear_disco();
 	}
 	pag->en_memoria = false;
 	pag->puntero_marco->libre = true;
+	pag->puntero_marco->pid = 0;
+	pag->puntero_marco->num_pagina = 0;
 	pag->puntero_marco = NULL;
 }
 
 void page_fault(pagina* pag, int pid, int num){
-	bloquear_swap();
+	
 	log_error(logger,"[SWAP]: PageFault PID: %d, pag: %d, pos.disco: %d", pid, num + 1, pag->disk_index);
 
 	pag->puntero_marco = asignar_marco(); // asignar marco me pone el marco en libre->false
 
-	bloquear_disco();
 	log_info(logger, "[SWAP]: Leo en disco en la pos: %d", pag->disk_index);
+	bloquear_disco();
 	fseek(disco, pag->disk_index * TAMANIO_PAGINA, SEEK_SET);
 	fread(memoria_principal + pag->puntero_marco->base, TAMANIO_PAGINA, 1, disco);
 	desbloquear_disco();
@@ -421,10 +457,11 @@ void page_fault(pagina* pag, int pid, int num){
 	pag->puntero_marco->num_pagina = num + 1;
 	pag->en_memoria = true;
 	pag->modificada = false;
-	desbloquear_swap();
+	
 }
 
 pagina* get_lru(){
+	bloquear_marcos();
 	log_info(logger, "[SWAP]: Ejecuto busqueda por LRU");
 	uint64_t lru_ts = get_timestamp();
     pagina* lru_p = NULL;
@@ -433,13 +470,19 @@ pagina* get_lru(){
 		marco* marc = (marco*) un_marco;
 		pagina* pagin = get_pagina_from_marco(marc);
 		if(pagin != NULL){
+			//bloquear_pagina(pagin);
 			if(pagin->ultimo_uso <= lru_ts){
+				//if(lru_p != NULL)
+					//desbloquear_pagina(lru_p);
 				lru_ts = pagin->ultimo_uso;
 				lru_p = pagin;
+			}else{
+				//desbloquear_pagina(pagin);
 			}
 		}
 	}
 	list_iterate(marcos, page_iterator);
+	desbloquear_marcos();
     return lru_p;
 }
 
@@ -452,12 +495,12 @@ pagina* get_clock(){
 		marco_actual = list_get(marcos, marco_clock);
 		pagina* pag = get_pagina_from_marco(marco_actual);
 		if(pag != NULL && pag->disk_index != -1){
+			bloquear_pagina(pag);
 			if(marco_clock < cantidad_marcos-1){
 				marco_clock++;
 			}else{
 				marco_clock = 0;
 			}
-			//bloquear_pagina(pag);
 			
 			if(!pag->usado){
 				clock_p = pag;
@@ -482,8 +525,13 @@ pagina* get_pagina_from_marco(marco* marco){
 	if(marco->libre)
 		return NULL;
 
+	
 	int pid = marco->pid;
 	int num_pagina = marco->num_pagina;
+	if(pid == 0)
+		return NULL;
+	if(num_pagina == 0)
+		return NULL;
 
 	tabla_paginas* tabla = buscar_tabla(pid);
 	if(tabla == NULL)
@@ -510,7 +558,8 @@ void liberar_lista_tcbs_paginacion(t_list* lista){
 }
 
 void dump_paginacion(){
-	bloquear_lista_marcos();
+	bloquear_asignacion();
+	bloquear_marcos();
 	char* path = string_from_format("./dump/Dump_%d.dmp",  time(NULL));
     FILE* file = fopen(path,"w");
     free(path);
@@ -534,7 +583,8 @@ void dump_paginacion(){
 	free(temporal);
 	free(string_a_printear);
     txt_close_file(file);
-	desbloquear_lista_marcos();
+	desbloquear_marcos();
+	desbloquear_asignacion();
 }
 
 uint64_t get_timestamp() {
@@ -564,8 +614,8 @@ int get_disk_index(){
 			return i;
 		}
 	}
-	desbloquear_disco();
 	log_error(logger, "No hay mas memoria virtual");
+	desbloquear_disco();
 	return -1;
 }
 
@@ -586,18 +636,22 @@ int get_disk_index(){
 // S:::::::::::::::SS E::::::::::::::::::::EM::::::M               M::::::M A:::::A                 A:::::A F::::::::FF              OO:::::::::OO   R::::::R     R:::::R   OO:::::::::OO   S:::::::::::::::SS 
 //  SSSSSSSSSSSSSSS   EEEEEEEEEEEEEEEEEEEEEEMMMMMMMM               MMMMMMMMAAAAAAA                   AAAAAAAFFFFFFFFFFF                OOOOOOOOO     RRRRRRRR     RRRRRRR     OOOOOOOOO      SSSSSSSSSSSSSSS   
 
-pagina* get_pagina(t_list* paginas, int pid, int num_pagina){
+pagina* get_pagina(t_list* paginas, int pid, int num_pagina, bool traer_a_memoria){
 	int size = list_size(paginas);
 	if(num_pagina < size){
+		log_trace(logger, "[PAG]: Accedo a pagina PID: %d, NUM: %d", pid, num_pagina + 1);
 		pagina* pagina = list_get(paginas, num_pagina);
 		if(pagina->disk_index == -1){
 			log_error(logger, "Se intentó acceder a una pagina ya liberada");
 			return NULL;
 		}
-		bloquear_pagina(pagina);
-		if(!pagina->en_memoria){
+		if(traer_a_memoria)
+			bloquear_pagina(pagina);
+		if(traer_a_memoria && !pagina->en_memoria){
+			bloquear_swap();
 			page_fault(pagina, pid, num_pagina);
-		}else{
+			desbloquear_swap();
+		}else if(traer_a_memoria){
 			bloquear_marco(pagina->puntero_marco);
 		}
 		pagina->ultimo_uso =  get_timestamp();
@@ -620,14 +674,12 @@ void desbloquear_marco(marco* marco){
 
 void bloquear_pagina(pagina* pagina){
 	pthread_mutex_lock(&(pagina->mutex));
-	log_trace(logger,"[SEM]: Bloqueo pagina");
+	log_trace(logger,"[SEM]: Bloqueo pagina con disk_index: %d", pagina->disk_index);
 }
 
 void desbloquear_pagina(pagina* pagina){
 	pthread_mutex_unlock(&(pagina->mutex));
-	log_trace(logger,"[SEM]: Desbloqueo pagina");
-	if(pagina->puntero_marco != NULL)
-		desbloquear_marco(pagina->puntero_marco);
+	log_trace(logger,"[SEM]: Desbloqueo paginacon disk_index: %d", pagina->disk_index);
 }
 
 void bloquear_lista_marcos(){
@@ -692,9 +744,11 @@ void bloquear_paginas_en_memoria(){
 void desbloquear_paginas_en_memoria(){
 	void page_unlocker(void* un_marco){
 		marco* marc = (marco*) un_marco;
-		pagina* pag = get_pagina_from_marco(marc);
-		if(pag != NULL)
-			desbloquear_pagina(pag);
+		if(!marc->libre){
+			pagina* pag = get_pagina_from_marco(marc);
+			if(pag != NULL)
+				desbloquear_pagina(pag);
+		}
 	}
 	log_trace(logger,"[SEM]: Desbloqueo paginas en memoria");
 	list_iterate(marcos,page_unlocker);
