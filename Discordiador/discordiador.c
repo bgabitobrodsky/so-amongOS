@@ -134,10 +134,10 @@ int main() {
     /*for(int i = 0; i<10; i++){
         ejecutar_tarea("estabilidad_general.txt");
     }*/
-    for(int i = 0; i < 50; i++)
+    /*for(int i = 0; i < 50; i++)
     	iniciar_patota("INICIAR_PATOTA 5 P_Nico.txt 8|0");
     iniciar_planificacion();
-
+    */
     // iniciar_planificacion();
     /*iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaA.txt 0|0");
     iniciar_patota("INICIAR_PATOTA 1 FSCK_PatotaB.txt 8|0");
@@ -148,10 +148,11 @@ int main() {
     //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota3.txt 9|9");
     //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota2.txt 9|9");
     iniciar_planificacion();
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 5; i++){
         ejecutar_tarea("estabilidad_general.txt");
+        //iniciar_patota("INICIAR_PATOTA 2 espartana.txt 9|9");
+        //iniciar_patota("INICIAR_PATOTA 3 persa.txt 9|9");
     }
-    //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota3.txt 9|9");
     //iniciar_patota("INICIAR_PATOTA 3 ES3_Patota3.txt 9|9 0|0 5|5");
     // ejecutar_tarea("test_sin_entrada_salida");
     // iniciar_patota("INICIAR_PATOTA 10 Random.ims");

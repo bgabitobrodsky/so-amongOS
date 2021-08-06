@@ -65,7 +65,7 @@ void dump_paginacion();
 /*
     Manejo de semaforos
 */
-pagina* get_pagina(t_list* paginas, int pid, int num_pag);
+pagina* get_pagina(t_list* paginas, int pid, int num_pag, bool traer_a_memoria);
 void bloquear_pagina(pagina* pagina);
 void desbloquear_pagina(pagina* pagina);
 void bloquear_lista_marcos();
