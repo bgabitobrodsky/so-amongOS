@@ -49,8 +49,7 @@ uint32_t cantidad_bloques_tripulante(char* path);
 void escribir_archivo_tripulante(char* path, uint32_t tamanio, t_list* lista_bloques);
 uint32_t bloques_contar(char caracter);
 
-void agregar_tam(char* path, int tamanio);
-void quitar_tam(char* path, int tamanio);
+void alterar_tam(char* path, int tamanio);
 void set_tam(char* path, int tamanio);
 void set_bloq(char* path, t_list* lista);
 void set_cant_bloques(char* path, int cant);

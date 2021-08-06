@@ -648,7 +648,7 @@ t_list* get_lista_bloques(char* path){
 void iniciar_archivo_recurso2(char* path, int tamanio) {
 
 	log_debug(logger_mongo, "RECURSO");
-	agregar_tam(path, tamanio);
+	alterar_tam(path, tamanio);
 
 	int cant_bloques = cantidad_bloques_recurso(path);
 
@@ -911,29 +911,13 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 	bitarray_destroy(nuevo_bitmap);
 }
 
-void agregar_tam(char* path, int tamanio) {
+void alterar_tam(char* path, int tamanio) {
 	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 	int tamanio_viejo = config_get_int_value(config, "SIZE");
 	tamanio_viejo += tamanio;
-	char* aux = string_itoa(tamanio_viejo);
-	config_set_value(config, "SIZE", aux);
-	free(aux);
-	config_save(config);
-	config_destroy(config);
-
-	unlockear_recurso(path);
-}
-
-void quitar_tam(char* path, int tamanio) {
-	lockear_recurso_escritura(path);
-
-	t_config* config = config_create(path);
-	config_save_in_file(config, path);
-	int tamanio_viejo = config_get_int_value(config, "SIZE");
-	tamanio_viejo -= tamanio;
 	char* aux = string_itoa(tamanio_viejo);
 	config_set_value(config, "SIZE", aux);
 	free(aux);
@@ -1086,9 +1070,7 @@ void lockear_recurso_lectura(char* path){
 	if(es_recurso(path)){
 		if(!strcmp(path, path_basura)){
 			if(existe_basura){
-				log_warning(logger_mongo, "existe basura lectura");
 				lockearLectura(path);
-				log_warning(logger_mongo, "salgo basura lectura");
 			}
 		} else {
 			lockearLectura(path);
@@ -1101,9 +1083,7 @@ void lockear_recurso_escritura(char* path){
 	if(es_recurso(path)){
 		if(!strcmp(path, path_basura)){
 			if(existe_basura){
-				log_warning(logger_mongo, "existe basura escritura");
 				lockearEscritura(path);
-				log_warning(logger_mongo, "salgo basura escritura");
 			}
 		} else {
 			lockearEscritura(path);
@@ -1115,9 +1095,7 @@ void unlockear_recurso(char* path){
 	if(es_recurso(path)){
 		if(!strcmp(path, path_basura)){
 			if(existe_basura){
-				log_warning(logger_mongo, "existe basura unlockeo");
 				unlockear(path);
-				log_warning(logger_mongo, "salgo existe basura unlockeo");
 			}
 		} else {
 			unlockear(path);
