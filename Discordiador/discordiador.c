@@ -131,7 +131,7 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    /*for(int i = 0; i<10; i++){
+    /*  for(int i = 0; i<10; i++){
         ejecutar_tarea("estabilidad_general.txt");
     }*/
     /*for(int i = 0; i < 50; i++)
@@ -147,12 +147,16 @@ int main() {
 
     //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota3.txt 9|9");
     //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota2.txt 9|9");
-    iniciar_planificacion();
-    for(int i = 0; i < 5; i++){
-        ejecutar_tarea("estabilidad_general.txt");
-        //iniciar_patota("INICIAR_PATOTA 2 espartana.txt 9|9");
-        //iniciar_patota("INICIAR_PATOTA 3 persa.txt 9|9");
+
+    for(int i = 0; i < 10; i++){
+    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota1.txt 9|9 0|0 5|5");
+    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota2.txt 4|0 2|6 8|2");
+    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota3.txt 2|3 5|8 5|3");
+    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota4.txt 0|9 4|4 9|0");
+    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
     }
+    iniciar_planificacion();
+    //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota3.txt 9|9");
     //iniciar_patota("INICIAR_PATOTA 3 ES3_Patota3.txt 9|9 0|0 5|5");
     // ejecutar_tarea("test_sin_entrada_salida");
     // iniciar_patota("INICIAR_PATOTA 10 Random.ims");
