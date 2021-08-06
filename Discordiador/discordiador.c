@@ -144,14 +144,15 @@ int main() {
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
         sleep(1);
     }*/
-    for(int i = 0; i<2; i++){
-        ejecutar_tarea("estabilidad_general.txt");
-    }
-    
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 	pthread_detach(hiloConsola);
+
+
+    for(int i = 0; i<10 ; i++){
+    	ejecutar_tarea("estabilidad_general.txt");
+    }
 
     pthread_t sabotaje;
     pthread_create(&sabotaje, NULL, (void*) guardian_mongo, NULL);
@@ -316,7 +317,6 @@ void planificador(){
     // sem_init(&planificador, 0, MIN(GRADO_MULTITAREA, queue_size(cola_tripulantes_ready)));
 
     while(planificacion_activa){
-    	usleep(1000);
 
     	// TODO
     	// sem_wait(&planificador);
@@ -352,8 +352,8 @@ void planificador(){
             else if(comparar_strings(ALGORITMO, "RR")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
             	quitar_tripulante_de_listas(aux_tripulante);
-            	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 aux_tripulante->quantum_restante = QUANTUM;
+            	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
@@ -506,7 +506,8 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mong
 			}else{
             	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
 				sleep(RETARDO_CICLO_CPU);
-				t_buffer* b_oxigeno = serializar_cantidad(-un_tripulante->tarea.parametro);
+				int cantidad = (int) un_tripulante->tarea.parametro;
+				t_buffer* b_oxigeno = serializar_cantidad(-cantidad);
 				empaquetar_y_enviar(b_oxigeno, OXIGENO, socket_mongo);
             	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
             	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
@@ -534,7 +535,8 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mong
             }else{
             	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
             	sleep(RETARDO_CICLO_CPU);
-            	t_buffer* b_comida = serializar_cantidad(-un_tripulante->tarea.parametro);
+            	int cantidad = (int) un_tripulante->tarea.parametro;
+            	t_buffer* b_comida = serializar_cantidad(-cantidad);
             	empaquetar_y_enviar(b_comida, COMIDA ,socket_mongo);
             	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
             	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
@@ -562,7 +564,8 @@ void realizar_tarea(t_tripulante* un_tripulante, int socket_ram, int socket_mong
             }else{
             	notificar_inicio_de_tarea(un_tripulante, socket_mongo);
             	sleep(RETARDO_CICLO_CPU);
-            	t_buffer* b_oxigeno = serializar_cantidad(un_tripulante->tarea.parametro);
+            	int cantidad = 0;
+            	t_buffer* b_oxigeno = serializar_cantidad(cantidad);
             	empaquetar_y_enviar(b_oxigeno, BASURA ,socket_mongo);
             	cambiar_estado(un_tripulante, estado_tripulante[BLOCK], socket_ram);
             	monitor_cola_push(sem_cola_block, cola_tripulantes_block, un_tripulante);
@@ -1177,7 +1180,7 @@ void esperar_entrada_salida(t_tripulante* un_tripulante, int st_ram, int st_mong
 
 int es_mi_turno(t_tripulante* un_tripulante){
 	t_tripulante* titular = monitor_cola_pop_or_peek(sem_cola_block, (void*) queue_peek, cola_tripulantes_block);
-	return (titular == un_tripulante);
+	return (titular->TID == un_tripulante->TID);
 }
 
 void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, char* estado_guardado){
@@ -1194,11 +1197,11 @@ void ciclo_de_vida_fifo(t_tripulante* un_tripulante, int st_ram, int st_mongo, c
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
-					usleep(1000); // Espero hasta que la entrada deje de estar ocupada
+					sleep(RETARDO_CICLO_CPU); // Espero hasta que la entrada deje de estar ocupada
 				}
     			break;
     		case 'R':
-				usleep(1000);
+    			sleep(RETARDO_CICLO_CPU);
 				break;
     		}
     	} else {
@@ -1236,11 +1239,11 @@ void ciclo_de_vida_rr(t_tripulante* un_tripulante, int st_ram, int st_mongo, cha
 					esperar_entrada_salida(un_tripulante, st_ram, st_mongo);
 				} else {
 					log_trace(logger, "%i espero mi turno!", un_tripulante->TID);
-					usleep(1000); // espero hasta que la entrada deje de estar ocupada
+					sleep(RETARDO_CICLO_CPU); // Espero hasta que la entrada deje de estar ocupada
 				}
 				break;
 			case 'R':
-				usleep(1000);
+				sleep(RETARDO_CICLO_CPU);
 				break;
             }
 		} else{

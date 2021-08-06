@@ -239,13 +239,13 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 	t_list* lista_bloques = get_lista_bloques(path);
 	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
-	for(int i = (list_size(lista_bloques) - 1); i >= 0 ; i--){
+	for(int i = list_size(lista_bloques); i > 0 ; i--){
 
-		aux = list_get(lista_bloques, i);
+		aux = list_get(lista_bloques, i-1);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
-			if (*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) == tipo) {
-				*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) = ',';
+			if (*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j - 1) == tipo) {
+				*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j - 1) = ',';
 				cantidad_alcanzada++;
 
 				if(j == TAMANIO_BLOQUE-1){
@@ -381,12 +381,10 @@ void quitar(int codigo_archivo, int cantidad) {
 	if (resultado != 0) {
 		log_info(logger_mongo, "Se intento quitar mas de lo ya existente en el archivo.");
 		iniciar_archivo_recurso(path, 0, 0, NULL);
-		return;
+	} else{
+		iniciar_archivo_recurso2(path, -cantidad);
+		log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 	}
-
-	iniciar_archivo_recurso2(path, -cantidad);
-
-	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
 
 char* tipo_a_path(char tipo){
@@ -871,41 +869,26 @@ void blanquear_bloque(int bloque){
 }
 
 void liberar_bloque(char* path, uint32_t nro_bloque) {
+	log_warning(logger_mongo, "INICIO LIBERAR");
 	t_list* bloques = get_lista_bloques(path);
-
-	uint32_t* nro_bloque_aux;
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
-
-	for(int i = 0; i < list_size(bloques) ; i++) {
-
-		nro_bloque_aux = list_get(bloques, i);
-
-		if (nro_bloque == *nro_bloque_aux) {
-			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
-
-			reescribir_bitmap_fd(nuevo_bitmap);
-
-			bool quitar_bloque(void* elemento1){
-				return (nro_bloque == *((int*) elemento1));
-			}
-
-			int* aux = list_remove_by_condition(bloques, quitar_bloque);
-			free(aux);
-
-			if(es_recurso(path)){
-				set_bloq(path, bloques);
-				set_cant_bloques(path, list_size(bloques));
-			}
-		}
-	}
 
 	bool quitar_bloque(void* elemento1){
 		return (nro_bloque == *((int*) elemento1));
 	}
 
-	int* aux = monitor_lista(sem_lista_bloques_ocupados, (void*) list_remove_by_condition, lista_bloques_ocupados, (void*) quitar_bloque);
+	int* aux_elem = list_remove_by_condition(bloques, quitar_bloque);
+	free(aux_elem);
+	if(es_recurso(path)){
+		set_bloq(path, bloques);
+		set_cant_bloques(path, list_size(bloques));
+	}
+	pthread_mutex_lock(&sem_lista_bloques_ocupados);
+	int* aux = list_remove_by_condition(lista_bloques_ocupados, (void*) quitar_bloque);
+	pthread_mutex_unlock(&sem_lista_bloques_ocupados);
+	bitarray_clean_bit(nuevo_bitmap, *aux);
+	reescribir_bitmap_fd(nuevo_bitmap);
 	free(aux);
-
 	matar_lista(bloques);
 	free(nuevo_bitmap->bitarray);
 	bitarray_destroy(nuevo_bitmap);
