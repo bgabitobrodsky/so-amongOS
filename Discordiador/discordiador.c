@@ -132,7 +132,7 @@ int main() {
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     iniciar_planificacion();
-    for(int i = 0; i<5; i++){
+    for(int i = 0; i<6; i++){
         ejecutar_tarea("estabilidad_general.txt");
     }
 
