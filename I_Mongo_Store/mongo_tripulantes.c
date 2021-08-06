@@ -145,7 +145,7 @@ void modificar_bitacora(t_estructura* mensaje, char** posicion, int socket) {
 			pos_inicial = malloc(sizeof(char)*3 + 1);
 			strcpy(pos_inicial, *posicion);
 			pos_final = formatear_posicion(mensaje->tcb->coord_x, mensaje->tcb->coord_y);
-
+			strcpy(*posicion, pos_final);
 			cadenita = malloc(strlen("Se mueve de ") + strlen(" a ") + 2*strlen(pos_final) + 1 + 1);
 			strcpy(cadenita, "Se mueve de ");
 			strcat(cadenita, pos_inicial);
