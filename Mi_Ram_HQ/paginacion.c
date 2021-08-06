@@ -487,6 +487,7 @@ pagina* get_lru(){
 }
 
 pagina* get_clock(){
+	bloquear_marcos();
 	log_info(logger, "[SWAP]: Ejecuto busqueda por CLOCK");
     pagina* clock_p;
 	int cantidad_marcos = list_size(marcos);
@@ -495,7 +496,6 @@ pagina* get_clock(){
 		marco_actual = list_get(marcos, marco_clock);
 		pagina* pag = get_pagina_from_marco(marco_actual);
 		if(pag != NULL && pag->disk_index != -1){
-			bloquear_pagina(pag);
 			if(marco_clock < cantidad_marcos-1){
 				marco_clock++;
 			}else{
@@ -507,7 +507,6 @@ pagina* get_clock(){
 				break;
 			}else{
 				pag->usado = false;
-				desbloquear_pagina(pag);
 			}
 		}else{
 			if(marco_clock < cantidad_marcos-1){
@@ -518,6 +517,7 @@ pagina* get_clock(){
 			log_error(logger, "[SWAP]: Se quiso acceder a una página ya liberada");
 		}
 	}
+	desbloquear_marcos();
     return clock_p;
 }
 
