@@ -228,6 +228,7 @@ int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
 }
 
 int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
+
 	sem_wait(&sem_quitar_ultimo_bloque_libre);
 	log_trace(logger_mongo, "Quitando del bloque de recurso");
 
@@ -238,14 +239,13 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 	t_list* lista_bloques = get_lista_bloques(path);
 	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
-	int aux_var = list_size(lista_bloques);
-	for(int i = aux_var; i > 0 ; i--){
+	for(int i = (list_size(lista_bloques) - 1); i >= 0 ; i--){
 
-		aux = list_get(lista_bloques, i-1);
+		aux = list_get(lista_bloques, i);
 
 		for(int j = 0; j < TAMANIO_BLOQUE; j++){
-			if (*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j - 1) == tipo) {
-				*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j - 1) = ',';
+			if (*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) == tipo) {
+				*(directorio.mapa_blocks + (*aux + 1) * TAMANIO_BLOQUE - j) = ',';
 				cantidad_alcanzada++;
 
 				if(j == TAMANIO_BLOQUE-1){
@@ -254,15 +254,15 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 			}
 
 			if (cantidad_alcanzada == cantidad_deseada) {
-				matar_lista(lista_bloques);
 				sem_post(&sem_quitar_ultimo_bloque_libre);
+				matar_lista(lista_bloques);
 				return 0;
 			}
 		}
 	}
 
-	matar_lista(lista_bloques);
 	sem_post(&sem_quitar_ultimo_bloque_libre);
+	matar_lista(lista_bloques);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -381,10 +381,12 @@ void quitar(int codigo_archivo, int cantidad) {
 	if (resultado != 0) {
 		log_info(logger_mongo, "Se intento quitar mas de lo ya existente en el archivo.");
 		iniciar_archivo_recurso(path, 0, 0, NULL);
-	} else{
-		iniciar_archivo_recurso2(path, -cantidad);
-		log_trace(logger_mongo, "Se quitaron: %i", cantidad);
+		return;
 	}
+
+	iniciar_archivo_recurso2(path, -cantidad);
+
+	log_trace(logger_mongo, "Se quitaron: %i", cantidad);
 }
 
 char* tipo_a_path(char tipo){
@@ -646,10 +648,7 @@ t_list* get_lista_bloques(char* path){
 void iniciar_archivo_recurso2(char* path, int tamanio) {
 
 	log_debug(logger_mongo, "RECURSO");
-	if(tamanio >= 0)
-		agregar_tam(path, tamanio);
-	else
-		quitar_tam(path, tamanio);
+	agregar_tam(path, tamanio);
 
 	int cant_bloques = cantidad_bloques_recurso(path);
 
@@ -657,10 +656,10 @@ void iniciar_archivo_recurso2(char* path, int tamanio) {
 	set_caracter_llenado(path, caracter);
 
 	if(cant_bloques != 0){
-		lockear_recurso_lectura(path);
+		lockearLectura(path);
 		t_config* config = config_create(path);
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-		unlockear_recurso(path);
+		unlockear(path);
 		char* cadena_aux = concatenar_numeros(cadena_blocks);
 		char* md5 = md5_archivo(cadena_aux);
 		set_md5(path, md5);
@@ -687,10 +686,10 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	set_caracter_llenado(path, caracter);
 
 	if(cant_bloques != 0){
-		lockear_recurso_lectura(path);
+		lockearLectura(path);
 		t_config* config = config_create(path);
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-		unlockear_recurso(path);
+		unlockear(path);
 		char* cadena_aux = concatenar_numeros(cadena_blocks);
 		char* md5 = md5_archivo(cadena_aux);
 		set_md5(path, md5);
@@ -848,8 +847,8 @@ void liberar_bloques(char* path) {
 
 	t_list* bloques = get_lista_bloques(path);
 	int* nro_bloque;
-	int var_aux = list_size(bloques);
-	for(int i = 0; i < var_aux ; i++) {
+
+	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
 		liberar_bloque(path, *nro_bloque);
 		blanquear_bloque(*nro_bloque);
@@ -877,8 +876,7 @@ void liberar_bloque(char* path, uint32_t nro_bloque) {
 	uint32_t* nro_bloque_aux;
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
 
-	int var_aux = list_size(bloques);
-	for(int i = 0; i < var_aux ; i++) {
+	for(int i = 0; i < list_size(bloques) ; i++) {
 
 		nro_bloque_aux = list_get(bloques, i);
 
@@ -935,7 +933,7 @@ void quitar_tam(char* path, int tamanio) {
 	t_config* config = config_create(path);
 	config_save_in_file(config, path);
 	int tamanio_viejo = config_get_int_value(config, "SIZE");
-	tamanio_viejo += tamanio;
+	tamanio_viejo -= tamanio;
 	char* aux = string_itoa(tamanio_viejo);
 	config_set_value(config, "SIZE", aux);
 	free(aux);
