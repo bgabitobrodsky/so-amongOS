@@ -1108,9 +1108,14 @@ void peligro(t_posicion* posicion_sabotaje, int socket_ram){
 
 	cambiar_estado(t_aux, estado_tripulante[EXEC], socket_ram);
 
+    log_error(logger, "PRE PELIGRO");
+
 	while(estamos_en_peligro){
 		usleep(1000); // todos se esperan a que termine el sabotaje
 	}
+
+	cambiar_estado(t_aux, estado_tripulante[PANIK], socket_ram);
+	monitor_cola_push(sem_cola_block_emergencia, cola_tripulantes_block_emergencia, t_aux);
 
 	t_aux->tarea = contexto;
 
@@ -1315,6 +1320,7 @@ void guardian_mongo(){
 					log_info(logger, "Asegurese de tener un tripulante en R o E.");
 				} else {
 					peligro(mensaje->posicion, socket_a_mi_ram_hq);
+					free(mensaje->posicion);
 				}
 				break;
 			case DESCONEXION:
