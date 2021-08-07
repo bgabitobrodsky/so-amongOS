@@ -272,7 +272,7 @@ int iniciar_patota(char* leido){
             liberar_puntero_doble(palabras);
         	return 0;
         }
-        log_trace(logger, "%i Tripulante creado:\n tid: %i, estado: %c, pos: %i %i.", i, t_aux->TID, t_aux->estado_tripulante, t_aux->coord_x, t_aux->coord_y);
+        log_trace(logger, "Tripulante creado:\n tid: %i, estado: %c, pos: %i %i.", t_aux->TID, t_aux->estado_tripulante, t_aux->coord_x, t_aux->coord_y);
     }
 
     for(int i = 0; i < list_size(l_aux); i++){
@@ -370,6 +370,11 @@ void tripulante(t_tripulante* un_tripulante){
     log_trace(logger, "Iniciando tripulante: %i", un_tripulante->TID);
     char estado_guardado = un_tripulante->estado_tripulante; // NEW
     iniciar_tripulante(un_tripulante, st_ram);
+
+    if(llegue(un_tripulante)){
+    	notificar_inicio_de_tarea(un_tripulante, st_mongo);
+    }
+
     estado_guardado = un_tripulante->estado_tripulante; // READY
 
     if(comparar_strings(ALGORITMO, "FIFO")){
