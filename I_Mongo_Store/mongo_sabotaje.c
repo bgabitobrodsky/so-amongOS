@@ -26,6 +26,27 @@ void enviar_posicion_sabotaje(int socket_discordiador) {
 void reparar() {
 
     int reparado = 0;
+
+    log_info(logger_mongo, "Se verifica el sizes de los archivos.");
+    reparado = verificar_sizes();
+
+    if (reparado){
+    	log_info(logger_mongo, "Se repara el tamanio de los archivos.");
+    }
+	
+    log_info(logger_mongo, "Se verifican los blocks de los archivos.");
+    reparado = verificar_blocks();
+
+    if (reparado){
+    	log_info(logger_mongo, "Se repara la lista de bloques de los recursos");
+    }
+
+    log_info(logger_mongo, "Se verifica el block counts de los archivos.");
+    reparado = verificar_block_counts();
+
+    if (reparado){
+    	log_info(logger_mongo, "Se repara la cantidad de bloques de los recursos.");
+    }
     
     log_info(logger_mongo, "Se verifica la cantidad de bloques.");
     reparado = verificar_cant_bloques();
@@ -39,27 +60,6 @@ void reparar() {
 
     if (reparado){
     	log_info(logger_mongo, "Se repara el bitmap del superbloque.");
-    }
-
-    log_info(logger_mongo, "Se verifica el sizes de los archivos.");
-    reparado = verificar_sizes();
-
-    if (reparado){
-    	log_info(logger_mongo, "Se repara el tamanio de los archivos.");
-    }
-
-    log_info(logger_mongo, "Se verifica el block counts de los archivos.");
-    reparado = verificar_block_counts();
-
-    if (reparado){
-    	log_info(logger_mongo, "Se repara la cantidad de bloques de los recursos.");
-    }
-
-    log_info(logger_mongo, "Se verifican los blocks de los archivos.");
-    reparado = verificar_blocks();
-
-    if (reparado){
-    	log_info(logger_mongo, "Se repara la lista de bloques de los recursos");
     }
 
     if (!reparado){
