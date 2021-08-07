@@ -228,6 +228,7 @@ int llenar_bloque_recurso(int cantidad_deseada, char tipo, char* path) {
 }
 
 int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
+
 	sem_wait(&sem_quitar_ultimo_bloque_libre);
 	log_trace(logger_mongo, "Quitando del bloque de recurso");
 
@@ -238,8 +239,7 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 	t_list* lista_bloques = get_lista_bloques(path);
 	log_trace(logger_mongo, "Cant bloques %i", list_size(lista_bloques));
 
-	int aux_var = list_size(lista_bloques);
-	for(int i = aux_var; i > 0 ; i--){
+	for(int i = list_size(lista_bloques); i > 0 ; i--){
 
 		aux = list_get(lista_bloques, i-1);
 
@@ -254,15 +254,15 @@ int quitar_ultimo_bloque_libre(int cantidad_deseada, char tipo) {
 			}
 
 			if (cantidad_alcanzada == cantidad_deseada) {
-				matar_lista(lista_bloques);
 				sem_post(&sem_quitar_ultimo_bloque_libre);
+				matar_lista(lista_bloques);
 				return 0;
 			}
 		}
 	}
 
-	matar_lista(lista_bloques);
 	sem_post(&sem_quitar_ultimo_bloque_libre);
+	matar_lista(lista_bloques);
 	return cantidad_alcanzada - cantidad_deseada;
 }
 
@@ -646,10 +646,7 @@ t_list* get_lista_bloques(char* path){
 void iniciar_archivo_recurso2(char* path, int tamanio) {
 
 	log_debug(logger_mongo, "RECURSO");
-	if(tamanio >= 0)
-		agregar_tam(path, tamanio);
-	else
-		quitar_tam(path, tamanio);
+	alterar_tam(path, tamanio);
 
 	int cant_bloques = cantidad_bloques_recurso(path);
 
@@ -657,10 +654,10 @@ void iniciar_archivo_recurso2(char* path, int tamanio) {
 	set_caracter_llenado(path, caracter);
 
 	if(cant_bloques != 0){
-		lockear_recurso_lectura(path);
+		lockearLectura(path);
 		t_config* config = config_create(path);
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-		unlockear_recurso(path);
+		unlockear(path);
 		char* cadena_aux = concatenar_numeros(cadena_blocks);
 		char* md5 = md5_archivo(cadena_aux);
 		set_md5(path, md5);
@@ -687,10 +684,10 @@ void iniciar_archivo_recurso(char* path, int tamanio, int cant_bloques, t_list* 
 	set_caracter_llenado(path, caracter);
 
 	if(cant_bloques != 0){
-		lockear_recurso_lectura(path);
+		lockearLectura(path);
 		t_config* config = config_create(path);
 		char* cadena_blocks = config_get_string_value(config, "BLOCKS");
-		unlockear_recurso(path);
+		unlockear(path);
 		char* cadena_aux = concatenar_numeros(cadena_blocks);
 		char* md5 = md5_archivo(cadena_aux);
 		set_md5(path, md5);
@@ -848,8 +845,8 @@ void liberar_bloques(char* path) {
 
 	t_list* bloques = get_lista_bloques(path);
 	int* nro_bloque;
-	int var_aux = list_size(bloques);
-	for(int i = 0; i < var_aux ; i++) {
+
+	for(int i = 0; i < list_size(bloques) ; i++) {
 		nro_bloque = list_get(bloques, i);
 		liberar_bloque(path, *nro_bloque);
 		blanquear_bloque(*nro_bloque);
@@ -872,64 +869,32 @@ void blanquear_bloque(int bloque){
 }
 
 void liberar_bloque(char* path, uint32_t nro_bloque) {
+	log_warning(logger_mongo, "INICIO LIBERAR");
 	t_list* bloques = get_lista_bloques(path);
-
-	uint32_t* nro_bloque_aux;
 	t_bitarray* nuevo_bitmap = obtener_bitmap();
-
-	int var_aux = list_size(bloques);
-	for(int i = 0; i < var_aux ; i++) {
-
-		nro_bloque_aux = list_get(bloques, i);
-
-		if (nro_bloque == *nro_bloque_aux) {
-			bitarray_clean_bit(nuevo_bitmap, nro_bloque);
-
-			reescribir_bitmap_fd(nuevo_bitmap);
-
-			bool quitar_bloque(void* elemento1){
-				return (nro_bloque == *((int*) elemento1));
-			}
-
-			int* aux = list_remove_by_condition(bloques, quitar_bloque);
-			free(aux);
-
-			if(es_recurso(path)){
-				set_bloq(path, bloques);
-				set_cant_bloques(path, list_size(bloques));
-			}
-		}
-	}
 
 	bool quitar_bloque(void* elemento1){
 		return (nro_bloque == *((int*) elemento1));
 	}
 
-	int* aux = monitor_lista(sem_lista_bloques_ocupados, (void*) list_remove_by_condition, lista_bloques_ocupados, (void*) quitar_bloque);
+	int* aux_elem = list_remove_by_condition(bloques, quitar_bloque);
+	free(aux_elem);
+	if(es_recurso(path)){
+		set_bloq(path, bloques);
+		set_cant_bloques(path, list_size(bloques));
+	}
+	pthread_mutex_lock(&sem_lista_bloques_ocupados);
+	int* aux = list_remove_by_condition(lista_bloques_ocupados, (void*) quitar_bloque);
+	pthread_mutex_unlock(&sem_lista_bloques_ocupados);
+	bitarray_clean_bit(nuevo_bitmap, *aux);
+	reescribir_bitmap_fd(nuevo_bitmap);
 	free(aux);
-
 	matar_lista(bloques);
 	free(nuevo_bitmap->bitarray);
 	bitarray_destroy(nuevo_bitmap);
 }
 
-void agregar_tam(char* path, int tamanio) {
-	lockear_recurso_escritura(path);
-
-	t_config* config = config_create(path);
-	config_save_in_file(config, path);
-	int tamanio_viejo = config_get_int_value(config, "SIZE");
-	tamanio_viejo += tamanio;
-	char* aux = string_itoa(tamanio_viejo);
-	config_set_value(config, "SIZE", aux);
-	free(aux);
-	config_save(config);
-	config_destroy(config);
-
-	unlockear_recurso(path);
-}
-
-void quitar_tam(char* path, int tamanio) {
+void alterar_tam(char* path, int tamanio) {
 	lockear_recurso_escritura(path);
 
 	t_config* config = config_create(path);
@@ -1088,9 +1053,7 @@ void lockear_recurso_lectura(char* path){
 	if(es_recurso(path)){
 		if(!strcmp(path, path_basura)){
 			if(existe_basura){
-				log_warning(logger_mongo, "existe basura lectura");
 				lockearLectura(path);
-				log_warning(logger_mongo, "salgo basura lectura");
 			}
 		} else {
 			lockearLectura(path);
@@ -1103,9 +1066,7 @@ void lockear_recurso_escritura(char* path){
 	if(es_recurso(path)){
 		if(!strcmp(path, path_basura)){
 			if(existe_basura){
-				log_warning(logger_mongo, "existe basura escritura");
 				lockearEscritura(path);
-				log_warning(logger_mongo, "salgo basura escritura");
 			}
 		} else {
 			lockearEscritura(path);
@@ -1117,9 +1078,7 @@ void unlockear_recurso(char* path){
 	if(es_recurso(path)){
 		if(!strcmp(path, path_basura)){
 			if(existe_basura){
-				log_warning(logger_mongo, "existe basura unlockeo");
 				unlockear(path);
-				log_warning(logger_mongo, "salgo existe basura unlockeo");
 			}
 		} else {
 			unlockear(path);

@@ -167,9 +167,7 @@ void manejo_discordiador(){
 						t_archivo_tareas texto_archivo;
 						texto_archivo.texto = malloc(strlen(bitacora) + 1);
 						strcpy(texto_archivo.texto, bitacora);
-						log_debug(logger_mongo, "La bitacora tiene: %s", texto_archivo.texto);
 						texto_archivo.largo_texto = strlen(bitacora);
-
 						t_buffer* b_bitacora = serializar_archivo_tareas(texto_archivo);
 						empaquetar_y_enviar(b_bitacora, BITACORA, socket_discordiador);
 						log_info(logger_mongo, "Se envio la bitacora del tripulante %i", mensaje->tid);

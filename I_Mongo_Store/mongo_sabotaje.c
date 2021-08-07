@@ -230,7 +230,6 @@ int verificar_blocks() {
 
 	if(codigo != 0){
 		restaurar_blocks(codigo);
-
 		return 1;
 	}
 
@@ -296,73 +295,69 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 	return 0;
 }
 
-int bitmap_no_concuerda() {
-
-	t_bitarray* bitmap = obtener_bitmap();
-	int* nro_bloque = malloc(sizeof(int));
-	t_list* bloques = list_create();
-
-	if(existe_basura) {
-		t_list* bloques_basura = get_lista_bloques(path_basura);
-		list_add_all(bloques, bloques_basura);
-	}
-
-	if(existe_comida) {
-		t_list* bloques_comida = get_lista_bloques(path_comida);
-		list_add_all(bloques, bloques_comida);
-	}
-
-	if(existe_oxigeno) {
-		t_list* bloques_oxigeno = get_lista_bloques(path_oxigeno);
-		list_add_all(bloques, bloques_oxigeno);
-	}
-
-	for(int i = 0; i < list_size(bloques) ; i++){
-		nro_bloque = list_get(bloques, i);
-
-		if (!bitarray_test_bit(bitmap, *nro_bloque)){
-			free(nro_bloque);
-			//liberar listas
-
-			return 1;
-		}
-	}
-
-	free(nro_bloque);
-	// liberar listas
-
-	return 0;
-}
-
 void restaurar_blocks(int codigo) {
 
-	uint32_t tamanio;
+	t_list* lista_bloque_recurso = get_lista_bloques(conseguir_path_recurso_codigo(codigo));
+	int* aux;
 
-	switch(codigo){
-		case BASURA:
-			tamanio = tamanio_archivo(path_basura);
-			liberar_bloques(path_basura);
-			limpiar_metadata(path_basura);
-			log_trace(logger_mongo, "Tamanio de Basura debe ser 0 : %i", tamanio_archivo(path_basura));
-			agregar(BASURA, (int) tamanio);
-			break;
-
-		case COMIDA:
-			tamanio = tamanio_archivo(path_comida);
-			liberar_bloques(path_comida);
-			limpiar_metadata(path_comida);
-			log_trace(logger_mongo, "Tamanio de Comida debe ser 0 : %i", tamanio_archivo(path_comida));
-			agregar(COMIDA, (int) tamanio);
-			break;
-
-		case OXIGENO:
-			tamanio = tamanio_archivo(path_oxigeno);
-			liberar_bloques(path_oxigeno);
-			limpiar_metadata(path_oxigeno);
-			log_trace(logger_mongo, "Tamanio de Oxigeno debe ser 0 : %i", tamanio_archivo(path_oxigeno));
-			agregar(OXIGENO, (int) tamanio);
-			break;
+	for(int i = 0 ; i < list_size(lista_bloque_recurso) ; i++){
+		aux = list_get(lista_bloque_recurso, i);
+		if(*aux < 0 || *aux > CANTIDAD_BLOQUES - 1){
+			aux = list_remove(lista_bloque_recurso, i);
+			free(aux);
+			// Empiezo de nuevo, porque cambio el size de la lista de bloques
+			i = -1;
+		}
 	}
+	uint32_t tamanio = tamanio_archivo(conseguir_path_recurso_codigo(codigo));
+	int cantidad_bloques_real = (tamanio / TAMANIO_BLOQUE) + 1;
+	if(cantidad_bloques_real == list_size(lista_bloque_recurso)){
+		// Cantidad correcta de bloques
+		set_tam(conseguir_path_recurso_codigo(codigo), 0);
+		for(int i = 0; i < list_size(lista_bloque_recurso) ; i++){
+			int* aux = list_get(lista_bloque_recurso, i);
+			blanquear_bloque(*aux);
+		}
+		set_bloq(conseguir_path_recurso_codigo(codigo), lista_bloque_recurso);
+		agregar(codigo, tamanio);
+	} else {
+		// hay un bloque de mas, o de menos
+		if (cantidad_bloques_real < list_size(lista_bloque_recurso)){
+			// hay un bloque de mas
+			for(int i = 0; i < list_size(lista_bloque_recurso) ; i++){
+				aux = list_get(lista_bloque_recurso, i);
+				if(!(esta_en_lista(lista_bloques_ocupados, *aux))){
+					aux = list_remove(lista_bloque_recurso, i);
+					free(aux);
+					// reinicio y me vuelvo a fijar
+					i = -1;
+				}
+			}
+			set_tam(conseguir_path_recurso_codigo(codigo), 0);
+			for(int i = 0; i < list_size(lista_bloque_recurso) ; i ++){
+				int* aux = list_get(lista_bloque_recurso, i);
+				blanquear_bloque(*aux);
+			}
+			set_bloq(conseguir_path_recurso_codigo(codigo), lista_bloque_recurso);
+			agregar(codigo, tamanio);
+		} else {
+			// hay un bloque de menos
+			set_bloq(conseguir_path_recurso_codigo(codigo), lista_bloque_recurso);
+			set_cant_bloques(conseguir_path_recurso_codigo(codigo), list_size(lista_bloque_recurso));
+
+			for(int i = 0; i < cantidad_bloques_real - list_size(lista_bloque_recurso) ; i++){
+				asignar_nuevo_bloque(conseguir_path_recurso_codigo(codigo));
+			}
+
+			set_tam(conseguir_path_recurso_codigo(codigo), 0);
+			for(int i = 0; i < list_size(lista_bloque_recurso) ; i ++){
+				int* aux = list_get(lista_bloque_recurso, i);
+				blanquear_bloque(*aux);
+			}
+			agregar(codigo, tamanio);
+		}
+	}
+	matar_lista(lista_bloque_recurso);
 }
 
 void recorrer_recursos(t_list* bloques_ocupados) {
