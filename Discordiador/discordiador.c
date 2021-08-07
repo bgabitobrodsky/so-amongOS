@@ -131,7 +131,8 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    iniciar_planificacion();
+    //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota1.txt");
+    //iniciar_planificacion();
     /*for(int i = 0; i<1; i++){
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota1.txt 9|9 0|0 5|5");
         sleep(1);
@@ -144,9 +145,9 @@ int main() {
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
         sleep(1);
     }*/
-    for(int i = 0; i<2; i++){
+    /*for(int i = 0; i<2; i++){
         ejecutar_tarea("estabilidad_general.txt");
-    }
+    }*/
     
 
     pthread_t hiloConsola;

@@ -234,7 +234,7 @@ void atender_clientes(void* param) {
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
-	memset(memoria_principal,'0',TAMANIO_MEMORIA);
+	memset(memoria_principal,',',TAMANIO_MEMORIA);
 	tablas = dictionary_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
@@ -404,7 +404,7 @@ int gestionar_tcb(t_TCB* tcb){
 		tcb->puntero_a_pcb = tabla->dl_pcb;
 
 		t_buffer* buffer = serializar_tcb(*tcb);
-		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, tamanio_tcb, pid);
+		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) buffer->estructura, tamanio_tcb, pid);
 		free(buffer->estructura);
 		free(buffer);
 		
