@@ -36,7 +36,6 @@ int main(int argc, char** argv) {
 	pthread_mutex_init(&m_lista_segmentos,NULL);
 	pthread_mutex_init(&m_mapa,NULL);
 	pthread_mutex_init(&m_disco,NULL);
-	pthread_mutex_init(&m_iniciar_patota,NULL);
 
 	iniciar_memoria();
 	iniciar_mapa();
@@ -235,7 +234,7 @@ void atender_clientes(void* param) {
 
 void iniciar_memoria(){
 	memoria_principal = malloc(TAMANIO_MEMORIA);
-	memset(memoria_principal,'0',TAMANIO_MEMORIA);
+	memset(memoria_principal,',',TAMANIO_MEMORIA);
 	tablas = dictionary_create();
 	if(strcmp(ESQUEMA_MEMORIA,"SEGMENTACION")==0){
 
@@ -282,7 +281,6 @@ void* buscar_tabla(int pid){
 }
 
 int gestionar_tareas(t_archivo_tareas* archivo){
-	bloquear_iniciar_patota();
 	int pid = archivo->pid;
 	int tamanio_tareas = archivo->largo_texto * sizeof(char) + 1;
 
@@ -294,7 +292,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		segmento* segmento_tareas = asignar_segmento(tamanio_tareas);
 		if(segmento_tareas == NULL){
 			matar_tabla_segmentos(pid);
-			desbloquear_iniciar_patota();
 			return 0;
 		}
 		bloquear_segmento(segmento_tareas);
@@ -313,7 +310,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		segmento* segmento_pcb = asignar_segmento(sizeof(t_PCB));
 		if(segmento_pcb == NULL){
 			matar_tabla_segmentos(pid);
-			desbloquear_iniciar_patota();
 			return 0;
 		}
 		
@@ -324,7 +320,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		desbloquear_segmento(segmento_pcb);
 		desbloquear_tabla(tabla);
 		free(pcb);
-		desbloquear_iniciar_patota();
 		return 1;
 	}else if(strcmp(ESQUEMA_MEMORIA, "PAGINACION") == 0){
 		tabla_paginas* tabla  = crear_tabla_paginas(pid);
@@ -333,7 +328,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		int dl_tareas = agregar_paginas_segun_tamano(tabla, (void*) archivo->texto, tamanio_tareas, pid);
 		if(dl_tareas == 99999){
 			matar_tabla_paginas(pid);
-			desbloquear_iniciar_patota();
 			return 0;
 		}
 		tabla->dl_tareas = dl_tareas;
@@ -346,7 +340,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		int dl_pcb = agregar_paginas_segun_tamano(tabla, (void*) pcb, sizeof(t_PCB), pid);
 		if(dl_pcb == 99999){
 			matar_tabla_paginas(pid);
-			desbloquear_iniciar_patota();
 			return 0;
 		}
 		tabla->dl_pcb = dl_pcb;
@@ -354,7 +347,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 		
 		free(pcb);
 		desbloquear_tabla(tabla);
-		desbloquear_iniciar_patota();
 		return 1;
 	}else{
 		log_error(logger, "Esquema de memoria desconocido");
@@ -363,7 +355,6 @@ int gestionar_tareas(t_archivo_tareas* archivo){
 }
 
 int gestionar_tcb(t_TCB* tcb){
-	bloquear_iniciar_patota();
 	int pid = tcb->TID / 10000;
 	size_t tamanio_tcb = sizeof(uint32_t)*5 + sizeof(char);
 
@@ -380,7 +371,6 @@ int gestionar_tcb(t_TCB* tcb){
 		if(segmento_tcb == NULL){
 			// si no hay mas memoria se mata toda la patota
 			matar_tabla_segmentos(pid);
-			desbloquear_iniciar_patota();
 			return 0;
 		}
 		bloquear_segmento(segmento_tcb);
@@ -404,8 +394,7 @@ int gestionar_tcb(t_TCB* tcb){
 		if(tabla == NULL){ 
 			// esto no tendria que pasar, pero por las dudas
 			log_error(logger,"La tabla no existe pid: %d",pid);
-			//desbloquear_lista_tablas();
-			desbloquear_iniciar_patota();
+			desbloquear_lista_tablas();
 			return 0;
 		}
 		bloquear_tabla(tabla);
@@ -415,13 +404,12 @@ int gestionar_tcb(t_TCB* tcb){
 		tcb->puntero_a_pcb = tabla->dl_pcb;
 
 		t_buffer* buffer = serializar_tcb(*tcb);
-		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) tcb, tamanio_tcb, pid);
+		int dl_tcb = agregar_paginas_segun_tamano(tabla, (void*) buffer->estructura, tamanio_tcb, pid);
 		free(buffer->estructura);
 		free(buffer);
 		
 		if(dl_tcb == 99999){
 			matar_tabla_paginas(pid);
-			desbloquear_iniciar_patota();
 			return 0;
 		}
 
@@ -434,7 +422,6 @@ int gestionar_tcb(t_TCB* tcb){
 		exit(EXIT_FAILURE);
 	}
 	mapa_iniciar_tcb(tcb);
-	desbloquear_iniciar_patota();
 	return 1;
 }
 
@@ -554,9 +541,6 @@ t_tarea* buscar_siguiente_tarea(int tid){
 		}
 		bloquear_tabla(tabla);
 		bloquear_segmento(tabla->segmento_tareas);
-		if(!tabla->completa)
-			tabla->completa = true; // si recibo un pedido de tarea de esa tabla, significa que está completa
-		
 		t_TCB* tcb = buscar_tcb_por_tid(tid);
 		if(tcb == NULL){
 			// tcb no encontrado, no debería pasar pero por las dudas viste
@@ -841,11 +825,7 @@ int actualizar_tcb(t_TCB* nuevo_tcb){
 void signal_compactacion(int n){
 	if(n == SIGUSR1){
 		if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
-			bloquear_asignacion();
-			bloquear_lista_segmentos();
 			compactacion();
-			desbloquear_asignacion();
-			desbloquear_lista_segmentos();
 		}
 	}
 }
@@ -1038,14 +1018,4 @@ void bloquear_mapa(){
 void desbloquear_mapa(){
 	log_trace(logger,"[SEM]: Desloqueo mapa");
 	pthread_mutex_unlock(&m_mapa);
-}
-
-void bloquear_iniciar_patota(){
-	pthread_mutex_lock(&m_iniciar_patota);
-	log_trace(logger,"[SEM]: Bloqueo iniciar");
-}
-
-void desbloquear_iniciar_patota(){
-	log_trace(logger,"[SEM]: Desloqueo iniciar");
-	pthread_mutex_unlock(&m_iniciar_patota);
 }
