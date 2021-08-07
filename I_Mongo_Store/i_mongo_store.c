@@ -54,6 +54,15 @@ int main(int argc, char** argv){
 	iniciar_file_system();
 	log_info(logger_mongo, "Se inicio el FileSystem correctamente.");
 
+	t_list* bloques = list_create();
+
+	t_list* bloques_comida = get_lista_bloques(path_oxigeno);
+	list_add_all(bloques, bloques_comida);
+	matar_lista(bloques_comida);
+	matar_lista(bloques);
+
+
+
 	pthread_t hilo_escucha;
 	pthread_create(&hilo_escucha, NULL, (void*) escuchar_mongo, (void*) &args_escuchar);
 	pthread_detach(hilo_escucha);

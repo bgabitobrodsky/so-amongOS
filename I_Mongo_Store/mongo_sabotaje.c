@@ -295,44 +295,6 @@ int md5_no_concuerda_recurso(char* path_recurso) {
 	return 0;
 }
 
-int bitmap_no_concuerda() {
-
-	t_bitarray* bitmap = obtener_bitmap();
-	int* nro_bloque = malloc(sizeof(int));
-	t_list* bloques = list_create();
-
-	if(existe_basura) {
-		t_list* bloques_basura = get_lista_bloques(path_basura);
-		list_add_all(bloques, bloques_basura);
-	}
-
-	if(existe_comida) {
-		t_list* bloques_comida = get_lista_bloques(path_comida);
-		list_add_all(bloques, bloques_comida);
-	}
-
-	if(existe_oxigeno) {
-		t_list* bloques_oxigeno = get_lista_bloques(path_oxigeno);
-		list_add_all(bloques, bloques_oxigeno);
-	}
-
-	for(int i = 0; i < list_size(bloques) ; i++){
-		nro_bloque = list_get(bloques, i);
-
-		if (!bitarray_test_bit(bitmap, *nro_bloque)){
-			free(nro_bloque);
-			//liberar listas
-
-			return 1;
-		}
-	}
-
-	free(nro_bloque);
-	// liberar listas
-
-	return 0;
-}
-
 void restaurar_blocks(int codigo) {
 
 	t_list* lista_bloque_recurso = get_lista_bloques(conseguir_path_recurso_codigo(codigo));
