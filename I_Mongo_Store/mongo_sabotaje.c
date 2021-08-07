@@ -338,6 +338,7 @@ void restaurar_blocks(int codigo) {
 				int* aux = list_get(lista_bloque_recurso, i);
 				blanquear_bloque(*aux);
 			}
+			set_cant_bloques(conseguir_path_recurso_codigo(codigo), list_size(lista_bloque_recurso));
 			set_bloq(conseguir_path_recurso_codigo(codigo), lista_bloque_recurso);
 			agregar(codigo, tamanio);
 		} else {
