@@ -148,7 +148,6 @@ int main() {
     /*for(int i = 0; i<2; i++){
         ejecutar_tarea("estabilidad_general.txt");
     }*/
-    
 
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
@@ -194,10 +193,6 @@ void ejecutar_tarea(char* path_archivo){
 		char** texto_nuevo = string_split(texto_split[i], " ");
 		if(!strcmp(texto_nuevo[0], "INICIAR_PATOTA")){
 			iniciar_patota(texto_split[i]);
-		} else if (!strcmp(texto_nuevo[0], "INICIAR_PLANIFICACION")){
-			iniciar_planificacion();
-		} else if (!strcmp(texto_nuevo[0], "LISTAR_TRIPULANTES")){
-			listar_tripulantes();
 		}
 	}
 }
@@ -313,39 +308,14 @@ void planificador(){
     log_info(logger, "Algoritmo %s", ALGORITMO);
 
     while(planificacion_activa){
-
-    	// TODO
-    	// sem_wait(&planificador);
-/*
-        if(comparar_strings(ALGORITMO, "FIFO")){
-            t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-        	quitar_tripulante_de_listas(aux_tripulante);
-        	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
-            monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
-            // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
-        }
-
-        else if(comparar_strings(ALGORITMO, "RR")){
-            t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
-        	quitar_tripulante_de_listas(aux_tripulante);
-        	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
-            aux_tripulante->quantum_restante = QUANTUM;
-            monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
-            // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
-        }
-*/
-
-        while(list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
-
+        if (list_size(lista_tripulantes_exec) < GRADO_MULTITAREA && !queue_is_empty(cola_tripulantes_ready)){
             if(comparar_strings(ALGORITMO, "FIFO")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
             	quitar_tripulante_de_listas(aux_tripulante);
             	aux_tripulante->estado_tripulante = estado_tripulante[EXEC];
                 monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
-            }
-
-            else if(comparar_strings(ALGORITMO, "RR")){
+            } else if(comparar_strings(ALGORITMO, "RR")){
                 t_tripulante* aux_tripulante = monitor_cola_pop(sem_cola_ready, cola_tripulantes_ready);
             	quitar_tripulante_de_listas(aux_tripulante);
                 aux_tripulante->quantum_restante = QUANTUM;
@@ -353,8 +323,9 @@ void planificador(){
                 monitor_lista(sem_lista_exec, (void*)list_add, lista_tripulantes_exec, aux_tripulante);
                 // log_trace(logger, "Muevo %i a EXEC", aux_tripulante->TID);
             }
+        } else {
+        	usleep(1000);
         }
-
     }
 }
 
