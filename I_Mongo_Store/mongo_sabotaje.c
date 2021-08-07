@@ -26,20 +26,6 @@ void enviar_posicion_sabotaje(int socket_discordiador) {
 void reparar() {
 
     int reparado = 0;
-    
-    log_info(logger_mongo, "Se verifica la cantidad de bloques.");
-    reparado = verificar_cant_bloques();
-
-    if (reparado){
-    	log_info(logger_mongo, "Se repara la cantidad de bloques del superbloque.");
-    }
-
-    log_info(logger_mongo, "Se verifica el bitmap.");
-    reparado = verificar_bitmap();
-
-    if (reparado){
-    	log_info(logger_mongo, "Se repara el bitmap del superbloque.");
-    }
 
     log_info(logger_mongo, "Se verifica el sizes de los archivos.");
     reparado = verificar_sizes();
@@ -60,6 +46,20 @@ void reparar() {
 
     if (reparado){
     	log_info(logger_mongo, "Se repara la cantidad de bloques de los recursos.");
+    }
+    
+    log_info(logger_mongo, "Se verifica la cantidad de bloques.");
+    reparado = verificar_cant_bloques();
+
+    if (reparado){
+    	log_info(logger_mongo, "Se repara la cantidad de bloques del superbloque.");
+    }
+
+    log_info(logger_mongo, "Se verifica el bitmap.");
+    reparado = verificar_bitmap();
+
+    if (reparado){
+    	log_info(logger_mongo, "Se repara el bitmap del superbloque.");
     }
 
     if (!reparado){
