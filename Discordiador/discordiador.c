@@ -131,33 +131,13 @@ int main() {
     socket_a_mi_ram_hq = crear_socket_cliente(IP_MI_RAM_HQ, PUERTO_MI_RAM_HQ);
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
-    iniciar_planificacion();
-    /*for(int i = 0; i<1; i++){
-        iniciar_patota("INICIAR_PATOTA 3 ES3_Patota1.txt 9|9 0|0 5|5");
-        sleep(1);
-        iniciar_patota("INICIAR_PATOTA 3 ES3_Patota2.txt 4|0 2|6 8|2");
-        sleep(1);
-        iniciar_patota("INICIAR_PATOTA 3 ES3_Patota3.txt 2|3 5|8 5|3");
-        sleep(1);
-        iniciar_patota("INICIAR_PATOTA 3 ES3_Patota4.txt 0|9 4|4 9|0");
-        sleep(1);
-        iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
-        sleep(1);
-    }*/
-
     pthread_t hiloConsola;
 	pthread_create(&hiloConsola, NULL, (void*)leer_consola, NULL);
 	pthread_detach(hiloConsola);
 
-
-    for(int i = 0; i<10 ; i++){
-    	ejecutar_tarea("estabilidad_general.txt");
-    }
-
     pthread_t sabotaje;
     pthread_create(&sabotaje, NULL, (void*) guardian_mongo, NULL);
     pthread_detach(sabotaje);
-
 
     sem_wait(&sistema_activo);
 
@@ -312,9 +292,6 @@ void iniciar_planificacion() {
 void planificador(){
     log_info(logger, "Planificando");
     log_info(logger, "Algoritmo %s", ALGORITMO);
-
-    // sem_t planificador;
-    // sem_init(&planificador, 0, MIN(GRADO_MULTITAREA, queue_size(cola_tripulantes_ready)));
 
     while(planificacion_activa){
 
