@@ -834,7 +834,7 @@ void dump(int n){
 	if(n == SIGUSR2){
 		struct stat st = {0};
 		if(stat("./dump/", &st) == -1) {
-			mkdir("./dump", 0700);
+			mkdir("./dump", 0777);
 		}
 		log_debug(logger,"Se inicia el dump de memoria");
 		if(strcmp(ESQUEMA_MEMORIA, "SEGMENTACION") == 0){
