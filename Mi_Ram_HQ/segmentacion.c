@@ -30,7 +30,12 @@ void ordenar_segmentos(){
 
 void compactacion(){
     log_debug(logger, "[COMP]: Se comienza la compactacion");
-    bloquear_lista_segmentos();
+    /*void hola_como_tu_te_llama(void *una_tabla){
+        tabla_segmentos* seg = (tabla_segmentos*) una_tabla;
+        bloquear_tabla(seg);
+    }
+    dictionary_iterator(tablas,hola_como_tu_te_llama);*/
+
     unificar_segmentos_libres();
     int size = list_size(segmentos);
     for(int i = 0; i < size; i++){
@@ -84,13 +89,15 @@ void compactacion(){
 
                         void buscador_tabla_por_tareas(char* spid, void* una_tabla){
                             tabla_segmentos* t = (tabla_segmentos*) una_tabla;
-                            if(t->segmento_tareas->base == segmento_ocupado->base){
-                                tabla = t;
-                                pid = atoi(spid);
+                            if(tabla->completa && t->segmento_tareas != NULL){
+                                if(t->segmento_tareas->base == segmento_ocupado->base){
+                                    tabla = t;
+                                    pid = atoi(spid);
+                                }
                             }
                         }
                         dictionary_iterator(tablas, buscador_tabla_por_tareas);
-
+                        
                         t_PCB* pcb = (t_PCB*) (memoria_principal + (tabla->segmento_pcb->base));
                         log_trace(logger, "[COMP]: Muevo el puntero a tareas de PID: %d, -%dbytes", pcb->PID, segmento_libre->tam);
                         pcb->direccion_tareas -= segmento_libre->tam;
@@ -150,7 +157,11 @@ void compactacion(){
     }
     //ordenar_segmentos();
     //unificar_segmentos_libres();
-    desbloquear_lista_segmentos();
+    /*void yo_no_se(void *una_tabla){
+        tabla_segmentos* seg = (tabla_segmentos*) una_tabla;
+        desbloquear_tabla(seg);
+    }
+    dictionary_iterator(segmentos,yo_no_se);*/
     log_debug(logger, "[COMP]: Compactación terminada");
     return;
 }
@@ -198,7 +209,6 @@ segmento* crear_segmento(int base, int tam, bool libre){
 
 segmento* buscar_segmento_libre(int tam){
     segmento* segmento;
-    bloquear_lista_segmentos();
     log_info(logger,"Buscando segmento libre");
 	if (strcmp(CRITERIO_SELECCION, "FF") == 0) {
         segmento = first_fit(tam);
@@ -208,7 +218,6 @@ segmento* buscar_segmento_libre(int tam){
         log_error(logger, "Metodo de asignacion desconocido");
         exit(EXIT_FAILURE);
     }
-    desbloquear_lista_segmentos();
     if(segmento == NULL)
         log_warning(logger,"No se encontró segmento libre");
     return segmento;
@@ -260,11 +269,15 @@ segmento* best_fit(int tam){
 
 segmento* asignar_segmento(int tam){
     bloquear_asignacion();
+    bloquear_lista_segmentos();
+    bloquear_lista_tablas();
 	log_info(logger, "Asignando segmento");
     segmento* segmento_libre = buscar_segmento_libre(tam);
 	if(segmento_libre != NULL){
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
+            desbloquear_lista_tablas();
+            desbloquear_lista_segmentos();
             desbloquear_asignacion();
 			return segmento_libre;
 		}else{
@@ -273,6 +286,8 @@ segmento* asignar_segmento(int tam){
 			segmento_libre->base += tam;
 			segmento_libre->tam -= tam;
 			ordenar_segmentos();
+            desbloquear_lista_tablas();
+            desbloquear_lista_segmentos();
             desbloquear_asignacion();
 			return nuevo_segmento;
 		}
@@ -282,6 +297,8 @@ segmento* asignar_segmento(int tam){
 	if(segmento_libre != NULL){
 		if(segmento_libre->tam == tam){
 			segmento_libre->libre = false;
+            desbloquear_lista_tablas();
+            desbloquear_lista_segmentos();
             desbloquear_asignacion();
 			return segmento_libre;
 		}else{
@@ -290,11 +307,15 @@ segmento* asignar_segmento(int tam){
 			segmento_libre->base += tam;
 			segmento_libre->tam -= tam;
 			ordenar_segmentos();
+            desbloquear_lista_tablas();
+            desbloquear_lista_segmentos();
             desbloquear_asignacion();
 			return nuevo_segmento;
 		}
 	}
     log_error(logger,"No hay mas memoria bro");
+    desbloquear_lista_tablas();
+    desbloquear_lista_segmentos();
     desbloquear_asignacion();
     return NULL;
 	}
@@ -308,6 +329,7 @@ tabla_segmentos* crear_tabla_segmentos(int pid){
         nueva_tabla->segmento_tareas = NULL;
         nueva_tabla->segmentos_tcb = list_create();
         pthread_mutex_init(&(nueva_tabla->mutex), NULL);
+        nueva_tabla->completa = false;
         bloquear_lista_tablas();
         dictionary_put(tablas,spid,nueva_tabla);
         desbloquear_lista_tablas();
@@ -430,6 +452,22 @@ void desbloquear_segmento_por_tid(int tid){
             desbloquear_segmento(segmento_tcb);
         }
     }
+}
+
+void bloquear_tablas_segmentos(){
+    void hola_como_tu_te_llama(void *una_tabla){
+        tabla_segmentos* tabla = (tabla_segmentos*) una_tabla;
+        bloquear_tabla(tabla);
+    }
+    dictionary_iterator(tablas,hola_como_tu_te_llama);
+}
+
+void desbloquear_tablas_segmentos(){
+    void yo_no_se(void *una_tabla){
+        tabla_segmentos* tabla = (tabla_segmentos*) una_tabla;
+        desbloquear_tabla(tabla);
+    }
+    dictionary_iterator(segmentos,yo_no_se);
 }
 
 /*

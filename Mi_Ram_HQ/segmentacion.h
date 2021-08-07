@@ -26,6 +26,7 @@ typedef struct tabla_segmentos {
     segmento* segmento_tareas;
     t_list* segmentos_tcb;
     pthread_mutex_t mutex;
+    bool completa;
 } tabla_segmentos;
 
 typedef struct segmento_dump_wrapper{

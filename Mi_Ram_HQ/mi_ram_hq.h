@@ -54,6 +54,7 @@ pthread_mutex_t m_mapa;
 void* memoria_principal;
 t_dictionary* tablas;
 pthread_mutex_t m_asignacion;
+pthread_mutex_t m_iniciar_patota;
 
 /*
     SEMAFOROS GENERALES

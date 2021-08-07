@@ -1,0 +1,614 @@
+==6649== Memcheck, a memory error detector
+==6649== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==6649== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==6649== Command: ./mi_ram_hq
+==6649== Parent PID: 6648
+==6649== 
+--6649-- 
+--6649-- Valgrind options:
+--6649--    --leak-check=full
+--6649--    --show-leak-kinds=all
+--6649--    --track-origins=yes
+--6649--    --verbose
+--6649--    --log-file=valgrind-out.txt
+--6649-- Contents of /proc/version:
+--6649--   Linux version 4.4.0-116-generic (buildd@lgw01-amd64-023) (gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.9) ) #140-Ubuntu SMP Mon Feb 12 21:22:43 UTC 2018
+--6649-- 
+--6649-- Arch and hwcaps: X86, LittleEndian, x86-mmxext-sse1-sse2-sse3
+--6649-- Page sizes: currently 4096, max supported 4096
+--6649-- Valgrind library directory: /usr/lib/valgrind
+--6649-- Reading syms from /lib/i386-linux-gnu/ld-2.23.so
+--6649--   Considering /lib/i386-linux-gnu/ld-2.23.so ..
+--6649--   .. CRC mismatch (computed 596cb2b8 wanted 417b32cc)
+--6649--   Considering /usr/lib/debug/lib/i386-linux-gnu/ld-2.23.so ..
+--6649--   .. CRC is valid
+--6649-- Reading syms from /media/sf_tp-2021-1c-No-matar-a-rey-de-fuego/Mi_Ram_HQ/mi_ram_hq
+--6649-- Reading syms from /usr/lib/valgrind/memcheck-x86-linux
+--6649--   Considering /usr/lib/valgrind/memcheck-x86-linux ..
+--6649--   .. CRC mismatch (computed 6036da3f wanted 652e483f)
+--6649--    object doesn't have a symbol table
+--6649--    object doesn't have a dynamic symbol table
+--6649-- Scheduler: using generic scheduler lock implementation.
+--6649-- Reading suppressions file: /usr/lib/valgrind/default.supp
+==6649== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-6649-by-root-on-???
+==6649== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-6649-by-root-on-???
+==6649== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-6649-by-root-on-???
+==6649== 
+==6649== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==6649== don't want to do, unless you know exactly what you're doing,
+==6649== or are doing some strange experiment):
+==6649==   /usr/lib/valgrind/../../bin/vgdb --pid=6649 ...command...
+==6649== 
+==6649== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==6649==   /path/to/gdb ./mi_ram_hq
+==6649== and then give GDB the following command
+==6649==   target remote | /usr/lib/valgrind/../../bin/vgdb --pid=6649
+==6649== --pid is optional if only one valgrind process is running
+==6649== 
+--6649-- REDIR: 0x4018eb0 (ld-linux.so.2:strlen) redirected to 0x380490f2 (???)
+--6649-- REDIR: 0x4018c70 (ld-linux.so.2:index) redirected to 0x380490cd (???)
+--6649-- Reading syms from /usr/lib/valgrind/vgpreload_core-x86-linux.so
+--6649--   Considering /usr/lib/valgrind/vgpreload_core-x86-linux.so ..
+--6649--   .. CRC mismatch (computed 5b95c0c4 wanted 39e79efa)
+--6649--    object doesn't have a symbol table
+--6649-- Reading syms from /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so
+--6649--   Considering /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so ..
+--6649--   .. CRC mismatch (computed 4d5a1526 wanted 33571d5b)
+--6649--    object doesn't have a symbol table
+==6649== WARNING: new redirection conflicts with existing -- ignoring it
+--6649--     old: 0x04018eb0 (strlen              ) R-> (0000.0) 0x380490f2 ???
+--6649--     new: 0x04018eb0 (strlen              ) R-> (2007.0) 0x0402f410 strlen
+--6649-- Reading syms from /usr/lib/libcommons.so
+--6649-- Reading syms from /lib/i386-linux-gnu/libpthread-2.23.so
+--6649--   Considering /usr/lib/debug/.build-id/12/78da59ecc0791dce5c44d8b8756a0480be3a5b.debug ..
+--6649--   .. build-id is valid
+--6649-- Reading syms from /usr/lib/libcomms.so
+--6649-- Reading syms from /usr/lib/i386-linux-gnu/libcunit.so.1.0.1
+--6649--    object doesn't have a symbol table
+--6649-- Reading syms from /usr/lib/libnivel-gui.so
+--6649-- Reading syms from /lib/i386-linux-gnu/libncurses.so.5.9
+--6649--    object doesn't have a symbol table
+--6649-- Reading syms from /lib/i386-linux-gnu/libc-2.23.so
+--6649--   Considering /lib/i386-linux-gnu/libc-2.23.so ..
+--6649--   .. CRC mismatch (computed af9c0474 wanted a5de3f2a)
+--6649--   Considering /usr/lib/debug/lib/i386-linux-gnu/libc-2.23.so ..
+--6649--   .. CRC is valid
+--6649-- Reading syms from /lib/i386-linux-gnu/libdl-2.23.so
+--6649--   Considering /lib/i386-linux-gnu/libdl-2.23.so ..
+--6649--   .. CRC mismatch (computed a82b1ac7 wanted 804ba9a9)
+--6649--   Considering /usr/lib/debug/lib/i386-linux-gnu/libdl-2.23.so ..
+--6649--   .. CRC is valid
+--6649-- Reading syms from /lib/i386-linux-gnu/libtinfo.so.5.9
+--6649--    object doesn't have a symbol table
+--6649-- REDIR: 0x41344b0 (libc.so.6:strncasecmp) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x413b140 (libc.so.6:memrchr) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x414db20 (libc.so.6:wcslen) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x4133350 (libc.so.6:strstr) redirected to 0x4033700 (strstr)
+--6649-- REDIR: 0x41327e0 (libc.so.6:__GI_strrchr) redirected to 0x402ee00 (__GI_strrchr)
+--6649-- REDIR: 0x412df00 (libc.so.6:malloc) redirected to 0x402c110 (malloc)
+--6649-- REDIR: 0x412e470 (libc.so.6:free) redirected to 0x402d2f0 (free)
+--6649-- REDIR: 0x41325c0 (libc.so.6:__GI_strlen) redirected to 0x402f390 (__GI_strlen)
+--6649-- REDIR: 0x4134680 (libc.so.6:__GI_memcpy) redirected to 0x4030fb0 (__GI_memcpy)
+--6649-- REDIR: 0x412e810 (libc.so.6:calloc) redirected to 0x402e010 (calloc)
+--6649-- REDIR: 0x4131d20 (libc.so.6:__GI_strchr) redirected to 0x402ef30 (__GI_strchr)
+--6649-- REDIR: 0x412e520 (libc.so.6:realloc) redirected to 0x402e250 (realloc)
+--6649-- REDIR: 0x4132580 (libc.so.6:strlen) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x413b440 (libc.so.6:__strlen_sse2_bsf) redirected to 0x402f370 (strlen)
+--6649-- REDIR: 0x4132700 (libc.so.6:strncmp) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x41f25c0 (libc.so.6:__strncmp_ssse3) redirected to 0x402fab0 (strncmp)
+--6649-- REDIR: 0x4133fc0 (libc.so.6:memset) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x41e24d0 (libc.so.6:__memset_sse2) redirected to 0x40327d0 (memset)
+--6649-- REDIR: 0x4131ee0 (libc.so.6:strcmp) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x41f1150 (libc.so.6:__strcmp_ssse3) redirected to 0x4030450 (strcmp)
+--6649-- REDIR: 0x4136280 (libc.so.6:strchrnul) redirected to 0x40330b0 (strchrnul)
+--6649-- REDIR: 0x41340d0 (libc.so.6:__GI_mempcpy) redirected to 0x40332c0 (__GI_mempcpy)
+--6649-- REDIR: 0x4131ae0 (libc.so.6:strcat) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x4146b30 (libc.so.6:__strcat_ssse3) redirected to 0x402f030 (strcat)
+--6649-- REDIR: 0x4134610 (libc.so.6:memcpy) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x41e4b70 (libc.so.6:__memcpy_ssse3) redirected to 0x4030cc0 (memcpy)
+--6649-- REDIR: 0x4133c10 (libc.so.6:__GI_memcmp) redirected to 0x4031ef0 (__GI_memcmp)
+--6649-- REDIR: 0x41361b0 (libc.so.6:__GI___rawmemchr) redirected to 0x4033110 (__GI___rawmemchr)
+--6649-- REDIR: 0x4131f90 (libc.so.6:strcpy) redirected to 0x4026560 (_vgnU_ifunc_wrapper)
+--6649-- REDIR: 0x413b570 (libc.so.6:__strcpy_ssse3) redirected to 0x402f450 (strcpy)
+--6649-- Reading syms from /lib/i386-linux-gnu/libgcc_s.so.1
+--6649--   Considering /lib/i386-linux-gnu/libgcc_s.so.1 ..
+--6649--   .. CRC mismatch (computed 1733b444 wanted 20ea50ba)
+--6649--    object doesn't have a symbol table
+==6649== Thread 3:
+==6649== Use of uninitialised value of size 4
+==6649==    at 0x804BFF2: buscador_tabla_por_tareas.6871 (segmentacion.c:92)
+==6649==    by 0x4053F3E: dictionary_iterator (in /usr/lib/libcommons.so)
+==6649==    by 0x804BE1E: compactacion (segmentacion.c:99)
+==6649==    by 0x804C669: asignar_segmento (segmentacion.c:295)
+==6649==    by 0x804DD8C: gestionar_tareas (mi_ram_hq.c:294)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649==  Uninitialised value was created by a stack allocation
+==6649==    at 0x804BB88: compactacion (segmentacion.c:31)
+==6649== 
+==6649== Invalid read of size 4
+==6649==    at 0x804C000: buscador_tabla_por_tareas.6871 (segmentacion.c:93)
+==6649==    by 0x4053F3E: dictionary_iterator (in /usr/lib/libcommons.so)
+==6649==    by 0x804BE1E: compactacion (segmentacion.c:99)
+==6649==    by 0x804C669: asignar_segmento (segmentacion.c:295)
+==6649==    by 0x804DD8C: gestionar_tareas (mi_ram_hq.c:294)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649==  Address 0x0 is not stack'd, malloc'd or (recently) free'd
+==6649== 
+==6649== 
+==6649== Process terminating with default action of signal 11 (SIGSEGV)
+==6649==  Access not within mapped region at address 0x0
+==6649==    at 0x804C000: buscador_tabla_por_tareas.6871 (segmentacion.c:93)
+==6649==    by 0x4053F3E: dictionary_iterator (in /usr/lib/libcommons.so)
+==6649==    by 0x804BE1E: compactacion (segmentacion.c:99)
+==6649==    by 0x804C669: asignar_segmento (segmentacion.c:295)
+==6649==    by 0x804DD8C: gestionar_tareas (mi_ram_hq.c:294)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649==  If you believe this happened as a result of a stack
+==6649==  overflow in your program's main thread (unlikely but
+==6649==  possible), you can try to increase the size of the
+==6649==  main thread stack using the --main-stacksize= flag.
+==6649==  The main thread stack size used in this run was 8388608.
+--6649-- Discarding syms at 0x7ea6080-0x7ebbd35 in /lib/i386-linux-gnu/libgcc_s.so.1 due to munmap()
+==6649== 
+==6649== HEAP SUMMARY:
+==6649==     in use at exit: 4,103 bytes in 112 blocks
+==6649==   total heap usage: 71,775 allocs, 71,663 frees, 4,186,341 bytes allocated
+==6649== 
+==6649== Searching for pointers to 112 not-freed blocks
+==6649== Checked 42,026,100 bytes
+==6649== 
+==6649== Thread 1:
+==6649== 8 bytes in 1 blocks are still reachable in loss record 1 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4055BC9: config_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D1DB: main (mi_ram_hq.c:25)
+==6649== 
+==6649== 8 bytes in 1 blocks are still reachable in loss record 2 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x40544E9: list_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804DA31: iniciar_memoria (mi_ram_hq.c:245)
+==6649==    by 0x804D2D6: main (mi_ram_hq.c:41)
+==6649== 
+==6649== 8 bytes in 1 blocks are still reachable in loss record 3 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407B326: serializar_tcb (in /usr/lib/libcomms.so)
+==6649==    by 0x804EBC0: buscar_siguiente_tarea (mi_ram_hq.c:593)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 8 bytes in 3 blocks are still reachable in loss record 4 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x41322C5: strdup (strdup.c:42)
+==6649==    by 0x4053D91: dictionary_put (in /usr/lib/libcommons.so)
+==6649==    by 0x804C7EC: crear_tabla_segmentos (segmentacion.c:334)
+==6649==    by 0x804DD54: gestionar_tareas (mi_ram_hq.c:290)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 10 bytes in 1 blocks are still reachable in loss record 5 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x41322C5: strdup (strdup.c:42)
+==6649==    by 0x40568D7: string_duplicate (in /usr/lib/libcommons.so)
+==6649==    by 0x40561F7: log_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D239: main (mi_ram_hq.c:28)
+==6649== 
+==6649== 12 bytes in 1 blocks are still reachable in loss record 6 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407BCAD: deserializar_archivo_tareas (in /usr/lib/libcomms.so)
+==6649==    by 0x407BA25: recepcion_y_deserializacion (in /usr/lib/libcomms.so)
+==6649==    by 0x804D4DC: atender_clientes (mi_ram_hq.c:120)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 13 bytes in 1 blocks are still reachable in loss record 7 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x41322C5: strdup (strdup.c:42)
+==6649==    by 0x4057463: temporal_get_string_time (in /usr/lib/libcommons.so)
+==6649==    by 0x40564CF: _log_write_in_level (in /usr/lib/libcommons.so)
+==6649==    by 0x4056291: log_trace (in /usr/lib/libcommons.so)
+==6649==    by 0x804CC19: desbloquear_segmento (segmentacion.c:436)
+==6649==    by 0x804EC13: buscar_siguiente_tarea (mi_ram_hq.c:599)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 13 bytes in 1 blocks are still reachable in loss record 8 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x41322C5: strdup (strdup.c:42)
+==6649==    by 0x4057463: temporal_get_string_time (in /usr/lib/libcommons.so)
+==6649==    by 0x40564CF: _log_write_in_level (in /usr/lib/libcommons.so)
+==6649==    by 0x4056291: log_trace (in /usr/lib/libcommons.so)
+==6649==    by 0x804FB13: bloquear_tabla (mi_ram_hq.c:999)
+==6649==    by 0x804EFE6: eliminar_tcb (mi_ram_hq.c:701)
+==6649==    by 0x804F296: actualizar_tcb (mi_ram_hq.c:763)
+==6649==    by 0x804D6AF: atender_clientes (mi_ram_hq.c:161)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 16 bytes in 1 blocks are still reachable in loss record 9 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4053C5B: dictionary_create (in /usr/lib/libcommons.so)
+==6649==    by 0x4055BEC: config_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D1DB: main (mi_ram_hq.c:25)
+==6649== 
+==6649== 16 bytes in 1 blocks are still reachable in loss record 10 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4053C5B: dictionary_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D984: iniciar_memoria (mi_ram_hq.c:239)
+==6649==    by 0x804D2D6: main (mi_ram_hq.c:41)
+==6649== 
+==6649== 16 bytes in 2 blocks are still reachable in loss record 11 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x405564C: list_create_element (in /usr/lib/libcommons.so)
+==6649==    by 0x4054579: list_add (in /usr/lib/libcommons.so)
+==6649==    by 0x804C625: asignar_segmento (segmentacion.c:285)
+==6649==    by 0x804DE51: gestionar_tareas (mi_ram_hq.c:313)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 16 bytes in 1 blocks are definitely lost in loss record 12 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x804D465: proceso_handler (mi_ram_hq.c:101)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 17 bytes in 1 blocks are still reachable in loss record 13 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x41322C5: strdup (strdup.c:42)
+==6649==    by 0x4055BDD: config_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D1DB: main (mi_ram_hq.c:25)
+==6649== 
+==6649== 17 bytes in 1 blocks are still reachable in loss record 14 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407AC65: crear_tarea (in /usr/lib/libcomms.so)
+==6649==    by 0x804EB53: buscar_siguiente_tarea (mi_ram_hq.c:583)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 20 bytes in 1 blocks are still reachable in loss record 15 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4056151: log_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D239: main (mi_ram_hq.c:28)
+==6649== 
+==6649== 21 bytes in 1 blocks are still reachable in loss record 16 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407B343: serializar_tcb (in /usr/lib/libcomms.so)
+==6649==    by 0x804EBC0: buscar_siguiente_tarea (mi_ram_hq.c:593)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 21 bytes in 1 blocks are still reachable in loss record 17 of 47
+==6649==    at 0x402E2CC: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4056924: string_append (in /usr/lib/libcommons.so)
+==6649==    by 0x40572AA: _string_append_with_format_list (in /usr/lib/libcommons.so)
+==6649==    by 0x4056A10: string_from_vformat (in /usr/lib/libcommons.so)
+==6649==    by 0x40564BA: _log_write_in_level (in /usr/lib/libcommons.so)
+==6649==    by 0x4056291: log_trace (in /usr/lib/libcommons.so)
+==6649==    by 0x804FB13: bloquear_tabla (mi_ram_hq.c:999)
+==6649==    by 0x804EFE6: eliminar_tcb (mi_ram_hq.c:701)
+==6649==    by 0x804F296: actualizar_tcb (mi_ram_hq.c:763)
+==6649==    by 0x804D6AF: atender_clientes (mi_ram_hq.c:161)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 24 bytes in 1 blocks are still reachable in loss record 18 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407BAEF: deserializar_tcb (in /usr/lib/libcomms.so)
+==6649==    by 0x804E586: buscar_tcb_por_tid (mi_ram_hq.c:465)
+==6649==    by 0x804EA6A: buscar_siguiente_tarea (mi_ram_hq.c:560)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 24 bytes in 1 blocks are still reachable in loss record 19 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407AC30: crear_tarea (in /usr/lib/libcomms.so)
+==6649==    by 0x804EB53: buscar_siguiente_tarea (mi_ram_hq.c:583)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 24 bytes in 3 blocks are still reachable in loss record 20 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x40544E9: list_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804C7AF: crear_tabla_segmentos (segmentacion.c:330)
+==6649==    by 0x804DD54: gestionar_tareas (mi_ram_hq.c:290)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 24 bytes in 3 blocks are still reachable in loss record 21 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x405564C: list_create_element (in /usr/lib/libcommons.so)
+==6649==    by 0x4054579: list_add (in /usr/lib/libcommons.so)
+==6649==    by 0x804C625: asignar_segmento (segmentacion.c:285)
+==6649==    by 0x804DD8C: gestionar_tareas (mi_ram_hq.c:294)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 32 bytes in 4 blocks are still reachable in loss record 22 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x405564C: list_create_element (in /usr/lib/libcommons.so)
+==6649==    by 0x4054579: list_add (in /usr/lib/libcommons.so)
+==6649==    by 0x804E239: gestionar_tcb (mi_ram_hq.c:398)
+==6649==    by 0x804D64E: atender_clientes (mi_ram_hq.c:151)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 37 bytes in 1 blocks are still reachable in loss record 23 of 47
+==6649==    at 0x402E2CC: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4056924: string_append (in /usr/lib/libcommons.so)
+==6649==    by 0x40572AA: _string_append_with_format_list (in /usr/lib/libcommons.so)
+==6649==    by 0x4056A10: string_from_vformat (in /usr/lib/libcommons.so)
+==6649==    by 0x40564BA: _log_write_in_level (in /usr/lib/libcommons.so)
+==6649==    by 0x4056291: log_trace (in /usr/lib/libcommons.so)
+==6649==    by 0x804CC19: desbloquear_segmento (segmentacion.c:436)
+==6649==    by 0x804EC13: buscar_siguiente_tarea (mi_ram_hq.c:599)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 40 bytes in 5 blocks are still reachable in loss record 24 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x405564C: list_create_element (in /usr/lib/libcommons.so)
+==6649==    by 0x4054579: list_add (in /usr/lib/libcommons.so)
+==6649==    by 0x804C625: asignar_segmento (segmentacion.c:285)
+==6649==    by 0x804E15C: gestionar_tcb (mi_ram_hq.c:379)
+==6649==    by 0x804D64E: atender_clientes (mi_ram_hq.c:151)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 40 bytes in 1 blocks are definitely lost in loss record 25 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407B8AA: recepcion_y_deserializacion (in /usr/lib/libcomms.so)
+==6649==    by 0x804D4DC: atender_clientes (mi_ram_hq.c:120)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 48 bytes in 2 blocks are still reachable in loss record 26 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407BAEF: deserializar_tcb (in /usr/lib/libcomms.so)
+==6649==    by 0x407B9D2: recepcion_y_deserializacion (in /usr/lib/libcomms.so)
+==6649==    by 0x804D4DC: atender_clientes (mi_ram_hq.c:120)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 48 bytes in 3 blocks are still reachable in loss record 27 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4054268: dictionary_create_element (in /usr/lib/libcommons.so)
+==6649==    by 0x4053DA3: dictionary_put (in /usr/lib/libcommons.so)
+==6649==    by 0x804C7EC: crear_tabla_segmentos (segmentacion.c:334)
+==6649==    by 0x804DD54: gestionar_tareas (mi_ram_hq.c:290)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 64 bytes in 4 blocks are still reachable in loss record 28 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x804D465: proceso_handler (mi_ram_hq.c:101)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 66 bytes in 1 blocks are still reachable in loss record 29 of 47
+==6649==    at 0x402E2CC: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4056924: string_append (in /usr/lib/libcommons.so)
+==6649==    by 0x40572AA: _string_append_with_format_list (in /usr/lib/libcommons.so)
+==6649==    by 0x4056A10: string_from_vformat (in /usr/lib/libcommons.so)
+==6649==    by 0x40569AE: string_from_format (in /usr/lib/libcommons.so)
+==6649==    by 0x4056512: _log_write_in_level (in /usr/lib/libcommons.so)
+==6649==    by 0x4056291: log_trace (in /usr/lib/libcommons.so)
+==6649==    by 0x804FB13: bloquear_tabla (mi_ram_hq.c:999)
+==6649==    by 0x804EFE6: eliminar_tcb (mi_ram_hq.c:701)
+==6649==    by 0x804F296: actualizar_tcb (mi_ram_hq.c:763)
+==6649==    by 0x804D6AF: atender_clientes (mi_ram_hq.c:161)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649== 
+==6649== 72 bytes in 11 blocks are still reachable in loss record 30 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x41322C5: strdup (strdup.c:42)
+==6649==    by 0x40568D7: string_duplicate (in /usr/lib/libcommons.so)
+==6649==    by 0x40573E2: _string_split (in /usr/lib/libcommons.so)
+==6649==    by 0x4056EE4: string_n_split (in /usr/lib/libcommons.so)
+==6649==    by 0x4055AE6: add_cofiguration.2909 (in /usr/lib/libcommons.so)
+==6649==    by 0x4057092: string_iterate_lines (in /usr/lib/libcommons.so)
+==6649==    by 0x4055C7A: config_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D1DB: main (mi_ram_hq.c:25)
+==6649== 
+==6649== 75 bytes in 1 blocks are still reachable in loss record 31 of 47
+==6649==    at 0x402E2CC: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4056924: string_append (in /usr/lib/libcommons.so)
+==6649==    by 0x40572AA: _string_append_with_format_list (in /usr/lib/libcommons.so)
+==6649==    by 0x4056A10: string_from_vformat (in /usr/lib/libcommons.so)
+==6649==    by 0x40569AE: string_from_format (in /usr/lib/libcommons.so)
+==6649==    by 0x4056565: _log_write_in_level (in /usr/lib/libcommons.so)
+==6649==    by 0x4056291: log_trace (in /usr/lib/libcommons.so)
+==6649==    by 0x804FB13: bloquear_tabla (mi_ram_hq.c:999)
+==6649==    by 0x804EFE6: eliminar_tcb (mi_ram_hq.c:701)
+==6649==    by 0x804F296: actualizar_tcb (mi_ram_hq.c:763)
+==6649==    by 0x804D6AF: atender_clientes (mi_ram_hq.c:161)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649== 
+==6649== 80 bytes in 1 blocks are still reachable in loss record 32 of 47
+==6649==    at 0x402E0B8: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4053C7C: dictionary_create (in /usr/lib/libcommons.so)
+==6649==    by 0x4055BEC: config_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D1DB: main (mi_ram_hq.c:25)
+==6649== 
+==6649== 80 bytes in 1 blocks are still reachable in loss record 33 of 47
+==6649==    at 0x402E0B8: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4053C7C: dictionary_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D984: iniciar_memoria (mi_ram_hq.c:239)
+==6649==    by 0x804D2D6: main (mi_ram_hq.c:41)
+==6649== 
+==6649== 80 bytes in 2 blocks are still reachable in loss record 34 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x804C2EC: crear_segmento (segmentacion.c:201)
+==6649==    by 0x804C60E: asignar_segmento (segmentacion.c:284)
+==6649==    by 0x804DE51: gestionar_tareas (mi_ram_hq.c:313)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 82 bytes in 1 blocks are still reachable in loss record 35 of 47
+==6649==    at 0x402E2CC: realloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4056924: string_append (in /usr/lib/libcommons.so)
+==6649==    by 0x40572AA: _string_append_with_format_list (in /usr/lib/libcommons.so)
+==6649==    by 0x4056A10: string_from_vformat (in /usr/lib/libcommons.so)
+==6649==    by 0x40569AE: string_from_format (in /usr/lib/libcommons.so)
+==6649==    by 0x4056512: _log_write_in_level (in /usr/lib/libcommons.so)
+==6649==    by 0x4056291: log_trace (in /usr/lib/libcommons.so)
+==6649==    by 0x804CC19: desbloquear_segmento (segmentacion.c:436)
+==6649==    by 0x804EC13: buscar_siguiente_tarea (mi_ram_hq.c:599)
+==6649==    by 0x804D5B4: atender_clientes (mi_ram_hq.c:137)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 120 bytes in 3 blocks are still reachable in loss record 36 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x804C791: crear_tabla_segmentos (segmentacion.c:327)
+==6649==    by 0x804DD54: gestionar_tareas (mi_ram_hq.c:290)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 120 bytes in 3 blocks are still reachable in loss record 37 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x804C2EC: crear_segmento (segmentacion.c:201)
+==6649==    by 0x804C60E: asignar_segmento (segmentacion.c:284)
+==6649==    by 0x804DD8C: gestionar_tareas (mi_ram_hq.c:294)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 136 bytes in 1 blocks are possibly lost in loss record 38 of 47
+==6649==    at 0x402E0B8: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4011726: allocate_dtv (dl-tls.c:322)
+==6649==    by 0x401214B: _dl_allocate_tls (dl-tls.c:539)
+==6649==    by 0x4062CC3: allocate_stack (allocatestack.c:588)
+==6649==    by 0x4062CC3: pthread_create@@GLIBC_2.1 (pthread_create.c:539)
+==6649==    by 0x804D333: main (mi_ram_hq.c:51)
+==6649== 
+==6649== 136 bytes in 1 blocks are definitely lost in loss record 39 of 47
+==6649==    at 0x402E0B8: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4011726: allocate_dtv (dl-tls.c:322)
+==6649==    by 0x401214B: _dl_allocate_tls (dl-tls.c:539)
+==6649==    by 0x4062CC3: allocate_stack (allocatestack.c:588)
+==6649==    by 0x4062CC3: pthread_create@@GLIBC_2.1 (pthread_create.c:539)
+==6649==    by 0x804D486: proceso_handler (mi_ram_hq.c:106)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 137 bytes in 11 blocks are still reachable in loss record 40 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x41322C5: strdup (strdup.c:42)
+==6649==    by 0x4053D91: dictionary_put (in /usr/lib/libcommons.so)
+==6649==    by 0x4055B09: add_cofiguration.2909 (in /usr/lib/libcommons.so)
+==6649==    by 0x4057092: string_iterate_lines (in /usr/lib/libcommons.so)
+==6649==    by 0x4055C7A: config_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D1DB: main (mi_ram_hq.c:25)
+==6649== 
+==6649== 160 bytes in 4 blocks are still reachable in loss record 41 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407B8AA: recepcion_y_deserializacion (in /usr/lib/libcomms.so)
+==6649==    by 0x804D4DC: atender_clientes (mi_ram_hq.c:120)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 176 bytes in 11 blocks are still reachable in loss record 42 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4054268: dictionary_create_element (in /usr/lib/libcommons.so)
+==6649==    by 0x4053DA3: dictionary_put (in /usr/lib/libcommons.so)
+==6649==    by 0x4055B09: add_cofiguration.2909 (in /usr/lib/libcommons.so)
+==6649==    by 0x4057092: string_iterate_lines (in /usr/lib/libcommons.so)
+==6649==    by 0x4055C7A: config_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D1DB: main (mi_ram_hq.c:25)
+==6649== 
+==6649== 200 bytes in 5 blocks are still reachable in loss record 43 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x804C2EC: crear_segmento (segmentacion.c:201)
+==6649==    by 0x804C60E: asignar_segmento (segmentacion.c:284)
+==6649==    by 0x804E15C: gestionar_tcb (mi_ram_hq.c:379)
+==6649==    by 0x804D64E: atender_clientes (mi_ram_hq.c:151)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 338 bytes in 1 blocks are still reachable in loss record 44 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x407BCDB: deserializar_archivo_tareas (in /usr/lib/libcomms.so)
+==6649==    by 0x407BA25: recepcion_y_deserializacion (in /usr/lib/libcomms.so)
+==6649==    by 0x804D4DC: atender_clientes (mi_ram_hq.c:120)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== 344 bytes in 1 blocks are still reachable in loss record 45 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x411B359: __fopen_internal (iofopen.c:69)
+==6649==    by 0x411B41D: fopen@@GLIBC_2.1 (iofopen.c:97)
+==6649==    by 0x40575B4: txt_open_for_append (in /usr/lib/libcommons.so)
+==6649==    by 0x4056191: log_create (in /usr/lib/libcommons.so)
+==6649==    by 0x804D239: main (mi_ram_hq.c:28)
+==6649== 
+==6649== 512 bytes in 1 blocks are still reachable in loss record 46 of 47
+==6649==    at 0x402C17C: malloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x804D94B: iniciar_memoria (mi_ram_hq.c:237)
+==6649==    by 0x804D2D6: main (mi_ram_hq.c:41)
+==6649== 
+==6649== 544 bytes in 4 blocks are possibly lost in loss record 47 of 47
+==6649==    at 0x402E0B8: calloc (in /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so)
+==6649==    by 0x4011726: allocate_dtv (dl-tls.c:322)
+==6649==    by 0x401214B: _dl_allocate_tls (dl-tls.c:539)
+==6649==    by 0x4062CC3: allocate_stack (allocatestack.c:588)
+==6649==    by 0x4062CC3: pthread_create@@GLIBC_2.1 (pthread_create.c:539)
+==6649==    by 0x804D486: proceso_handler (mi_ram_hq.c:106)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649== 
+==6649== LEAK SUMMARY:
+==6649==    definitely lost: 192 bytes in 3 blocks
+==6649==    indirectly lost: 0 bytes in 0 blocks
+==6649==      possibly lost: 680 bytes in 5 blocks
+==6649==    still reachable: 3,231 bytes in 104 blocks
+==6649==         suppressed: 0 bytes in 0 blocks
+==6649== 
+==6649== ERROR SUMMARY: 7 errors from 7 contexts (suppressed: 0 from 0)
+==6649== 
+==6649== 1 errors in context 1 of 7:
+==6649== Thread 3:
+==6649== Invalid read of size 4
+==6649==    at 0x804C000: buscador_tabla_por_tareas.6871 (segmentacion.c:93)
+==6649==    by 0x4053F3E: dictionary_iterator (in /usr/lib/libcommons.so)
+==6649==    by 0x804BE1E: compactacion (segmentacion.c:99)
+==6649==    by 0x804C669: asignar_segmento (segmentacion.c:295)
+==6649==    by 0x804DD8C: gestionar_tareas (mi_ram_hq.c:294)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649==  Address 0x0 is not stack'd, malloc'd or (recently) free'd
+==6649== 
+==6649== 
+==6649== 1 errors in context 2 of 7:
+==6649== Use of uninitialised value of size 4
+==6649==    at 0x804BFF2: buscador_tabla_por_tareas.6871 (segmentacion.c:92)
+==6649==    by 0x4053F3E: dictionary_iterator (in /usr/lib/libcommons.so)
+==6649==    by 0x804BE1E: compactacion (segmentacion.c:99)
+==6649==    by 0x804C669: asignar_segmento (segmentacion.c:295)
+==6649==    by 0x804DD8C: gestionar_tareas (mi_ram_hq.c:294)
+==6649==    by 0x804D51F: atender_clientes (mi_ram_hq.c:125)
+==6649==    by 0x4062294: start_thread (pthread_create.c:333)
+==6649==    by 0x41A40AD: clone (clone.S:114)
+==6649==  Uninitialised value was created by a stack allocation
+==6649==    at 0x804BB88: compactacion (segmentacion.c:31)
+==6649== 
+==6649== ERROR SUMMARY: 7 errors from 7 contexts (suppressed: 0 from 0)

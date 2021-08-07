@@ -132,19 +132,42 @@ int main() {
     socket_a_mongo_store = crear_socket_cliente(IP_I_MONGO_STORE, PUERTO_I_MONGO_STORE);
 
     //iniciar_patota("INICIAR_PATOTA 1 ES3_Patota1.txt");
-    //iniciar_planificacion();
-    /*for(int i = 0; i<1; i++){
+    /*for(int i = 0; i<5; i++){
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota1.txt 9|9 0|0 5|5");
-        sleep(1);
+        log_error(logger, "INICIO PATOTA");
+        // sleep(1);
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota2.txt 4|0 2|6 8|2");
-        sleep(1);
+        log_error(logger, "INICIO PATOTA");
+        // sleep(1);
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota3.txt 2|3 5|8 5|3");
-        sleep(1);
+        log_error(logger, "INICIO PATOTA");
+        // sleep(1);
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota4.txt 0|9 4|4 9|0");
-        sleep(1);
+        log_error(logger, "INICIO PATOTA");
+        // sleep(1);
         iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
-        sleep(1);
-    }*/
+        log_error(logger, "INICIO PATOTA");
+        // sleep(1);
+    }
+    iniciar_planificacion();*/
+    /*iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
+    log_error(logger, "INICIO PATOTA");
+    iniciar_patota("INICIAR_PATOTA 3 ES3_Patota5.txt 0|2 9|6 3|5");
+    log_error(logger, "INICIO PATOTA");*/
+    /*
+    expulsar_tripulante("EXPULSAR_TRIPULANTE 20001");
+    sleep(2);
+    expulsar_tripulante("EXPULSAR_TRIPULANTE 20002");
+    sleep(2);
+    listar_tripulantes();
+    sleep(2);
+    expulsar_tripulante("EXPULSAR_TRIPULANTE 40001");
+    sleep(2);
+    listar_tripulantes();
+    sleep(2);
+    expulsar_tripulante("EXPULSAR_TRIPULANTE 60001");
+    sleep(2);
+    */
     /*for(int i = 0; i<2; i++){
         ejecutar_tarea("estabilidad_general.txt");
     }*/

@@ -139,6 +139,8 @@ void matar_tabla_paginas(int pid){
 			if(pag->en_memoria){
 				if(pag->puntero_marco != NULL){
 					pag->puntero_marco->libre = true;
+					pag->puntero_marco->pid = 0;
+					pag->puntero_marco->num_pagina = 0;
 				}else{
 					log_error(logger,"Pagina dice que está en memoria pero no tiene un marco asignado pinche pagina puta y mentirosa");
 				}
@@ -160,7 +162,7 @@ void matar_tabla_paginas(int pid){
     sprintf(spid, "%d", pid);
     dictionary_remove_and_destroy(tablas,spid,table_destroyer);
 	
-	log_info(logger, "Se mató la tabla de paginas");
+	log_debug(logger, "[PAG]: Se mató patota PID: %d", pid);
 	desbloquear_lista_tablas();
 }
 
@@ -525,7 +527,6 @@ pagina* get_pagina_from_marco(marco* marco){
 	if(marco->libre)
 		return NULL;
 
-	
 	int pid = marco->pid;
 	int num_pagina = marco->num_pagina;
 	if(pid == 0)
@@ -536,9 +537,14 @@ pagina* get_pagina_from_marco(marco* marco){
 	tabla_paginas* tabla = buscar_tabla(pid);
 	if(tabla == NULL)
 		return NULL;
-	/*pagina* pag = list_get(tabla->paginas, num_pagina - 1);
-	bloquear_pagina(pag);
-	return pag;*/
+	//pagina* pag = list_get(tabla->paginas, num_pagina - 1);
+	//bloquear_pagina(pag);
+	/*if(pag->en_memoria)
+		return pag;
+	return NULL;*/
+	//usleep(10);
+	if(num_pagina - 1 < 0)
+		log_error(logger, "num pag: %d", num_pagina - 1);
 	return list_get(tabla->paginas, num_pagina - 1);
 }
 
@@ -546,6 +552,8 @@ marco* crear_marco(int base, bool libre){
     marco* nuevo_marco = malloc(sizeof(marco));
     nuevo_marco->base = base;
     nuevo_marco->libre = libre;
+	nuevo_marco->pid = 0;
+	nuevo_marco->num_pagina = 0;
 	pthread_mutex_init(&(nuevo_marco->mutex), NULL);
     return nuevo_marco;
 }
