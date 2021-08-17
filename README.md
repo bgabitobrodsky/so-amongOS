@@ -1,23 +1,8 @@
 # No matar a rey de fuego
 
-### Registro de cambios MONGO
-30/06
-Envío posiciones de sabotaje de manera individual. Cambios en:
-	-enviar_posiciones_sabotaje() --> Ahora se envía de a 1
-	-reparar() --> Devuelve char* con los archivos saboteados
-mongo_archivos: Los if(offset) de agregar/quitar los mato? --> tema msync
-mongo_tripulantes: Al iniciar el FS se borran las botácoras existentes
-
-24/06/2021
-README: A partir de ahora lo implemento, prometo ir anotando los cambios para no olvidarme, como me pudo haber pasado hoy.
-Hilos: join por detach
-Inicializar archvos: Se inicializan los datos en 0 (tamaño, cant_bloques, etc)
-Actualizaciones MD5: No las hacía, ahora si
-obtener_bitacora: completa
-
 ### Registro de cambios
 9/7/2021
-Ahora el MONGO es capaz de vivir.
++ Ahora el MONGO es capaz de vivir.
 
 4/7/2021
 + Ahora los tripulantes no puede ejecutar sus ráfagas de E/S en paralelo.
